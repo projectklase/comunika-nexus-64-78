@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useRewardsStore } from './rewards-store';
 
 interface GamificationData {
   lastCheckIn: string; // YYYY-MM-DD
@@ -25,6 +26,8 @@ interface GamificationStore extends GamificationData {
   addActivityXP: (activityId: string) => number;
   addFocusXP: (type: 'start' | 'complete') => number;
   resetIfNeeded: () => void;
+  // Integration with Koins system
+  syncWithKoins: (studentId: string) => void;
 }
 
 const MISSIONS = [
@@ -189,6 +192,26 @@ export const useStudentGamification = create<GamificationStore>()(
           xp: state.xp + xpGained
         }));
         return xpGained;
+      },
+
+      syncWithKoins: (studentId: string) => {
+        // This method can be used to sync XP with Koin balance if needed
+        // For now, both systems work independently but show together in UI
+        const rewardsState = useRewardsStore.getState();
+        const balance = rewardsState.getStudentBalance(studentId);
+        
+        // Optional: Could add bonus XP based on Koin milestones
+        // Example: Every 100 Koins = 50 bonus XP
+        const milestoneXP = Math.floor(balance.totalEarned / 100) * 50;
+        
+        set(state => {
+          const currentMilestoneXP = Math.floor((state.xp - (state.xp % 50)) / 50) * 50;
+          const newXP = milestoneXP - currentMilestoneXP;
+          
+          return newXP > 0 ? {
+            xp: state.xp + newXP
+          } : state;
+        });
       }
     }),
     {

@@ -10,6 +10,7 @@ export interface ActivityMeta {
   // Campos comuns
   peso?: number;
   usePeso?: boolean;  // Flag para controlar se deve usar peso nesta atividade
+  koinReward?: number; // Koins que o aluno receberá ao concluir esta atividade
   
   // ATIVIDADE
   rubrica?: string;

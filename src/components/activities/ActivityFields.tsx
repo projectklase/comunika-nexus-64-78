@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { WeightToggleField } from '@/components/activities/WeightToggleField';
 import { X } from 'lucide-react';
 import { useState } from 'react';
+import { Coins } from 'lucide-react';
 
 interface ActivityFieldsProps {
   type: ActivityType;
@@ -82,6 +83,26 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           activityType={type}
           onChange={handleWeightChange}
         />
+
+        <div className="space-y-2">
+          <Label htmlFor="koin-reward">Recompensa em Koins</Label>
+          <div className="relative">
+            <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="koin-reward"
+              type="number"
+              min="0"
+              max="100"
+              value={meta.koinReward || ''}
+              onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
+              placeholder="0"
+              className="pl-10"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Koins que o aluno receberá ao concluir esta atividade
+          </p>
+        </div>
         
         <div className="space-y-2">
           <Label htmlFor="rubrica">Rubrica de Avaliação</Label>
@@ -106,6 +127,26 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           activityType={type}
           onChange={handleWeightChange}
         />
+
+        <div className="space-y-2">
+          <Label htmlFor="koin-reward">Recompensa em Koins</Label>
+          <div className="relative">
+            <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="koin-reward"
+              type="number"
+              min="0"
+              max="100"
+              value={meta.koinReward || ''}
+              onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
+              placeholder="0"
+              className="pl-10"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Koins que o aluno receberá ao concluir este trabalho
+          </p>
+        </div>
 
         <div className="space-y-3">
           <Label>Formatos de Entrega</Label>
@@ -175,6 +216,26 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           activityType={type}
           onChange={handleWeightChange}
         />
+
+        <div className="space-y-2">
+          <Label htmlFor="koin-reward">Recompensa em Koins</Label>
+          <div className="relative">
+            <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="koin-reward"
+              type="number"
+              min="0"
+              max="100"
+              value={meta.koinReward || ''}
+              onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
+              placeholder="0"
+              className="pl-10"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Koins que o aluno receberá ao concluir esta prova
+          </p>
+        </div>
 
         <div className="space-y-2">
           <Label>Duração (minutos)</Label>
