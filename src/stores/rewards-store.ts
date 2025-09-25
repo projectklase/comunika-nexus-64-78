@@ -19,6 +19,9 @@ interface RewardsStore {
   // Loading states
   loading: boolean;
   
+  // Initialize store with clean data
+  initializeStore: () => void;
+  
   // Actions - Reward Items Management (Secretaria)
   addItem: (item: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateItem: (id: string, updates: Partial<RewardItem>) => void;
@@ -119,6 +122,25 @@ export const useRewardsStore = create<RewardsStore>()(
       searchTerm: '',
       sortBy: 'name',
 
+      // Initialize and clean up data from localStorage
+      initializeStore: () => {
+        const state = get();
+        const cleanedBalances: Record<string, KoinBalance> = {};
+        
+        // Clean up any corrupted balance data
+        Object.entries(state.balances).forEach(([studentId, balance]) => {
+          cleanedBalances[studentId] = {
+            ...balance,
+            availableBalance: Number(balance.availableBalance) || 0,
+            blockedBalance: Number(balance.blockedBalance) || 0,
+            totalEarned: Number(balance.totalEarned) || 0,
+            totalSpent: Number(balance.totalSpent) || 0
+          };
+        });
+        
+        set({ balances: cleanedBalances });
+      },
+
       addItem: (itemData) => {
         const newItem: RewardItem = {
           ...itemData,
@@ -158,7 +180,16 @@ export const useRewardsStore = create<RewardsStore>()(
 
       getStudentBalance: (studentId) => {
         const state = get();
-        return state.balances[studentId] || { ...defaultBalance, studentId };
+        const balance = state.balances[studentId] || { ...defaultBalance, studentId };
+        
+        // Ensure all numeric fields are actually numbers
+        return {
+          ...balance,
+          availableBalance: Number(balance.availableBalance) || 0,
+          blockedBalance: Number(balance.blockedBalance) || 0,
+          totalEarned: Number(balance.totalEarned) || 0,
+          totalSpent: Number(balance.totalSpent) || 0
+        };
       },
 
       addTransaction: (transactionData) => {
@@ -174,15 +205,20 @@ export const useRewardsStore = create<RewardsStore>()(
         set(state => {
           const currentBalance = state.balances[transaction.studentId] || { ...defaultBalance, studentId: transaction.studentId };
           
-          let newAvailableBalance = currentBalance.availableBalance;
-          let newBlockedBalance = currentBalance.blockedBalance;
+          // Force all current balance values to be numbers
+          let newAvailableBalance = Number(currentBalance.availableBalance) || 0;
+          let newBlockedBalance = Number(currentBalance.blockedBalance) || 0;
+          let totalEarned = Number(currentBalance.totalEarned) || 0;
+          let totalSpent = Number(currentBalance.totalSpent) || 0;
+          
+          const transactionAmount = Number(transaction.amount);
           
           if (transaction.type === 'EARN' || transaction.type === 'BONUS' || transaction.type === 'REFUND') {
-            newAvailableBalance += Number(transaction.amount);
+            newAvailableBalance = newAvailableBalance + transactionAmount;
           } else if (transaction.type === 'SPEND') {
             // This should move from available to blocked
-            newAvailableBalance -= Number(transaction.amount);
-            newBlockedBalance += Number(transaction.amount);
+            newAvailableBalance = newAvailableBalance - transactionAmount;
+            newBlockedBalance = newBlockedBalance + transactionAmount;
           }
 
           const updatedBalance: KoinBalance = {
@@ -190,11 +226,11 @@ export const useRewardsStore = create<RewardsStore>()(
             availableBalance: newAvailableBalance,
             blockedBalance: newBlockedBalance,
             totalEarned: transaction.type === 'EARN' || transaction.type === 'BONUS' 
-              ? currentBalance.totalEarned + Number(transaction.amount)
-              : currentBalance.totalEarned,
+              ? totalEarned + transactionAmount
+              : totalEarned,
             totalSpent: transaction.type === 'SPEND' 
-              ? currentBalance.totalSpent + Number(transaction.amount)
-              : currentBalance.totalSpent,
+              ? totalSpent + transactionAmount
+              : totalSpent,
             lastUpdated: new Date().toISOString()
           };
 
@@ -403,7 +439,13 @@ export const useRewardsStore = create<RewardsStore>()(
       }
     }),
     {
-      name: 'rewards-store'
+      name: 'rewards-store',
+      onRehydrateStorage: () => (state) => {
+        // Clean up data when loading from localStorage
+        if (state) {
+          state.initializeStore?.();
+        }
+      }
     }
   )
 );
