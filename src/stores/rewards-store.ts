@@ -122,6 +122,8 @@ export const useRewardsStore = create<RewardsStore>()(
       addItem: (itemData) => {
         const newItem: RewardItem = {
           ...itemData,
+          koinPrice: Number(itemData.koinPrice), // Force number conversion
+          stock: Number(itemData.stock), // Force number conversion
           id: generateId(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -136,7 +138,13 @@ export const useRewardsStore = create<RewardsStore>()(
         set(state => ({
           items: state.items.map(item =>
             item.id === id
-              ? { ...item, ...updates, updatedAt: new Date().toISOString() }
+              ? { 
+                  ...item, 
+                  ...updates, 
+                  koinPrice: updates.koinPrice ? Number(updates.koinPrice) : item.koinPrice,
+                  stock: updates.stock !== undefined ? Number(updates.stock) : item.stock,
+                  updatedAt: new Date().toISOString() 
+                }
               : item
           )
         }));
@@ -156,6 +164,9 @@ export const useRewardsStore = create<RewardsStore>()(
       addTransaction: (transactionData) => {
         const transaction: KoinTransaction = {
           ...transactionData,
+          amount: Number(transactionData.amount), // Force number conversion
+          balanceBefore: Number(transactionData.balanceBefore), // Force number conversion
+          balanceAfter: Number(transactionData.balanceAfter), // Force number conversion
           id: generateId(),
           timestamp: new Date().toISOString()
         };
@@ -167,11 +178,11 @@ export const useRewardsStore = create<RewardsStore>()(
           let newBlockedBalance = currentBalance.blockedBalance;
           
           if (transaction.type === 'EARN' || transaction.type === 'BONUS' || transaction.type === 'REFUND') {
-            newAvailableBalance += transaction.amount;
+            newAvailableBalance += Number(transaction.amount);
           } else if (transaction.type === 'SPEND') {
             // This should move from available to blocked
-            newAvailableBalance -= transaction.amount;
-            newBlockedBalance += transaction.amount;
+            newAvailableBalance -= Number(transaction.amount);
+            newBlockedBalance += Number(transaction.amount);
           }
 
           const updatedBalance: KoinBalance = {
@@ -179,10 +190,10 @@ export const useRewardsStore = create<RewardsStore>()(
             availableBalance: newAvailableBalance,
             blockedBalance: newBlockedBalance,
             totalEarned: transaction.type === 'EARN' || transaction.type === 'BONUS' 
-              ? currentBalance.totalEarned + transaction.amount 
+              ? currentBalance.totalEarned + Number(transaction.amount)
               : currentBalance.totalEarned,
             totalSpent: transaction.type === 'SPEND' 
-              ? currentBalance.totalSpent + transaction.amount 
+              ? currentBalance.totalSpent + Number(transaction.amount)
               : currentBalance.totalSpent,
             lastUpdated: new Date().toISOString()
           };
@@ -223,7 +234,7 @@ export const useRewardsStore = create<RewardsStore>()(
           studentId,
           itemId: item.id,
           itemName: item.name,
-          koinAmount: item.koinPrice,
+          koinAmount: Number(item.koinPrice), // Force number conversion
           status: 'PENDING',
           requestedAt: new Date().toISOString()
         };
@@ -232,9 +243,9 @@ export const useRewardsStore = create<RewardsStore>()(
         get().addTransaction({
           studentId,
           type: 'SPEND',
-          amount: item.koinPrice,
-          balanceBefore: balance.availableBalance,
-          balanceAfter: balance.availableBalance - item.koinPrice,
+          amount: Number(item.koinPrice),
+          balanceBefore: Number(balance.availableBalance),
+          balanceAfter: Number(balance.availableBalance - item.koinPrice),
           source: `REDEMPTION:${redemption.id}`,
           description: `Resgate pendente: ${item.name}`
         });
@@ -263,7 +274,7 @@ export const useRewardsStore = create<RewardsStore>()(
           const currentBalance = state.balances[redemption.studentId];
           const updatedBalance: KoinBalance = {
             ...currentBalance,
-            blockedBalance: currentBalance.blockedBalance - redemption.koinAmount,
+            blockedBalance: Number(currentBalance.blockedBalance) - Number(redemption.koinAmount),
             lastUpdated: new Date().toISOString()
           };
 
@@ -298,8 +309,8 @@ export const useRewardsStore = create<RewardsStore>()(
           const currentBalance = state.balances[redemption.studentId];
           const updatedBalance: KoinBalance = {
             ...currentBalance,
-            availableBalance: currentBalance.availableBalance + redemption.koinAmount,
-            blockedBalance: currentBalance.blockedBalance - redemption.koinAmount,
+            availableBalance: Number(currentBalance.availableBalance) + Number(redemption.koinAmount),
+            blockedBalance: Number(currentBalance.blockedBalance) - Number(redemption.koinAmount),
             lastUpdated: new Date().toISOString()
           };
 
@@ -326,9 +337,9 @@ export const useRewardsStore = create<RewardsStore>()(
         get().addTransaction({
           studentId: redemption.studentId,
           type: 'REFUND',
-          amount: redemption.koinAmount,
-          balanceBefore: state.balances[redemption.studentId].availableBalance,
-          balanceAfter: state.balances[redemption.studentId].availableBalance + redemption.koinAmount,
+          amount: Number(redemption.koinAmount),
+          balanceBefore: Number(state.balances[redemption.studentId].availableBalance),
+          balanceAfter: Number(state.balances[redemption.studentId].availableBalance + redemption.koinAmount),
           source: `REDEMPTION:${redemptionId}`,
           description: `Estorno: ${redemption.itemName} - ${reason}`,
           responsibleUserId: rejectedBy
@@ -338,6 +349,7 @@ export const useRewardsStore = create<RewardsStore>()(
       createBonusEvent: (eventData) => {
         const event: BonusEvent = {
           ...eventData,
+          koinAmount: Number(eventData.koinAmount), // Force number conversion
           id: generateId(),
           createdAt: new Date().toISOString()
         };
@@ -349,9 +361,9 @@ export const useRewardsStore = create<RewardsStore>()(
           get().addTransaction({
             studentId,
             type: 'BONUS',
-            amount: event.koinAmount,
-            balanceBefore: currentBalance.availableBalance,
-            balanceAfter: currentBalance.availableBalance + event.koinAmount,
+            amount: Number(event.koinAmount),
+            balanceBefore: Number(currentBalance.availableBalance),
+            balanceAfter: Number(currentBalance.availableBalance + event.koinAmount),
             source: `EVENT:${event.id}`,
             description: `Bonificação: ${event.name}`,
             responsibleUserId: event.createdBy

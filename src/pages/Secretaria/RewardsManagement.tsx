@@ -49,7 +49,7 @@ export default function RewardsManagement() {
   const pendingRedemptions = redemptions.filter(r => r.status === 'PENDING').length;
   const totalKoinsDistributed = transactions
     .filter(t => t.type === 'EARN' || t.type === 'BONUS')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const handleAddItem = (itemData: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => {
     addItem(itemData);

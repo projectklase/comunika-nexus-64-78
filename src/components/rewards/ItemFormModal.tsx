@@ -108,6 +108,8 @@ export function ItemFormModal({ item, isOpen, onClose, onSubmit }: ItemFormModal
   const onFormSubmit = (data: FormData) => {
     onSubmit({
       ...data,
+      koinPrice: Number(data.koinPrice), // Force number conversion
+      stock: Number(data.stock), // Force number conversion
       isActive: true
     });
     
@@ -238,7 +240,8 @@ export function ItemFormModal({ item, isOpen, onClose, onSubmit }: ItemFormModal
                   min="1"
                   {...register('koinPrice', { 
                     required: 'Preço é obrigatório',
-                    min: { value: 1, message: 'Preço deve ser maior que 0' }
+                    min: { value: 1, message: 'Preço deve ser maior que 0' },
+                    valueAsNumber: true
                   })}
                   className="pl-10"
                   placeholder="0"
@@ -257,7 +260,8 @@ export function ItemFormModal({ item, isOpen, onClose, onSubmit }: ItemFormModal
                 min="0"
                 {...register('stock', { 
                   required: 'Estoque é obrigatório',
-                  min: { value: 0, message: 'Estoque não pode ser negativo' }
+                  min: { value: 0, message: 'Estoque não pode ser negativo' },
+                  valueAsNumber: true
                 })}
                 placeholder="0"
               />

@@ -74,6 +74,7 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
 
     createBonusEvent({
       ...data,
+      koinAmount: Number(data.koinAmount), // Force number conversion
       studentIds: selectedStudents,
       createdBy: user.id
     });
@@ -143,7 +144,8 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
                   min="1"
                   {...register('koinAmount', { 
                     required: 'Quantidade de Koins é obrigatória',
-                    min: { value: 1, message: 'Deve ser pelo menos 1 Koin' }
+                    min: { value: 1, message: 'Deve ser pelo menos 1 Koin' },
+                    valueAsNumber: true
                   })}
                   className="pl-10"
                   placeholder="0"
