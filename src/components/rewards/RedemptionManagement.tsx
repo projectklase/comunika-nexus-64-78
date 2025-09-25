@@ -1,0 +1,281 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { RedemptionRequest } from '@/types/rewards';
+import { useRewardsStore } from '@/stores/rewards-store';
+import { useAuth } from '@/contexts/AuthContext';
+import { CheckCircle2, XCircle, Clock, AlertTriangle, Coins } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+
+export function RedemptionManagement() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { redemptions, approveRedemption, rejectRedemption, items } = useRewardsStore();
+  
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  const pendingRedemptions = redemptions.filter(r => r.status === 'PENDING');
+  const processedRedemptions = redemptions.filter(r => r.status !== 'PENDING');
+
+  const handleApprove = (redemptionId: string) => {
+    if (!user) return;
+    
+    const result = approveRedemption(redemptionId, user.id);
+    
+    if (result.success) {
+      toast({
+        title: "Resgate aprovado!",
+        description: result.message,
+        duration: 3000
+      });
+    } else {
+      toast({
+        title: "Erro ao aprovar",
+        description: result.message,
+        variant: "destructive",
+        duration: 4000
+      });
+    }
+  };
+
+  const handleReject = () => {
+    if (!user || !rejectingId || !rejectionReason.trim()) return;
+    
+    rejectRedemption(rejectingId, user.id, rejectionReason.trim());
+    
+    toast({
+      title: "Resgate recusado",
+      description: "O aluno foi notificado sobre a recusa.",
+      duration: 3000
+    });
+    
+    setRejectingId(null);
+    setRejectionReason('');
+  };
+
+  const getStatusBadge = (status: RedemptionRequest['status']) => {
+    switch (status) {
+      case 'PENDING':
+        return (
+          <Badge variant="outline" className="border-yellow-500/30 text-yellow-500 bg-yellow-500/10">
+            <Clock className="h-3 w-3 mr-1" />
+            Pendente
+          </Badge>
+        );
+      case 'APPROVED':
+        return (
+          <Badge variant="outline" className="border-green-500/30 text-green-500 bg-green-500/10">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Aprovado
+          </Badge>
+        );
+      case 'REJECTED':
+        return (
+          <Badge variant="outline" className="border-red-500/30 text-red-500 bg-red-500/10">
+            <XCircle className="h-3 w-3 mr-1" />
+            Recusado
+          </Badge>
+        );
+    }
+  };
+
+  const getItemById = (itemId: string) => {
+    return items.find(item => item.id === itemId);
+  };
+
+  const canApprove = (redemption: RedemptionRequest) => {
+    const item = getItemById(redemption.itemId);
+    return item && item.isActive && item.stock > 0;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Pending Redemptions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-yellow-500" />
+            Resgates Pendentes ({pendingRedemptions.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {pendingRedemptions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum resgate pendente no momento</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingRedemptions.map((redemption) => {
+                const item = getItemById(redemption.itemId);
+                const canApproveThis = canApprove(redemption);
+                
+                return (
+                  <div
+                    key={redemption.id}
+                    className="flex items-start gap-4 p-4 bg-muted/5 rounded-lg border border-border/50"
+                  >
+                    {/* Item Image */}
+                    <img
+                      src={item?.images[0] || '/placeholder.svg'}
+                      alt={redemption.itemName}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="font-semibold text-foreground">
+                            {redemption.itemName}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            Solicitado em {format(new Date(redemption.requestedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </p>
+                        </div>
+                        {getStatusBadge(redemption.status)}
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Coins className="h-4 w-4 text-yellow-500" />
+                          <span className="font-medium">{redemption.koinAmount} Koins</span>
+                        </div>
+                        {item && (
+                          <div className="text-muted-foreground">
+                            Estoque atual: {item.stock}
+                          </div>
+                        )}
+                      </div>
+
+                      {!canApproveThis && (
+                        <div className="flex items-center gap-1 mt-2 text-sm text-destructive">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>
+                            {!item ? 'Item removido' : 'Sem estoque disponível'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-600 border-green-200 hover:bg-green-50"
+                        onClick={() => handleApprove(redemption.id)}
+                        disabled={!canApproveThis}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        Aprovar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => setRejectingId(redemption.id)}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Recusar
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Processed Redemptions */}
+      {processedRedemptions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Resgates</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {processedRedemptions.slice(0, 10).map((redemption) => (
+                <div
+                  key={redemption.id}
+                  className="flex items-center justify-between p-3 bg-muted/5 rounded-lg border border-border/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={getItemById(redemption.itemId)?.images[0] || '/placeholder.svg'}
+                      alt={redemption.itemName}
+                      className="w-10 h-10 object-cover rounded"
+                    />
+                    <div>
+                      <p className="font-medium text-sm">{redemption.itemName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(redemption.processedAt!), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 text-sm">
+                      <Coins className="h-3 w-3 text-yellow-500" />
+                      {redemption.koinAmount}
+                    </div>
+                    {getStatusBadge(redemption.status)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rejection Modal */}
+      <Dialog open={!!rejectingId} onOpenChange={() => setRejectingId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Recusar Resgate</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Por favor, forneça uma justificativa para a recusa. Esta mensagem será enviada ao aluno.
+            </p>
+            
+            <Textarea
+              placeholder="Ex: Item temporariamente indisponível..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRejectingId(null);
+                setRejectionReason('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={!rejectionReason.trim()}
+            >
+              Recusar Resgate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

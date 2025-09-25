@@ -3,7 +3,8 @@ export const ROUTES = {
     CALENDARIO: '/aluno/calendario',
     FEED: '/aluno/feed',
     DASHBOARD: '/aluno/dashboard',
-    NEXUS: '/aluno/nexus'
+    NEXUS: '/aluno/nexus',
+    REWARDS: '/aluno/loja-recompensas'
   },
   PROFESSOR: {
     CALENDARIO: '/professor/calendario',
@@ -20,6 +21,7 @@ export const ROUTES = {
     HISTORICO: '/secretaria/historico',
     NOVO_POST: '/novo-post',
     NOTIFICACOES: '/secretaria/notificacoes',
+    REWARDS_MANAGEMENT: '/secretaria/gerenciar-recompensas',
     SEGURANCA: {
       RESETS: '/secretaria/seguranca/resets'
     },

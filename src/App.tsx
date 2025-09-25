@@ -48,6 +48,8 @@ import AlterarSenha from "./pages/Auth/AlterarSenha";
 import PasswordResetsPage from "./pages/Secretaria/PasswordResets/index";
 import NotificationsPage from "./pages/Secretaria/Notifications/index";
 import { PostFallback } from "./pages/PostFallback";
+import RewardsStore from "./pages/RewardsStore";
+import RewardsManagement from "./pages/Secretaria/RewardsManagement";
 
 const queryClient = new QueryClient();
 
@@ -304,6 +306,13 @@ const App = () => (
                 </AppLayout>
               </RoleGuard>
             } />
+            <Route path="/aluno/loja-recompensas" element={
+              <RoleGuard allowedRoles={['aluno']}>
+                <AppLayout>
+                  <RewardsStore />
+                </AppLayout>
+              </RoleGuard>
+            } />
             {/* Legacy routes for backward compatibility */}
             <Route path="/minhas-turmas" element={
               <ProtectedRoute>
@@ -346,6 +355,13 @@ const App = () => (
               <ProtectedRoute allowedRoles={['secretaria']}>
                 <AppLayout>
                   <NotificationsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/secretaria/gerenciar-recompensas" element={
+              <ProtectedRoute allowedRoles={['secretaria']}>
+                <AppLayout>
+                  <RewardsManagement />
                 </AppLayout>
               </ProtectedRoute>
             } />

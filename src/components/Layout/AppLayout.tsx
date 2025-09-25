@@ -14,6 +14,7 @@ import {
 import { Settings, LogOut, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
+import { KoinBalanceHeader } from '@/components/rewards/KoinBalanceHeader';
 import { PasswordResetNotificationHandler } from '@/components/notifications/PasswordResetNotificationHandler';
 import { UniversalNexusOrb } from '@/components/nexus/UniversalNexusOrb';
 import { ActivityDrawer } from '@/components/calendar/ActivityDrawer';

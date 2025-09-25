@@ -28,6 +28,8 @@ import {
   Target,
   FileText,
   UserCog,
+  Gift,
+  Store,
 } from 'lucide-react';
 
 const menuItems = {
@@ -35,6 +37,7 @@ const menuItems = {
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     { title: 'Feed', url: '/secretaria/feed', icon: Rss },
     { title: 'Calendário', url: '/secretaria/calendario', icon: Calendar },
+    { title: 'Recompensas', url: '/secretaria/gerenciar-recompensas', icon: Gift },
     { title: 'Histórico', url: '/secretaria/historico', icon: History },
   ],
   secretariaCadastros: [
@@ -55,6 +58,7 @@ const menuItems = {
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     { title: 'Feed', url: '/aluno/feed', icon: Rss },
     { title: 'Calendário', url: '/aluno/calendario', icon: Calendar },
+    { title: 'Loja de Recompensas', url: '/aluno/loja-recompensas', icon: Store },
   ],
 };
 
