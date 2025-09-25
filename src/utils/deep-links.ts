@@ -211,3 +211,17 @@ export function generateCalendarLink(date: string, eventId?: string, classId?: s
   
   return `${base}?${params.toString()}`;
 }
+
+/**
+ * Generate link to student rewards store history
+ */
+export function generateRewardsHistoryLink(): string {
+  return '/aluno/loja-recompensas';
+}
+
+/**
+ * Generate link to secretaria redemption management
+ */
+export function generateRedemptionManagementLink(): string {
+  return '/secretaria/recompensas';
+}

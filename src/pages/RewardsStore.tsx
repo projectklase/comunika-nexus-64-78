@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { RewardItem } from '@/types/rewards';
 import { History, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { notificationStore } from '@/stores/notification-store';
+import { generateRedemptionManagementLink } from '@/utils/deep-links';
 
 export default function RewardsStore() {
   const { user } = useAuth();
@@ -45,6 +47,23 @@ export default function RewardsStore() {
       const result = requestRedemption(user.id, item.id);
       
       if (result.success) {
+        // Evento 3: Aluno solicita resgate de item
+        notificationStore.add({
+          type: 'POST_NEW',
+          title: 'Nova solicitação de resgate',
+          message: `Nova solicitação de resgate: O aluno ${user.name} deseja resgatar o item '${item.name}'.`,
+          roleTarget: 'SECRETARIA',
+          link: generateRedemptionManagementLink(),
+          meta: {
+            studentId: user.id,
+            studentName: user.name,
+            itemId: item.id,
+            itemName: item.name,
+            koinAmount: item.koinPrice,
+            requestType: 'redemption'
+          }
+        });
+
         toast({
           title: "Resgate solicitado!",
           description: result.message,

@@ -10,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { Coins, Users, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { notificationStore } from '@/stores/notification-store';
+import { generateRewardsHistoryLink } from '@/utils/deep-links';
 
 interface BonusEventModalProps {
   isOpen: boolean;
@@ -77,6 +79,24 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
       koinAmount: Number(data.koinAmount), // Force number conversion
       studentIds: selectedStudents,
       createdBy: user.id
+    });
+
+    // Evento 2: Aluno ganha Koins por bonificação da secretaria
+    selectedStudents.forEach(studentId => {
+      notificationStore.add({
+        type: 'POST_NEW',
+        title: 'Bonificação recebida!',
+        message: `Você recebeu uma bonificação de ${data.koinAmount} Koins referente ao evento '${data.name}'!`,
+        roleTarget: 'ALUNO',
+        link: generateRewardsHistoryLink(),
+        meta: {
+          koinAmount: Number(data.koinAmount),
+          eventName: data.name,
+          eventDescription: data.description,
+          studentId,
+          bonusType: 'event'
+        }
+      });
     });
 
     toast({

@@ -21,6 +21,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { ReviewStatusBadge } from './DeliveryStatusBadge';
 import { KoinEarnedToast } from '@/components/student/KoinEarnedToast';
+import { notificationStore } from '@/stores/notification-store';
+import { generateRewardsHistoryLink } from '@/utils/deep-links';
 
 interface StudentDeliveryButtonProps {
   activity: Post;
@@ -89,6 +91,21 @@ export function StudentDeliveryButton({ activity, classId, delivery, onUpdate }:
       // Award Koins for first-time completion (not for resubmissions)
       if (!delivery && activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0) {
         setShowKoinToast(true);
+        
+        // Evento 1: Aluno ganha Koins por entregar tarefa
+        notificationStore.add({
+          type: 'POST_NEW',
+          title: 'Koins ganhos!',
+          message: `Parabéns! Você ganhou ${activity.activityMeta.koinReward} Koins por completar a tarefa '${activity.title}'.`,
+          roleTarget: 'ALUNO',
+          link: generateRewardsHistoryLink(),
+          meta: {
+            koinAmount: activity.activityMeta.koinReward,
+            activityId: activity.id,
+            activityTitle: activity.title,
+            studentId: user.id
+          }
+        });
       }
 
       setIsOpen(false);

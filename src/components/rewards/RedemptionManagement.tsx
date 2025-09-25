@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { notificationStore } from '@/stores/notification-store';
+import { generateRewardsHistoryLink } from '@/utils/deep-links';
 
 export function RedemptionManagement() {
   const { user } = useAuth();
@@ -27,9 +29,27 @@ export function RedemptionManagement() {
   const handleApprove = (redemptionId: string) => {
     if (!user) return;
     
+    const redemption = redemptions.find(r => r.id === redemptionId);
     const result = approveRedemption(redemptionId, user.id);
     
-    if (result.success) {
+    if (result.success && redemption) {
+      // Evento 4: Resgate do aluno é aprovado
+      notificationStore.add({
+        type: 'POST_NEW',
+        title: 'Resgate aprovado!',
+        message: `Boas notícias! Seu resgate do item '${redemption.itemName}' foi aprovado. Você já pode retirá-lo na secretaria.`,
+        roleTarget: 'ALUNO',
+        link: generateRewardsHistoryLink(),
+        meta: {
+          studentId: redemption.studentId,
+          itemId: redemption.itemId,
+          itemName: redemption.itemName,
+          koinAmount: redemption.koinAmount,
+          redemptionId: redemption.id,
+          approvedBy: user.id
+        }
+      });
+
       toast({
         title: "Resgate aprovado!",
         description: result.message,
@@ -48,7 +68,28 @@ export function RedemptionManagement() {
   const handleReject = () => {
     if (!user || !rejectingId || !rejectionReason.trim()) return;
     
+    const redemption = redemptions.find(r => r.id === rejectingId);
     rejectRedemption(rejectingId, user.id, rejectionReason.trim());
+    
+    if (redemption) {
+      // Evento 5: Resgate do aluno é recusado
+      notificationStore.add({
+        type: 'POST_NEW',
+        title: 'Resgate recusado',
+        message: `Atenção: Seu resgate do item '${redemption.itemName}' foi recusado. Motivo: '${rejectionReason.trim()}'.`,
+        roleTarget: 'ALUNO',
+        link: generateRewardsHistoryLink(),
+        meta: {
+          studentId: redemption.studentId,
+          itemId: redemption.itemId,
+          itemName: redemption.itemName,
+          koinAmount: redemption.koinAmount,
+          redemptionId: redemption.id,
+          rejectedBy: user.id,
+          rejectionReason: rejectionReason.trim()
+        }
+      });
+    }
     
     toast({
       title: "Resgate recusado",
