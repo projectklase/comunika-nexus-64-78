@@ -94,7 +94,7 @@ export function StudentDeliveryButton({ activity, classId, delivery, onUpdate }:
         
         // Evento 1: Aluno ganha Koins por entregar tarefa
         notificationStore.add({
-          type: 'POST_NEW',
+          type: 'KOINS_EARNED',
           title: 'Koins ganhos!',
           message: `Parabéns! Você ganhou ${activity.activityMeta.koinReward} Koins por completar a tarefa '${activity.title}'.`,
           roleTarget: 'ALUNO',

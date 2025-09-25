@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { RewardCard } from '@/components/rewards/RewardCard';
@@ -8,8 +8,10 @@ import { KoinHistoryModal } from '@/components/rewards/KoinHistoryModal';
 import { RewardsFilters } from '@/components/rewards/RewardsFilters';
 import { KoinBalance } from '@/components/rewards/KoinBalance';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RewardItem } from '@/types/rewards';
-import { History, Store } from 'lucide-react';
+import { History, Store, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { notificationStore } from '@/stores/notification-store';
 import { generateRedemptionManagementLink } from '@/utils/deep-links';
@@ -33,6 +35,16 @@ export default function RewardsStore() {
   const [confirmItem, setConfirmItem] = useState<RewardItem | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState('store');
+
+  // Check for URL params to determine active tab
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'history') {
+      setActiveTab('history');
+    }
+  }, []);
 
   const items = getFilteredItems();
   const balance = user ? getStudentBalance(user.id) : null;
@@ -49,7 +61,7 @@ export default function RewardsStore() {
       if (result.success) {
         // Evento 3: Aluno solicita resgate de item
         notificationStore.add({
-          type: 'POST_NEW',
+          type: 'REDEMPTION_REQUESTED',
           title: 'Nova solicitação de resgate',
           message: `Nova solicitação de resgate: O aluno ${user.name} deseja resgatar o item '${item.name}'.`,
           roleTarget: 'SECRETARIA',
@@ -121,57 +133,111 @@ export default function RewardsStore() {
               isCompact
             />
           )}
-          
-          <Button
-            variant="outline"
-            onClick={() => setShowHistory(true)}
-            className="flex items-center gap-2"
-          >
-            <History className="h-4 w-4" />
-            Meu Histórico
-          </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <RewardsFilters
-        searchTerm={searchTerm}
-        sortBy={sortBy}
-        onSearchChange={setSearchTerm}
-        onSortChange={setSortBy}
-        onClearFilters={handleClearFilters}
-      />
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="store" className="flex items-center gap-2">
+            <Store className="h-4 w-4" />
+            Loja
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Meu Histórico
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Items Grid */}
-      <div className="mt-8">
-        {items.length === 0 ? (
-          <div className="text-center py-12">
-            <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Nenhum item encontrado
-            </h3>
-            <p className="text-muted-foreground">
-              {searchTerm 
-                ? "Tente ajustar os filtros de busca"
-                : "A loja está sendo abastecida com novos itens!"
-              }
-            </p>
+        {/* Store Tab */}
+        <TabsContent value="store" className="space-y-6">
+          {/* Filters */}
+          <RewardsFilters
+            searchTerm={searchTerm}
+            sortBy={sortBy}
+            onSearchChange={setSearchTerm}
+            onSortChange={setSortBy}
+            onClearFilters={handleClearFilters}
+          />
+
+          {/* Items Grid */}
+          <div>
+            {items.length === 0 ? (
+              <div className="text-center py-12">
+                <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Loja em breve!
+                </h3>
+                <p className="text-muted-foreground">
+                  Novos itens serão adicionados em breve.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {items.map((item) => (
+                  <RewardCard
+                    key={item.id}
+                    item={item}
+                    onViewDetails={setSelectedItem}
+                    onRedeem={setConfirmItem}
+                    studentKoins={balance?.availableBalance || 0}
+                    isStudent
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {items.map((item) => (
-              <RewardCard
-                key={item.id}
-                item={item}
-                onViewDetails={setSelectedItem}
-                onRedeem={setConfirmItem}
-                studentKoins={balance?.availableBalance || 0}
-                isStudent
-              />
-            ))}
-          </div>
-        )}
-      </div>
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-yellow-500" />
+                Histórico de Transações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {studentTransactions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Coins className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma transação encontrada</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {studentTransactions
+                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                    .map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-3 bg-muted/5 rounded-lg border border-border/50"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{transaction.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(transaction.timestamp).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Coins className="h-4 w-4 text-yellow-500" />
+                        <span className={`font-medium ${
+                          transaction.type === 'SPEND' 
+                            ? 'text-red-500' 
+                            : 'text-green-500'
+                        }`}>
+                          {transaction.type === 'SPEND' ? '-' : '+'}
+                          {transaction.amount}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Modals */}
       <RewardDetailModal

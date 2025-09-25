@@ -5,7 +5,12 @@ export type NotificationType =
   | 'RESET_CANCELLED'
   | 'POST_NEW'
   | 'POST_IMPORTANT' 
-  | 'HOLIDAY';
+  | 'HOLIDAY'
+  | 'KOINS_EARNED'
+  | 'KOIN_BONUS'
+  | 'REDEMPTION_REQUESTED'
+  | 'REDEMPTION_APPROVED'
+  | 'REDEMPTION_REJECTED';
 
 export type NotificationStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,6 +42,18 @@ export default function RewardsManagement() {
   const [showItemForm, setShowItemForm] = useState(false);
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('items');
+
+  // Check for URL params to determine active tab
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'redemptions') {
+      setActiveTab('redemptions');
+    } else if (tab === 'history') {
+      setActiveTab('history');
+    }
+  }, []);
 
   // Statistics
   const totalItems = items.length;
@@ -169,8 +181,8 @@ export default function RewardsManagement() {
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="items" className="space-y-6">
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Store className="h-4 w-4" />

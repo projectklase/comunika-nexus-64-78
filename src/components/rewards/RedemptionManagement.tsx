@@ -35,7 +35,7 @@ export function RedemptionManagement() {
     if (result.success && redemption) {
       // Evento 4: Resgate do aluno é aprovado
       notificationStore.add({
-        type: 'POST_NEW',
+        type: 'REDEMPTION_APPROVED',
         title: 'Resgate aprovado!',
         message: `Boas notícias! Seu resgate do item '${redemption.itemName}' foi aprovado. Você já pode retirá-lo na secretaria.`,
         roleTarget: 'ALUNO',
@@ -74,7 +74,7 @@ export function RedemptionManagement() {
     if (redemption) {
       // Evento 5: Resgate do aluno é recusado
       notificationStore.add({
-        type: 'POST_NEW',
+        type: 'REDEMPTION_REJECTED',
         title: 'Resgate recusado',
         message: `Atenção: Seu resgate do item '${redemption.itemName}' foi recusado. Motivo: '${rejectionReason.trim()}'.`,
         roleTarget: 'ALUNO',

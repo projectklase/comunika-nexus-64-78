@@ -84,7 +84,7 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
     // Evento 2: Aluno ganha Koins por bonificação da secretaria
     selectedStudents.forEach(studentId => {
       notificationStore.add({
-        type: 'POST_NEW',
+        type: 'KOIN_BONUS',
         title: 'Bonificação recebida!',
         message: `Você recebeu uma bonificação de ${data.koinAmount} Koins referente ao evento '${data.name}'!`,
         roleTarget: 'ALUNO',

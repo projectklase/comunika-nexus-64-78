@@ -216,12 +216,12 @@ export function generateCalendarLink(date: string, eventId?: string, classId?: s
  * Generate link to student rewards store history
  */
 export function generateRewardsHistoryLink(): string {
-  return '/aluno/loja-recompensas';
+  return '/aluno/loja-recompensas?tab=history';
 }
 
 /**
  * Generate link to secretaria redemption management
  */
 export function generateRedemptionManagementLink(): string {
-  return '/secretaria/recompensas';
+  return '/secretaria/recompensas?tab=redemptions';
 }
