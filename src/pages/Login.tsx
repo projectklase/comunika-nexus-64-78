@@ -183,17 +183,30 @@ const Login = () => {
     }
   };
 
-  const quickLogin = (testEmail: string, testPassword: string) => {
+  const quickLogin = async (testEmail: string, testPassword: string) => {
     if (isFormSubmitting) return;
     
     setEmail(testEmail);
     setPassword(testPassword);
     setFormError('');
+    setIsSubmitting(true);
     
-    // Submit the form after setting values
-    setTimeout(() => {
-      formRef.current?.requestSubmit();
-    }, 100);
+    try {
+      const success = await login(testEmail, testPassword);
+      
+      if (success) {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao Comunika.",
+        });
+      } else {
+        setFormError("Erro ao fazer login com conta de demonstração.");
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      setFormError("Erro interno. Tente novamente.");
+      setIsSubmitting(false);
+    }
   };
 
   return (
