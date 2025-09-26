@@ -110,14 +110,151 @@ const mockItems: RewardItem[] = [
   }
 ];
 
+// Mock transactions for demonstration
+const mockTransactions: KoinTransaction[] = [
+  {
+    id: 'tx-1',
+    studentId: 'student-1',
+    type: 'EARN',
+    amount: 25,
+    balanceBefore: 120,
+    balanceAfter: 145,
+    source: 'TASK:activity-math-01',
+    description: 'Exercícios de Matemática - Álgebra',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    responsibleUserId: 'system'
+  },
+  {
+    id: 'tx-2',
+    studentId: 'student-2',
+    type: 'SPEND',
+    amount: 80,
+    balanceBefore: 180,
+    balanceAfter: 100,
+    source: 'REDEMPTION:redemp-1',
+    description: 'Resgate pendente: Vale-Pizza',
+    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+    responsibleUserId: 'admin-1'
+  },
+  {
+    id: 'tx-3',
+    studentId: 'student-3',
+    type: 'BONUS',
+    amount: 50,
+    balanceBefore: 75,
+    balanceAfter: 125,
+    source: 'EVENT:bonus-1',
+    description: 'Bonificação: Participação Evento da Escola',
+    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+    responsibleUserId: 'admin-2'
+  },
+  {
+    id: 'tx-4',
+    studentId: 'student-4',
+    type: 'EARN',
+    amount: 15,
+    balanceBefore: 45,
+    balanceAfter: 60,
+    source: 'TASK:activity-port-02',
+    description: 'Redação - Texto Dissertativo',
+    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+    responsibleUserId: 'system'
+  },
+  {
+    id: 'tx-5',
+    studentId: 'student-1',
+    type: 'REFUND',
+    amount: 60,
+    balanceBefore: 85,
+    balanceAfter: 145,
+    source: 'REDEMPTION:redemp-2',
+    description: 'Estorno: Kit Material Escolar Premium - Item fora de estoque',
+    timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+    responsibleUserId: 'admin-1'
+  }
+];
+
+// Mock bonus events for demonstration
+const mockBonusEvents: BonusEvent[] = [
+  {
+    id: 'bonus-1',
+    name: 'Participação Evento da Escola',
+    description: 'Bonificação por participar do evento de ciências',
+    koinAmount: 50,
+    createdBy: 'admin-2',
+    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    studentIds: ['student-3', 'student-5']
+  }
+];
+
+// Mock redemptions for demonstration
+const mockRedemptions: RedemptionRequest[] = [
+  {
+    id: 'redemp-1',
+    studentId: 'student-2',
+    itemId: '2',
+    itemName: 'Vale-Pizza',
+    koinAmount: 80,
+    status: 'APPROVED',
+    requestedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    processedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    processedBy: 'admin-1'
+  },
+  {
+    id: 'redemp-2',
+    studentId: 'student-1',
+    itemId: '3',
+    itemName: 'Kit Material Escolar Premium',
+    koinAmount: 60,
+    status: 'REJECTED',
+    requestedAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
+    processedAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+    processedBy: 'admin-1',
+    rejectionReason: 'Item fora de estoque'
+  }
+];
+
 export const useRewardsStore = create<RewardsStore>()(
   persist(
     (set, get) => ({
       items: mockItems,
-      balances: {},
-      transactions: [],
-      redemptions: [],
-      bonusEvents: [],
+      balances: {
+        'student-1': { 
+          studentId: 'student-1', 
+          availableBalance: 145, 
+          blockedBalance: 0, 
+          totalEarned: 230, 
+          totalSpent: 85, 
+          lastUpdated: new Date().toISOString() 
+        },
+        'student-2': { 
+          studentId: 'student-2', 
+          availableBalance: 100, 
+          blockedBalance: 0, 
+          totalEarned: 180, 
+          totalSpent: 80, 
+          lastUpdated: new Date().toISOString() 
+        },
+        'student-3': { 
+          studentId: 'student-3', 
+          availableBalance: 125, 
+          blockedBalance: 0, 
+          totalEarned: 125, 
+          totalSpent: 0, 
+          lastUpdated: new Date().toISOString() 
+        },
+        'student-4': { 
+          studentId: 'student-4', 
+          availableBalance: 60, 
+          blockedBalance: 0, 
+          totalEarned: 60, 
+          totalSpent: 0, 
+          lastUpdated: new Date().toISOString() 
+        }
+      },
+      transactions: mockTransactions,
+      redemptions: mockRedemptions,
+      bonusEvents: mockBonusEvents,
       loading: false,
       searchTerm: '',
       sortBy: 'name',
@@ -283,7 +420,8 @@ export const useRewardsStore = create<RewardsStore>()(
           balanceBefore: Number(balance.availableBalance),
           balanceAfter: Number(balance.availableBalance - item.koinPrice),
           source: `REDEMPTION:${redemption.id}`,
-          description: `Resgate pendente: ${item.name}`
+          description: `Resgate pendente: ${item.name}`,
+          responsibleUserId: 'system'
         });
 
         set(state => ({

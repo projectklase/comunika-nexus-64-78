@@ -8,7 +8,7 @@ import { RewardDetailModal } from '@/components/rewards/RewardDetailModal';
 import { ItemFormModal } from '@/components/rewards/ItemFormModal';
 import { RedemptionManagement } from '@/components/rewards/RedemptionManagement';
 import { BonusEventModal } from '@/components/rewards/BonusEventModal';
-import { KoinHistoryModal } from '@/components/rewards/KoinHistoryModal';
+import { AdminKoinHistoryModal } from '@/components/rewards/AdminKoinHistoryModal';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { RewardItem } from '@/types/rewards';
 import { 
@@ -24,6 +24,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { enhanceTransactionsForAdmin } from '@/utils/transaction-enhancer';
 
 export default function RewardsManagement() {
   const { toast } = useToast();
@@ -36,6 +37,14 @@ export default function RewardsManagement() {
     updateItem, 
     deleteItem 
   } = useRewardsStore();
+
+  // Enhanced transactions for admin view
+  const enhancedTransactions = enhanceTransactionsForAdmin(
+    transactions,
+    redemptions,
+    bonusEvents,
+    items
+  );
 
   const [selectedItem, setSelectedItem] = useState<RewardItem | null>(null);
   const [editingItem, setEditingItem] = useState<RewardItem | null>(null);
@@ -339,11 +348,10 @@ export default function RewardsManagement() {
         onClose={() => setShowBonusModal(false)}
       />
 
-      <KoinHistoryModal
+      <AdminKoinHistoryModal
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
-        transactions={transactions}
-        studentName="Todas as"
+        transactions={enhancedTransactions}
       />
     </div>
   );
