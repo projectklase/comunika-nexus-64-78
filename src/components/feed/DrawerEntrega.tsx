@@ -16,7 +16,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, FileX, AlertTriangle, Clock } from 'lucide-react';
 import { Post } from '@/types/post';
 import { DeliveryAttachment } from '@/types/delivery';
-import { deliveryStore } from '@/stores/delivery-store';
+import { deliveryService } from '@/services/delivery-service';
+import { notificationService } from '@/services/notification-service';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
@@ -151,7 +152,7 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
         })
       );
 
-      const delivery = deliveryStore.submit({
+      const delivery = await deliveryService.submit({
         postId: activity.id,
         studentId: user.id,
         studentName: user.name,
@@ -162,22 +163,17 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
 
       console.log('Submission successful - deliveryId:', delivery.id, 'postId:', activity.id);
 
-      // Notify the teacher about the new submission
-      const { notificationStore } = await import('@/stores/notification-store');
-      await notificationStore.add({
-        type: 'POST_NEW',
-        title: 'Nova entrega recebida',
-        message: `O aluno ${user.name} entregou a atividade "${activity.title}".`,
-        roleTarget: 'PROFESSOR',
-        link: `/professor/turma/${classId}/atividade/${activity.id}`,
-        meta: {
-          activityId: activity.id,
-          classId: classId,
-          studentId: user.id,
-          studentName: user.name,
-          deliveryId: delivery.id,
-          activityTitle: activity.title
-        }
+      // Encontrar o professor responsável pela turma (temporário - usar dados reais)
+      // TODO: Implementar busca real do professor da turma
+      const teacherId = 'prof-temp-id'; // Por enquanto usar um ID temporário
+      
+      // Notificar o professor sobre a nova entrega
+      await notificationService.notifyDeliverySubmitted(teacherId, {
+        studentName: user.name,
+        activityTitle: activity.title,
+        activityId: activity.id,
+        classId: classId,
+        deliveryId: delivery.id
       });
 
       console.log('Teacher notification sent for delivery:', delivery.id);

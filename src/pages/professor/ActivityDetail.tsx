@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
-import { deliveryStore } from '@/stores/delivery-store';
+import { deliveryService } from '@/services/delivery-service';
+import { notificationService } from '@/services/notification-service';
 import { useClassStore } from '@/stores/class-store';
 import { DeliveryTable } from '@/components/activities/DeliveryTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,15 +79,39 @@ export default function ActivityDetail() {
   }
 
   // Buscar entregas (with refresh trigger to force reload)
-  const deliveries = useMemo(() => {
-    const result = deliveryStore.list({ postId });
-    console.log('ActivityDetail - Loading deliveries for postId:', postId, 'Found:', result.length);
-    return result;
+  const [deliveries, setDeliveries] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const loadDeliveries = async () => {
+      try {
+        const result = await deliveryService.list({ postId });
+        console.log('ActivityDetail - Loading deliveries for postId:', postId, 'Found:', result.length);
+        setDeliveries(result);
+      } catch (error) {
+        console.error('Error loading deliveries:', error);
+        setDeliveries([]);
+      }
+    };
+    
+    loadDeliveries();
   }, [postId, refreshTrigger]);
   
-  const metrics = useMemo(() => {
-    return deliveryStore.getActivityMetrics(postId, schoolClass.students.length);
-  }, [postId, schoolClass.students.length, refreshTrigger]);
+  const [metrics, setMetrics] = useState<any>(null);
+  
+  useEffect(() => {
+    const loadMetrics = async () => {
+      try {
+        const result = await deliveryService.getActivityMetrics(postId, schoolClass?.students.length || 0);
+        setMetrics(result);
+      } catch (error) {
+        console.error('Error loading metrics:', error);
+      }
+    };
+    
+    if (schoolClass) {
+      loadMetrics();
+    }
+  }, [postId, schoolClass?.students.length, refreshTrigger]);
 
   // Configuração do tipo de atividade
   const typeConfig = activityTypeConfig[activity.type as keyof typeof activityTypeConfig];
@@ -98,96 +123,48 @@ export default function ActivityDetail() {
       const { notificationStore } = await import('@/stores/notification-store');
       const { useRewardsStore } = await import('@/stores/rewards-store');
       
-      // Process each delivery
-      const processedDeliveries = deliveryIds.map(deliveryId => {
-        if (deliveryIds.length === 1) {
-          return deliveryStore.review(deliveryId, {
-            reviewStatus,
-            reviewNote,
-            reviewedBy: user.id
+      // Process each delivery with notifications
+      if (deliveryIds.length === 1) {
+        const delivery = await deliveryService.review(deliveryIds[0], {
+          reviewStatus,
+          reviewNote,
+          reviewedBy: user.id
+        });
+        
+        if (delivery) {
+          // Notify student about the review
+          await notificationService.notifyDeliveryReviewed(delivery.studentId, {
+            activityTitle: activity.title,
+            activityId: activity.id,
+            classId: classId,
+            deliveryId: delivery.id,
+            reviewStatus: reviewStatus as 'APROVADA' | 'DEVOLVIDA',
+            reviewNote
           });
-        } else {
-          return deliveryStore.reviewMultiple([deliveryId], {
-            reviewStatus,
-            reviewNote,
-            reviewedBy: user.id
-          })[0];
         }
-      }).filter(Boolean);
-
-      // Handle rewards and notifications for approved deliveries
-      if (reviewStatus === 'APROVADA') {
-        processedDeliveries.forEach(delivery => {
-          if (!delivery) return;
-          
-          // Award Koins if activity has reward
-          if (posts[0]?.activityMeta?.koinReward && posts[0].activityMeta.koinReward > 0) {
-            const rewardsStore = useRewardsStore.getState();
-            const currentBalance = rewardsStore.getStudentBalance(delivery.studentId);
-            
-            rewardsStore.addTransaction({
-              studentId: delivery.studentId,
-              type: 'EARN',
-              amount: posts[0].activityMeta.koinReward,
-              balanceBefore: currentBalance.availableBalance,
-              balanceAfter: currentBalance.availableBalance + posts[0].activityMeta.koinReward,
-              source: `ACTIVITY:${posts[0].id}`,
-              description: `Koins ganhos por conclusão da atividade: ${posts[0].title}`,
-              responsibleUserId: user.id
-            });
-
-            // Notify student about approved delivery with Koins
-            notificationStore.add({
-              type: 'KOINS_EARNED',
-              title: 'Atividade aprovada!',
-              message: `Sua atividade "${posts[0].title}" foi aprovada! Você ganhou ${posts[0].activityMeta.koinReward} Koins.`,
-              roleTarget: 'ALUNO',
-              link: `/aluno/atividade/${posts[0].id}/resultado`,
-              meta: {
-                activityId: posts[0].id,
-                activityTitle: posts[0].title,
-                koinAmount: posts[0].activityMeta.koinReward,
-                studentId: delivery.studentId,
-                teacherName: user.name
-              }
-            });
-          } else {
-            // Notify student about approved delivery without Koins
-            notificationStore.add({
-              type: 'POST_NEW',
-              title: 'Atividade aprovada!',
-              message: `Sua atividade "${posts[0]?.title}" foi aprovada pelo professor.`,
-              roleTarget: 'ALUNO',
-              link: `/aluno/atividade/${posts[0]?.id}/resultado`,
-              meta: {
-                activityId: posts[0]?.id,
-                activityTitle: posts[0]?.title,
-                studentId: delivery.studentId,
-                teacherName: user.name
-              }
-            });
-          }
+      } else {
+        const deliveries = await deliveryService.reviewMultiple(deliveryIds, {
+          reviewStatus,
+          reviewNote,
+          reviewedBy: user.id
         });
-      } else if (reviewStatus === 'DEVOLVIDA') {
-        // Notify students about returned deliveries
-        processedDeliveries.forEach(delivery => {
-          if (!delivery) return;
-          
-          notificationStore.add({
-            type: 'POST_NEW',
-            title: 'Atividade devolvida',
-            message: `Sua atividade "${posts[0]?.title}" foi devolvida para correções.`,
-            roleTarget: 'ALUNO',
-            link: `/aluno/atividade/${posts[0]?.id}/resultado`,
-            meta: {
-              activityId: posts[0]?.id,
-              activityTitle: posts[0]?.title,
-              studentId: delivery.studentId,
-              teacherName: user.name,
-              reviewNote: reviewNote
-            }
+        
+        // Notify each student
+        for (const delivery of deliveries) {
+          await notificationService.notifyDeliveryReviewed(delivery.studentId, {
+            activityTitle: activity.title,
+            activityId: activity.id,
+            classId: classId,
+            deliveryId: delivery.id,
+            reviewStatus: reviewStatus as 'APROVADA' | 'DEVOLVIDA',
+            reviewNote
           });
-        });
+        }
+      }
+
+      // Handle rewards for approved deliveries
+      if (reviewStatus === 'APROVADA') {
+        // TODO: Implement reward system integration when available
       }
 
       toast({
@@ -208,7 +185,7 @@ export default function ActivityDetail() {
   const handleMarkAsReceived = async (studentId: string, studentName: string) => {
     setIsLoading(true);
     try {
-      deliveryStore.markAsReceived(postId, studentId, studentName, classId, user.id);
+      await deliveryService.markAsReceived(postId, studentId, studentName, classId, user.id);
       toast({
         title: 'Entrega marcada',
         description: `Entrega de ${studentName} marcada como recebida manualmente.`

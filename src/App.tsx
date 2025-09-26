@@ -39,6 +39,7 @@ import NovaAtividade from "./pages/professor/NovaAtividade";
 import { ClassCalendarPage } from "./pages/ClassCalendarPage";
 import AlunoFeed from "./pages/AlunoFeed";
 import AlunoHome from "./pages/AlunoHome";
+import AlunoActivityResult from "./pages/aluno/AlunoActivityResult";
 import AlunoNexus from "./pages/AlunoNexus";
 import AlunoCalendario from "./pages/AlunoCalendario";
 import StudentDashboard from "./pages/StudentDashboard";
@@ -50,7 +51,7 @@ import NotificationsPage from "./pages/Secretaria/Notifications/index";
 import { PostFallback } from "./pages/PostFallback";
 import RewardsStore from "./pages/RewardsStore";
 import RewardsManagement from "./pages/Secretaria/RewardsManagement";
-import AlunoActivityResult from "./pages/AlunoActivityResult";
+<Route path="/aluno/atividade/:activityId/resultado" element={<AlunoActivityResult />} />
 
 const queryClient = new QueryClient();
 
