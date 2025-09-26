@@ -97,19 +97,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         
         if (session?.user) {
-          // Fetch full user profile from our profiles table
-          const profile = await getUserProfile(session.user.id);
-          if (profile) {
-            setUser(profile);
-          } else {
-            console.error('No profile found for user:', session.user.id);
-            setUser(null);
-          }
+          // Add delay to ensure profile is created
+          setTimeout(async () => {
+            const profile = await getUserProfile(session.user.id);
+            if (profile) {
+              setUser(profile);
+            } else {
+              console.error('No profile found for user:', session.user.id);
+              // Try once more after additional delay
+              setTimeout(async () => {
+                const retryProfile = await getUserProfile(session.user.id);
+                if (retryProfile) {
+                  setUser(retryProfile);
+                } else {
+                  console.error('Profile still not found after retry');
+                  setUser(null);
+                }
+                setIsLoading(false);
+              }, 1000);
+              return;
+            }
+            setIsLoading(false);
+          }, 500);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
