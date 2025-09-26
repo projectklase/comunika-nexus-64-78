@@ -29,8 +29,7 @@ import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
   document: z.string().optional(),
-  email: z.string().optional().refine((val) => {
-    if (!val || val === '') return true;
+  email: z.string().min(1, 'E-mail é obrigatório').refine((val) => {
     return validateEmail(val) === null;
   }, 'E-mail inválido'),
   phones: z.array(z.string()).optional().refine((phones) => {
@@ -271,9 +270,15 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
     e.preventDefault();
     e.stopPropagation();
     
-    if (currentStep === 0 && !form.getValues('name')?.trim()) {
-      form.setError('name', { type: 'required', message: 'Nome é obrigatório' });
-      return;
+    if (currentStep === 0) {
+      if (!form.getValues('name')?.trim()) {
+        form.setError('name', { type: 'required', message: 'Nome é obrigatório' });
+        return;
+      }
+      if (!form.getValues('email')?.trim()) {
+        form.setError('email', { type: 'required', message: 'E-mail é obrigatório' });
+        return;
+      }
     }
     
     if (currentStep < 2) {
@@ -383,9 +388,9 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         name="email"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>E-mail</FormLabel>
+            <FormLabel>E-mail *</FormLabel>
             <FormControl>
-              <Input type="email" placeholder="email@exemplo.com" {...field} />
+              <Input type="email" placeholder="email@exemplo.com" {...field} required />
             </FormControl>
             <FormMessage />
           </FormItem>

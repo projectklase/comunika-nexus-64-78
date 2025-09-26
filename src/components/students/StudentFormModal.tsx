@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { usePeopleStore } from '@/stores/people-store';
+import { useStudents } from '@/hooks/useStudents';
 import { Person } from '@/types/class';
 import { toast } from 'sonner';
 
@@ -28,7 +28,7 @@ export function StudentFormModal({ open, onOpenChange, student }: StudentFormMod
   });
   const [loading, setLoading] = useState(false);
 
-  const { createPerson, updatePerson } = usePeopleStore();
+  const { createStudent, updateStudent } = useStudents();
 
   useEffect(() => {
     if (student) {
@@ -54,21 +54,23 @@ export function StudentFormModal({ open, onOpenChange, student }: StudentFormMod
       return;
     }
 
+    if (!formData.email.trim()) {
+      toast.error('Email é obrigatório');
+      return;
+    }
+
     setLoading(true);
     try {
       if (student) {
-        await updatePerson(student.id, {
+        await updateStudent(student.id, {
           name: formData.name.trim(),
-          email: formData.email.trim() || undefined,
-          isActive: formData.isActive,
+          email: formData.email.trim(),
         });
         toast.success('Aluno atualizado com sucesso');
       } else {
-        await createPerson({
+        await createStudent({
           name: formData.name.trim(),
-          email: formData.email.trim() || undefined,
-          role: 'ALUNO',
-          isActive: formData.isActive,
+          email: formData.email.trim(),
         });
         toast.success('Aluno criado com sucesso');
       }
@@ -90,21 +92,22 @@ export function StudentFormModal({ open, onOpenChange, student }: StudentFormMod
         toast.error('Nome é obrigatório');
         return;
       }
+      if (!formData.email.trim()) {
+        toast.error('Email é obrigatório');
+        return;
+      }
       setLoading(true);
       try {
         if (student) {
-          await updatePerson(student.id, {
+          await updateStudent(student.id, {
             name: formData.name.trim(),
-            email: formData.email.trim() || undefined,
-            isActive: formData.isActive,
+            email: formData.email.trim(),
           });
           toast.success('Aluno atualizado com sucesso');
         } else {
-          await createPerson({
+          await createStudent({
             name: formData.name.trim(),
-            email: formData.email.trim() || undefined,
-            role: 'ALUNO',
-            isActive: formData.isActive,
+            email: formData.email.trim(),
           });
           toast.success('Aluno criado com sucesso');
         }
@@ -150,13 +153,14 @@ export function StudentFormModal({ open, onOpenChange, student }: StudentFormMod
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              placeholder="Digite o email (opcional)"
+              placeholder="Digite o email"
+              required
             />
           </div>
 
