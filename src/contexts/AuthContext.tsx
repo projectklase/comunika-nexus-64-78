@@ -79,29 +79,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { user: { email } };
       }
       
-      // Use admin.createUser to create users with confirmed emails
-      const { data, error } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true, // Creates user as already confirmed
-        user_metadata: {
+      // Use edge function to create demo user with admin privileges
+      const { data, error } = await supabase.functions.invoke('create-demo-user', {
+        body: {
+          email,
+          password,
           name,
           role,
         }
       });
 
       if (error) {
-        console.error('Error creating demo user:', error.message, error);
-        // If user already exists, that's okay - we'll try to login anyway
-        if (error.message?.includes('already') || error.message?.includes('exists')) {
-          console.log('User already exists, proceeding with login attempt');
-          return { user: { email } }; // Return minimal data to proceed
-        }
+        console.error('Error creating demo user via edge function:', error);
         return null;
       }
 
-      console.log('Demo user created successfully:', data);
-      return data;
+      if (data && !data.success) {
+        console.error('Demo user creation failed:', data.error);
+        return null;
+      }
+
+      console.log('Demo user created successfully via edge function');
+      return { user: { email } };
     } catch (error) {
       console.error('Error in createDemoUser:', error);
       return null;
