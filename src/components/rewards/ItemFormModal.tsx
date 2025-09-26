@@ -69,32 +69,45 @@ export function ItemFormModal({ item, isOpen, onClose, onSubmit }: ItemFormModal
     setIsUploading(true);
     
     try {
-      // In a real implementation, you would upload to a storage service
-      // For now, we'll use a placeholder URL
-      const imageUrl = `/placeholder.svg?t=${Date.now()}`;
-      
-      // Add the new image to the array (max 5 images)
-      const currentImages = images.filter(img => img !== '/placeholder.svg');
-      if (currentImages.length < 5) {
-        setValue('images', [...currentImages, imageUrl]);
+      // Convert image to base64 data URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        
+        // Add the new image to the array (max 5 images)
+        const currentImages = images.filter(img => img !== '/placeholder.svg');
+        if (currentImages.length < 5) {
+          setValue('images', [...currentImages, imageUrl]);
+          toast({
+            title: "Sucesso",
+            description: "Imagem adicionada com sucesso!"
+          });
+        } else {
+          toast({
+            title: "Limite atingido",
+            description: "Máximo de 5 imagens por item.",
+            variant: "destructive"
+          });
+        }
+        setIsUploading(false);
+      };
+
+      reader.onerror = () => {
         toast({
-          title: "Sucesso",
-          description: "Imagem adicionada com sucesso!"
-        });
-      } else {
-        toast({
-          title: "Limite atingido",
-          description: "Máximo de 5 imagens por item.",
+          title: "Erro",
+          description: "Erro ao processar a imagem.",
           variant: "destructive"
         });
-      }
+        setIsUploading(false);
+      };
+
+      reader.readAsDataURL(file);
     } catch (error) {
       toast({
         title: "Erro",
         description: "Erro ao fazer upload da imagem.",
         variant: "destructive"
       });
-    } finally {
       setIsUploading(false);
     }
   };
