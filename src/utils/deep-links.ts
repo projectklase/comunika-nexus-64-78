@@ -223,5 +223,5 @@ export function generateRewardsHistoryLink(): string {
  * Generate link to secretaria redemption management
  */
 export function generateRedemptionManagementLink(): string {
-  return '/secretaria/recompensas?tab=redemptions';
+  return '/secretaria/gerenciar-recompensas?tab=redemptions';
 }
