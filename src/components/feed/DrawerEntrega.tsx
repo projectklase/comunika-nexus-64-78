@@ -170,6 +170,7 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
         link: `/professor/turma/${classId}/atividade/${activity.id}`,
         meta: {
           activityId: activity.id,
+          classId: classId,
           studentId: user.id,
           studentName: user.name,
           deliveryId: delivery.id,

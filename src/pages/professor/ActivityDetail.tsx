@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { deliveryStore } from '@/stores/delivery-store';
@@ -37,8 +37,18 @@ const activityTypeConfig = {
 
 export default function ActivityDetail() {
   const { classId, postId } = useParams<{ classId: string; postId: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Effect to handle URL tab parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'entregas') {
+      setActiveTab('deliveries');
+    }
+  }, [searchParams]);
 
   if (!user || !classId || !postId) {
     return <div>Parâmetros inválidos</div>;
@@ -309,7 +319,7 @@ export default function ActivityDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="deliveries">

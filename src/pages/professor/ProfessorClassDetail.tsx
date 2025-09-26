@@ -379,8 +379,10 @@ export default function ProfessorClassDetail() {
                           <Badge variant={activity.status === 'PUBLISHED' ? 'default' : 'secondary'}>
                             {activity.status === 'PUBLISHED' ? 'Publicado' : 'Agendado'}
                           </Badge>
-                          <Button variant="outline" size="sm">
-                            Ver Entregas
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/professor/turma/${schoolClass.id}/atividade/${activity.id}?tab=entregas`}>
+                              Ver Entregas
+                            </Link>
                           </Button>
                         </div>
                       </div>

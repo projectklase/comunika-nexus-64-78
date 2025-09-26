@@ -23,6 +23,14 @@ export function resolveNotificationTarget(
     };
   }
 
+  // Delivery notifications - go directly to activity correction page
+  if (notification.type === 'POST_NEW' && notification.meta?.activityId && notification.meta?.classId) {
+    return {
+      destination: 'feed', // This will be treated as a specific page navigation
+      url: `/professor/turma/${notification.meta.classId}/atividade/${notification.meta.activityId}?tab=entregas`
+    };
+  }
+
   // Post notifications
   if (notification.meta?.postId) {
     const postType = notification.meta.postType || 'AVISO';
