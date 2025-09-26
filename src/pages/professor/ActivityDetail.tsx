@@ -21,7 +21,8 @@ import {
   Eye,
   MessageSquare,
   Download,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,6 +42,7 @@ export default function ActivityDetail() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Effect to handle URL tab parameter
   useEffect(() => {
@@ -75,9 +77,16 @@ export default function ActivityDetail() {
     );
   }
 
-  // Buscar entregas
-  const deliveries = deliveryStore.list({ postId });
-  const metrics = deliveryStore.getActivityMetrics(postId, schoolClass.students.length);
+  // Buscar entregas (with refresh trigger to force reload)
+  const deliveries = useMemo(() => {
+    const result = deliveryStore.list({ postId });
+    console.log('ActivityDetail - Loading deliveries for postId:', postId, 'Found:', result.length);
+    return result;
+  }, [postId, refreshTrigger]);
+  
+  const metrics = useMemo(() => {
+    return deliveryStore.getActivityMetrics(postId, schoolClass.students.length);
+  }, [postId, schoolClass.students.length, refreshTrigger]);
 
   // Configuração do tipo de atividade
   const typeConfig = activityTypeConfig[activity.type as keyof typeof activityTypeConfig];
@@ -204,6 +213,9 @@ export default function ActivityDetail() {
         title: 'Entrega marcada',
         description: `Entrega de ${studentName} marcada como recebida manualmente.`
       });
+      
+      // Force refresh the deliveries list
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       toast({
         title: 'Erro',
@@ -271,6 +283,10 @@ export default function ActivityDetail() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setRefreshTrigger(prev => prev + 1)}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar Entregas
+          </Button>
           <Button variant="outline" onClick={handleExportCSV}>
             <Download className="h-4 w-4 mr-2" />
             Exportar CSV

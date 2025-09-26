@@ -8,6 +8,8 @@ class DeliveryStore {
   constructor() {
     this.loadFromStorage();
     this.initializeWithMockData();
+    // Debug: log deliveries on initialization
+    console.log('DeliveryStore initialized with', this.deliveries.length, 'deliveries');
   }
 
   private loadFromStorage() {
@@ -24,6 +26,7 @@ class DeliveryStore {
   private saveToStorage() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.deliveries));
+      console.log('Deliveries saved to storage:', this.deliveries.length, 'total');
     } catch (error) {
       console.error('Error saving deliveries to storage:', error);
     }
@@ -59,6 +62,7 @@ class DeliveryStore {
 
     this.deliveries.push(delivery);
     this.saveToStorage();
+    console.log('New delivery submitted:', delivery.id, 'for post:', delivery.postId);
     return delivery;
   }
 
@@ -165,6 +169,7 @@ class DeliveryStore {
 
   // Listar entregas com filtros
   list(filter?: DeliveryFilter): Delivery[] {
+    console.log('Listing deliveries with filter:', filter, 'Total deliveries:', this.deliveries.length);
     let filtered = [...this.deliveries];
 
     if (filter?.postId) {
@@ -264,7 +269,9 @@ class DeliveryStore {
 
   // Dados mock para desenvolvimento
   private initializeWithMockData() {
-    if (this.deliveries.length === 0) {
+    // Only initialize mock data if there are no deliveries at all in storage
+    const hasStoredData = localStorage.getItem(this.storageKey);
+    if (!hasStoredData && this.deliveries.length === 0) {
       const mockDeliveries: Delivery[] = [
         {
           id: 'delivery-1',
@@ -319,6 +326,7 @@ class DeliveryStore {
 
       this.deliveries = mockDeliveries;
       this.saveToStorage();
+      console.log('Mock deliveries initialized:', mockDeliveries.length);
     }
   }
 }

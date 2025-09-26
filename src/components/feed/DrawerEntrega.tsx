@@ -160,9 +160,11 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
         notes: notes.trim() || undefined
       }, activity.dueAt);
 
+      console.log('Submission successful - deliveryId:', delivery.id, 'postId:', activity.id);
+
       // Notify the teacher about the new submission
       const { notificationStore } = await import('@/stores/notification-store');
-      notificationStore.add({
+      await notificationStore.add({
         type: 'POST_NEW',
         title: 'Nova entrega recebida',
         message: `O aluno ${user.name} entregou a atividade "${activity.title}".`,
@@ -177,6 +179,8 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
           activityTitle: activity.title
         }
       });
+
+      console.log('Teacher notification sent for delivery:', delivery.id);
 
       toast({
         title: isOverdue ? 'Entrega atrasada realizada' : 'Entrega realizada',
