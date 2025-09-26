@@ -442,6 +442,22 @@ const Login = () => {
                   </div>
                 </form>
 
+                {/* Registration Link */}
+                <div className="text-center pt-4">
+                  <p className="text-xs text-muted-foreground">
+                    Não tem uma conta?{' '}
+                    <Button 
+                      type="button" 
+                      variant="link" 
+                      className="text-xs text-primary hover:underline p-0 h-auto font-medium"
+                      disabled={isFormSubmitting}
+                      onClick={() => window.location.href = '/register'}
+                    >
+                      Criar conta
+                    </Button>
+                  </p>
+                </div>
+
                 {/* Demo Accounts */}
                 <div className="border-t border-border/30 pt-4 mt-5">
                   <div className="text-center mb-3">

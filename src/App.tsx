@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ConditionalNotificationProvider } from "@/components/ConditionalNotificationProvider";
 import { ModalManagerProvider } from "@/components/ui/app-dialog";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import SecretariaFeed from "./pages/SecretariaFeed";
 import HistoricoPage from "./pages/HistoricoPage";
@@ -65,7 +66,8 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
