@@ -192,8 +192,8 @@ const Login = () => {
     try {
       const credentials = {
         secretaria: { email: 'secretaria@comunika.com', name: 'Maria Silva' },
-        professor: { email: 'professor@comunika.com', name: 'João Silva' },
-        aluno: { email: 'aluno@comunika.com', name: 'Ana Santos' }
+        professor: { email: 'professor@exemplo.com', name: 'Professor Exemplo' },
+        aluno: { email: 'aluno@exemplo.com', name: 'Aluno Exemplo' }
       };
       
       const { email, name } = credentials[role as keyof typeof credentials];
