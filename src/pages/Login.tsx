@@ -26,7 +26,7 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
-  const { user, login, isLoading } = useAuth();
+  const { user, login, isLoading, createDemoUser } = useAuth();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -186,12 +186,19 @@ const Login = () => {
   const quickLogin = async (testEmail: string, testPassword: string) => {
     if (isFormSubmitting) return;
     
-    setEmail(testEmail);
-    setPassword(testPassword);
     setFormError('');
     setIsSubmitting(true);
     
     try {
+      // First, try to create the demo user if it doesn't exist
+      if (testEmail === 'secretaria@comunika.com' && createDemoUser) {
+        await createDemoUser('secretaria@comunika.com', '123456', 'Maria Silva', 'secretaria');
+      }
+      
+      // Small delay to allow user creation to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Now attempt login
       const success = await login(testEmail, testPassword);
       
       if (success) {

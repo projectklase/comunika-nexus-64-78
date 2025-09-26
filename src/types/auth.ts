@@ -38,4 +38,5 @@ export interface AuthContextType {
   updateUser: (updates: Partial<User>) => void;
   updatePassword: (userId: string, newPasswordHash: string, mustChange?: boolean) => Promise<boolean>;
   isLoading: boolean;
+  createDemoUser?: (email: string, password: string, name: string, role: string) => Promise<any>;
 }

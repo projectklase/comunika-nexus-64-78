@@ -62,31 +62,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Temporarily create demo user for development
-  useEffect(() => {
-    const createDemoUser = async () => {
-      if (process.env.NODE_ENV === 'development') {
-        try {
-          // Try to sign up the demo user - this will only work if user doesn't exist
-          await supabase.auth.signUp({
-            email: 'secretaria@comunika.com',
-            password: '123456',
-            options: {
-              data: {
-                name: 'Maria Silva',
-                role: 'secretaria'
-              }
-            }
-          });
-        } catch (error) {
-          // User might already exist, ignore the error
-          console.log('Demo user creation skipped (may already exist)');
+  // Function to create demo users if they don't exist
+  const createDemoUser = async (email: string, password: string, name: string, role: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name,
+            role,
+          }
         }
+      });
+
+      if (error && !error.message.includes('already registered')) {
+        console.error('Error creating demo user:', error);
+        return null;
       }
-    };
-    
-    createDemoUser();
-  }, []);
+
+      return data;
+    } catch (error) {
+      console.error('Error in createDemoUser:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -230,8 +231,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Export createDemoUser function so it can be used in Login component
+  const contextValue = {
+    user,
+    login,
+    logout,
+    updateUser,
+    updatePassword,
+    isLoading,
+    createDemoUser, // Add this to the context
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, updatePassword, isLoading }}>
+    <AuthContext.Provider value={contextValue as AuthContextType}>
       {children}
     </AuthContext.Provider>
   );
