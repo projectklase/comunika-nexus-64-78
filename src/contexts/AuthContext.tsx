@@ -72,57 +72,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('id, email')
         .eq('email', email)
-        .single();
+        .maybeSingle();
       
       if (existingProfile) {
         console.log('User already exists in profiles, proceeding with login');
         return { user: { email } };
       }
       
-      // Use signUp to create users (works with standard privileges)
-      const { data, error } = await supabase.auth.signUp({
+      // Use admin.createUser to create users with confirmed emails
+      const { data, error } = await supabase.auth.admin.createUser({
         email,
         password,
-        options: {
-          data: {
-            name,
-            role,
-          }
+        email_confirm: true, // Creates user as already confirmed
+        user_metadata: {
+          name,
+          role,
         }
       });
 
       if (error) {
         console.error('Error creating demo user:', error.message, error);
-        // If user already exists in auth, that's okay
-        if (error.message?.includes('already') || error.message?.includes('exists') || error.message?.includes('User already registered')) {
-          console.log('User already exists in auth, proceeding with login attempt');
+        // If user already exists, that's okay - we'll try to login anyway
+        if (error.message?.includes('already') || error.message?.includes('exists')) {
+          console.log('User already exists, proceeding with login attempt');
           return { user: { email } }; // Return minimal data to proceed
         }
         return null;
       }
 
       console.log('Demo user created successfully:', data);
-      
-      // For demo purposes, we'll wait a bit and then manually create the profile if needed
-      setTimeout(async () => {
-        if (data.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: data.user.id,
-              name,
-              email,
-              role,
-            });
-          
-          if (profileError) {
-            console.error('Error creating profile:', profileError);
-          } else {
-            console.log('Profile created successfully for:', email);
-          }
-        }
-      }, 500);
-      
       return data;
     } catch (error) {
       console.error('Error in createDemoUser:', error);
