@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/Layout/AppLayout';
-import { usePeopleStore } from '@/stores/people-store';
-import { useClassStore } from '@/stores/class-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
 import { TeacherFormModal } from '@/components/teachers/TeacherFormModal';
 import { TeacherCSVImportModal } from '@/components/teachers/TeacherCSVImportModal';
 import { TeacherBulkActions } from '@/components/teachers/TeacherBulkActions';
-import { useTeacherExport } from '@/hooks/useTeacherExport';
+import { useTeachers } from '@/hooks/useTeachers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,16 +13,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users } from 'lucide-react';
+import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Person } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 
 export default function TeachersPage() {
-  const { listTeachers, archiveTeacher, deletePerson, loadPeople } = usePeopleStore();
-  const { classes, loadClasses } = useClassStore();
-  const { loadSubjects } = useGlobalSubjectStore();
-  const { exportTeachersCSV } = useTeacherExport();
+  const { 
+    teachers,
+    loading,
+    fetchTeachers,
+    deleteTeacher: deleteTeacherHook,
+  } = useTeachers();
   const { toast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,65 +31,74 @@ export default function TeachersPage() {
   const [classFilter, setClassFilter] = useState<string>('all');
   const [dayFilter, setDayFilter] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingTeacher, setEditingTeacher] = useState<Person | null>(null);
+  const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [selectedTeachers, setSelectedTeachers] = useState<Person[]>([]);
+  const [selectedTeachers, setSelectedTeachers] = useState<any[]>([]);
 
+  // Apply filters when they change
   useEffect(() => {
-    loadPeople();
-    loadClasses();
-    loadSubjects();
-  }, [loadPeople, loadClasses, loadSubjects]);
+    const filters = {
+      search: searchQuery || undefined,
+      status: statusFilter !== 'all' ? statusFilter as 'active' | 'archived' : undefined,
+      class_id: classFilter !== 'all' ? classFilter : undefined,
+      day: dayFilter !== 'all' ? dayFilter : undefined,
+    };
+    
+    fetchTeachers(filters);
+  }, [searchQuery, statusFilter, classFilter, dayFilter, fetchTeachers]);
 
-  const activeClasses = classes.filter(c => c.status === 'ATIVA');
-
-  const getFilteredTeachers = () => {
-    const filters: any = {};
-    
-    if (searchQuery) filters.query = searchQuery;
-    if (statusFilter !== 'all') filters.active = statusFilter === 'active';
-    if (classFilter !== 'all') filters.classId = classFilter;
-    
-    let teachers = listTeachers(filters);
-    
-    // Day filter (optional)
-    if (dayFilter !== 'all') {
-      teachers = teachers.filter(t => 
-        t.teacher?.availability?.daysOfWeek?.includes(dayFilter)
-      );
-    }
-    
-    return teachers;
-  };
-
-  const teachers = getFilteredTeachers();
+  const filteredTeachers = teachers;
 
   const getTeacherClasses = (teacherId: string) => {
-    return classes.filter(c => c.teachers.includes(teacherId) && c.status === 'ATIVA');
+    // For now, return empty array since we don't have class relationships in Supabase yet
+    return [];
   };
 
   const getTeacherPhone = (teacher: any) => {
-    return teacher.teacher?.phones?.[0] || '-';
+    return teacher.phone || '-';
   };
 
   const handleArchiveTeacher = async (id: string) => {
-    await archiveTeacher(id);
+    // Archive functionality not implemented in this version
+    console.log('Archive teacher:', id);
   };
 
   const handleDeleteTeacher = async (id: string) => {
-    await deletePerson(id);
+    try {
+      await deleteTeacherHook(id);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
   const handleExportCSV = () => {
-    const filteredTeachers = getFilteredTeachers();
-    const filename = exportTeachersCSV(filteredTeachers);
+    const csvData = filteredTeachers.map(teacher => {
+      return [
+        teacher.id,
+        teacher.name,
+        teacher.email || '',
+        getTeacherPhone(teacher),
+        'Ativo'
+      ].join(';');
+    }).join('\n');
+
+    const header = 'professor_id;nome;email;telefone;status\n';
+    const blob = new Blob([header + csvData], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date();
+    a.download = `professores_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
     toast({
       title: "Exportação concluída",
-      description: `Arquivo ${filename} baixado com sucesso.`,
+      description: `Arquivo baixado com sucesso.`,
     });
   };
 
-  const handleSelectTeacher = (teacher: Person, checked: boolean) => {
+  const handleSelectTeacher = (teacher: any, checked: boolean) => {
     if (checked) {
       setSelectedTeachers(prev => [...prev, teacher]);
     } else {
@@ -101,7 +108,7 @@ export default function TeachersPage() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTeachers(teachers);
+      setSelectedTeachers(filteredTeachers);
     } else {
       setSelectedTeachers([]);
     }
@@ -116,7 +123,7 @@ export default function TeachersPage() {
     setModalOpen(true);
   };
 
-  const openEditTeacherModal = (teacher: Person) => {
+  const openEditTeacherModal = (teacher: any) => {
     setEditingTeacher(teacher);
     setModalOpen(true);
   };
@@ -199,14 +206,9 @@ export default function TeachersPage() {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {activeClasses.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} {c.code && `(${c.code})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                </SelectContent>
                 </Select>
               </div>
 
@@ -242,7 +244,7 @@ export default function TeachersPage() {
                 <TableRow>
                   <TableHead className="w-[50px]">
                     <Checkbox
-                      checked={teachers.length > 0 && selectedTeachers.length === teachers.length}
+                      checked={filteredTeachers.length > 0 && selectedTeachers.length === filteredTeachers.length}
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
@@ -255,25 +257,34 @@ export default function TeachersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teachers.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Carregando professores...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredTeachers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Nenhum professor encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  teachers.map((teacher) => {
+                  filteredTeachers.map((teacher) => {
                     const teacherClasses = getTeacherClasses(teacher.id);
                     return (
                       <TableRow key={teacher.id}>
                         <TableCell>
                           <Checkbox
-                            checked={isTeacherSelected(teacher.id)}
+                            checked={selectedTeachers.some(t => t.id === teacher.id)}
                             onCheckedChange={(checked) => handleSelectTeacher(teacher, checked as boolean)}
                           />
                         </TableCell>
                         <TableCell className="font-medium">{teacher.name}</TableCell>
-                        <TableCell>{teacher.teacher?.email || teacher.email || '-'}</TableCell>
+                        <TableCell>{teacher.email || '-'}</TableCell>
                         <TableCell>{getTeacherPhone(teacher)}</TableCell>
                         <TableCell>
                           {teacherClasses.length > 0 ? (
@@ -287,8 +298,8 @@ export default function TeachersPage() {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <div className="space-y-1">
-                                    {teacherClasses.map(c => (
-                                      <div key={c.id}>{c.name} {c.code && `(${c.code})`}</div>
+                                    {teacherClasses.map((c, index) => (
+                                      <div key={index}>{c.name}</div>
                                     ))}
                                   </div>
                                 </TooltipContent>
@@ -299,8 +310,8 @@ export default function TeachersPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={teacher.isActive ? "default" : "secondary"}>
-                            {teacher.isActive ? 'Ativo' : 'Arquivado'}
+                          <Badge variant="default">
+                            Ativo
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -317,7 +328,7 @@ export default function TeachersPage() {
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleArchiveTeacher(teacher.id)}>
                                 <Archive className="h-4 w-4 mr-2" />
-                                {teacher.isActive ? 'Arquivar' : 'Desarquivar'}
+                                Arquivar
                               </DropdownMenuItem>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -345,21 +356,28 @@ export default function TeachersPage() {
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
             </Table>
           </CardContent>
         </Card>
 
         <TeacherFormModal
           open={modalOpen}
-          onOpenChange={closeModal}
+          onOpenChange={(open) => {
+            setModalOpen(open);
+            if (!open) {
+              setEditingTeacher(null);
+              // Refresh the list when modal closes
+              fetchTeachers();
+            }
+          }}
           teacher={editingTeacher}
         />
 
