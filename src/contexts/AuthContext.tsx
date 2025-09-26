@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType, UserPreferences } from '@/types/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export { AuthContext };
 
-// Default preferences
+// Default preferences for new users
 const defaultPreferences: UserPreferences = {
   notifications: {
     email: true,
@@ -23,111 +25,176 @@ const defaultPreferences: UserPreferences = {
   },
 };
 
-// Mock users data
-const mockUsers: Array<User & { password: string }> = [
-  {
-    id: '550e8400-e29b-41d4-a716-446655440000',
-    name: 'Maria Silva',
-    email: 'secretaria@comunika.com',
-    role: 'secretaria',
-    password: '123456',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150',
-    preferences: defaultPreferences
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440001',
-    name: 'João Santos',
-    email: 'professor@comunika.com',
-    role: 'professor',
-    password: '123456',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-    preferences: defaultPreferences
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440002',
-    name: 'Ana Costa',
-    email: 'aluno@comunika.com',
-    role: 'aluno',
-    password: '123456',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
-    preferences: defaultPreferences
-  }
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Check for stored user on mount
-    const storedUser = localStorage.getItem('comunika_user');
-    console.log('AuthProvider: Checking stored user...', storedUser);
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      console.log('AuthProvider: Found stored user:', parsedUser);
-      setUser(parsedUser);
-    } else {
-      console.log('AuthProvider: No stored user found');
+  // Helper function to get user profile from Supabase
+  const getUserProfile = async (userId: string): Promise<User | null> => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      return {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role as 'secretaria' | 'professor' | 'aluno',
+        avatar: profile.avatar,
+        phone: profile.phone,
+        classId: profile.class_id,
+        defaultSchoolSlug: profile.default_school_slug,
+        preferences: (profile.preferences as unknown as UserPreferences) || defaultPreferences,
+        mustChangePassword: profile.must_change_password,
+      };
+    } catch (error) {
+      console.error('Error in getUserProfile:', error);
+      return null;
     }
-    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        setSession(session);
+        
+        if (session?.user) {
+          // Fetch full user profile from our profiles table
+          const profile = await getUserProfile(session.user.id);
+          if (profile) {
+            setUser(profile);
+          } else {
+            console.error('No profile found for user:', session.user.id);
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        getUserProfile(session.user.id).then(profile => {
+          if (profile) {
+            setUser(profile);
+            setSession(session);
+          }
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('comunika_user', JSON.stringify(userWithoutPassword));
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Login error:', error.message);
+        setIsLoading(false);
+        return false;
+      }
+
+      if (data.user) {
+        // The auth state change listener will handle setting the user
+        return true;
+      }
+
       setIsLoading(false);
-      return true;
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      setIsLoading(false);
+      return false;
     }
-    
-    setIsLoading(false);
-    return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('comunika_user');
-    localStorage.removeItem('comunika_user_preferences');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
-  const updateUser = (updates: Partial<User>) => {
+  const updateUser = async (updates: Partial<User>) => {
     if (!user) return;
     
-    const updatedUser = { ...user, ...updates };
-    setUser(updatedUser);
-    localStorage.setItem('comunika_user', JSON.stringify(updatedUser));
+    try {
+      // Update in Supabase profiles table
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: updates.name,
+          avatar: updates.avatar,
+          phone: updates.phone,
+          class_id: updates.classId,
+          default_school_slug: updates.defaultSchoolSlug,
+          preferences: updates.preferences as any,
+          must_change_password: updates.mustChangePassword,
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error updating user profile:', error);
+        return;
+      }
+
+      // Update local state
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Error in updateUser:', error);
+    }
   };
 
-  const updatePassword = async (userId: string, newPasswordHash: string, mustChange = false): Promise<boolean> => {
+  const updatePassword = async (userId: string, newPassword: string, mustChange = false): Promise<boolean> => {
     try {
-      // Update in mockUsers array
-      const userIndex = mockUsers.findIndex(u => u.id === userId);
-      if (userIndex !== -1) {
-        mockUsers[userIndex].password = newPasswordHash;
-        mockUsers[userIndex].mustChangePassword = mustChange;
+      // Update password in auth.users table
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        console.error('Error updating password:', error);
+        return false;
       }
 
-      // Update in people store if exists
-      const peopleData = localStorage.getItem('comunika_people_v2');
-      if (peopleData) {
-        const people = JSON.parse(peopleData);
-        const updatedPeople = people.map(p => 
-          p.id === userId ? { ...p, passwordHash: newPasswordHash, mustChangePassword: mustChange } : p
-        );
-        localStorage.setItem('comunika_people_v2', JSON.stringify(updatedPeople));
-      }
+      // Update must_change_password flag in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ must_change_password: mustChange })
+        .eq('id', userId);
 
-      // Update current user if it's the same
-      if (user && user.id === userId) {
-        updateUser({ passwordHash: newPasswordHash, mustChangePassword: mustChange });
+      if (profileError) {
+        console.error('Error updating password flag:', profileError);
+        return false;
       }
 
       return true;
