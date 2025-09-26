@@ -198,13 +198,15 @@ const Login = () => {
       
       const { email, name } = credentials[role as keyof typeof credentials];
       
-      // Create demo user if it doesn't exist
-      if (createDemoUser) {
-        await createDemoUser(email, '123456', name, role);
-      }
+      console.log(`QuickLogin attempt for ${role}: ${email}`);
       
-      // Small delay to allow user creation to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Force create demo user every time for professor and aluno (they might not exist)
+      if (role !== 'secretaria' && createDemoUser) {
+        console.log(`Force creating demo user for ${role}`);
+        await createDemoUser(email, '123456', name, role);
+        // Add extra delay for user creation to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       
       // Now attempt login
       const success = await login(email, '123456');
@@ -215,10 +217,11 @@ const Login = () => {
           description: "Bem-vindo ao Comunika.",
         });
       } else {
-        setFormError("Erro ao fazer login com conta de demonstração.");
+        setFormError(`Erro ao fazer login com conta de demonstração (${role}).`);
         setIsSubmitting(false);
       }
     } catch (error) {
+      console.error('QuickLogin error:', error);
       setFormError("Erro interno. Tente novamente.");
       setIsSubmitting(false);
     }

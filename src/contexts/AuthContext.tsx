@@ -65,6 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Function to create demo users if they don't exist
   const createDemoUser = async (email: string, password: string, name: string, role: string) => {
     try {
+      console.log(`Attempting to create demo user: ${email} with role: ${role}`);
+      
       // Use admin.createUser to create users with confirmed emails
       const { data, error } = await supabase.auth.admin.createUser({
         email,
@@ -77,7 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('Error creating demo user:', error);
+        console.error('Error creating demo user:', error.message, error);
+        // If user already exists, that's okay - we'll try to login anyway
+        if (error.message?.includes('already') || error.message?.includes('exists')) {
+          console.log('User already exists, proceeding with login attempt');
+          return { user: { email } }; // Return minimal data to proceed
+        }
         return null;
       }
 
@@ -147,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log(`Attempting login for: ${email}`);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -154,12 +162,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('Login error:', error.message);
+        console.error('Login error:', error.message, error);
         setIsLoading(false);
         return false;
       }
 
       if (data.user) {
+        console.log('Login successful for:', data.user.email);
         // The auth state change listener will handle setting the user
         return true;
       }
