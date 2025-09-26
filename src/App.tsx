@@ -11,7 +11,7 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { AppLayout } from "@/components/Layout/AppLayout";
 import { CalendarProviders } from "@/providers/CalendarProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { NotificationProvider } from "@/contexts/NotificationContext";
+import { ConditionalNotificationProvider } from "@/components/ConditionalNotificationProvider";
 import { ModalManagerProvider } from "@/components/ui/app-dialog";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -59,7 +59,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <NotificationProvider>
+        <ConditionalNotificationProvider>
           <ModalManagerProvider>
             <Toaster />
             <Sonner />
@@ -383,7 +383,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
           </ModalManagerProvider>
-        </NotificationProvider>
+        </ConditionalNotificationProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

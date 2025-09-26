@@ -3,6 +3,8 @@ import { User, AuthContextType, UserPreferences } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export { AuthContext };
+
 // Default preferences
 const defaultPreferences: UserPreferences = {
   notifications: {
