@@ -65,23 +65,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Function to create demo users if they don't exist
   const createDemoUser = async (email: string, password: string, name: string, role: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Use admin.createUser to create users with confirmed emails
+      const { data, error } = await supabase.auth.admin.createUser({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name,
-            role,
-          }
+        email_confirm: true, // Creates user as already confirmed
+        user_metadata: {
+          name,
+          role,
         }
       });
 
-      if (error && !error.message.includes('already registered')) {
+      if (error) {
         console.error('Error creating demo user:', error);
         return null;
       }
 
+      console.log('Demo user created successfully:', data);
       return data;
     } catch (error) {
       console.error('Error in createDemoUser:', error);
