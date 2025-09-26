@@ -62,6 +62,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Temporarily create demo user for development
+  useEffect(() => {
+    const createDemoUser = async () => {
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          // Try to sign up the demo user - this will only work if user doesn't exist
+          await supabase.auth.signUp({
+            email: 'secretaria@comunika.com',
+            password: '123456',
+            options: {
+              data: {
+                name: 'Maria Silva',
+                role: 'secretaria'
+              }
+            }
+          });
+        } catch (error) {
+          // User might already exist, ignore the error
+          console.log('Demo user creation skipped (may already exist)');
+        }
+      }
+    };
+    
+    createDemoUser();
+  }, []);
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
