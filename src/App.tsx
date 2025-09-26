@@ -50,6 +50,7 @@ import NotificationsPage from "./pages/Secretaria/Notifications/index";
 import { PostFallback } from "./pages/PostFallback";
 import RewardsStore from "./pages/RewardsStore";
 import RewardsManagement from "./pages/Secretaria/RewardsManagement";
+import AlunoActivityResult from "./pages/AlunoActivityResult";
 
 const queryClient = new QueryClient();
 
@@ -310,6 +311,13 @@ const App = () => (
               <RoleGuard allowedRoles={['aluno']}>
                 <AppLayout>
                   <RewardsStore />
+                </AppLayout>
+              </RoleGuard>
+            } />
+            <Route path="/aluno/atividade/:postId/resultado" element={
+              <RoleGuard allowedRoles={['aluno']}>
+                <AppLayout>
+                  <AlunoActivityResult />
                 </AppLayout>
               </RoleGuard>
             } />

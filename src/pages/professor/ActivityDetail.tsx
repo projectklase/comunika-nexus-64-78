@@ -133,7 +133,7 @@ export default function ActivityDetail() {
               title: 'Atividade aprovada!',
               message: `Sua atividade "${posts[0].title}" foi aprovada! Você ganhou ${posts[0].activityMeta.koinReward} Koins.`,
               roleTarget: 'ALUNO',
-              link: '/aluno/recompensas',
+              link: `/aluno/atividade/${posts[0].id}/resultado`,
               meta: {
                 activityId: posts[0].id,
                 activityTitle: posts[0].title,
@@ -149,7 +149,7 @@ export default function ActivityDetail() {
               title: 'Atividade aprovada!',
               message: `Sua atividade "${posts[0]?.title}" foi aprovada pelo professor.`,
               roleTarget: 'ALUNO',
-              link: `/aluno/calendario`,
+              link: `/aluno/atividade/${posts[0]?.id}/resultado`,
               meta: {
                 activityId: posts[0]?.id,
                 activityTitle: posts[0]?.title,
@@ -165,11 +165,11 @@ export default function ActivityDetail() {
           if (!delivery) return;
           
           notificationStore.add({
-            type: 'POST_IMPORTANT',
+            type: 'POST_NEW',
             title: 'Atividade devolvida',
-            message: `Sua atividade "${posts[0]?.title}" foi devolvida para correção.`,
+            message: `Sua atividade "${posts[0]?.title}" foi devolvida para correções.`,
             roleTarget: 'ALUNO',
-            link: `/aluno/calendario`,
+            link: `/aluno/atividade/${posts[0]?.id}/resultado`,
             meta: {
               activityId: posts[0]?.id,
               activityTitle: posts[0]?.title,
