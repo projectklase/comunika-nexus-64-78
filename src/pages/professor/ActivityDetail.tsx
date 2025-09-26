@@ -76,17 +76,98 @@ export default function ActivityDetail() {
   const handleReview = async (deliveryIds: string[], reviewStatus: ReviewStatus, reviewNote?: string) => {
     setIsLoading(true);
     try {
-      if (deliveryIds.length === 1) {
-        deliveryStore.review(deliveryIds[0], {
-          reviewStatus,
-          reviewNote,
-          reviewedBy: user.id
+      const { notificationStore } = await import('@/stores/notification-store');
+      const { useRewardsStore } = await import('@/stores/rewards-store');
+      
+      // Process each delivery
+      const processedDeliveries = deliveryIds.map(deliveryId => {
+        if (deliveryIds.length === 1) {
+          return deliveryStore.review(deliveryId, {
+            reviewStatus,
+            reviewNote,
+            reviewedBy: user.id
+          });
+        } else {
+          return deliveryStore.reviewMultiple([deliveryId], {
+            reviewStatus,
+            reviewNote,
+            reviewedBy: user.id
+          })[0];
+        }
+      }).filter(Boolean);
+
+      // Handle rewards and notifications for approved deliveries
+      if (reviewStatus === 'APROVADA') {
+        processedDeliveries.forEach(delivery => {
+          if (!delivery) return;
+          
+          // Award Koins if activity has reward
+          if (posts[0]?.activityMeta?.koinReward && posts[0].activityMeta.koinReward > 0) {
+            const rewardsStore = useRewardsStore.getState();
+            const currentBalance = rewardsStore.getStudentBalance(delivery.studentId);
+            
+            rewardsStore.addTransaction({
+              studentId: delivery.studentId,
+              type: 'EARN',
+              amount: posts[0].activityMeta.koinReward,
+              balanceBefore: currentBalance.availableBalance,
+              balanceAfter: currentBalance.availableBalance + posts[0].activityMeta.koinReward,
+              source: `ACTIVITY:${posts[0].id}`,
+              description: `Koins ganhos por conclusão da atividade: ${posts[0].title}`,
+              responsibleUserId: user.id
+            });
+
+            // Notify student about approved delivery with Koins
+            notificationStore.add({
+              type: 'KOINS_EARNED',
+              title: 'Atividade aprovada!',
+              message: `Sua atividade "${posts[0].title}" foi aprovada! Você ganhou ${posts[0].activityMeta.koinReward} Koins.`,
+              roleTarget: 'ALUNO',
+              link: '/aluno/recompensas',
+              meta: {
+                activityId: posts[0].id,
+                activityTitle: posts[0].title,
+                koinAmount: posts[0].activityMeta.koinReward,
+                studentId: delivery.studentId,
+                teacherName: user.name
+              }
+            });
+          } else {
+            // Notify student about approved delivery without Koins
+            notificationStore.add({
+              type: 'POST_NEW',
+              title: 'Atividade aprovada!',
+              message: `Sua atividade "${posts[0]?.title}" foi aprovada pelo professor.`,
+              roleTarget: 'ALUNO',
+              link: `/aluno/calendario`,
+              meta: {
+                activityId: posts[0]?.id,
+                activityTitle: posts[0]?.title,
+                studentId: delivery.studentId,
+                teacherName: user.name
+              }
+            });
+          }
         });
-      } else {
-        deliveryStore.reviewMultiple(deliveryIds, {
-          reviewStatus,
-          reviewNote,
-          reviewedBy: user.id
+      } else if (reviewStatus === 'DEVOLVIDA') {
+        // Notify students about returned deliveries
+        processedDeliveries.forEach(delivery => {
+          if (!delivery) return;
+          
+          notificationStore.add({
+            type: 'POST_IMPORTANT',
+            title: 'Atividade devolvida',
+            message: `Sua atividade "${posts[0]?.title}" foi devolvida para correção.`,
+            roleTarget: 'ALUNO',
+            link: `/aluno/calendario`,
+            meta: {
+              activityId: posts[0]?.id,
+              activityTitle: posts[0]?.title,
+              studentId: delivery.studentId,
+              teacherName: user.name,
+              reviewNote: reviewNote
+            }
+          });
         });
       }
 

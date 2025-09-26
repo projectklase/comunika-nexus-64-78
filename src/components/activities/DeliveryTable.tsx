@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { ReviewStatusBadge } from './DeliveryStatusBadge';
 import { ApprovalModal } from './ApprovalModal';
+import { AttachmentPreviewModal } from './AttachmentPreviewModal';
 import { 
   Search, 
   Eye, 
@@ -23,7 +24,8 @@ import {
   XCircle, 
   FileText,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
+  Image as ImageIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -34,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { DeliveryAttachment } from '@/types/delivery';
 
 interface DeliveryTableProps {
   deliveries: Delivery[];
@@ -64,6 +67,8 @@ export function DeliveryTable({
   const [attachmentFilter, setAttachmentFilter] = useState<string>(DEFAULT_FILTER_TOKENS.ALL_ATTACHMENTS);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [reviewingDelivery, setReviewingDelivery] = useState<Delivery | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewingAttachment, setPreviewingAttachment] = useState<DeliveryAttachment | null>(null);
 
   // Filtrar entregas
   const filteredDeliveries = useMemo(() => {
@@ -156,6 +161,26 @@ export function DeliveryTable({
         return '🖼️';
       default:
         return '📎';
+    }
+  };
+
+  const handleAttachmentClick = (attachment: DeliveryAttachment) => {
+    const isImage = attachment.type?.includes('image/') || 
+      ['jpg', 'jpeg', 'png', 'webp'].some(ext => 
+        attachment.name.toLowerCase().endsWith(`.${ext}`)
+      );
+    
+    if (isImage && attachment.url) {
+      setPreviewingAttachment(attachment);
+      setPreviewModalOpen(true);
+    } else if (attachment.url) {
+      // Download non-image files
+      const link = document.createElement('a');
+      link.href = attachment.url;
+      link.download = attachment.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -300,13 +325,33 @@ export function DeliveryTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    {delivery.attachments && delivery.attachments.length > 0 ? (
+                     {delivery.attachments && delivery.attachments.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {delivery.attachments.map((attachment, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {getFileIcon(attachment.name)} {attachment.name}
-                          </Badge>
-                        ))}
+                        {delivery.attachments.map((attachment, index) => {
+                          const isImage = attachment.type?.includes('image/') || 
+                            ['jpg', 'jpeg', 'png', 'webp'].some(ext => 
+                              attachment.name.toLowerCase().endsWith(`.${ext}`)
+                            );
+                          
+                          return (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              size="sm"
+                              className="h-auto p-2 text-xs hover:bg-primary/10"
+                              onClick={() => handleAttachmentClick(attachment)}
+                            >
+                              <div className="flex items-center gap-1">
+                                {isImage ? (
+                                  <ImageIcon className="h-3 w-3" />
+                                ) : (
+                                  <span>{getFileIcon(attachment.name)}</span>
+                                )}
+                                <span className="truncate max-w-[120px]">{attachment.name}</span>
+                              </div>
+                            </Button>
+                          );
+                        })}
                       </div>
                     ) : (
                       <span className="text-muted-foreground text-sm">Sem anexos</span>
@@ -385,6 +430,16 @@ export function DeliveryTable({
         mode={reviewingDelivery ? 'single' : 'multiple'}
         selectedCount={selectedDeliveries.length}
         isLoading={isLoading}
+      />
+
+      {/* Modal de preview de anexos */}
+      <AttachmentPreviewModal
+        attachment={previewingAttachment}
+        isOpen={previewModalOpen}
+        onClose={() => {
+          setPreviewModalOpen(false);
+          setPreviewingAttachment(null);
+        }}
       />
     </div>
   );

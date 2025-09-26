@@ -125,14 +125,57 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      deliveryStore.submit({
+      // Convert file URLs to base64 data URLs for persistent storage
+      const processedAttachments = await Promise.all(
+        attachments.map(async (attachment) => {
+          if (attachment.url?.startsWith('blob:')) {
+            try {
+              const response = await fetch(attachment.url);
+              const blob = await response.blob();
+              const reader = new FileReader();
+              return new Promise<typeof attachment>((resolve) => {
+                reader.onload = () => {
+                  resolve({
+                    ...attachment,
+                    url: reader.result as string
+                  });
+                };
+                reader.readAsDataURL(blob);
+              });
+            } catch (error) {
+              console.error('Error converting attachment to base64:', error);
+              return attachment;
+            }
+          }
+          return attachment;
+        })
+      );
+
+      const delivery = deliveryStore.submit({
         postId: activity.id,
         studentId: user.id,
         studentName: user.name,
         classId,
-        attachments: attachments.length > 0 ? attachments : undefined,
+        attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
         notes: notes.trim() || undefined
       }, activity.dueAt);
+
+      // Notify the teacher about the new submission
+      const { notificationStore } = await import('@/stores/notification-store');
+      notificationStore.add({
+        type: 'POST_NEW',
+        title: 'Nova entrega recebida',
+        message: `O aluno ${user.name} entregou a atividade "${activity.title}".`,
+        roleTarget: 'PROFESSOR',
+        link: `/professor/turma/${classId}/atividade/${activity.id}`,
+        meta: {
+          activityId: activity.id,
+          studentId: user.id,
+          studentName: user.name,
+          deliveryId: delivery.id,
+          activityTitle: activity.title
+        }
+      });
 
       toast({
         title: isOverdue ? 'Entrega atrasada realizada' : 'Entrega realizada',
