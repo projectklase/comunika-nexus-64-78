@@ -142,6 +142,51 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar: string | null
+          class_id: string | null
+          created_at: string | null
+          default_school_slug: string | null
+          email: string
+          id: string
+          must_change_password: boolean | null
+          name: string
+          phone: string | null
+          preferences: Json | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar?: string | null
+          class_id?: string | null
+          created_at?: string | null
+          default_school_slug?: string | null
+          email: string
+          id: string
+          must_change_password?: boolean | null
+          name: string
+          phone?: string | null
+          preferences?: Json | null
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar?: string | null
+          class_id?: string | null
+          created_at?: string | null
+          default_school_slug?: string | null
+          email?: string
+          id?: string
+          must_change_password?: boolean | null
+          name?: string
+          phone?: string | null
+          preferences?: Json | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
