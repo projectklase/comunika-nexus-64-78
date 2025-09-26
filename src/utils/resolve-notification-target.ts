@@ -65,6 +65,22 @@ export function resolveNotificationTarget(
     }
   }
 
+  // Rewards notifications - use their specific links
+  if (['KOINS_EARNED', 'KOIN_BONUS', 'REDEMPTION_APPROVED', 'REDEMPTION_REJECTED'].includes(notification.type)) {
+    return {
+      destination: 'feed',
+      url: notification.link || '/aluno/loja-recompensas?tab=history'
+    };
+  }
+
+  // Redemption request notifications for secretaria
+  if (notification.type === 'REDEMPTION_REQUESTED') {
+    return {
+      destination: 'feed',
+      url: notification.link || '/secretaria/gerenciar-recompensas?tab=redemptions'
+    };
+  }
+
   // Password reset notifications
   if (notification.type.startsWith('RESET_')) {
     return {
