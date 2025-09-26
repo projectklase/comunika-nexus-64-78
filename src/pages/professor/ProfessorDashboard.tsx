@@ -9,11 +9,30 @@ import { Link, useNavigate } from 'react-router-dom';
 import { orderClassesBySchedule, getClassDisplayInfo } from '@/utils/class-helpers';
 
 export default function ProfessorDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   useStoreInitialization();
   
-  if (!user) return null;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="glass-card p-8 rounded-xl">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+  
+  if (user.role !== 'professor') {
+    navigate('/dashboard');
+    return null;
+  }
   
   const professorClasses = getProfessorClasses(user.id);
   const orderedClasses = orderClassesBySchedule(professorClasses);

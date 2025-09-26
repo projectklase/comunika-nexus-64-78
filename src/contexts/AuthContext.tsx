@@ -59,8 +59,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check for stored user on mount
     const storedUser = localStorage.getItem('comunika_user');
+    console.log('AuthProvider: Checking stored user...', storedUser);
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      console.log('AuthProvider: Found stored user:', parsedUser);
+      setUser(parsedUser);
+    } else {
+      console.log('AuthProvider: No stored user found');
     }
     setIsLoading(false);
   }, []);

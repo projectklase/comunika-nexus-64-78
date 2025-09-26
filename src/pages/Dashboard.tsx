@@ -35,13 +35,31 @@ import {
 } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const posts = usePosts();
   const { toast } = useToast();
   const [showComposer, setShowComposer] = useState(false);
 
-  if (!user) return null;
+  console.log('Dashboard: user state:', user);
+  console.log('Dashboard: isLoading state:', isLoading);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="glass-card p-8 rounded-xl">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    console.log('Dashboard: No user found, redirecting to login');
+    navigate('/login');
+    return null;
+  }
 
   const getButtonConfig = () => {
     switch (user.role) {
@@ -197,11 +215,25 @@ const Dashboard = () => {
       case 'secretaria':
         return renderSecretariaDashboard();
       case 'professor':
-        window.location.href = '/professor/dashboard';
-        return null;
+        navigate('/professor/dashboard');
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="glass-card p-8 rounded-xl">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-4">Redirecionando...</p>
+            </div>
+          </div>
+        );
       case 'aluno':
-        window.location.href = '/aluno/dashboard';
-        return null;
+        navigate('/aluno/dashboard');
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="glass-card p-8 rounded-xl">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-4">Redirecionando...</p>
+            </div>
+          </div>
+        );
       default:
         return <div>Dashboard não encontrado para este perfil.</div>;
     }
