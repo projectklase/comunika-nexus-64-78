@@ -26,7 +26,7 @@ const defaultPreferences: UserPreferences = {
 // Mock users data
 const mockUsers: Array<User & { password: string }> = [
   {
-    id: '1',
+    id: '550e8400-e29b-41d4-a716-446655440000',
     name: 'Maria Silva',
     email: 'secretaria@comunika.com',
     role: 'secretaria',
@@ -35,7 +35,7 @@ const mockUsers: Array<User & { password: string }> = [
     preferences: defaultPreferences
   },
   {
-    id: 'prof-joao',
+    id: '550e8400-e29b-41d4-a716-446655440001',
     name: 'João Santos',
     email: 'professor@comunika.com',
     role: 'professor',
@@ -44,7 +44,7 @@ const mockUsers: Array<User & { password: string }> = [
     preferences: defaultPreferences
   },
   {
-    id: '3',
+    id: '550e8400-e29b-41d4-a716-446655440002',
     name: 'Ana Costa',
     email: 'aluno@comunika.com',
     role: 'aluno',

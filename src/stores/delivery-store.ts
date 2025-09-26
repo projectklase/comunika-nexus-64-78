@@ -6,10 +6,38 @@ class DeliveryStore {
   private storageKey = 'comunika_deliveries';
 
   constructor() {
+    // Limpar dados antigos do localStorage com IDs inválidos
+    this.clearOldData();
     this.loadFromStorage();
     this.initializeWithMockData();
     // Debug: log deliveries on initialization
     console.log('DeliveryStore initialized with', this.deliveries.length, 'deliveries');
+  }
+
+  private clearOldData() {
+    try {
+      const stored = localStorage.getItem(this.storageKey);
+      if (stored) {
+        const data = JSON.parse(stored);
+        // Verificar se há dados com IDs inválidos (não UUID)
+        const hasInvalidIds = data.some((delivery: any) => 
+          delivery.studentId && !this.isValidUUID(delivery.studentId)
+        );
+        
+        if (hasInvalidIds) {
+          console.log('Clearing old delivery data with invalid UUIDs');
+          localStorage.removeItem(this.storageKey);
+        }
+      }
+    } catch (error) {
+      console.error('Error clearing old data:', error);
+      localStorage.removeItem(this.storageKey);
+    }
+  }
+
+  private isValidUUID(str: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
   }
 
   private loadFromStorage() {
@@ -272,11 +300,15 @@ class DeliveryStore {
     // Only initialize mock data if there are no deliveries at all in storage
     const hasStoredData = localStorage.getItem(this.storageKey);
     if (!hasStoredData && this.deliveries.length === 0) {
-      const mockDeliveries: Delivery[] = [
+// Adicionar função helper para gerar UUIDs mock
+const generateMockUUID = (suffix: string) => `550e8400-e29b-41d4-a716-44665544${suffix.padStart(4, '0')}`;
+
+// Atualizar referências para usar UUIDs
+const mockDeliveries: Delivery[] = [
         {
           id: 'delivery-1',
           postId: 'atividade-1',
-          studentId: 'student-1',
+          studentId: generateMockUUID('1001'),
           studentName: 'Ana Silva',
           classId: 'class-3a',
           submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
@@ -291,13 +323,13 @@ class DeliveryStore {
         {
           id: 'delivery-2',
           postId: 'trabalho-1',
-          studentId: 'student-2',
+          studentId: generateMockUUID('1002'),
           studentName: 'Carlos Santos',
           classId: 'class-3a',
           submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 dia atrás
           reviewStatus: 'APROVADA',
           reviewNote: 'Excelente trabalho! Boa análise dos impactos ambientais.',
-          reviewedBy: 'prof-joao',
+          reviewedBy: '550e8400-e29b-41d4-a716-446655440001',
           reviewedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 horas atrás
           isLate: false,
           attachments: [
@@ -309,13 +341,13 @@ class DeliveryStore {
         {
           id: 'delivery-3',
           postId: 'prova-1',
-          studentId: 'student-3',
+          studentId: generateMockUUID('1003'),
           studentName: 'Maria Costa',
           classId: 'class-3a',
           submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias atrás
           reviewStatus: 'DEVOLVIDA',
           reviewNote: 'Revisar as questões sobre fontes exponenciais. Refazer e reenviar.',
-          reviewedBy: 'prof-joao',
+          reviewedBy: '550e8400-e29b-41d4-a716-446655440001',
           reviewedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
           isLate: true,
           notes: 'Tive dificuldades com as questões 3 e 4',

@@ -56,9 +56,9 @@ const loadFromStorage = (): Person[] => {
 const getMockPeople = (): Person[] => [
   // Professores - incluindo o do AuthContext
   { 
-    id: 'prof-joao', 
+    id: '550e8400-e29b-41d4-a716-446655440001', 
     name: 'João Santos', 
-    email: 'professor@comunika.com', 
+    email: 'professor@comunika.com',
     role: 'PROFESSOR', 
     isActive: true, 
     createdAt: '2024-01-01T00:00:00Z',

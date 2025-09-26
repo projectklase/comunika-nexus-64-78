@@ -4,13 +4,25 @@ import { Delivery, DeliveryInput, DeliveryReview, DeliveryFilter, ActivityMetric
 export class DeliveryService {
   // Criar uma entrega
   async submit(input: DeliveryInput, dueAt?: string): Promise<Delivery> {
+    console.log('Attempting to submit delivery:', {
+      postId: input.postId,
+      studentId: input.studentId,
+      studentName: input.studentName,
+      classId: input.classId
+    });
+
     // Verificar se já existe entrega para este aluno nesta atividade
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from('deliveries')
       .select('id')
       .eq('post_id', input.postId)
       .eq('student_id', input.studentId)
       .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing delivery:', checkError);
+      throw checkError;
+    }
 
     if (existing) {
       throw new Error('Entrega já existe para este aluno nesta atividade');
