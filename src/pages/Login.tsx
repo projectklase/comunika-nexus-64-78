@@ -200,7 +200,7 @@ const Login = () => {
       
       console.log(`QuickLogin attempt for ${role}: ${email}`);
       
-      // Force create demo user every time for professor and aluno (they might not exist)
+      // Force create demo user for professor and aluno (they might not exist)
       if (role !== 'secretaria' && createDemoUser) {
         console.log(`Force creating demo user for ${role}`);
         const createResult = await createDemoUser(email, '123456', name, role);
@@ -209,8 +209,9 @@ const Login = () => {
           setIsSubmitting(false);
           return;
         }
-        // Add longer delay for user creation to complete
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Add longer delay for user creation and profile trigger to complete
+        console.log('Waiting for profile creation to complete...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
       
       // Now attempt login
