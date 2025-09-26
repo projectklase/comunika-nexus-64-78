@@ -183,23 +183,31 @@ const Login = () => {
     }
   };
 
-  const quickLogin = async (testEmail: string, testPassword: string) => {
+  const quickLogin = async (role: string = 'secretaria') => {
     if (isFormSubmitting) return;
     
     setFormError('');
     setIsSubmitting(true);
     
     try {
-      // First, try to create the demo user if it doesn't exist
-      if (testEmail === 'secretaria@comunika.com' && createDemoUser) {
-        await createDemoUser('secretaria@comunika.com', '123456', 'Maria Silva', 'secretaria');
+      const credentials = {
+        secretaria: { email: 'secretaria@comunika.com', name: 'Maria Silva' },
+        professor: { email: 'professor@comunika.com', name: 'João Silva' },
+        aluno: { email: 'aluno@comunika.com', name: 'Ana Santos' }
+      };
+      
+      const { email, name } = credentials[role as keyof typeof credentials];
+      
+      // Create demo user if it doesn't exist
+      if (createDemoUser) {
+        await createDemoUser(email, '123456', name, role);
       }
       
       // Small delay to allow user creation to complete
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Now attempt login
-      const success = await login(testEmail, testPassword);
+      const success = await login(email, '123456');
       
       if (success) {
         toast({
@@ -487,7 +495,7 @@ const Login = () => {
                   <div className="space-y-2">
                     <button
                       type="button"
-                      onClick={() => quickLogin('secretaria@comunika.com', '123456')}
+                      onClick={() => quickLogin('secretaria')}
                       disabled={isFormSubmitting}
                       className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
                     >
@@ -500,7 +508,7 @@ const Login = () => {
                     
                     <button
                       type="button"
-                      onClick={() => quickLogin('professor@comunika.com', '123456')}
+                      onClick={() => quickLogin('professor')}
                       disabled={isFormSubmitting}
                       className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
                     >
@@ -513,7 +521,7 @@ const Login = () => {
                     
                     <button
                       type="button"
-                      onClick={() => quickLogin('aluno@comunika.com', '123456')}
+                      onClick={() => quickLogin('aluno')}
                       disabled={isFormSubmitting}
                       className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
                     >
