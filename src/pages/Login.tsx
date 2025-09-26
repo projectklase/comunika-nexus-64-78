@@ -203,9 +203,14 @@ const Login = () => {
       // Force create demo user every time for professor and aluno (they might not exist)
       if (role !== 'secretaria' && createDemoUser) {
         console.log(`Force creating demo user for ${role}`);
-        await createDemoUser(email, '123456', name, role);
-        // Add extra delay for user creation to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const createResult = await createDemoUser(email, '123456', name, role);
+        if (!createResult) {
+          setFormError(`Erro ao criar usuário de demonstração (${role}).`);
+          setIsSubmitting(false);
+          return;
+        }
+        // Add longer delay for user creation to complete
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
       
       // Now attempt login
@@ -217,7 +222,8 @@ const Login = () => {
           description: "Bem-vindo ao Comunika.",
         });
       } else {
-        setFormError(`Erro ao fazer login com conta de demonstração (${role}).`);
+        console.error(`Login failed for ${role} with email ${email}`);
+        setFormError(`Erro ao fazer login com conta de demonstração (${role}). Verifique se o usuário foi criado corretamente.`);
         setIsSubmitting(false);
       }
     } catch (error) {
