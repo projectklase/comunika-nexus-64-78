@@ -142,9 +142,9 @@ export const mockCalendarEvents: CalendarEvent[] = [
 ];
 
 export const mockClasses: Class[] = [
-  { id: '1', name: '3º A', year: '2024', studentsCount: 32, teacherId: '2' },
-  { id: '2', name: '3º B', year: '2024', studentsCount: 28, teacherId: '2' },
-  { id: '3', name: '2º A', year: '2024', studentsCount: 35, teacherId: '4' },
-  { id: '4', name: '2º B', year: '2024', studentsCount: 30, teacherId: '5' },
-  { id: '5', name: '1º A', year: '2024', studentsCount: 33, teacherId: '6' },
+  { id: '1', name: '3º A', year: '2024', studentsCount: 32 },
+  { id: '2', name: '3º B', year: '2024', studentsCount: 28 },
+  { id: '3', name: '2º A', year: '2024', studentsCount: 35 },
+  { id: '4', name: '2º B', year: '2024', studentsCount: 30 },
+  { id: '5', name: '1º A', year: '2024', studentsCount: 33 },
 ];

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { usePeopleStore } from '@/stores/people-store';
+import { useTeachers } from '@/hooks/useTeachers';
 import { useClassStore } from '@/stores/class-store';
 import { Person } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
@@ -23,17 +23,15 @@ export function AssignTeacherDialog({ open, onOpenChange, classId, className }: 
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const { getTeachers } = usePeopleStore();
+  const { teachers } = useTeachers();
   const { updateClass, getClass } = useClassStore();
   const { toast } = useToast();
 
-  const teachers = getTeachers();
   const currentClass = getClass(classId);
   const currentTeacherIds = currentClass?.teachers || [];
 
   const filteredTeachers = teachers.filter(teacher => 
     teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    teacher.teacher?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     teacher.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -130,29 +128,15 @@ export function AssignTeacherDialog({ open, onOpenChange, classId, className }: 
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {teacher.teacher?.email || teacher.email || 'Sem e-mail'}
-                      </p>
-                      {teacherClasses.length > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="h-3 w-3" />
-                          <span>{teacherClasses.length} turma(s)</span>
-                        </div>
-                      )}
-                      {teacher.teacher?.specialties && teacher.teacher.specialties.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {teacher.teacher.specialties.slice(0, 3).map((specialty, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {specialty}
-                            </Badge>
-                          ))}
-                          {teacher.teacher.specialties.length > 3 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{teacher.teacher.specialties.length - 3} mais
-                            </span>
-                          )}
-                        </div>
-                      )}
+                       <p className="text-sm text-muted-foreground">
+                         {teacher.email || 'Sem e-mail'}
+                       </p>
+                       {teacherClasses.length > 0 && (
+                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                           <Users className="h-3 w-3" />
+                           <span>{teacherClasses.length} turma(s)</span>
+                         </div>
+                       )}
                     </div>
                   </div>
                 );

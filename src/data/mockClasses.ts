@@ -11,7 +11,7 @@ export const mockClasses: SchoolClass[] = [
     daysOfWeek: ['Segunda', 'Quarta', 'Sexta'],
     startTime: '08:00',
     endTime: '12:00',
-    teachers: ['550e8400-e29b-41d4-a716-446655440001', 'teacher-2'],
+    teachers: [], // Professores agora vêm do Supabase
     students: ['550e8400-e29b-41d4-a716-446655440002', '6', '7', '8', '9'],
     createdAt: new Date('2025-01-15').toISOString(),
     updatedAt: new Date('2025-01-15').toISOString(),
@@ -26,7 +26,7 @@ export const mockClasses: SchoolClass[] = [
     daysOfWeek: ['Terça', 'Quinta'],
     startTime: '14:00',
     endTime: '18:00',
-    teachers: ['teacher-1'],
+    teachers: [], // Professores agora vêm do Supabase
     students: ['student-5', 'student-6', 'student-7'],
     createdAt: new Date('2025-01-15').toISOString(),
     updatedAt: new Date('2025-01-15').toISOString(),
@@ -41,7 +41,7 @@ export const mockClasses: SchoolClass[] = [
     daysOfWeek: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'],
     startTime: '19:00',
     endTime: '22:00',
-    teachers: ['teacher-2'],
+    teachers: [], // Professores agora vêm do Supabase
     students: ['student-8', 'student-9'],
     createdAt: new Date('2025-01-15').toISOString(),
     updatedAt: new Date('2025-01-15').toISOString(),
@@ -56,7 +56,7 @@ export const mockClasses: SchoolClass[] = [
     daysOfWeek: ['Sábado'],
     startTime: '08:00',
     endTime: '17:00', 
-    teachers: ['550e8400-e29b-41d4-a716-446655440001', 'teacher-3'],
+    teachers: [], // Professores agora vêm do Supabase
     students: ['550e8400-e29b-41d4-a716-446655440002', 'student-10', 'student-11', 'student-12'],
     createdAt: new Date('2025-01-15').toISOString(),
     updatedAt: new Date('2025-01-15').toISOString(),

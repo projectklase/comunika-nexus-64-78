@@ -36,7 +36,7 @@ interface PeopleStore {
   importStudents: (csvData: string) => Promise<Person[]>;
 }
 
-const STORAGE_KEY = 'comunika_people_v2'; // v2 to force refresh
+const STORAGE_KEY = 'comunika_people_v3'; // v3 para limpar dados mock de professores
 
 const generateId = () => crypto.randomUUID();
 
@@ -54,34 +54,7 @@ const loadFromStorage = (): Person[] => {
 };
 
 const getMockPeople = (): Person[] => [
-  // Professores - incluindo o do AuthContext
-  { 
-    id: '550e8400-e29b-41d4-a716-446655440001', 
-    name: 'João Santos', 
-    email: 'professor@comunika.com',
-    role: 'PROFESSOR', 
-    isActive: true, 
-    createdAt: '2024-01-01T00:00:00Z',
-    teacher: {
-      document: '123.456.789-00',
-      phones: ['(11) 99999-0001'],
-      email: 'professor@comunika.com',
-      qualifications: ['Licenciatura em Matemática', 'Mestrado em Educação'],
-      specialties: ['Matemática', 'Física'],
-      workloadHours: 40,
-      availability: {
-        daysOfWeek: ['segunda', 'terça', 'quarta', 'quinta', 'sexta'],
-        startTime: '07:00',
-        endTime: '17:00'
-      },
-      classIds: ['class-3a', 'class-2b'], // Turmas atribuídas
-      hiredAt: '2024-01-01',
-      notes: 'Professor de Matemática e Física'
-    }
-  },
-  { id: '1', name: 'Ana Silva', email: 'ana.silva@escola.com', role: 'PROFESSOR', isActive: true, createdAt: '2024-01-01T00:00:00Z' },
-  { id: '2', name: 'Carlos Santos', email: 'carlos.santos@escola.com', role: 'PROFESSOR', isActive: true, createdAt: '2024-01-01T00:00:00Z' },
-  // Alunos com dados StudentExtra
+  // Apenas alunos com dados StudentExtra - professores agora vêm do Supabase
   { 
     id: '3', 
     name: 'Ana Costa', 
@@ -95,9 +68,6 @@ const getMockPeople = (): Person[] => [
       email: 'aluno@comunika.com'
     }
   },
-  { id: '13', name: 'Maria Oliveira', email: 'maria.oliveira@escola.com', role: 'PROFESSOR', isActive: true, createdAt: '2024-01-01T00:00:00Z' },
-  { id: '4', name: 'João Costa', email: 'joao.costa@escola.com', role: 'PROFESSOR', isActive: true, createdAt: '2024-01-01T00:00:00Z' },
-  { id: '5', name: 'Paula Lima', email: 'paula.lima@escola.com', role: 'PROFESSOR', isActive: true, createdAt: '2024-01-01T00:00:00Z' },
   { 
     id: '6', 
     name: 'Pedro Almeida', 
@@ -371,32 +341,8 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   },
 
   listTeachers: (filters) => {
-    const teachers = get().people.filter(p => p.role === 'PROFESSOR');
-    
-    if (!filters) return teachers;
-    
-    let filtered = teachers;
-    
-    if (filters.query) {
-      const query = filters.query.toLowerCase();
-      filtered = filtered.filter(t => 
-        t.name.toLowerCase().includes(query) || 
-        t.teacher?.email?.toLowerCase().includes(query) ||
-        t.email?.toLowerCase().includes(query)
-      );
-    }
-    
-    if (filters.active !== undefined) {
-      filtered = filtered.filter(t => t.isActive === filters.active);
-    }
-    
-    if (filters.classId) {
-      filtered = filtered.filter(t => 
-        t.teacher?.classIds?.includes(filters.classId)
-      );
-    }
-    
-    return filtered;
+    // Professores agora vêm do Supabase, não do store local
+    return [];
   },
 
   isMinor: (student: Person) => {
@@ -432,7 +378,8 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   },
 
   getTeachers: () => {
-    return get().people.filter(p => p.role === 'PROFESSOR' && p.isActive);
+    // Professores agora vêm do Supabase, não do store local
+    return [];
   },
 
   getStudents: () => {
@@ -444,6 +391,10 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   },
 
   getPeopleByRole: (role: 'PROFESSOR' | 'ALUNO') => {
+    if (role === 'PROFESSOR') {
+      // Professores agora vêm do Supabase, não do store local
+      return [];
+    }
     return get().people.filter(p => p.role === role);
   },
 

@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { usePeopleStore } from '@/stores/people-store';
+import { useTeachers } from '@/hooks/useTeachers';
 import { useClassStore } from '@/stores/class-store';
 import { useGlobalSubjectStore } from '@/stores/global-subject-store';
 import { Person, TeacherExtra } from '@/types/class';
@@ -112,7 +112,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [newSpecialty, setNewSpecialty] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { createTeacher, updateTeacher } = usePeopleStore();
+  const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
   const { subjects } = useGlobalSubjectStore();
   const { toast } = useToast();
@@ -204,10 +204,10 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       };
 
       if (teacher) {
-        // Update existing teacher
+        // Atualizando professor existente - usando apenas os dados básicos
         await updateTeacher(teacher.id, {
           name: data.name,
-          teacher: teacherData,
+          email: data.email,
         });
 
         // Update class enrollments
@@ -242,24 +242,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           description: "As informações do professor foram atualizadas com sucesso.",
         });
       } else {
-        // Create new teacher
-        const newTeacher = await createTeacher({
+        // Create new teacher - usando apenas os dados básicos
+        await createTeacher({
           name: data.name,
-          role: 'PROFESSOR',
-          isActive: true,
-          teacher: teacherData,
+          email: data.email,
         });
-
-        // Add to selected classes
-        if (data.classIds) {
-          for (const classId of data.classIds) {
-            const classToUpdate = classes.find(c => c.id === classId);
-            if (classToUpdate && !classToUpdate.teachers.includes(newTeacher.id)) {
-              const updatedTeachers = [...classToUpdate.teachers, newTeacher.id];
-              await updateClass(classId, { teachers: updatedTeachers });
-            }
-          }
-        }
 
         toast({
           title: "Professor criado",
