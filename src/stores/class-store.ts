@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { SchoolClass, ClassStatus, ClassFilters } from '@/types/class';
-import { mockClasses } from '@/data/mockClasses';
+// Mock data removed - now using Supabase data
 import { validateClassData } from '@/lib/data-hygiene';
 
 interface ClassStore {
@@ -60,9 +60,8 @@ export const useClassStore = create<ClassStore>((set, get) => ({
   loadClasses: () => {
     const classes = loadFromStorage();
     if (classes.length === 0) {
-      // Initialize with mock data if no classes exist
-      set({ classes: mockClasses });
-      saveToStorage(mockClasses);
+      // Initialize with empty array - data will come from Supabase
+      set({ classes: [] });
     } else {
       set({ classes });
     }

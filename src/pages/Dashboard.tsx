@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { mockAnnouncements, mockActivities, mockCalendarEvents, mockClasses } from '@/data/mockData';
+// Mock data imports removed - now using Supabase data
 import { usePosts } from '@/hooks/usePosts';
 import { getLastSeen } from '@/stores/last-seen';
 import { isUpcomingEvent, recentPosts, lastN, sortDesc } from '@/stores/post-selectors';
@@ -101,7 +101,7 @@ const Dashboard = () => {
       (!lastSeen || new Date(p.createdAt) > lastSeen)
     ).length;
     const weekEvents = posts.filter(p => isUpcomingEvent(p)).length;
-    const activeClasses = mockClasses.length;
+    const activeClasses = 0; // TODO: Implement with real data from Supabase
     const recentPostsCount = recentPosts(posts, 7).length;
     const latestPosts = lastN(posts, 3);
     const upcomingEvents = posts.filter(p => isUpcomingEvent(p)).sort(sortDesc).slice(0, 3);
