@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -29,7 +29,7 @@ export function useStudents() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStudents = async (filters: StudentFilters = {}) => {
+  const fetchStudents = useCallback(async (filters: StudentFilters = {}) => {
     setLoading(true);
     setError(null);
 
@@ -61,9 +61,9 @@ export function useStudents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const createStudent = async (studentData: {
+  const createStudent = useCallback(async (studentData: {
     name: string;
     email: string;
     password?: string;
@@ -99,9 +99,9 @@ export function useStudents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchStudents]);
 
-  const updateStudent = async (id: string, updates: Partial<Student>) => {
+  const updateStudent = useCallback(async (id: string, updates: Partial<Student>) => {
     setLoading(true);
     try {
       const { error } = await supabase
@@ -122,9 +122,9 @@ export function useStudents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchStudents]);
 
-  const deleteStudent = async (id: string) => {
+  const deleteStudent = useCallback(async (id: string) => {
     setLoading(true);
     try {
       const { error } = await supabase
@@ -145,11 +145,11 @@ export function useStudents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchStudents]);
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [fetchStudents]);
 
   return {
     students,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -28,7 +28,7 @@ export function useTeachers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTeachers = async (filters: TeacherFilters = {}) => {
+  const fetchTeachers = useCallback(async (filters: TeacherFilters = {}) => {
     setLoading(true);
     setError(null);
 
@@ -60,9 +60,9 @@ export function useTeachers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const createTeacher = async (teacherData: {
+  const createTeacher = useCallback(async (teacherData: {
     name: string;
     email: string;
     password?: string;
@@ -98,9 +98,9 @@ export function useTeachers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchTeachers]);
 
-  const updateTeacher = async (id: string, updates: Partial<Teacher>) => {
+  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher>) => {
     setLoading(true);
     try {
       const { error } = await supabase
@@ -121,9 +121,9 @@ export function useTeachers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchTeachers]);
 
-  const deleteTeacher = async (id: string) => {
+  const deleteTeacher = useCallback(async (id: string) => {
     setLoading(true);
     try {
       const { error } = await supabase
@@ -144,11 +144,11 @@ export function useTeachers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchTeachers]);
 
   useEffect(() => {
     fetchTeachers();
-  }, []);
+  }, [fetchTeachers]);
 
   return {
     teachers,
