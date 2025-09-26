@@ -51,7 +51,6 @@ import NotificationsPage from "./pages/Secretaria/Notifications/index";
 import { PostFallback } from "./pages/PostFallback";
 import RewardsStore from "./pages/RewardsStore";
 import RewardsManagement from "./pages/Secretaria/RewardsManagement";
-<Route path="/aluno/atividade/:activityId/resultado" element={<AlunoActivityResult />} />
 
 const queryClient = new QueryClient();
 
