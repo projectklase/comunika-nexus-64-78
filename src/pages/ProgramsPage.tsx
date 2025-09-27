@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgramStore } from '@/stores/program-store';
+import { usePrograms } from '@/hooks/usePrograms';
 import { ProgramFilters } from '@/types/curriculum';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { ProgramTable } from '@/components/curriculum/ProgramTable';
@@ -12,15 +12,11 @@ import { Navigate } from 'react-router-dom';
 
 export default function ProgramsPage() {
   const { user } = useAuth();
-  const { loadPrograms } = useProgramStore();
+  const { loading } = usePrograms();
   const [filters, setFilters] = useState<ProgramFilters>({
     search: '',
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  useEffect(() => {
-    loadPrograms();
-  }, [loadPrograms]);
 
   // RBAC: Only secretaria can access
   if (!user || user.role !== 'secretaria') {

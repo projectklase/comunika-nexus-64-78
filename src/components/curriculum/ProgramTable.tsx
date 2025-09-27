@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useProgramStore } from '@/stores/program-store';
+import { usePrograms } from '@/hooks/usePrograms';
 import { Program, ProgramFilters } from '@/types/curriculum';
 import { ProgramFormModal } from './ProgramFormModal';
 import {
@@ -30,9 +30,9 @@ export function ProgramTable({ filters }: ProgramTableProps) {
   const { 
     getFilteredPrograms, 
     deleteProgram, 
-    activateProgram, 
-    deactivateProgram 
-  } = useProgramStore();
+    updateProgram,
+    loading
+  } = usePrograms();
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
 
   const programs = getFilteredPrograms(filters);
@@ -57,19 +57,11 @@ export function ProgramTable({ filters }: ProgramTableProps) {
 
   const handleToggleStatus = async (program: Program) => {
     try {
-      if (program.isActive) {
-        await deactivateProgram(program.id);
-        toast({
-          title: "Programa desativado",
-          description: "O programa foi desativado com sucesso.",
-        });
-      } else {
-        await activateProgram(program.id);
-        toast({
-          title: "Programa ativado",
-          description: "O programa foi ativado com sucesso.",
-        });
-      }
+      await updateProgram(program.id, { isActive: !program.isActive });
+      toast({
+        title: program.isActive ? "Programa desativado" : "Programa ativado",
+        description: `O programa foi ${program.isActive ? 'desativado' : 'ativado'} com sucesso.`,
+      });
     } catch (error) {
       toast({
         title: "Erro",
@@ -78,6 +70,14 @@ export function ProgramTable({ filters }: ProgramTableProps) {
       });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Carregando programas...</p>
+      </div>
+    );
+  }
 
   if (programs.length === 0) {
     return (

@@ -21,69 +21,16 @@ interface ProgramStore {
   getActivePrograms: () => Program[];
 }
 
-const STORAGE_KEY = 'comunika_programs';
-
-const generateId = () => crypto.randomUUID();
-
-const saveToStorage = (programs: Program[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(programs));
-};
-
-const loadFromStorage = (): Program[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-// Mock data
-const mockPrograms: Program[] = [
-  {
-    id: 'prog-1',
-    name: 'Ensino Fundamental',
-    code: 'EF',
-    description: 'Programa regular do ensino fundamental',
-    curriculumMode: 'SUBJECTS',
-    isActive: true,
-    createdAt: new Date('2025-01-15').toISOString(),
-    updatedAt: new Date('2025-01-15').toISOString(),
-  },
-  {
-    id: 'prog-2',
-    name: 'Inglês',
-    code: 'ENG',
-    description: 'Curso de idioma inglês',
-    curriculumMode: 'MODALITIES',
-    isActive: true,
-    createdAt: new Date('2025-01-15').toISOString(),
-    updatedAt: new Date('2025-01-15').toISOString(),
-  },
-  {
-    id: 'prog-3',
-    name: 'Futebol',
-    code: 'FUT',
-    description: 'Escolinha de futebol',
-    curriculumMode: 'MODALITIES',
-    isActive: true,
-    createdAt: new Date('2025-01-15').toISOString(),
-    updatedAt: new Date('2025-01-15').toISOString(),
-  },
-];
-
+// NOTE: This store is deprecated for Programs functionality
+// Programs now use usePrograms hook with Supabase integration
+// This store is kept only for backwards compatibility with other features (Levels, Subjects, Modalities)
 export const useProgramStore = create<ProgramStore>((set, get) => ({
-  programs: [],
+  programs: [], // Empty - Programs now use Supabase via usePrograms hook
   loading: false,
 
   loadPrograms: () => {
-    const programs = loadFromStorage();
-    if (programs.length === 0) {
-      set({ programs: mockPrograms });
-      saveToStorage(mockPrograms);
-    } else {
-      set({ programs });
-    }
+    // No-op - Programs now use Supabase
+    set({ programs: [] });
   },
 
   getProgram: (id: string) => {
@@ -91,56 +38,37 @@ export const useProgramStore = create<ProgramStore>((set, get) => ({
   },
 
   createProgram: async (programData) => {
-    const newProgram: Program = {
-      ...programData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const programs = [...get().programs, newProgram];
-    set({ programs });
-    saveToStorage(programs);
-    return newProgram;
+    // Deprecated - use usePrograms hook instead
+    throw new Error('Use usePrograms hook for program operations');
   },
 
   updateProgram: async (id: string, updates) => {
-    const programs = get().programs.map(p => 
-      p.id === id 
-        ? { ...p, ...updates, updatedAt: new Date().toISOString() }
-        : p
-    );
-    set({ programs });
-    saveToStorage(programs);
+    // Deprecated - use usePrograms hook instead
+    throw new Error('Use usePrograms hook for program operations');
   },
 
   deleteProgram: async (id: string) => {
-    const programs = get().programs.filter(p => p.id !== id);
-    set({ programs });
-    saveToStorage(programs);
+    // Deprecated - use usePrograms hook instead
+    throw new Error('Use usePrograms hook for program operations');
   },
 
   activateProgram: async (id: string) => {
-    await get().updateProgram(id, { isActive: true });
+    // Deprecated - use usePrograms hook instead
+    throw new Error('Use usePrograms hook for program operations');
   },
 
   deactivateProgram: async (id: string) => {
-    await get().updateProgram(id, { isActive: false });
+    // Deprecated - use usePrograms hook instead
+    throw new Error('Use usePrograms hook for program operations');
   },
 
   getFilteredPrograms: (filters: ProgramFilters) => {
-    const programs = get().programs;
-    return programs.filter(p => {
-      if (filters.search && !p.name.toLowerCase().includes(filters.search.toLowerCase()) && 
-          !p.code?.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false;
-      }
-      if (filters.isActive !== undefined && p.isActive !== filters.isActive) return false;
-      return true;
-    });
+    // Empty array - Programs now use Supabase
+    return [];
   },
 
   getActivePrograms: () => {
-    return get().programs.filter(p => p.isActive);
+    // Empty array - Programs now use Supabase
+    return [];
   },
 }));

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useProgramStore } from '@/stores/program-store';
+import { usePrograms } from '@/hooks/usePrograms';
 import { Program } from '@/types/curriculum';
 import {
   Dialog,
@@ -42,7 +42,7 @@ interface ProgramFormModalProps {
 
 export function ProgramFormModal({ open, onOpenChange, program }: ProgramFormModalProps) {
   const { toast } = useToast();
-  const { createProgram, updateProgram, programs } = useProgramStore();
+  const { createProgram, updateProgram, programs } = usePrograms();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
