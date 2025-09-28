@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { useGlobalSubjectStore, GlobalSubject } from '@/stores/global-subject-store';
+import { useSubjects, Subject } from '@/hooks/useSubjects';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  code: z.string().optional(),
-  description: z.string().optional(),
-  isActive: z.boolean(),
+  code: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  is_active: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -22,12 +22,12 @@ type FormData = z.infer<typeof formSchema>;
 interface CatalogoSubjectFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subject: GlobalSubject | null;
+  subject: Subject | null;
 }
 
 export function CatalogoSubjectFormModal({ open, onOpenChange, subject }: CatalogoSubjectFormModalProps) {
   const { toast } = useToast();
-  const { createSubject, updateSubject } = useGlobalSubjectStore();
+  const { createSubject, updateSubject } = useSubjects();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -35,27 +35,28 @@ export function CatalogoSubjectFormModal({ open, onOpenChange, subject }: Catalo
       name: subject?.name || '',
       code: subject?.code || '',
       description: subject?.description || '',
-      isActive: subject?.isActive ?? true,
+      is_active: subject?.is_active ?? true,
     },
   });
 
   const onSubmit = async (data: FormData) => {
     try {
+      const payload = {
+        name: data.name,
+        code: data.code || null,
+        description: data.description || null,
+        is_active: data.is_active,
+      };
+
       if (subject) {
-        await updateSubject(subject.id, data);
-        toast({ title: "Matéria atualizada", description: "A matéria foi atualizada com sucesso." });
+        await updateSubject(subject.id, payload);
       } else {
-        await createSubject(data as any);
-        toast({ title: "Matéria criada", description: "A matéria foi criada com sucesso." });
+        await createSubject(payload);
       }
       onOpenChange(false);
       form.reset();
     } catch (error) {
-      toast({ 
-        title: "Erro", 
-        description: `Não foi possível ${subject ? 'atualizar' : 'criar'} a matéria.`, 
-        variant: "destructive" 
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -111,7 +112,7 @@ export function CatalogoSubjectFormModal({ open, onOpenChange, subject }: Catalo
             
             <FormField
               control={form.control}
-              name="isActive"
+              name="is_active"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">

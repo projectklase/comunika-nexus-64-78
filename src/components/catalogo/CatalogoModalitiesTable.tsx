@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGlobalModalityStore, GlobalModality, GlobalModalityFilters } from '@/stores/global-modality-store';
+import { useModalities, Modality, ModalityFilters } from '@/hooks/useModalities';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,38 +9,31 @@ import { useToast } from '@/hooks/use-toast';
 import { CatalogoModalityFormModal } from './CatalogoModalityFormModal';
 
 interface CatalogoModalitiesTableProps {
-  filters: GlobalModalityFilters;
+  filters: ModalityFilters;
 }
 
 export function CatalogoModalitiesTable({ filters }: CatalogoModalitiesTableProps) {
   const { toast } = useToast();
-  const { getFilteredModalities, deleteModality, activateModality, deactivateModality } = useGlobalModalityStore();
-  const [editingModality, setEditingModality] = useState<GlobalModality | null>(null);
+  const { getFilteredModalities, deleteModality, updateModality } = useModalities();
+  const [editingModality, setEditingModality] = useState<Modality | null>(null);
 
   const modalities = getFilteredModalities(filters);
 
-  const handleDelete = async (modality: GlobalModality) => {
+  const handleDelete = async (modality: Modality) => {
     if (confirm(`Tem certeza que deseja excluir a modalidade "${modality.name}"?`)) {
       try {
         await deleteModality(modality.id);
-        toast({ title: "Modalidade excluída", description: "A modalidade foi excluída com sucesso." });
       } catch (error) {
-        toast({ title: "Erro", description: "Não foi possível excluir a modalidade.", variant: "destructive" });
+        // Error handling is done in the hook
       }
     }
   };
 
-  const handleToggleStatus = async (modality: GlobalModality) => {
+  const handleToggleStatus = async (modality: Modality) => {
     try {
-      if (modality.isActive) {
-        await deactivateModality(modality.id);
-        toast({ title: "Modalidade desativada", description: "A modalidade foi desativada com sucesso." });
-      } else {
-        await activateModality(modality.id);
-        toast({ title: "Modalidade ativada", description: "A modalidade foi ativada com sucesso." });
-      }
+      await updateModality(modality.id, { is_active: !modality.is_active });
     } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível alterar o status da modalidade.", variant: "destructive" });
+      // Error handling is done in the hook
     }
   };
 
@@ -67,8 +60,8 @@ export function CatalogoModalitiesTable({ filters }: CatalogoModalitiesTableProp
               <TableCell>{modality.code || '-'}</TableCell>
               <TableCell className="max-w-xs truncate">{modality.description || '-'}</TableCell>
               <TableCell>
-                <Badge variant={modality.isActive ? 'default' : 'secondary'}>
-                  {modality.isActive ? 'Ativo' : 'Inativo'}
+                <Badge variant={modality.is_active ? 'default' : 'secondary'}>
+                  {modality.is_active ? 'Ativo' : 'Inativo'}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -81,7 +74,7 @@ export function CatalogoModalitiesTable({ filters }: CatalogoModalitiesTableProp
                       <Edit className="mr-2 h-4 w-4" />Editar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleToggleStatus(modality)}>
-                      {modality.isActive ? <><Archive className="mr-2 h-4 w-4" />Desativar</> : <><ArchiveRestore className="mr-2 h-4 w-4" />Ativar</>}
+                      {modality.is_active ? <><Archive className="mr-2 h-4 w-4" />Desativar</> : <><ArchiveRestore className="mr-2 h-4 w-4" />Ativar</>}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDelete(modality)} className="text-destructive">
                       <Trash2 className="mr-2 h-4 w-4" />Excluir

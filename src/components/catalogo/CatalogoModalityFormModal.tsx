@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { useGlobalModalityStore, GlobalModality } from '@/stores/global-modality-store';
+import { useModalities, Modality } from '@/hooks/useModalities';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  code: z.string().optional(),
-  description: z.string().optional(),
-  isActive: z.boolean(),
+  code: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  is_active: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -22,12 +22,12 @@ type FormData = z.infer<typeof formSchema>;
 interface CatalogoModalityFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  modality: GlobalModality | null;
+  modality: Modality | null;
 }
 
 export function CatalogoModalityFormModal({ open, onOpenChange, modality }: CatalogoModalityFormModalProps) {
   const { toast } = useToast();
-  const { createModality, updateModality } = useGlobalModalityStore();
+  const { createModality, updateModality } = useModalities();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -35,27 +35,28 @@ export function CatalogoModalityFormModal({ open, onOpenChange, modality }: Cata
       name: modality?.name || '',
       code: modality?.code || '',
       description: modality?.description || '',
-      isActive: modality?.isActive ?? true,
+      is_active: modality?.is_active ?? true,
     },
   });
 
   const onSubmit = async (data: FormData) => {
     try {
+      const payload = {
+        name: data.name,
+        code: data.code || null,
+        description: data.description || null,
+        is_active: data.is_active,
+      };
+
       if (modality) {
-        await updateModality(modality.id, data);
-        toast({ title: "Modalidade atualizada", description: "A modalidade foi atualizada com sucesso." });
+        await updateModality(modality.id, payload);
       } else {
-        await createModality(data as any);
-        toast({ title: "Modalidade criada", description: "A modalidade foi criada com sucesso." });
+        await createModality(payload);
       }
       onOpenChange(false);
       form.reset();
     } catch (error) {
-      toast({ 
-        title: "Erro", 
-        description: `Não foi possível ${modality ? 'atualizar' : 'criar'} a modalidade.`, 
-        variant: "destructive" 
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -111,7 +112,7 @@ export function CatalogoModalityFormModal({ open, onOpenChange, modality }: Cata
             
             <FormField
               control={form.control}
-              name="isActive"
+              name="is_active"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGlobalSubjectStore, GlobalSubject, GlobalSubjectFilters } from '@/stores/global-subject-store';
+import { useSubjects, Subject, SubjectFilters } from '@/hooks/useSubjects';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,38 +9,31 @@ import { useToast } from '@/hooks/use-toast';
 import { CatalogoSubjectFormModal } from './CatalogoSubjectFormModal';
 
 interface CatalogoSubjectsTableProps {
-  filters: GlobalSubjectFilters;
+  filters: SubjectFilters;
 }
 
 export function CatalogoSubjectsTable({ filters }: CatalogoSubjectsTableProps) {
   const { toast } = useToast();
-  const { getFilteredSubjects, deleteSubject, activateSubject, deactivateSubject } = useGlobalSubjectStore();
-  const [editingSubject, setEditingSubject] = useState<GlobalSubject | null>(null);
+  const { getFilteredSubjects, deleteSubject, updateSubject } = useSubjects();
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
 
   const subjects = getFilteredSubjects(filters);
 
-  const handleDelete = async (subject: GlobalSubject) => {
+  const handleDelete = async (subject: Subject) => {
     if (confirm(`Tem certeza que deseja excluir a matéria "${subject.name}"?`)) {
       try {
         await deleteSubject(subject.id);
-        toast({ title: "Matéria excluída", description: "A matéria foi excluída com sucesso." });
       } catch (error) {
-        toast({ title: "Erro", description: "Não foi possível excluir a matéria.", variant: "destructive" });
+        // Error handling is done in the hook
       }
     }
   };
 
-  const handleToggleStatus = async (subject: GlobalSubject) => {
+  const handleToggleStatus = async (subject: Subject) => {
     try {
-      if (subject.isActive) {
-        await deactivateSubject(subject.id);
-        toast({ title: "Matéria desativada", description: "A matéria foi desativada com sucesso." });
-      } else {
-        await activateSubject(subject.id);
-        toast({ title: "Matéria ativada", description: "A matéria foi ativada com sucesso." });
-      }
+      await updateSubject(subject.id, { is_active: !subject.is_active });
     } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível alterar o status da matéria.", variant: "destructive" });
+      // Error handling is done in the hook
     }
   };
 
@@ -67,8 +60,8 @@ export function CatalogoSubjectsTable({ filters }: CatalogoSubjectsTableProps) {
               <TableCell>{subject.code || '-'}</TableCell>
               <TableCell className="max-w-xs truncate">{subject.description || '-'}</TableCell>
               <TableCell>
-                <Badge variant={subject.isActive ? 'default' : 'secondary'}>
-                  {subject.isActive ? 'Ativo' : 'Inativo'}
+                <Badge variant={subject.is_active ? 'default' : 'secondary'}>
+                  {subject.is_active ? 'Ativo' : 'Inativo'}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -81,7 +74,7 @@ export function CatalogoSubjectsTable({ filters }: CatalogoSubjectsTableProps) {
                       <Edit className="mr-2 h-4 w-4" />Editar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleToggleStatus(subject)}>
-                      {subject.isActive ? <><Archive className="mr-2 h-4 w-4" />Desativar</> : <><ArchiveRestore className="mr-2 h-4 w-4" />Ativar</>}
+                      {subject.is_active ? <><Archive className="mr-2 h-4 w-4" />Desativar</> : <><ArchiveRestore className="mr-2 h-4 w-4" />Ativar</>}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDelete(subject)} className="text-destructive">
                       <Trash2 className="mr-2 h-4 w-4" />Excluir

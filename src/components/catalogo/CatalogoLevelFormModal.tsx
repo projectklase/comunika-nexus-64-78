@@ -7,15 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { useGlobalLevelStore, GlobalLevel } from '@/stores/global-level-store';
+import { useLevels, Level } from '@/hooks/useLevels';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  code: z.string().optional(),
-  description: z.string().optional(),
-  isActive: z.boolean(),
-  order: z.number().min(0).optional(),
+  code: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  is_active: z.boolean(),
+  display_order: z.number().min(0).nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -23,12 +23,12 @@ type FormData = z.infer<typeof formSchema>;
 interface CatalogoLevelFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  level: GlobalLevel | null;
+  level: Level | null;
 }
 
 export function CatalogoLevelFormModal({ open, onOpenChange, level }: CatalogoLevelFormModalProps) {
   const { toast } = useToast();
-  const { createLevel, updateLevel } = useGlobalLevelStore();
+  const { createLevel, updateLevel } = useLevels();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -36,28 +36,30 @@ export function CatalogoLevelFormModal({ open, onOpenChange, level }: CatalogoLe
       name: level?.name || '',
       code: level?.code || '',
       description: level?.description || '',
-      isActive: level?.isActive ?? true,
-      order: level?.order || 0,
+      is_active: level?.is_active ?? true,
+      display_order: level?.display_order || 0,
     },
   });
 
   const onSubmit = async (data: FormData) => {
     try {
+      const payload = {
+        name: data.name,
+        code: data.code || null,
+        description: data.description || null,
+        is_active: data.is_active,
+        display_order: data.display_order || null,
+      };
+
       if (level) {
-        await updateLevel(level.id, data);
-        toast({ title: "Nível atualizado", description: "O nível foi atualizado com sucesso." });
+        await updateLevel(level.id, payload);
       } else {
-        await createLevel(data as any);
-        toast({ title: "Nível criado", description: "O nível foi criado com sucesso." });
+        await createLevel(payload);
       }
       onOpenChange(false);
       form.reset();
     } catch (error) {
-      toast({ 
-        title: "Erro", 
-        description: `Não foi possível ${level ? 'atualizar' : 'criar'} o nível.`, 
-        variant: "destructive" 
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -99,7 +101,7 @@ export function CatalogoLevelFormModal({ open, onOpenChange, level }: CatalogoLe
 
             <FormField
               control={form.control}
-              name="order"
+              name="display_order"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ordem</FormLabel>
@@ -132,7 +134,7 @@ export function CatalogoLevelFormModal({ open, onOpenChange, level }: CatalogoLe
             
             <FormField
               control={form.control}
-              name="isActive"
+              name="is_active"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
