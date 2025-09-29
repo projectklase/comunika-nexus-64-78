@@ -1,11 +1,7 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useClassStore } from '@/stores/class-store';
-import { usePeopleStore } from '@/stores/people-store';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
+import { useClasses } from '@/hooks/useClasses';
 import { useClassExport } from '@/hooks/useClassExport';
 import { ClassFilters } from '@/types/class';
 import { AppLayout } from '@/components/Layout/AppLayout';
@@ -21,11 +17,7 @@ import { Navigate } from 'react-router-dom';
 
 export default function ClassesPage() {
   const { user } = useAuth();
-  const { classes, loadClasses } = useClassStore();
-  const { loadPeople } = usePeopleStore();
-  const { loadLevels } = useGlobalLevelStore();
-  const { loadModalities } = useGlobalModalityStore();
-  const { loadSubjects } = useGlobalSubjectStore();
+  const { loadClasses } = useClasses();
   const {
     exportClassesSummary,
     exportClassesDetailed,
@@ -37,14 +29,6 @@ export default function ClassesPage() {
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-
-  useEffect(() => {
-    loadClasses();
-    loadPeople();
-    loadLevels();
-    loadModalities();
-    loadSubjects();
-  }, [loadClasses, loadPeople, loadLevels, loadModalities, loadSubjects]);
 
   // RBAC: Only secretaria can access
   if (!user || user.role !== 'secretaria') {
