@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useClasses } from '@/hooks/useClasses';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
+import { useSubjects } from '@/hooks/useSubjects';
 import { SchoolClass } from '@/types/class';
 import { hasCatalogs, getMissingCatalogs } from '@/utils/catalog-guards';
 import { saveDraft, restoreDraft, clearDraft } from '@/utils/form-draft';
@@ -87,9 +87,9 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
   
   const { toast } = useToast();
   const { classes, createClass, updateClass } = useClasses();
-  const { levels, loadLevels, getActiveLevels } = useGlobalLevelStore();
-  const { modalities, loadModalities, getActiveModalities } = useGlobalModalityStore();
-  const { subjects, loadSubjects, getActiveSubjects } = useGlobalSubjectStore();
+  const { levels, isLoading: levelsLoading } = useLevels();
+  const { modalities, isLoading: modalitiesLoading } = useModalities();
+  const { subjects, isLoading: subjectsLoading } = useSubjects();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -122,11 +122,12 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
     }
   }, [formValues, open, schoolClass]);
 
-  useEffect(() => {
-    loadLevels();
-    loadModalities();
-    loadSubjects();
-  }, [loadLevels, loadModalities, loadSubjects]);
+  // Filter only active items from Supabase
+  const activeLevels = levels.filter(l => l.is_active);
+  const activeModalities = modalities.filter(m => m.is_active);
+  const activeSubjects = subjects.filter(s => s.is_active);
+  
+  const isLoadingCatalog = levelsLoading || modalitiesLoading || subjectsLoading;
 
   useEffect(() => {
     if (schoolClass) {
@@ -260,13 +261,20 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
     window.open('/secretaria/cadastros/catalogo', '_blank');
   };
 
-  const activeLevels = getActiveLevels();
-  const activeModalities = getActiveModalities();
-  const activeSubjects = getActiveSubjects();
-
   // Verificar se há catálogos suficientes
-  const catalogsReady = hasCatalogs({ levels: true, modalities: true, subjects: true });
-  const missingCatalogs = getMissingCatalogs({ levels: true, modalities: true, subjects: true });
+  const catalogsReady = activeLevels.length > 0 && activeModalities.length > 0 && activeSubjects.length > 0;
+  
+  // Determinar quais catálogos estão faltando
+  const missingCatalogs = [];
+  if (activeLevels.length === 0) {
+    missingCatalogs.push({ type: 'level', label: 'Níveis', description: 'Ex: Fundamental I, Médio' });
+  }
+  if (activeModalities.length === 0) {
+    missingCatalogs.push({ type: 'modality', label: 'Modalidades', description: 'Ex: Regular, Integral' });
+  }
+  if (activeSubjects.length === 0) {
+    missingCatalogs.push({ type: 'subject', label: 'Matérias', description: 'Ex: Matemática, Português' });
+  }
 
   return (
     <>
@@ -278,8 +286,15 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
           </DialogTitle>
         </DialogHeader>
 
+        {/* Show loading state while catalog is being loaded */}
+        {isLoadingCatalog && !schoolClass && (
+          <div className="flex items-center justify-center p-8">
+            <p className="text-muted-foreground">Carregando catálogos...</p>
+          </div>
+        )}
+
         {/* Mostrar empty state se catálogos estão em falta */}
-        {!catalogsReady && !schoolClass && (
+        {!isLoadingCatalog && !catalogsReady && !schoolClass && (
           <CatalogEmptyState
             missingCatalogs={missingCatalogs}
             onCreateLevel={() => setShowLevelSheet(true)}
@@ -290,7 +305,7 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
         )}
 
         {/* Mostrar formulário apenas se catálogos estão prontos ou editando */}
-        {(catalogsReady || schoolClass) && (
+        {!isLoadingCatalog && (catalogsReady || schoolClass) && (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -452,7 +467,15 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
                     <FormLabel>Matérias</FormLabel>
                     <FormControl>
                       <SubjectMultiSelect
-                        subjects={activeSubjects}
+                        subjects={activeSubjects.map(s => ({
+                          id: s.id,
+                          name: s.name,
+                          code: s.code,
+                          description: s.description,
+                          isActive: s.is_active,
+                          createdAt: s.created_at,
+                          updatedAt: s.updated_at,
+                        }))}
                         selectedIds={field.value || []}
                         onSelectionChange={field.onChange}
                       />
