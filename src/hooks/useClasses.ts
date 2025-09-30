@@ -119,6 +119,10 @@ export function useClasses() {
 
   const createClass = async (data: ClassInsert, subjectIds: string[] = []) => {
     try {
+      // Ponto de Verificação 1: Dados sendo enviados
+      alert("Passo 1: Tentando criar a turma. Dados: " + JSON.stringify(data, null, 2));
+      alert("Passo 1b: Matérias selecionadas (IDs): " + JSON.stringify(subjectIds));
+
       // Insert class - using type assertion
       const { data: newClass, error: classError } = await (supabase as any)
         .from('classes')
@@ -126,7 +130,13 @@ export function useClasses() {
         .select()
         .single();
 
-      if (classError) throw classError;
+      // Ponto de Verificação 2: Resposta do Supabase para a tabela classes
+      if (classError) {
+        alert(`Passo 2 - ERRO: O Supabase retornou um erro ao salvar a turma: ${classError.message}`);
+        throw classError;
+      }
+
+      alert("Passo 2 - SUCESSO: Turma principal salva com ID: " + newClass.id);
 
       // Insert class subjects
       if (subjectIds.length > 0) {
@@ -135,12 +145,23 @@ export function useClasses() {
           subject_id: subjectId,
         }));
 
+        alert("Passo 3: Inserindo as matérias na tabela de conexão: " + JSON.stringify(classSubjects, null, 2));
+
         const { error: subjectsError } = await (supabase as any)
           .from('class_subjects')
           .insert(classSubjects);
 
-        if (subjectsError) throw subjectsError;
+        // Ponto de Verificação 3: Resposta do Supabase para class_subjects
+        if (subjectsError) {
+          alert(`Passo 3 - ERRO: O Supabase retornou um erro ao salvar as matérias: ${subjectsError.message}`);
+          throw subjectsError;
+        }
+
+        alert("Passo 3 - SUCESSO: Matérias associadas com sucesso!");
       }
+
+      // Ponto de Verificação 4: Sucesso final
+      alert("Passo 4 - SUCESSO FINAL: Turma e matérias salvas com sucesso!");
 
       toast({
         title: 'Turma criada',
@@ -149,7 +170,8 @@ export function useClasses() {
 
       await loadClasses();
       return newClass;
-    } catch (error) {
+    } catch (error: any) {
+      alert(`ERRO GERAL: Ocorreu um erro inesperado. Mensagem: ${error.message || JSON.stringify(error)}`);
       console.error('Error creating class:', error);
       toast({
         title: 'Erro ao criar turma',
