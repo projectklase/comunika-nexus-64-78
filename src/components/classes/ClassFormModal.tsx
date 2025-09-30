@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useClassStore } from '@/stores/class-store';
+import { useClasses } from '@/hooks/useClasses';
 import { useGlobalLevelStore } from '@/stores/global-level-store';
 import { useGlobalModalityStore } from '@/stores/global-modality-store';
 import { useGlobalSubjectStore } from '@/stores/global-subject-store';
@@ -86,7 +86,7 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
   const [showSubjectSheet, setShowSubjectSheet] = useState(false);
   
   const { toast } = useToast();
-  const { createClass, updateClass, classes } = useClassStore();
+  const { classes, createClass, updateClass } = useClasses();
   const { levels, loadLevels, getActiveLevels } = useGlobalLevelStore();
   const { modalities, loadModalities, getActiveModalities } = useGlobalModalityStore();
   const { subjects, loadSubjects, getActiveSubjects } = useGlobalSubjectStore();
@@ -206,30 +206,31 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
         }
       }
 
+      // Converter camelCase para snake_case para o Supabase
       const classData = {
         name: data.name,
         code: data.code || undefined,
-        daysOfWeek: data.daysOfWeek,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        levelId: data.levelId,
-        modalityId: data.modalityId,
-        subjectIds: data.subjectIds || [],
-        grade: data.grade || undefined,
-        year: data.year,
-        status: data.status,
-        teachers: schoolClass?.teachers || [],
-        students: schoolClass?.students || [],
+        week_days: data.daysOfWeek,
+        start_time: data.startTime,
+        end_time: data.endTime,
+        level_id: data.levelId,
+        modality_id: data.modalityId,
+        main_teacher_id: data.teacherId || undefined,
+        series: data.grade || undefined,
+        year: data.year || currentYear,
+        status: data.status === 'ATIVA' ? 'Ativa' : 'Arquivada',
       };
 
+      const subjectIds = data.subjectIds || [];
+
       if (schoolClass) {
-        await updateClass(schoolClass.id, classData);
+        await updateClass(schoolClass.id, classData, subjectIds);
         toast({
           title: "Turma atualizada",
           description: "A turma foi atualizada com sucesso.",
         });
       } else {
-        await createClass(classData);
+        await createClass(classData, subjectIds);
         toast({
           title: "Turma criada",
           description: "A turma foi criada com sucesso.",

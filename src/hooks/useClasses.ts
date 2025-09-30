@@ -30,7 +30,25 @@ interface ClassUpdate extends Partial<Omit<ClassRow, 'id' | 'created_at' | 'upda
   updated_at?: string;
 }
 
-export interface ClassWithRelations extends ClassRow {
+// Tipo compatível com SchoolClass da aplicação
+export interface ClassWithRelations {
+  id: string;
+  name: string;
+  code?: string;
+  grade?: string;
+  year: number;
+  status: 'ATIVA' | 'ARQUIVADA';
+  levelId?: string;
+  modalityId?: string;
+  subjectIds?: string[];
+  daysOfWeek: string[];
+  startTime: string;
+  endTime: string;
+  teachers: string[];
+  students: string[];
+  createdAt: string;
+  updatedAt: string;
+  // Campos extras para display
   level_name?: string;
   modality_name?: string;
   teacher_name?: string;
@@ -90,9 +108,25 @@ export function useClasses() {
         studentCountMap.set(cs.class_id, (studentCountMap.get(cs.class_id) || 0) + 1);
       });
 
-      // Combine data
+      // Combine data - converter snake_case para camelCase
       const classesWithRelations: ClassWithRelations[] = (classesData || []).map((cls: ClassRow) => ({
-        ...cls,
+        id: cls.id,
+        name: cls.name,
+        code: cls.code || undefined,
+        grade: cls.series || undefined,
+        year: cls.year,
+        status: cls.status === 'Ativa' ? 'ATIVA' : 'ARQUIVADA',
+        levelId: cls.level_id || undefined,
+        modalityId: cls.modality_id || undefined,
+        subjectIds: classSubjectsMap.get(cls.id) || [],
+        daysOfWeek: cls.week_days || [],
+        startTime: cls.start_time || '',
+        endTime: cls.end_time || '',
+        teachers: cls.main_teacher_id ? [cls.main_teacher_id] : [],
+        students: [], // será preenchido com os dados de class_students
+        createdAt: cls.created_at || new Date().toISOString(),
+        updatedAt: cls.updated_at || new Date().toISOString(),
+        // Campos extras
         level_name: cls.level_id ? levelsMap.get(cls.level_id) : undefined,
         modality_name: cls.modality_id ? modalitiesMap.get(cls.modality_id) : undefined,
         teacher_name: cls.main_teacher_id ? teachersMap.get(cls.main_teacher_id) : undefined,
@@ -119,10 +153,6 @@ export function useClasses() {
 
   const createClass = async (data: ClassInsert, subjectIds: string[] = []) => {
     try {
-      // Ponto de Verificação 1: Dados sendo enviados
-      alert("Passo 1: Tentando criar a turma. Dados: " + JSON.stringify(data, null, 2));
-      alert("Passo 1b: Matérias selecionadas (IDs): " + JSON.stringify(subjectIds));
-
       // Insert class - using type assertion
       const { data: newClass, error: classError } = await (supabase as any)
         .from('classes')
@@ -130,13 +160,7 @@ export function useClasses() {
         .select()
         .single();
 
-      // Ponto de Verificação 2: Resposta do Supabase para a tabela classes
-      if (classError) {
-        alert(`Passo 2 - ERRO: O Supabase retornou um erro ao salvar a turma: ${classError.message}`);
-        throw classError;
-      }
-
-      alert("Passo 2 - SUCESSO: Turma principal salva com ID: " + newClass.id);
+      if (classError) throw classError;
 
       // Insert class subjects
       if (subjectIds.length > 0) {
@@ -145,23 +169,12 @@ export function useClasses() {
           subject_id: subjectId,
         }));
 
-        alert("Passo 3: Inserindo as matérias na tabela de conexão: " + JSON.stringify(classSubjects, null, 2));
-
         const { error: subjectsError } = await (supabase as any)
           .from('class_subjects')
           .insert(classSubjects);
 
-        // Ponto de Verificação 3: Resposta do Supabase para class_subjects
-        if (subjectsError) {
-          alert(`Passo 3 - ERRO: O Supabase retornou um erro ao salvar as matérias: ${subjectsError.message}`);
-          throw subjectsError;
-        }
-
-        alert("Passo 3 - SUCESSO: Matérias associadas com sucesso!");
+        if (subjectsError) throw subjectsError;
       }
-
-      // Ponto de Verificação 4: Sucesso final
-      alert("Passo 4 - SUCESSO FINAL: Turma e matérias salvas com sucesso!");
 
       toast({
         title: 'Turma criada',
@@ -171,7 +184,6 @@ export function useClasses() {
       await loadClasses();
       return newClass;
     } catch (error: any) {
-      alert(`ERRO GERAL: Ocorreu um erro inesperado. Mensagem: ${error.message || JSON.stringify(error)}`);
       console.error('Error creating class:', error);
       toast({
         title: 'Erro ao criar turma',
