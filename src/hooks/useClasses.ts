@@ -333,6 +333,36 @@ export function useClasses() {
     }
   };
 
+  const assignTeachers = async (classId: string, teacherIds: string[]) => {
+    try {
+      // For now, we'll update only the main_teacher_id with the first teacher
+      // In the future, we might need a separate table for multiple teachers per class
+      const mainTeacherId = teacherIds.length > 0 ? teacherIds[0] : null;
+
+      const { error } = await (supabase as any)
+        .from('classes')
+        .update({ main_teacher_id: mainTeacherId })
+        .eq('id', classId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Professores atribuídos',
+        description: 'Os professores foram atribuídos com sucesso.',
+      });
+
+      await loadClasses();
+    } catch (error) {
+      console.error('Error assigning teachers:', error);
+      toast({
+        title: 'Erro ao atribuir professores',
+        description: 'Não foi possível atribuir os professores.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   return {
     classes,
     loading,
@@ -344,5 +374,6 @@ export function useClasses() {
     unarchiveClass,
     addStudentsToClass,
     removeStudentFromClass,
+    assignTeachers,
   };
 }

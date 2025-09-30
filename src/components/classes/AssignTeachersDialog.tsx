@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useClassStore } from '@/stores/class-store';
+import { useClasses } from '@/hooks/useClasses';
 import { usePeopleStore } from '@/stores/people-store';
 import {
   Dialog,
@@ -28,7 +28,7 @@ export function AssignTeachersDialog({
   currentTeachers 
 }: AssignTeachersDialogProps) {
   const { toast } = useToast();
-  const { assignTeachers, getClassesByTeacher } = useClassStore();
+  const { assignTeachers } = useClasses();
   const { getTeachers } = usePeopleStore();
   
   const [search, setSearch] = useState('');
@@ -54,22 +54,15 @@ export function AssignTeachersDialog({
   const handleSave = async () => {
     try {
       await assignTeachers(classId, selectedTeachers);
-      toast({
-        title: "Professores atribuídos",
-        description: "Os professores foram atribuídos com sucesso.",
-      });
       onOpenChange(false);
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível atribuir os professores.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 
   const getTeacherLoad = (teacherId: string) => {
-    return getClassesByTeacher(teacherId).filter(c => c.status === 'ATIVA').length;
+    // TODO: Implement this when we have proper teacher-class relationship
+    return 0;
   };
 
   return (

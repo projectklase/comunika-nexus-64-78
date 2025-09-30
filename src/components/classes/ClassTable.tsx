@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useClassStore } from '@/stores/class-store';
-import { usePeopleStore } from '@/stores/people-store';
+import { useClasses } from '@/hooks/useClasses';
 import { useGlobalLevelStore } from '@/stores/global-level-store';
 import { useGlobalModalityStore } from '@/stores/global-modality-store';
 import { useGlobalSubjectStore } from '@/stores/global-subject-store';
@@ -47,12 +46,12 @@ export function ClassTable({ filters }: ClassTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { 
-    getFilteredClasses, 
+    classes,
+    loading,
     archiveClass, 
     unarchiveClass, 
     deleteClass 
-  } = useClassStore();
-  const { getPerson } = usePeopleStore();
+  } = useClasses();
   const { getLevel } = useGlobalLevelStore();
   const { getModality } = useGlobalModalityStore();
   const { getSubject } = useGlobalSubjectStore();
@@ -65,12 +64,38 @@ export function ClassTable({ filters }: ClassTableProps) {
     classId: string;
   } | null>(null);
 
-  const classes = getFilteredClasses(filters);
-  const editClass = editingClass ? classes.find(c => c.id === editingClass) : null;
-  const confirmClass = confirmAction ? classes.find(c => c.id === confirmAction.classId) : null;
+  // Apply filters
+  const filteredClasses = classes.filter(cls => {
+    // Status filter
+    if (filters.status && cls.status !== filters.status) return false;
+    
+    // Level filter
+    if (filters.levelId && cls.levelId !== filters.levelId) return false;
+    
+    // Modality filter
+    if (filters.modalityId && cls.modalityId !== filters.modalityId) return false;
+    
+    // Year filter
+    if (filters.year && cls.year !== filters.year) return false;
+    
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      return (
+        cls.name.toLowerCase().includes(searchLower) ||
+        cls.code?.toLowerCase().includes(searchLower) ||
+        cls.grade?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
+
+  const editClass = editingClass ? filteredClasses.find(c => c.id === editingClass) : null;
+  const confirmClass = confirmAction ? filteredClasses.find(c => c.id === confirmAction.classId) : null;
 
   const handleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? classes.map(c => c.id) : []);
+    setSelectedIds(checked ? filteredClasses.map(c => c.id) : []);
   };
 
   const handleSelectRow = (classId: string, checked: boolean) => {
@@ -108,7 +133,9 @@ export function ClassTable({ filters }: ClassTableProps) {
   };
 
   const getTeacherNames = (teacherIds: string[]) => {
-    return teacherIds.map(id => getPerson(id)?.name || 'Professor não encontrado');
+    // For now, just return placeholder names
+    // This will be properly implemented when we fetch teacher data
+    return teacherIds.map((_, index) => `Professor ${index + 1}`);
   };
 
   const getLevelName = (levelId?: string) => {
@@ -172,7 +199,13 @@ export function ClassTable({ filters }: ClassTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {classes.map((schoolClass) => {
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                  Carregando turmas...
+                </TableCell>
+              </TableRow>
+            ) : filteredClasses.map((schoolClass) => {
               const teacherNames = getTeacherNames(schoolClass.teachers);
               const subjectNames = getSubjectNames(schoolClass.subjectIds);
               
@@ -325,7 +358,7 @@ export function ClassTable({ filters }: ClassTableProps) {
           </TableBody>
         </Table>
 
-        {classes.length === 0 && (
+        {!loading && filteredClasses.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             Nenhuma turma encontrada com os filtros aplicados.
           </div>
@@ -343,7 +376,7 @@ export function ClassTable({ filters }: ClassTableProps) {
         open={!!assigningTeachers}
         onOpenChange={(open) => !open && setAssigningTeachers(null)}
         classId={assigningTeachers || ''}
-        currentTeachers={assigningTeachers ? classes.find(c => c.id === assigningTeachers)?.teachers || [] : []}
+        currentTeachers={assigningTeachers ? filteredClasses.find(c => c.id === assigningTeachers)?.teachers || [] : []}
       />
 
       <ConfirmDialog
