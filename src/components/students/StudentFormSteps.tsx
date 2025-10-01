@@ -28,7 +28,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { usePeopleStore } from '@/stores/people-store';
 import { useClassStore } from '@/stores/class-store';
-import { useProgramStore } from '@/stores/program-store';
+import { usePrograms } from '@/hooks/usePrograms';
 import { useLevels } from '@/hooks/useLevels';
 import { Person, Guardian, StudentExtra } from '@/types/class';
 import { toast } from 'sonner';
@@ -90,7 +90,7 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
 
   const { createStudent, updateStudent, isMinor } = usePeopleStore();
   const { classes } = useClassStore();
-  const { programs } = useProgramStore();
+  const { programs } = usePrograms();
   const { levels } = useLevels();
 
   // Calculate if student is minor based on current form data
@@ -144,7 +144,7 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
       case 2: // Contato & Endereço
         return !!(formData.student?.phones?.some(p => p.trim()));
       case 3: // Acadêmico
-        return !!(formData.student?.programId && formData.student?.levelId);
+        return !!(formData.student?.levelId);
       case 4: // Responsável (only if minor)
         if (!isStudentMinor) return true;
         const guardians = formData.student?.guardians || [];
@@ -487,7 +487,6 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
       case 3:
         const filteredClasses = classes.filter(c => 
           c.status === 'ATIVA' &&
-          (!formData.student?.programId || c.programId === formData.student.programId) &&
           (!formData.student?.levelId || c.levelId === formData.student.levelId)
         );
 
@@ -496,13 +495,13 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
             <div className="space-y-2">
               <Label>Programa *</Label>
               <Select 
-                value={formData.student?.programId || ''} 
+                 value={formData.student?.programId || ''} 
                 onValueChange={(value) => {
                   updateFormData({ 
                     student: { 
                       programId: value,
-                      levelId: undefined, // Reset level when program changes
-                      classIds: [] // Reset classes when program changes
+                      levelId: undefined,
+                      classIds: []
                     } 
                   });
                 }}
@@ -528,7 +527,7 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
                   updateFormData({ 
                     student: { 
                       levelId: value,
-                      classIds: [] // Reset classes when level changes
+                      classIds: []
                     } 
                   });
                 }}
@@ -569,11 +568,11 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
                       </Label>
                     </div>
                   ))
-                ) : (
+                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    {!formData.student?.programId || !formData.student?.levelId
-                      ? 'Selecione programa e nível para ver as turmas'
-                      : 'Nenhuma turma disponível para este programa/nível'
+                    {!formData.student?.levelId
+                      ? 'Selecione um nível para ver as turmas'
+                      : 'Nenhuma turma disponível para este nível'
                     }
                   </p>
                 )}
