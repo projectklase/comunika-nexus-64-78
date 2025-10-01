@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGlobalModalityStore, GlobalModality, GlobalModalityFilters } from '@/stores/global-modality-store';
+import { useModalities } from '@/hooks/useModalities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,13 +9,13 @@ import { CatalogoModalitiesTable } from './CatalogoModalitiesTable';
 import { CatalogoModalityFormModal } from './CatalogoModalityFormModal';
 
 export function CatalogoModalitiesTab() {
-  const [filters, setFilters] = useState<GlobalModalityFilters>({
+  const [filters, setFilters] = useState<{ search: string; isActive?: boolean }>({
     search: '',
     isActive: undefined,
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const updateFilters = (key: keyof GlobalModalityFilters, value: any) => {
+  const updateFilters = (key: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 

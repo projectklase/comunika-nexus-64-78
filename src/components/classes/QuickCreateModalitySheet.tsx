@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
+import { useModalities } from '@/hooks/useModalities';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -45,7 +45,7 @@ export function QuickCreateModalitySheet({
   onModalityCreated 
 }: QuickCreateModalitySheetProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { createModality, modalities } = useGlobalModalityStore();
+  const { createModality, modalities } = useModalities();
   const { toast } = useToast();
 
   const form = useForm<ModalityFormData>({
@@ -64,7 +64,7 @@ export function QuickCreateModalitySheet({
       // Verificar duplicado (case-insensitive)
       const isDuplicate = modalities.some(modality => 
         modality.name.toLowerCase() === data.name.toLowerCase() &&
-        modality.isActive
+        modality.is_active
       );
 
       if (isDuplicate) {
@@ -81,7 +81,7 @@ export function QuickCreateModalitySheet({
       if (data.code && data.code.trim()) {
         const isDuplicateCode = modalities.some(modality => 
           modality.code?.toLowerCase() === data.code?.toLowerCase() &&
-          modality.isActive
+          modality.is_active
         );
 
         if (isDuplicateCode) {
@@ -97,9 +97,9 @@ export function QuickCreateModalitySheet({
 
       const newModality = await createModality({
         name: data.name.trim(),
-        code: data.code?.trim() || undefined,
-        description: data.description?.trim() || undefined,
-        isActive: true,
+        code: data.code?.trim(),
+        description: data.description?.trim(),
+        is_active: true,
       });
 
       toast({

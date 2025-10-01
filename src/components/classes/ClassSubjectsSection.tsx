@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClassSubjectStore } from '@/stores/class-subject-store';
-import { useSubjectStore } from '@/stores/subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { usePeopleStore } from '@/stores/people-store';
 import { SchoolClass } from '@/types/class';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ export function ClassSubjectsSection({ schoolClass }: ClassSubjectsSectionProps)
     assignTeacherToSubject,
     removeSubjectFromClass
   } = useClassSubjectStore();
-  const { subjects, loadSubjects, getSubject } = useSubjectStore();
+  const { subjects } = useSubjects();
   const { people, loadPeople, getPeopleByRole } = usePeopleStore();
   
   const [showAddSubjects, setShowAddSubjects] = useState(false);
@@ -39,9 +39,8 @@ export function ClassSubjectsSection({ schoolClass }: ClassSubjectsSectionProps)
 
   useEffect(() => {
     loadClassSubjects();
-    loadSubjects();
     loadPeople();
-  }, [loadClassSubjects, loadSubjects, loadPeople]);
+  }, [loadClassSubjects, loadPeople]);
 
   const handleAssignTeacher = async (subjectId: string, teacherId: string) => {
     try {
@@ -86,7 +85,7 @@ export function ClassSubjectsSection({ schoolClass }: ClassSubjectsSectionProps)
 
   const getSubjectsByClass = () => {
     return classSubjectsList
-      .map(cs => getSubject(cs.subjectId))
+      .map(cs => subjects.find(s => s.id === cs.subjectId))
       .filter(Boolean)
       .sort((a, b) => a!.name.localeCompare(b!.name));
   };

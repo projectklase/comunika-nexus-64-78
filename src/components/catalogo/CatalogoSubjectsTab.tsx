@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGlobalSubjectStore, GlobalSubject, GlobalSubjectFilters } from '@/stores/global-subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,13 +9,13 @@ import { CatalogoSubjectsTable } from './CatalogoSubjectsTable';
 import { CatalogoSubjectFormModal } from './CatalogoSubjectFormModal';
 
 export function CatalogoSubjectsTab() {
-  const [filters, setFilters] = useState<GlobalSubjectFilters>({
+  const [filters, setFilters] = useState<{ search: string; isActive?: boolean }>({
     search: '',
     isActive: undefined,
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const updateFilters = (key: keyof GlobalSubjectFilters, value: any) => {
+  const updateFilters = (key: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 

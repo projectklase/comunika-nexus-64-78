@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGlobalLevelStore, GlobalLevel, GlobalLevelFilters } from '@/stores/global-level-store';
+import { useLevels } from '@/hooks/useLevels';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,13 +9,13 @@ import { CatalogoLevelsTable } from './CatalogoLevelsTable';
 import { CatalogoLevelFormModal } from './CatalogoLevelFormModal';
 
 export function CatalogoLevelsTab() {
-  const [filters, setFilters] = useState<GlobalLevelFilters>({
+  const [filters, setFilters] = useState<{ search: string; isActive?: boolean }>({
     search: '',
     isActive: undefined,
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const updateFilters = (key: keyof GlobalLevelFilters, value: any) => {
+  const updateFilters = (key: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 

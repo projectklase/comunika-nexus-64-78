@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ClassFilters as ClassFiltersType } from '@/types/class';
 import { usePeopleStore } from '@/stores/people-store';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -25,18 +25,13 @@ const years = [2023, 2024, 2025, 2026];
 
 export function ClassFilters({ filters, onFiltersChange }: ClassFiltersProps) {
   const { getTeachers } = usePeopleStore();
-  const { levels, loadLevels, getActiveLevels } = useGlobalLevelStore();
-  const { modalities, loadModalities, getActiveModalities } = useGlobalModalityStore();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
   const [searchInput, setSearchInput] = useState(filters.search);
   
-  useEffect(() => {
-    loadLevels();
-    loadModalities();
-  }, [loadLevels, loadModalities]);
-  
   const teachers = getTeachers();
-  const activeLevels = getActiveLevels();
-  const activeModalities = getActiveModalities();
+  const activeLevels = levels.filter(l => l.is_active);
+  const activeModalities = modalities.filter(m => m.is_active);
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);

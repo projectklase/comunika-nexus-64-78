@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClasses } from '@/hooks/useClasses';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
+import { useSubjects } from '@/hooks/useSubjects';
 import { ClassFilters } from '@/types/class';
 import {
   Table,
@@ -52,9 +52,9 @@ export function ClassTable({ filters }: ClassTableProps) {
     unarchiveClass, 
     deleteClass 
   } = useClasses();
-  const { getLevel } = useGlobalLevelStore();
-  const { getModality } = useGlobalModalityStore();
-  const { getSubject } = useGlobalSubjectStore();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
+  const { subjects } = useSubjects();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingClass, setEditingClass] = useState<string | null>(null);
@@ -139,16 +139,23 @@ export function ClassTable({ filters }: ClassTableProps) {
   };
 
   const getLevelName = (levelId?: string) => {
-    return levelId ? getLevel(levelId)?.name || 'Nível não encontrado' : '—';
+    if (!levelId) return '—';
+    const level = levels.find(l => l.id === levelId);
+    return level?.name || 'Nível não encontrado';
   };
 
   const getModalityName = (modalityId?: string) => {
-    return modalityId ? getModality(modalityId)?.name || 'Modalidade não encontrada' : '—';
+    if (!modalityId) return '—';
+    const modality = modalities.find(m => m.id === modalityId);
+    return modality?.name || 'Modalidade não encontrada';
   };
 
   const getSubjectNames = (subjectIds?: string[]) => {
     if (!subjectIds || subjectIds.length === 0) return [];
-    return subjectIds.map(id => getSubject(id)?.name || 'Matéria não encontrada');
+    return subjectIds.map(id => {
+      const subject = subjects.find(s => s.id === id);
+      return subject?.name || 'Matéria não encontrada';
+    });
   };
 
   const formatSchedule = (daysOfWeek: string[], startTime: string, endTime: string) => {

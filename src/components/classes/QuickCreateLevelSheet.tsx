@@ -21,8 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useLevelStore } from '@/stores/level-store';
+import { useLevels } from '@/hooks/useLevels';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -47,7 +46,7 @@ export function QuickCreateLevelSheet({
   onLevelCreated 
 }: QuickCreateLevelSheetProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { createLevel, levels } = useGlobalLevelStore();
+  const { createLevel, levels } = useLevels();
   const { toast } = useToast();
 
   const form = useForm<LevelFormData>({
@@ -67,7 +66,7 @@ export function QuickCreateLevelSheet({
       // Verificar duplicado (case-insensitive) 
       const isDuplicate = levels.some(level => 
         level.name.toLowerCase() === data.name.toLowerCase() &&
-        level.isActive
+        level.is_active
       );
 
       if (isDuplicate) {
@@ -82,10 +81,10 @@ export function QuickCreateLevelSheet({
 
       const newLevel = await createLevel({
         name: data.name.trim(),
-        code: data.code?.trim() || undefined,
-        order: data.order,
-        description: data.description?.trim() || undefined,
-        isActive: true,
+        code: data.code?.trim(),
+        display_order: data.order,
+        description: data.description?.trim(),
+        is_active: true,
       });
 
       toast({

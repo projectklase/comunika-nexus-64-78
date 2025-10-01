@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,7 @@ export function QuickCreateSubjectSheet({
 }: QuickCreateSubjectSheetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { createSubject, subjects } = useGlobalSubjectStore();
+  const { createSubject, subjects } = useSubjects();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -62,9 +62,9 @@ export function QuickCreateSubjectSheet({
 
       const newSubject = await createSubject({
         name: data.name,
-        code: data.code || undefined,
-        description: data.description || undefined,
-        isActive: true,
+        code: data.code,
+        description: data.description,
+        is_active: true,
       });
 
       toast({

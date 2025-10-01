@@ -1,28 +1,22 @@
 import { SchoolClass } from '@/types/class';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
 
-// Helper functions for resolving names from global stores
-export function resolveLevelName(id?: string): string {
+// Helper functions for resolving names - now receive the data as parameters
+export function resolveLevelName(id: string | undefined, levels: Array<{ id: string; name: string }>): string {
   if (!id) return 'Sem nível';
-  const { getLevel } = useGlobalLevelStore.getState();
-  const level = getLevel(id);
+  const level = levels.find(l => l.id === id);
   return level?.name || 'Nível não encontrado';
 }
 
-export function resolveModalityName(id?: string): string {
+export function resolveModalityName(id: string | undefined, modalities: Array<{ id: string; name: string }>): string {
   if (!id) return 'Sem modalidade';
-  const { getModality } = useGlobalModalityStore.getState();
-  const modality = getModality(id);
+  const modality = modalities.find(m => m.id === id);
   return modality?.name || 'Modalidade não encontrada';
 }
 
-export function resolveSubjectNames(ids?: string[]): string[] {
+export function resolveSubjectNames(ids: string[] | undefined, subjects: Array<{ id: string; name: string }>): string[] {
   if (!ids || ids.length === 0) return [];
-  const { getSubject } = useGlobalSubjectStore.getState();
   return ids.map(id => {
-    const subject = getSubject(id);
+    const subject = subjects.find(s => s.id === id);
     return subject?.name || 'Matéria não encontrada';
   }).filter(name => name !== 'Matéria não encontrada');
 }
@@ -126,9 +120,13 @@ export function orderClassesBySchedule(classes: SchoolClass[]): SchoolClass[] {
 }
 
 // Generate class display info
-export function getClassDisplayInfo(schoolClass: SchoolClass) {
-  const level = resolveLevelName(schoolClass.levelId);
-  const modality = resolveModalityName(schoolClass.modalityId);
+export function getClassDisplayInfo(
+  schoolClass: SchoolClass,
+  levels: Array<{ id: string; name: string }>,
+  modalities: Array<{ id: string; name: string }>
+) {
+  const level = resolveLevelName(schoolClass.levelId, levels);
+  const modality = resolveModalityName(schoolClass.modalityId, modalities);
   const days = formatDaysOfWeek(schoolClass.daysOfWeek);
   const time = formatClassTime(schoolClass.startTime, schoolClass.endTime);
   

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSubjectStore } from '@/stores/subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useClassSubjectStore } from '@/stores/class-subject-store';
 import { SchoolClass } from '@/types/class';
 import {
@@ -24,7 +24,7 @@ interface AddSubjectsModalProps {
 
 export function AddSubjectsModal({ open, onOpenChange, schoolClass }: AddSubjectsModalProps) {
   const { toast } = useToast();
-  const { subjects, loadSubjects, getActiveSubjectsByProgram } = useSubjectStore();
+  const { subjects } = useSubjects();
   const { getClassSubjects, addSubjectsToClass } = useClassSubjectStore();
   
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
@@ -35,15 +35,12 @@ export function AddSubjectsModal({ open, onOpenChange, schoolClass }: AddSubject
   const existingSubjectIds = classSubjects.map(cs => cs.subjectId);
   
   // Filter subjects by program and exclude already added ones
-  const availableSubjects = getActiveSubjectsByProgram(schoolClass.programId || '')
+  const availableSubjects = subjects
     .filter(subject => 
+      subject.is_active &&
       !existingSubjectIds.includes(subject.id) &&
       (searchTerm === '' || subject.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-
-  useEffect(() => {
-    loadSubjects();
-  }, [loadSubjects]);
 
   useEffect(() => {
     if (!open) {
