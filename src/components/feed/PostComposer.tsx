@@ -127,10 +127,7 @@ export function PostComposer({
   useEffect(() => {
     loadClasses();
     loadPeople();
-    loadLevels();
-    loadModalities();
-    loadSubjects();
-  }, [loadClasses, loadPeople, loadLevels, loadModalities, loadSubjects]);
+  }, [loadClasses, loadPeople]);
   
   const [activeTab, setActiveTab] = useState<PostType>(() => {
     // Priority: initialData -> preferences -> dayFocus hint -> first allowed
@@ -338,8 +335,8 @@ export function PostComposer({
   );
 
   // Get available options for filters
-  const availableLevels = getActiveLevels();
-  const availableModalities = getActiveModalities();
+  const availableLevels = levels.filter(l => l.is_active);
+  const availableModalities = modalities.filter(m => m.is_active);
   
   // Stable dependencies for auto-save to prevent loops
   const formDataRef = useRef({

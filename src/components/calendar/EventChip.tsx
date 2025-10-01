@@ -13,6 +13,9 @@ import { openActivityDrawerFromCalendar, activityDrawerStore, dayDrawerStore } f
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostViews } from '@/stores/post-views.store';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
+import { useSubjects } from '@/hooks/useSubjects';
 
 interface EventChipProps {
   event: CalendarEvent | NormalizedCalendarEvent;
@@ -46,6 +49,9 @@ export function EventChip({ event, onClick, isDraggable = false, className, useU
   const weightsEnabled = useWeightsEnabled();
   const { user } = useAuth();
   const { recordPostView } = usePostViews();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
+  const { subjects } = useSubjects();
   
   // Handle both CalendarEvent and NormalizedCalendarEvent
   const post = 'meta' in event ? {

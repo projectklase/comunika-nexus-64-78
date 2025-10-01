@@ -7,11 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Users, BookOpen, Clock, Plus, BarChart3 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { orderClassesBySchedule, getClassDisplayInfo } from '@/utils/class-helpers';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
 
 export default function ProfessorDashboard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   useStoreInitialization();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
   
   if (isLoading) {
     return (

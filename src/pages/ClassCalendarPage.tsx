@@ -29,11 +29,15 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { getClassDisplayInfo } from '@/utils/class-helpers';
 import { ActivityType } from '@/types/post';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
 
 export function ClassCalendarPage() {
   const { classId } = useParams<{ classId: string }>();
   const { user } = useAuth();
   const { getClass } = useClassStore();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week'>('month');
   const [showScheduled, setShowScheduled] = useState(false);

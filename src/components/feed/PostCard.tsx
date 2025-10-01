@@ -48,6 +48,9 @@ import {
 import { Post, PostType } from '@/types/post';
 import { useClassStore } from '@/stores/class-store';
 import { getClassDisplayInfo, resolveSubjectNames } from '@/utils/class-helpers';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReads } from '@/hooks/useReads';
 import { usePostViews } from '@/stores/post-views.store';
@@ -80,6 +83,9 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
   const { toggleSave, isSaved } = useSaved();
   const { recordPostView } = usePostViews();
   const { archivePost, deletePost, openInCalendar } = usePostActionsUnified();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
+  const { subjects } = useSubjects();
   
   const [isDrawerEntregaOpen, setIsDrawerEntregaOpen] = useState(false);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);

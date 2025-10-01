@@ -10,10 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Users, Calendar, Clock, Plus, FileText, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SchoolClass } from '@/types/class';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
 
 export default function ProfessorClasses() {
   const { user } = useAuth();
   useStoreInitialization();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);

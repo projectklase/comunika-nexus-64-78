@@ -31,6 +31,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostViews } from '@/stores/post-views.store';
 import { useEffect } from 'react';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
+import { useSubjects } from '@/hooks/useSubjects';
 
 interface PostDetailDrawerProps {
   isOpen: boolean;
@@ -44,6 +47,9 @@ export function PostDetailDrawer({ isOpen, onClose, post }: PostDetailDrawerProp
   const { toast } = useToast();
   const { user } = useAuth();
   const { recordPostView } = usePostViews();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
+  const { subjects } = useSubjects();
 
   // Record post view when drawer opens
   useEffect(() => {

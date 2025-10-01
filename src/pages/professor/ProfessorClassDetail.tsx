@@ -7,6 +7,8 @@ import { isProfessorOfClass } from '@/utils/professor-helpers';
 import { getClassDisplayInfo } from '@/utils/class-helpers';
 import { usePosts } from '@/hooks/usePosts';
 import { Button } from '@/components/ui/button';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +38,8 @@ export default function ProfessorClassDetail() {
   useStoreInitialization();
   const { getClass } = useClassStore();
   const { getPerson } = usePeopleStore();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
   
   if (!user || !id) return null;
   
