@@ -1,7 +1,8 @@
 import { SchoolClass } from '@/types/class';
-import { usePeopleStore } from '@/stores/people-store';
 import { useClassStore } from '@/stores/class-store';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -28,7 +29,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from './ConfirmDialog';
-import { useState } from 'react';
 
 interface ClassRosterProps {
   schoolClass: SchoolClass;
@@ -46,8 +46,10 @@ export function ClassRoster({
   onTransferStudents
 }: ClassRosterProps) {
   const { toast } = useToast();
-  const { getPerson } = usePeopleStore();
   const { removeStudent, removeTeacher } = useClassStore();
+  const [students, setStudents] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [confirmRemove, setConfirmRemove] = useState<{
     type: 'student' | 'teacher';
@@ -55,8 +57,36 @@ export function ClassRoster({
     name: string;
   } | null>(null);
 
-  const students = schoolClass.students.map(id => getPerson(id)).filter(Boolean);
-  const teachers = schoolClass.teachers.map(id => getPerson(id)).filter(Boolean);
+  useEffect(() => {
+    loadRosterData();
+  }, [schoolClass.id]);
+
+  const loadRosterData = async () => {
+    setLoading(true);
+    try {
+      // Load students from profiles table filtered by class_id
+      const { data: studentData } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar')
+        .eq('role', 'aluno')
+        .in('id', schoolClass.students);
+      
+      if (studentData) setStudents(studentData);
+
+      // Load teachers
+      const { data: teacherData } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar')
+        .eq('role', 'professor')
+        .in('id', schoolClass.teachers);
+      
+      if (teacherData) setTeachers(teacherData);
+    } catch (error) {
+      console.error('Error loading roster:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSelectAll = (checked: boolean) => {
     onSelectedStudentsChange(checked ? schoolClass.students : []);
@@ -73,6 +103,7 @@ export function ClassRoster({
   const handleRemoveStudent = async (studentId: string) => {
     try {
       await removeStudent(schoolClass.id, studentId);
+      await loadRosterData();
       toast({
         title: "Aluno removido",
         description: "O aluno foi removido da turma com sucesso.",
@@ -104,6 +135,10 @@ export function ClassRoster({
       });
     }
   };
+
+  if (loading) {
+    return <div className="text-center py-8">Carregando...</div>;
+  }
 
   return (
     <div className="space-y-6">

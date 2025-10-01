@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useClassStore } from '@/stores/class-store';
-import { usePeopleStore } from '@/stores/people-store';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,12 +31,23 @@ export function TransferStudentsDialog({
 }: TransferStudentsDialogProps) {
   const { toast } = useToast();
   const { getActiveClasses, transferStudents } = useClassStore();
-  const { getPerson } = usePeopleStore();
-  
   const [targetClassId, setTargetClassId] = useState('');
+  const [students, setStudents] = useState<any[]>([]);
 
   const activeClasses = getActiveClasses().filter(c => c.id !== fromClassId);
-  const students = studentIds.map(id => getPerson(id)).filter(Boolean);
+
+  useEffect(() => {
+    const loadStudents = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', studentIds);
+      
+      if (data) setStudents(data);
+    };
+    
+    if (studentIds.length > 0) loadStudents();
+  }, [studentIds]);
 
   const handleTransfer = async () => {
     if (!targetClassId) {

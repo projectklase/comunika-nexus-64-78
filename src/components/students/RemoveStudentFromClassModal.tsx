@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useClassStore } from '@/stores/class-store';
-import { usePeopleStore } from '@/stores/people-store';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface RemoveStudentFromClassModalProps {
@@ -28,11 +29,22 @@ export function RemoveStudentFromClassModal({
 }: RemoveStudentFromClassModalProps) {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [students, setStudents] = useState<any[]>([]);
 
   const { classes, removeStudent } = useClassStore();
-  const { getPerson } = usePeopleStore();
 
-  const students = studentIds.map(id => getPerson(id)).filter(Boolean);
+  useEffect(() => {
+    const loadStudents = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', studentIds);
+      
+      if (data) setStudents(data);
+    };
+    
+    if (studentIds.length > 0) loadStudents();
+  }, [studentIds]);
   
   // Get classes that have at least one of the selected students
   const relevantClasses = classes.filter(c => 
@@ -57,6 +69,7 @@ export function RemoveStudentFromClassModal({
 
     setLoading(true);
     try {
+      // Update class store directly (no junction table yet)
       for (const classId of selectedClasses) {
         for (const studentId of studentIds) {
           await removeStudent(classId, studentId);
@@ -71,6 +84,7 @@ export function RemoveStudentFromClassModal({
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
+      console.error('Error removing students:', error);
       toast.error('Erro ao remover alunos das turmas');
     } finally {
       setLoading(false);

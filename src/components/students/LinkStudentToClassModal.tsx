@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useClassStore } from '@/stores/class-store';
-import { usePeopleStore } from '@/stores/people-store';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LinkStudentToClassModalProps {
@@ -28,12 +29,23 @@ export function LinkStudentToClassModal({
 }: LinkStudentToClassModalProps) {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [students, setStudents] = useState<any[]>([]);
 
   const { getActiveClasses, addStudents } = useClassStore();
-  const { getPerson } = usePeopleStore();
-
   const activeClasses = getActiveClasses();
-  const students = studentIds.map(id => getPerson(id)).filter(Boolean);
+
+  useEffect(() => {
+    const loadStudents = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', studentIds);
+      
+      if (data) setStudents(data);
+    };
+    
+    if (studentIds.length > 0) loadStudents();
+  }, [studentIds]);
 
   const handleClassToggle = (classId: string, checked: boolean) => {
     if (checked) {
@@ -53,6 +65,7 @@ export function LinkStudentToClassModal({
 
     setLoading(true);
     try {
+      // Update class store directly (class_students table not yet created)
       for (const classId of selectedClasses) {
         await addStudents(classId, studentIds);
       }
@@ -65,6 +78,7 @@ export function LinkStudentToClassModal({
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
+      console.error('Error linking students:', error);
       toast.error('Erro ao vincular alunos às turmas');
     } finally {
       setLoading(false);
