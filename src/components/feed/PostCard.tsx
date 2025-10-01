@@ -193,8 +193,8 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
     if (classIds.length === 1) {
       const cls = getClass(classIds[0]);
       if (cls) {
-        const displayInfo = getClassDisplayInfo(cls);
-        const subjectNames = resolveSubjectNames(cls.subjectIds);
+        const displayInfo = getClassDisplayInfo(cls, levels, modalities);
+        const subjectNames = resolveSubjectNames(cls.subjectIds, subjects);
         const subjectText = subjectNames.length > 0 ? ` (+${subjectNames.length} matérias)` : '';
         
         return (

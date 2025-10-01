@@ -12,7 +12,7 @@ import { useImportHistoryStore } from '@/stores/import-history-store';
 import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
 import { useProgramStore } from '@/stores/program-store';
-import { useLevelStore } from '@/stores/level-store';
+import { useLevels } from '@/hooks/useLevels';
 import { useToast } from '@/hooks/use-toast';
 import { ColumnMapping } from '@/types/import';
 
@@ -58,7 +58,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const { createClass } = useClassStore();
   const { createPerson } = usePeopleStore();
   const { programs } = useProgramStore();
-  const { levels } = useLevelStore();
+  const { levels } = useLevels();
   const { toast } = useToast();
 
   const resetModal = () => {

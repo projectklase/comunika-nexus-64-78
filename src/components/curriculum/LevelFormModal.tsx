@@ -2,9 +2,8 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useLevelStore } from '@/stores/level-store';
+import { useLevels } from '@/hooks/useLevels';
 import { useProgramStore } from '@/stores/program-store';
-import { Level } from '@/types/curriculum';
 import {
   Dialog,
   DialogContent,
@@ -38,12 +37,12 @@ type FormData = z.infer<typeof formSchema>;
 interface LevelFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  level?: Level | null;
+  level?: any;
 }
 
 export function LevelFormModal({ open, onOpenChange, level }: LevelFormModalProps) {
   const { toast } = useToast();
-  const { createLevel, updateLevel } = useLevelStore();
+  const { createLevel, updateLevel } = useLevels();
   const { getActivePrograms } = useProgramStore();
 
   const form = useForm<FormData>({
@@ -62,11 +61,11 @@ export function LevelFormModal({ open, onOpenChange, level }: LevelFormModalProp
   useEffect(() => {
     if (level) {
       form.reset({
-        programId: level.programId,
+        programId: level.program_id || '',
         name: level.name,
-        order: level.order,
+        order: level.display_order,
         description: level.description || '',
-        isActive: level.isActive,
+        isActive: level.is_active,
       });
     } else {
       form.reset({
@@ -82,11 +81,11 @@ export function LevelFormModal({ open, onOpenChange, level }: LevelFormModalProp
   const onSubmit = async (data: FormData) => {
     try {
       const levelData = {
-        programId: data.programId,
         name: data.name,
-        order: data.order,
-        description: data.description || undefined,
-        isActive: data.isActive,
+        code: undefined,
+        display_order: data.order,
+        description: data.description,
+        is_active: data.isActive,
       };
 
       if (level) {

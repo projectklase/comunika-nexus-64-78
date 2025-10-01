@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubjectStore } from '@/stores/subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useProgramStore } from '@/stores/program-store';
-import { SubjectFilters } from '@/types/curriculum';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { SubjectTable } from '@/components/curriculum/SubjectTable';
 import { SubjectFilters as SubjectFiltersComponent } from '@/components/curriculum/SubjectFilters';
@@ -13,17 +12,13 @@ import { Navigate } from 'react-router-dom';
 
 export default function SubjectsPage() {
   const { user } = useAuth();
-  const { loadSubjects } = useSubjectStore();
   const { loadPrograms } = useProgramStore();
-  const [filters, setFilters] = useState<SubjectFilters>({
-    search: '',
-  });
+  const [filters, setFilters] = useState({ search: '' });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    loadSubjects();
     loadPrograms();
-  }, [loadSubjects, loadPrograms]);
+  }, [loadPrograms]);
 
   // RBAC: Only secretaria can access
   if (!user || user.role !== 'secretaria') {

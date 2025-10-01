@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useLevelStore } from '@/stores/level-store';
+import { useLevels } from '@/hooks/useLevels';
 import { useProgramStore } from '@/stores/program-store';
-import { Level, LevelFilters } from '@/types/curriculum';
 import { LevelFormModal } from './LevelFormModal';
 import {
   Table,
@@ -23,23 +22,18 @@ import { MoreHorizontal, Edit, Archive, ArchiveRestore, Trash2 } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 
 interface LevelTableProps {
-  filters: LevelFilters;
+  filters: { search?: string; isActive?: boolean };
 }
 
 export function LevelTable({ filters }: LevelTableProps) {
   const { toast } = useToast();
-  const { 
-    getFilteredLevels, 
-    deleteLevel, 
-    activateLevel, 
-    deactivateLevel 
-  } = useLevelStore();
+  const { levels, getFilteredLevels, deleteLevel, updateLevel } = useLevels();
   const { getProgram } = useProgramStore();
-  const [editingLevel, setEditingLevel] = useState<Level | null>(null);
+  const [editingLevel, setEditingLevel] = useState<any>(null);
 
-  const levels = getFilteredLevels(filters);
+  const filteredLevels = getFilteredLevels(filters);
 
-  const handleDelete = async (level: Level) => {
+  const handleDelete = async (level: any) => {
     if (confirm(`Tem certeza que deseja excluir o nível "${level.name}"?`)) {
       try {
         await deleteLevel(level.id);
@@ -57,21 +51,13 @@ export function LevelTable({ filters }: LevelTableProps) {
     }
   };
 
-  const handleToggleStatus = async (level: Level) => {
+  const handleToggleStatus = async (level: any) => {
     try {
-      if (level.isActive) {
-        await deactivateLevel(level.id);
-        toast({
-          title: "Nível desativado",
-          description: "O nível foi desativado com sucesso.",
-        });
-      } else {
-        await activateLevel(level.id);
-        toast({
-          title: "Nível ativado",
-          description: "O nível foi ativado com sucesso.",
-        });
-      }
+      await updateLevel(level.id, { is_active: !level.is_active });
+      toast({
+        title: level.is_active ? "Nível desativado" : "Nível ativado",
+        description: level.is_active ? "O nível foi desativado com sucesso." : "O nível foi ativado com sucesso.",
+      });
     } catch (error) {
       toast({
         title: "Erro",
@@ -81,7 +67,7 @@ export function LevelTable({ filters }: LevelTableProps) {
     }
   };
 
-  if (levels.length === 0) {
+  if (filteredLevels.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">Nenhum nível encontrado.</p>
@@ -103,19 +89,19 @@ export function LevelTable({ filters }: LevelTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {levels.map((level) => {
-            const program = getProgram(level.programId);
+          {filteredLevels.map((level) => {
+            const program = getProgram(level.id);
             return (
               <TableRow key={level.id}>
                 <TableCell className="font-medium">{level.name}</TableCell>
                 <TableCell>{program?.name || 'N/A'}</TableCell>
-                <TableCell>{level.order || '-'}</TableCell>
+                <TableCell>{level.display_order || '-'}</TableCell>
                 <TableCell className="max-w-xs truncate">
                   {level.description || '-'}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={level.isActive ? 'default' : 'secondary'}>
-                    {level.isActive ? 'Ativo' : 'Inativo'}
+                  <Badge variant={level.is_active ? 'default' : 'secondary'}>
+                    {level.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -131,7 +117,7 @@ export function LevelTable({ filters }: LevelTableProps) {
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleToggleStatus(level)}>
-                        {level.isActive ? (
+                        {level.is_active ? (
                           <>
                             <Archive className="mr-2 h-4 w-4" />
                             Desativar

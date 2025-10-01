@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { GlobalSubject } from '@/stores/global-subject-store';
+
+type Subject = { 
+  id: string; 
+  name: string; 
+  code?: string | null; 
+};
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -12,7 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { X, ChevronDown } from 'lucide-react';
 
 interface SubjectMultiSelectProps {
-  subjects: GlobalSubject[];
+  subjects: Subject[];
   selectedIds: string[];
   onSelectionChange: (selectedIds: string[]) => void;
 }

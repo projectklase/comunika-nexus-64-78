@@ -93,8 +93,8 @@ export function EventChip({ event, onClick, isDraggable = false, className, useU
         const cls = getClass(classId);
         if (!cls) return `Turma não encontrada (${String(classId || 'N/A')})`;
         
-        const displayInfo = getClassDisplayInfo(cls);
-        const subjectNames = resolveSubjectNames(cls.subjectIds);
+        const displayInfo = getClassDisplayInfo(cls, levels, modalities);
+        const subjectNames = resolveSubjectNames(cls.subjectIds, subjects);
         const subjectText = subjectNames.length > 0 ? ` (+${subjectNames.length} matérias)` : '';
         
         // Ensure all values are strings

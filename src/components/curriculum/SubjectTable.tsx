@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useSubjectStore } from '@/stores/subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useProgramStore } from '@/stores/program-store';
-import { Subject, SubjectFilters } from '@/types/curriculum';
 import { SubjectFormModal } from './SubjectFormModal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -11,18 +10,18 @@ import { MoreHorizontal, Edit, Archive, ArchiveRestore, Trash2 } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 
 interface SubjectTableProps {
-  filters: SubjectFilters;
+  filters: { search?: string; isActive?: boolean };
 }
 
 export function SubjectTable({ filters }: SubjectTableProps) {
   const { toast } = useToast();
-  const { getFilteredSubjects, deleteSubject, activateSubject, deactivateSubject } = useSubjectStore();
+  const { subjects, getFilteredSubjects, deleteSubject, updateSubject } = useSubjects();
   const { getProgram } = useProgramStore();
-  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [editingSubject, setEditingSubject] = useState<any>(null);
 
-  const subjects = getFilteredSubjects(filters);
+  const filtered = getFilteredSubjects(filters);
 
-  const handleDelete = async (subject: Subject) => {
+  const handleDelete = async (subject: any) => {
     if (confirm(`Tem certeza que deseja excluir a matéria "${subject.name}"?`)) {
       try {
         await deleteSubject(subject.id);
@@ -33,21 +32,16 @@ export function SubjectTable({ filters }: SubjectTableProps) {
     }
   };
 
-  const handleToggleStatus = async (subject: Subject) => {
+  const handleToggleStatus = async (subject: any) => {
     try {
-      if (subject.isActive) {
-        await deactivateSubject(subject.id);
-        toast({ title: "Matéria desativada", description: "A matéria foi desativada com sucesso." });
-      } else {
-        await activateSubject(subject.id);
-        toast({ title: "Matéria ativada", description: "A matéria foi ativada com sucesso." });
-      }
+      await updateSubject(subject.id, { is_active: !subject.is_active });
+      toast({ title: subject.is_active ? "Matéria desativada" : "Matéria ativada", description: subject.is_active ? "A matéria foi desativada com sucesso." : "A matéria foi ativada com sucesso." });
     } catch (error) {
       toast({ title: "Erro", description: "Não foi possível alterar o status da matéria.", variant: "destructive" });
     }
   };
 
-  if (subjects.length === 0) {
+  if (filtered.length === 0) {
     return <div className="text-center py-8"><p className="text-muted-foreground">Nenhuma matéria encontrada.</p></div>;
   }
 
@@ -65,8 +59,8 @@ export function SubjectTable({ filters }: SubjectTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {subjects.map((subject) => {
-            const program = getProgram(subject.programId);
+          {filtered.map((subject) => {
+            const program = getProgram(subject.id);
             return (
               <TableRow key={subject.id}>
                 <TableCell className="font-medium">{subject.name}</TableCell>
@@ -74,8 +68,8 @@ export function SubjectTable({ filters }: SubjectTableProps) {
                 <TableCell>{subject.code || '-'}</TableCell>
                 <TableCell className="max-w-xs truncate">{subject.description || '-'}</TableCell>
                 <TableCell>
-                  <Badge variant={subject.isActive ? 'default' : 'secondary'}>
-                    {subject.isActive ? 'Ativo' : 'Inativo'}
+                  <Badge variant={subject.is_active ? 'default' : 'secondary'}>
+                    {subject.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -88,7 +82,7 @@ export function SubjectTable({ filters }: SubjectTableProps) {
                         <Edit className="mr-2 h-4 w-4" />Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleToggleStatus(subject)}>
-                        {subject.isActive ? <><Archive className="mr-2 h-4 w-4" />Desativar</> : <><ArchiveRestore className="mr-2 h-4 w-4" />Ativar</>}
+                        {subject.is_active ? <><Archive className="mr-2 h-4 w-4" />Desativar</> : <><ArchiveRestore className="mr-2 h-4 w-4" />Ativar</>}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDelete(subject)} className="text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" />Excluir

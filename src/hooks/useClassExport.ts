@@ -1,8 +1,9 @@
-
 import { useCallback } from 'react';
 import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
-import { useSubjectStore } from '@/stores/subject-store';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useClassSubjectStore } from '@/stores/class-subject-store';
 import { ClassFilters } from '@/types/class';
 import { toCsv, downloadCsv, formatDateTime } from '@/utils/csv';
@@ -12,7 +13,9 @@ import { resolveLevelName, resolveModalityName, resolveSubjectNames, formatDaysO
 export const useClassExport = () => {
   const { getFilteredClasses } = useClassStore();
   const { people, getPerson } = usePeopleStore();
-  const { subjects, getSubject } = useSubjectStore();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
+  const { subjects } = useSubjects();
   const { getClassSubjects } = useClassSubjectStore();
   const { toast } = useToast();
 
@@ -42,15 +45,15 @@ export const useClassExport = () => {
     const rows = classes.map(schoolClass => {
       const classSubjects = getClassSubjects(schoolClass.id);
       
-      const subjectNames = resolveSubjectNames(schoolClass.subjectIds);
+      const subjectNames = resolveSubjectNames(schoolClass.subjectIds, subjects);
       
       return {
         class_id: schoolClass.id,
         turma: schoolClass.name,
         codigo: schoolClass.code || '',
         programa: schoolClass.programId || '',
-        level: resolveLevelName(schoolClass.levelId),
-        modality: resolveModalityName(schoolClass.modalityId),
+        level: resolveLevelName(schoolClass.levelId, levels),
+        modality: resolveModalityName(schoolClass.modalityId, modalities),
         subjects: subjectNames.join(', '),
         days_of_week: formatDaysOfWeek(schoolClass.daysOfWeek),
         time: formatClassTime(schoolClass.startTime, schoolClass.endTime),
@@ -76,7 +79,7 @@ export const useClassExport = () => {
     
     downloadCsv(filename, csv);
     toast({ title: "Arquivo gerado com filtros aplicados" });
-  }, [getFilteredClasses, createMaps, getClassSubjects, toast]);
+  }, [getFilteredClasses, createMaps, getClassSubjects, toast, levels, modalities, subjects]);
 
   const exportClassesDetailed = useCallback((filters: ClassFilters) => {
     const classes = getFilteredClasses(filters);
@@ -89,15 +92,15 @@ export const useClassExport = () => {
       
       if (classSubjects.length === 0) {
         // Se não há matérias, criar uma linha básica
-        const subjectNames = resolveSubjectNames(schoolClass.subjectIds);
+        const subjectNames = resolveSubjectNames(schoolClass.subjectIds, subjects);
         
         rows.push({
           class_id: schoolClass.id,
           turma: schoolClass.name,
           codigo: schoolClass.code || '',
           programa: schoolClass.programId || '',
-          level: resolveLevelName(schoolClass.levelId),
-          modality: resolveModalityName(schoolClass.modalityId),
+          level: resolveLevelName(schoolClass.levelId, levels),
+          modality: resolveModalityName(schoolClass.modalityId, modalities),
           subjects: subjectNames.join(', '),
           days_of_week: formatDaysOfWeek(schoolClass.daysOfWeek),
           time: formatClassTime(schoolClass.startTime, schoolClass.endTime),
@@ -110,10 +113,10 @@ export const useClassExport = () => {
         });
       } else {
         // Uma linha por matéria
-        const subjectNames = resolveSubjectNames(schoolClass.subjectIds);
+        const subjectNames = resolveSubjectNames(schoolClass.subjectIds, subjects);
         
         classSubjects.forEach(classSubject => {
-          const subject = getSubject(classSubject.subjectId);
+          const subject = subjects.find(s => s.id === classSubject.subjectId);
           const teacherName = classSubject.teacherId ? 
             teachersMap.get(classSubject.teacherId) || '' : '';
           
@@ -122,8 +125,8 @@ export const useClassExport = () => {
             turma: schoolClass.name,
             codigo: schoolClass.code || '',
             programa: schoolClass.programId || '',
-            level: resolveLevelName(schoolClass.levelId),
-            modality: resolveModalityName(schoolClass.modalityId),
+            level: resolveLevelName(schoolClass.levelId, levels),
+            modality: resolveModalityName(schoolClass.modalityId, modalities),
             subjects: subjectNames.join(', '),
             days_of_week: formatDaysOfWeek(schoolClass.daysOfWeek),
             time: formatClassTime(schoolClass.startTime, schoolClass.endTime),
@@ -149,7 +152,7 @@ export const useClassExport = () => {
     
     downloadCsv(filename, csv);
     toast({ title: "Arquivo gerado com filtros aplicados" });
-  }, [getFilteredClasses, createMaps, getClassSubjects, getSubject, toast]);
+  }, [getFilteredClasses, createMaps, getClassSubjects, toast, levels, modalities, subjects]);
 
   const exportStudentsByClass = useCallback((filters: ClassFilters) => {
     const classes = getFilteredClasses(filters);

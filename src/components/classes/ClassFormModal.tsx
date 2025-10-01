@@ -7,7 +7,7 @@ import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
 import { useSubjects } from '@/hooks/useSubjects';
 import { SchoolClass } from '@/types/class';
-import { hasCatalogs, getMissingCatalogs } from '@/utils/catalog-guards';
+import { useCatalogGuards } from '@/utils/catalog-guards';
 import { saveDraft, restoreDraft, clearDraft } from '@/utils/form-draft';
 import { CatalogEmptyState } from './CatalogEmptyState';
 import { QuickCreateLevelSheet } from './QuickCreateLevelSheet';
@@ -87,6 +87,9 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
   
   const { toast } = useToast();
   const { classes, createClass, updateClass } = useClasses();
+  // Use catalog guards hook
+  const { hasCatalogs, getMissingCatalogs } = useCatalogGuards();
+  
   const { levels, isLoading: levelsLoading } = useLevels();
   const { modalities, isLoading: modalitiesLoading } = useModalities();
   const { subjects, isLoading: subjectsLoading } = useSubjects();

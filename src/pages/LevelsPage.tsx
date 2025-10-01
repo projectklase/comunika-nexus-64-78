@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLevelStore } from '@/stores/level-store';
+import { useLevels } from '@/hooks/useLevels';
 import { useProgramStore } from '@/stores/program-store';
-import { LevelFilters } from '@/types/curriculum';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { LevelTable } from '@/components/curriculum/LevelTable';
 import { LevelFilters as LevelFiltersComponent } from '@/components/curriculum/LevelFilters';
@@ -13,17 +12,13 @@ import { Navigate } from 'react-router-dom';
 
 export default function LevelsPage() {
   const { user } = useAuth();
-  const { loadLevels } = useLevelStore();
   const { loadPrograms } = useProgramStore();
-  const [filters, setFilters] = useState<LevelFilters>({
-    search: '',
-  });
+  const [filters, setFilters] = useState({ search: '' });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    loadLevels();
     loadPrograms();
-  }, [loadLevels, loadPrograms]);
+  }, [loadPrograms]);
 
   // RBAC: Only secretaria can access
   if (!user || user.role !== 'secretaria') {

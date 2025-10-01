@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useModalityStore } from '@/stores/modality-store';
+import { useModalities } from '@/hooks/useModalities';
 import { useProgramStore } from '@/stores/program-store';
-import { ModalityFilters } from '@/types/curriculum';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { ModalityTable } from '@/components/curriculum/ModalityTable';
 import { ModalityFilters as ModalityFiltersComponent } from '@/components/curriculum/ModalityFilters';
@@ -13,17 +12,13 @@ import { Navigate } from 'react-router-dom';
 
 export default function ModalitiesPage() {
   const { user } = useAuth();
-  const { loadModalities } = useModalityStore();
   const { loadPrograms } = useProgramStore();
-  const [filters, setFilters] = useState<ModalityFilters>({
-    search: '',
-  });
+  const [filters, setFilters] = useState({ search: '' });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    loadModalities();
     loadPrograms();
-  }, [loadModalities, loadPrograms]);
+  }, [loadPrograms]);
 
   // RBAC: Only secretaria can access
   if (!user || user.role !== 'secretaria') {

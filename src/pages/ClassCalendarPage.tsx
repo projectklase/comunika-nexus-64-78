@@ -43,7 +43,7 @@ export function ClassCalendarPage() {
   });
 
   const classData = classId ? getClass(classId) : null;
-  const classInfo = classData ? getClassDisplayInfo(classData) : null;
+  const classInfo = classData ? getClassDisplayInfo(classData, levels, modalities) : null;
 
   // Get data for the calendar
   const startDate = view === 'month' 

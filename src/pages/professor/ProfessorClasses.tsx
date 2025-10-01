@@ -173,7 +173,7 @@ export default function ProfessorClasses() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClasses.map((schoolClass) => {
-            const info = getClassDisplayInfo(schoolClass);
+            const info = getClassDisplayInfo(schoolClass, levels, modalities);
             
             return (
               <Card key={schoolClass.id} className="hover:shadow-md transition-shadow">

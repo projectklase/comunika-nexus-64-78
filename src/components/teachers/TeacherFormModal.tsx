@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useTeachers } from '@/hooks/useTeachers';
 import { useClassStore } from '@/stores/class-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { Person, TeacherExtra } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -113,7 +113,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
-  const { subjects } = useGlobalSubjectStore();
+  const { subjects } = useSubjects();
   const { toast } = useToast();
 
   const form = useForm<TeacherFormData>({

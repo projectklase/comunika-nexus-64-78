@@ -1,28 +1,14 @@
-import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CatalogoLevelsTab } from '@/components/catalogo/CatalogoLevelsTab';
 import { CatalogoSubjectsTab } from '@/components/catalogo/CatalogoSubjectsTab';
 import { CatalogoModalitiesTab } from '@/components/catalogo/CatalogoModalitiesTab';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
 import { SchoolEvaluationTab } from '@/components/settings/SchoolEvaluationTab';
 import { Layers, BookOpen, Target, Settings } from 'lucide-react';
 
 export default function CatalogoPage() {
   const { user } = useAuth();
-  const { loadLevels } = useGlobalLevelStore();
-  const { loadSubjects } = useGlobalSubjectStore();
-  const { loadModalities } = useGlobalModalityStore();
-
-  useEffect(() => {
-    loadLevels();
-    loadSubjects();
-    loadModalities();
-  }, [loadLevels, loadSubjects, loadModalities]);
 
   // RBAC: Only secretaria can access
   if (!user || user.role !== 'secretaria') {

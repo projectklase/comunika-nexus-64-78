@@ -9,10 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useModalityStore } from '@/stores/modality-store';
+import { useModalities } from '@/hooks/useModalities';
 import { useProgramStore } from '@/stores/program-store';
 import { useToast } from '@/hooks/use-toast';
-import { Modality } from '@/types/curriculum';
 
 const modalitySchema = z.object({
   programId: z.string().min(1, 'Programa é obrigatório'),
@@ -27,11 +26,11 @@ type ModalityFormData = z.infer<typeof modalitySchema>;
 interface ModalityFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  modality?: Modality | null;
+  modality?: any;
 }
 
 export function ModalityFormModal({ open, onOpenChange, modality }: ModalityFormModalProps) {
-  const { createModality, updateModality } = useModalityStore();
+  const { createModality, updateModality } = useModalities();
   const { getActivePrograms } = useProgramStore();
   const { toast } = useToast();
   const programs = getActivePrograms();
@@ -50,11 +49,11 @@ export function ModalityFormModal({ open, onOpenChange, modality }: ModalityForm
   useEffect(() => {
     if (modality) {
       form.reset({
-        programId: modality.programId,
+        programId: modality.program_id || '',
         name: modality.name,
         code: modality.code || '',
         description: modality.description || '',
-        isActive: modality.isActive,
+        isActive: modality.is_active,
       });
     } else {
       form.reset({
@@ -74,11 +73,10 @@ export function ModalityFormModal({ open, onOpenChange, modality }: ModalityForm
         toast({ title: 'Modalidade atualizada com sucesso!' });
       } else {
         await createModality({
-          programId: data.programId,
           name: data.name,
-          code: data.code || undefined,
-          description: data.description || undefined,
-          isActive: data.isActive,
+          code: data.code,
+          description: data.description,
+          is_active: data.isActive,
         });
         toast({ title: 'Modalidade criada com sucesso!' });
       }

@@ -67,7 +67,7 @@ export default function ProfessorClassDetail() {
     );
   }
   
-  const info = getClassDisplayInfo(schoolClass);
+  const info = getClassDisplayInfo(schoolClass, levels, modalities);
   
   // Buscar atividades desta turma (todos os tipos)
   const allClassActivities = usePosts({ classId: schoolClass.id }).filter(post => 

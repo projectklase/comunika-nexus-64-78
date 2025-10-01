@@ -123,7 +123,7 @@ export default function ProfessorDashboard() {
             ) : (
               <div className="space-y-3">
                 {orderedClasses.slice(0, 5).map((schoolClass) => {
-                  const info = getClassDisplayInfo(schoolClass);
+                  const info = getClassDisplayInfo(schoolClass, levels, modalities);
                   return (
                     <div key={schoolClass.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div>

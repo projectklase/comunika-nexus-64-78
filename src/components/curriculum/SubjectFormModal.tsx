@@ -2,9 +2,8 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useSubjectStore } from '@/stores/subject-store';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useProgramStore } from '@/stores/program-store';
-import { Subject } from '@/types/curriculum';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -26,12 +25,12 @@ type FormData = z.infer<typeof formSchema>;
 interface SubjectFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subject?: Subject | null;
+  subject?: any;
 }
 
 export function SubjectFormModal({ open, onOpenChange, subject }: SubjectFormModalProps) {
   const { toast } = useToast();
-  const { createSubject, updateSubject, subjects } = useSubjectStore();
+  const { createSubject, updateSubject, subjects } = useSubjects();
   const { getActivePrograms } = useProgramStore();
 
   const form = useForm<FormData>({
@@ -44,11 +43,11 @@ export function SubjectFormModal({ open, onOpenChange, subject }: SubjectFormMod
   useEffect(() => {
     if (subject) {
       form.reset({
-        programId: subject.programId,
+        programId: subject.program_id || '',
         name: subject.name,
         code: subject.code || '',
         description: subject.description || '',
-        isActive: subject.isActive,
+        isActive: subject.is_active,
       });
     } else {
       form.reset({ programId: '', name: '', code: '', description: '', isActive: true });
@@ -66,11 +65,10 @@ export function SubjectFormModal({ open, onOpenChange, subject }: SubjectFormMod
       }
 
       const subjectData = {
-        programId: data.programId,
         name: data.name,
-        code: data.code || undefined,
-        description: data.description || undefined,
-        isActive: data.isActive,
+        code: data.code,
+        description: data.description,
+        is_active: data.isActive,
       };
 
       if (subject) {

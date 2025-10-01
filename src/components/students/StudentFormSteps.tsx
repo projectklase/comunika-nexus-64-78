@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePeopleStore } from '@/stores/people-store';
 import { useClassStore } from '@/stores/class-store';
 import { useProgramStore } from '@/stores/program-store';
-import { useLevelStore } from '@/stores/level-store';
+import { useLevels } from '@/hooks/useLevels';
 import { Person, Guardian, StudentExtra } from '@/types/class';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -91,7 +91,7 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
   const { createStudent, updateStudent, isMinor } = usePeopleStore();
   const { classes } = useClassStore();
   const { programs } = useProgramStore();
-  const { levels } = useLevelStore();
+  const { levels } = useLevels();
 
   // Calculate if student is minor based on current form data
   const isStudentMinor = formData.student?.dob ? 
@@ -538,9 +538,7 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
                   <SelectValue placeholder="Selecione um nível" />
                 </SelectTrigger>
                 <SelectContent>
-                  {levels
-                    .filter(level => level.programId === formData.student?.programId)
-                    .map((level) => (
+                  {levels.map((level) => (
                       <SelectItem key={level.id} value={level.id}>
                         {level.name}
                       </SelectItem>

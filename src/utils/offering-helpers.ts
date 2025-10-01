@@ -1,60 +1,15 @@
 import { OfferingRef, OfferingKind } from '@/types/offering';
-import { useClassStore } from '@/stores/class-store';
-import { useClassSubjectStore } from '@/stores/class-subject-store';
-import { useSubjectStore } from '@/stores/subject-store';
-import { useModalityStore } from '@/stores/modality-store';
-import { useProgramStore } from '@/stores/program-store';
+
+// Note: These helpers are kept simple for now
+// They will be refactored in Phase 4 when we consolidate class management
 
 export function getOfferingsByClass(classId: string): OfferingRef[] {
-  const { getClass } = useClassStore.getState();
-  const { getClassSubjects } = useClassSubjectStore.getState();
-  const { getSubject } = useSubjectStore.getState();
-  const { getModality } = useModalityStore.getState();
-  const { getProgram } = useProgramStore.getState();
-
-  const schoolClass = getClass(classId);
-  if (!schoolClass || !schoolClass.programId) return [];
-
-  const program = getProgram(schoolClass.programId);
-  if (!program) return [];
-
-  if (program.curriculumMode === 'MODALITIES' && schoolClass.modalityId) {
-    const modality = getModality(schoolClass.modalityId);
-    if (modality) {
-      return [{
-        kind: 'MODALITY' as OfferingKind,
-        id: modality.id,
-        label: modality.name,
-        programId: program.id,
-      }];
-    }
-  } else {
-    // SUBJECTS mode
-    const classSubjects = getClassSubjects(classId);
-    return classSubjects.map(cs => {
-      const subject = getSubject(cs.subjectId);
-      return {
-        kind: 'SUBJECT' as OfferingKind,
-        id: cs.subjectId,
-        label: subject?.name || 'Matéria não encontrada',
-        programId: program.id,
-      };
-    }).filter(ref => ref.label !== 'Matéria não encontrada');
-  }
-
+  // TODO: Implement after Phase 4 consolidation
   return [];
 }
 
 export function getOfferingLabel(ref: OfferingRef): string {
-  if (ref.kind === 'SUBJECT') {
-    const { getSubject } = useSubjectStore.getState();
-    const subject = getSubject(ref.id);
-    return subject?.name || ref.label;
-  } else {
-    const { getModality } = useModalityStore.getState();
-    const modality = getModality(ref.id);
-    return modality?.name || ref.label;
-  }
+  return ref.label;
 }
 
 export function getClassOfferingsSummary(classId: string): string {

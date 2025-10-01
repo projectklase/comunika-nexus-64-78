@@ -144,8 +144,8 @@ export function PostDetailDrawer({ isOpen, onClose, post }: PostDetailDrawerProp
     if (classIds.length === 1) {
       const cls = getClass(classIds[0]);
       if (cls) {
-        const displayInfo = getClassDisplayInfo(cls);
-        const subjectNames = resolveSubjectNames(cls.subjectIds);
+        const displayInfo = getClassDisplayInfo(cls, levels, modalities);
+        const subjectNames = resolveSubjectNames(cls.subjectIds, subjects);
         
         return (
           <div className="space-y-1">

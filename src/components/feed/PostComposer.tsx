@@ -25,9 +25,9 @@ import { AttachmentUploader, Attachment } from '@/components/files/AttachmentUpl
 import { PostAttachment } from '@/types/post';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClassStore } from '@/stores/class-store';
-import { useGlobalLevelStore } from '@/stores/global-level-store';
-import { useGlobalModalityStore } from '@/stores/global-modality-store';
-import { useGlobalSubjectStore } from '@/stores/global-subject-store';
+import { useLevels } from '@/hooks/useLevels';
+import { useModalities } from '@/hooks/useModalities';
+import { useSubjects } from '@/hooks/useSubjects';
 import { usePeopleStore } from '@/stores/people-store';
 import { orderClassesBySchedule, getClassDisplayInfo, resolveSubjectNames } from '@/utils/class-helpers';
 import { validateTitle, validateDescription, clampLen } from '@/lib/validation';
@@ -74,9 +74,9 @@ export function PostComposer({
   const { toast } = useToast();
   const { user } = useAuth();
   const { getActiveClasses, getClassesByTeacher, loadClasses } = useClassStore();
-  const { getActiveLevels, loadLevels } = useGlobalLevelStore();
-  const { getActiveModalities, loadModalities } = useGlobalModalityStore();
-  const { getActiveSubjects, loadSubjects } = useGlobalSubjectStore();
+  const { levels } = useLevels();
+  const { modalities } = useModalities();
+  const { subjects } = useSubjects();
   const { loadPeople } = usePeopleStore();
   
   // Generate unique temp ID for this composer instance
@@ -1126,8 +1126,8 @@ return (
                             const cls = availableClasses.find(c => c.id === classId);
                             if (!cls) return null;
                             
-                            const displayInfo = getClassDisplayInfo(cls);
-                            const subjectNames = resolveSubjectNames(cls.subjectIds);
+                            const displayInfo = getClassDisplayInfo(cls, levels, modalities);
+                            const subjectNames = resolveSubjectNames(cls.subjectIds, subjects);
                             const subjectCount = subjectNames.length;
                             
                             return (
@@ -1217,8 +1217,8 @@ return (
                         </p>
                       ) : (
                         filteredClasses.map(cls => {
-                          const displayInfo = getClassDisplayInfo(cls);
-                          const subjectNames = resolveSubjectNames(cls.subjectIds);
+                          const displayInfo = getClassDisplayInfo(cls, levels, modalities);
+                          const subjectNames = resolveSubjectNames(cls.subjectIds, subjects);
                           
                           return (
                             <div 

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useModalityStore } from '@/stores/modality-store';
+import { useModalities } from '@/hooks/useModalities';
 import { useProgramStore } from '@/stores/program-store';
-import { ModalityFilters } from '@/types/curriculum';
 import { ModalityFormModal } from './ModalityFormModal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -12,24 +11,24 @@ import { useToast } from '@/hooks/use-toast';
 import { Modality } from '@/types/curriculum';
 
 interface ModalityTableProps {
-  filters: ModalityFilters;
+  filters: { search?: string; isActive?: boolean };
 }
 
 export function ModalityTable({ filters }: ModalityTableProps) {
-  const { getFilteredModalities, deleteModality, activateModality, deactivateModality } = useModalityStore();
+  const { modalities, getFilteredModalities, deleteModality, updateModality } = useModalities();
   const { getProgram } = useProgramStore();
   const { toast } = useToast();
-  const [editingModality, setEditingModality] = useState<Modality | null>(null);
+  const [editingModality, setEditingModality] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const modalities = getFilteredModalities(filters);
+  const filtered = getFilteredModalities(filters);
 
-  const handleEdit = (modality: Modality) => {
+  const handleEdit = (modality: any) => {
     setEditingModality(modality);
     setShowEditModal(true);
   };
 
-  const handleDelete = async (modality: Modality) => {
+  const handleDelete = async (modality: any) => {
     if (confirm(`Tem certeza que deseja excluir a modalidade "${modality.name}"?`)) {
       try {
         await deleteModality(modality.id);
@@ -43,15 +42,10 @@ export function ModalityTable({ filters }: ModalityTableProps) {
     }
   };
 
-  const handleToggleStatus = async (modality: Modality) => {
+  const handleToggleStatus = async (modality: any) => {
     try {
-      if (modality.isActive) {
-        await deactivateModality(modality.id);
-        toast({ title: 'Modalidade desativada' });
-      } else {
-        await activateModality(modality.id);
-        toast({ title: 'Modalidade ativada' });
-      }
+      await updateModality(modality.id, { is_active: !modality.is_active });
+      toast({ title: modality.is_active ? 'Modalidade desativada' : 'Modalidade ativada' });
     } catch (error) {
       toast({
         title: 'Erro ao alterar status',
@@ -60,7 +54,7 @@ export function ModalityTable({ filters }: ModalityTableProps) {
     }
   };
 
-  if (modalities.length === 0) {
+  if (filtered.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         <p>Nenhuma modalidade encontrada.</p>
@@ -82,8 +76,8 @@ export function ModalityTable({ filters }: ModalityTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {modalities.map((modality) => {
-            const program = getProgram(modality.programId);
+          {filtered.map((modality) => {
+            const program = getProgram(modality.id);
             
             return (
               <TableRow key={modality.id}>
@@ -94,8 +88,8 @@ export function ModalityTable({ filters }: ModalityTableProps) {
                   {modality.description || '-'}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={modality.isActive ? 'default' : 'secondary'}>
-                    {modality.isActive ? 'Ativo' : 'Inativo'}
+                  <Badge variant={modality.is_active ? 'default' : 'secondary'}>
+                    {modality.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -112,7 +106,7 @@ export function ModalityTable({ filters }: ModalityTableProps) {
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleToggleStatus(modality)}>
-                        {modality.isActive ? (
+                        {modality.is_active ? (
                           <>
                             <ToggleLeft className="mr-2 h-4 w-4" />
                             Desativar
