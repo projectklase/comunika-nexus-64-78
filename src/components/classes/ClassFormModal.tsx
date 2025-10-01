@@ -222,15 +222,21 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
         status: data.status === 'ATIVA' ? 'Ativa' : 'Arquivada',
       };
 
+      console.log('🔵 [ClassFormModal] Dados do formulário:', data);
+      console.log('🔵 [ClassFormModal] Dados convertidos para Supabase:', classData);
+
       const subjectIds = data.subjectIds || [];
+      console.log('🔵 [ClassFormModal] SubjectIds:', subjectIds);
 
       if (schoolClass) {
+        console.log('🔵 [ClassFormModal] Atualizando turma:', schoolClass.id);
         await updateClass(schoolClass.id, classData, subjectIds);
         toast({
           title: "Turma atualizada",
           description: "A turma foi atualizada com sucesso.",
         });
       } else {
+        console.log('🔵 [ClassFormModal] Criando nova turma');
         await createClass(classData, subjectIds);
         toast({
           title: "Turma criada",
@@ -242,9 +248,10 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
       clearDraft(DRAFT_KEY);
       onOpenChange(false);
     } catch (error) {
+      console.error('🔴 [ClassFormModal] Erro ao salvar turma:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível salvar a turma.",
+        description: error instanceof Error ? error.message : "Não foi possível salvar a turma.",
         variant: "destructive",
       });
     }

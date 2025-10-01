@@ -69,6 +69,8 @@ export function useTeachers() {
   }) => {
     setLoading(true);
     try {
+      console.log('🔵 [useTeachers] Tentando criar professor:', teacherData);
+      
       // Use Edge Function to create teacher
       const { data, error } = await supabase.functions.invoke('create-demo-user', {
         body: {
@@ -79,12 +81,19 @@ export function useTeachers() {
         }
       });
 
-      if (error) throw error;
+      console.log('🔵 [useTeachers] Resposta da Edge Function:', { data, error });
+
+      if (error) {
+        console.error('🔴 [useTeachers] Erro na Edge Function:', error);
+        throw error;
+      }
 
       if (data && !data.success) {
+        console.error('🔴 [useTeachers] Edge Function retornou erro:', data.error);
         throw new Error(data.error || 'Erro ao criar usuário');
       }
 
+      console.log('✅ [useTeachers] Professor criado com sucesso');
       toast.success('Professor criado com sucesso');
       
       // Refresh the list
@@ -92,7 +101,7 @@ export function useTeachers() {
       
       return data;
     } catch (err) {
-      console.error('Error creating teacher:', err);
+      console.error('🔴 [useTeachers] Erro ao criar professor:', err);
       toast.error(err instanceof Error ? err.message : 'Erro ao criar professor');
       throw err;
     } finally {

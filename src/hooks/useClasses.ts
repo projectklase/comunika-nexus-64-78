@@ -153,6 +153,9 @@ export function useClasses() {
 
   const createClass = async (data: ClassInsert, subjectIds: string[] = []) => {
     try {
+      console.log('🔵 [useClasses] Tentando criar turma:', data);
+      console.log('🔵 [useClasses] SubjectIds:', subjectIds);
+      
       // Insert class - using type assertion
       const { data: newClass, error: classError } = await (supabase as any)
         .from('classes')
@@ -160,7 +163,14 @@ export function useClasses() {
         .select()
         .single();
 
-      if (classError) throw classError;
+      console.log('🔵 [useClasses] Resposta do insert class:', { newClass, classError });
+
+      if (classError) {
+        console.error('🔴 [useClasses] Erro ao criar turma:', classError);
+        throw classError;
+      }
+
+      console.log('✅ [useClasses] Turma criada com sucesso:', newClass.id);
 
       // Insert class subjects
       if (subjectIds.length > 0) {
@@ -169,11 +179,18 @@ export function useClasses() {
           subject_id: subjectId,
         }));
 
+        console.log('🔵 [useClasses] Inserindo matérias:', classSubjects);
+
         const { error: subjectsError } = await (supabase as any)
           .from('class_subjects')
           .insert(classSubjects);
 
-        if (subjectsError) throw subjectsError;
+        if (subjectsError) {
+          console.error('🔴 [useClasses] Erro ao inserir matérias:', subjectsError);
+          throw subjectsError;
+        }
+
+        console.log('✅ [useClasses] Matérias inseridas com sucesso');
       }
 
       toast({
@@ -184,10 +201,16 @@ export function useClasses() {
       await loadClasses();
       return newClass;
     } catch (error: any) {
-      console.error('Error creating class:', error);
+      console.error('🔴 [useClasses] Erro geral ao criar turma:', error);
+      console.error('🔴 [useClasses] Detalhes do erro:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
       toast({
         title: 'Erro ao criar turma',
-        description: 'Não foi possível criar a turma.',
+        description: error.message || 'Não foi possível criar a turma.',
         variant: 'destructive',
       });
       throw error;
