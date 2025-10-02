@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { SchoolClass, ClassStatus, ClassFilters } from '@/types/class';
-// Mock data removed - now using Supabase data
 import { validateClassData } from '@/lib/data-hygiene';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ClassStore {
   classes: SchoolClass[];
@@ -36,34 +37,75 @@ interface ClassStore {
   getActiveClasses: () => SchoolClass[];
 }
 
-const STORAGE_KEY = 'comunika_classes';
-
-const generateId = () => crypto.randomUUID();
-
-const saveToStorage = (classes: SchoolClass[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(classes));
-};
-
-const loadFromStorage = (): SchoolClass[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
+// Helper to convert DB row to SchoolClass
+const dbRowToClass = (row: any): SchoolClass => ({
+  id: row.id,
+  name: row.name,
+  code: row.code || undefined,
+  grade: row.series || undefined,
+  year: row.year,
+  status: row.status === 'Ativa' ? 'ATIVA' : 'ARQUIVADA',
+  levelId: row.level_id || undefined,
+  modalityId: row.modality_id || undefined,
+  subjectIds: [], // Will be populated from class_subjects
+  daysOfWeek: row.week_days || [],
+  startTime: row.start_time || '',
+  endTime: row.end_time || '',
+  teachers: row.main_teacher_id ? [row.main_teacher_id] : [],
+  students: [], // Will be populated from class_students
+  createdAt: row.created_at || new Date().toISOString(),
+  updatedAt: row.updated_at || new Date().toISOString(),
+});
 
 export const useClassStore = create<ClassStore>((set, get) => ({
   classes: [],
   loading: false,
 
-  loadClasses: () => {
-    const classes = loadFromStorage();
-    if (classes.length === 0) {
-      // Initialize with empty array - data will come from Supabase
-      set({ classes: [] });
-    } else {
-      set({ classes });
+  loadClasses: async () => {
+    set({ loading: true });
+    try {
+      const { data: classesData, error } = await (supabase as any)
+        .from('classes')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      // Fetch related data
+      const [classSubjectsRes, classStudentsRes] = await Promise.all([
+        (supabase as any).from('class_subjects').select('class_id, subject_id'),
+        (supabase as any).from('class_students').select('class_id, student_id'),
+      ]);
+
+      // Group subjects per class
+      const classSubjectsMap = new Map<string, string[]>();
+      classSubjectsRes.data?.forEach((cs) => {
+        if (!classSubjectsMap.has(cs.class_id)) {
+          classSubjectsMap.set(cs.class_id, []);
+        }
+        classSubjectsMap.get(cs.class_id)?.push(cs.subject_id);
+      });
+
+      // Group students per class
+      const classStudentsMap = new Map<string, string[]>();
+      classStudentsRes.data?.forEach((cs) => {
+        if (!classStudentsMap.has(cs.class_id)) {
+          classStudentsMap.set(cs.class_id, []);
+        }
+        classStudentsMap.get(cs.class_id)?.push(cs.student_id);
+      });
+
+      const classes: SchoolClass[] = (classesData || []).map((row) => ({
+        ...dbRowToClass(row),
+        subjectIds: classSubjectsMap.get(row.id) || [],
+        students: classStudentsMap.get(row.id) || [],
+      }));
+
+      set({ classes, loading: false });
+    } catch (error) {
+      console.error('Error loading classes:', error);
+      toast.error('Erro ao carregar turmas');
+      set({ loading: false });
     }
   },
 
@@ -72,71 +114,135 @@ export const useClassStore = create<ClassStore>((set, get) => ({
   },
 
   createClass: async (classData) => {
-    // Validate and sanitize data
     const validation = validateClassData(classData);
     if (!validation.isValid) {
       throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
     }
 
-    const newClass: SchoolClass = {
-      ...validation.data,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const classes = [...get().classes, newClass];
-    set({ classes });
-    saveToStorage(classes);
-    
-    // Log audit event
-    const { logAudit } = await import('@/stores/audit-store');
-    logAudit({
-      action: 'CREATE',
-      entity: 'CLASS',
-      entity_id: newClass.id,
-      entity_label: newClass.name,
-      scope: `CLASS:${newClass.id}`,
-      class_name: newClass.name,
-      meta: { fields: ['name', 'code', 'year', 'grade'] },
-      diff_json: {
-        name: { before: null, after: newClass.name },
-        code: { before: null, after: newClass.code },
-        year: { before: null, after: newClass.year },
-        grade: { before: null, after: newClass.grade }
-      },
-      actor_id: 'system',
-      actor_name: 'Sistema',
-      actor_email: 'system@escola.com',
-      actor_role: 'SECRETARIA'
-    });
-    
-    return newClass;
+    try {
+      const insertData = {
+        name: classData.name,
+        code: classData.code,
+        series: classData.grade,
+        year: classData.year || new Date().getFullYear(),
+        status: classData.status === 'ATIVA' ? 'Ativa' : 'Arquivada',
+        level_id: classData.levelId,
+        modality_id: classData.modalityId,
+        week_days: classData.daysOfWeek,
+        start_time: classData.startTime,
+        end_time: classData.endTime,
+        main_teacher_id: classData.teachers[0] || null,
+      };
+
+      const { data: newClass, error } = await (supabase as any)
+        .from('classes')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Insert subjects
+      if (classData.subjectIds && classData.subjectIds.length > 0) {
+        const classSubjects = classData.subjectIds.map(subjectId => ({
+          class_id: newClass.id,
+          subject_id: subjectId,
+        }));
+        await (supabase as any).from('class_subjects').insert(classSubjects);
+      }
+
+      // Insert students
+      if (classData.students && classData.students.length > 0) {
+        const classStudents = classData.students.map(studentId => ({
+          class_id: newClass.id,
+          student_id: studentId,
+        }));
+        await (supabase as any).from('class_students').insert(classStudents);
+      }
+
+      await get().loadClasses();
+      toast.success('Turma criada com sucesso');
+      
+      return dbRowToClass(newClass);
+    } catch (error: any) {
+      console.error('Error creating class:', error);
+      toast.error(error.message || 'Erro ao criar turma');
+      throw error;
+    }
   },
 
   updateClass: async (id: string, updates) => {
-    const currentClass = get().classes.find(c => c.id === id);
-    if (!currentClass) throw new Error('Turma não encontrada');
+    try {
+      const updateData: any = {};
+      
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.code !== undefined) updateData.code = updates.code;
+      if (updates.grade !== undefined) updateData.series = updates.grade;
+      if (updates.year !== undefined) updateData.year = updates.year;
+      if (updates.status !== undefined) updateData.status = updates.status === 'ATIVA' ? 'Ativa' : 'Arquivada';
+      if (updates.levelId !== undefined) updateData.level_id = updates.levelId;
+      if (updates.modalityId !== undefined) updateData.modality_id = updates.modalityId;
+      if (updates.daysOfWeek !== undefined) updateData.week_days = updates.daysOfWeek;
+      if (updates.startTime !== undefined) updateData.start_time = updates.startTime;
+      if (updates.endTime !== undefined) updateData.end_time = updates.endTime;
+      if (updates.teachers !== undefined) updateData.main_teacher_id = updates.teachers[0] || null;
 
-    const mergedData = { ...currentClass, ...updates };
-    const validation = validateClassData(mergedData);
-    if (!validation.isValid) {
-      throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
+      const { error } = await (supabase as any)
+        .from('classes')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update subjects if provided
+      if (updates.subjectIds !== undefined) {
+        await (supabase as any).from('class_subjects').delete().eq('class_id', id);
+        if (updates.subjectIds.length > 0) {
+          const classSubjects = updates.subjectIds.map(subjectId => ({
+            class_id: id,
+            subject_id: subjectId,
+          }));
+          await (supabase as any).from('class_subjects').insert(classSubjects);
+        }
+      }
+
+      // Update students if provided
+      if (updates.students !== undefined) {
+        await (supabase as any).from('class_students').delete().eq('class_id', id);
+        if (updates.students.length > 0) {
+          const classStudents = updates.students.map(studentId => ({
+            class_id: id,
+            student_id: studentId,
+          }));
+          await (supabase as any).from('class_students').insert(classStudents);
+        }
+      }
+
+      await get().loadClasses();
+      toast.success('Turma atualizada');
+    } catch (error: any) {
+      console.error('Error updating class:', error);
+      toast.error(error.message || 'Erro ao atualizar turma');
+      throw error;
     }
-
-    const classes = get().classes.map(c => 
-      c.id === id 
-        ? { ...validation.data, updatedAt: new Date().toISOString() }
-        : c
-    );
-    set({ classes });
-    saveToStorage(classes);
   },
 
   deleteClass: async (id: string) => {
-    const classes = get().classes.filter(c => c.id !== id);
-    set({ classes });
-    saveToStorage(classes);
+    try {
+      const { error } = await (supabase as any)
+        .from('classes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await get().loadClasses();
+      toast.success('Turma excluída');
+    } catch (error: any) {
+      console.error('Error deleting class:', error);
+      toast.error(error.message || 'Erro ao excluir turma');
+      throw error;
+    }
   },
 
   archiveClass: async (id: string) => {
@@ -148,46 +254,21 @@ export const useClassStore = create<ClassStore>((set, get) => ({
   },
 
   bulkArchive: async (ids: string[]) => {
-    const classes = get().classes.map(c => 
-      ids.includes(c.id) 
-        ? { ...c, status: 'ARQUIVADA' as ClassStatus, updatedAt: new Date().toISOString() }
-        : c
-    );
-    set({ classes });
-    saveToStorage(classes);
-    
-    // Log audit events for each archived class
-    const { logAudit } = await import('@/stores/audit-store');
-    const { useAuth } = await import('@/contexts/AuthContext');
-    
-    // Get current user - we'll need to pass this differently in a real implementation
-    ids.forEach(classId => {
-      const classData = classes.find(c => c.id === classId);
-      if (classData) {
-        // TODO: Get user from context properly
-        logAudit({
-          action: 'ARCHIVE',
-          entity: 'CLASS',
-          entity_id: classId,
-          entity_label: classData.name,
-          scope: `CLASS:${classId}`,
-          class_name: classData.name,
-          meta: { 
-            fields: ['status'],
-            status_before: 'ATIVA',
-            status_after: 'ARQUIVADA'
-          },
-          diff_json: {
-            status: { before: 'ATIVA', after: 'ARQUIVADA' }
-          },
-          // Placeholder user - will be replaced with proper user context
-          actor_id: 'system',
-          actor_name: 'Sistema',
-          actor_email: 'system@escola.com',
-          actor_role: 'SECRETARIA'
-        });
-      }
-    });
+    try {
+      const { error } = await (supabase as any)
+        .from('classes')
+        .update({ status: 'Arquivada' })
+        .in('id', ids);
+
+      if (error) throw error;
+
+      await get().loadClasses();
+      toast.success(`${ids.length} turma(s) arquivada(s)`);
+    } catch (error: any) {
+      console.error('Error archiving classes:', error);
+      toast.error(error.message || 'Erro ao arquivar turmas');
+      throw error;
+    }
   },
 
   assignTeachers: async (classId: string, teacherIds: string[]) => {
@@ -203,47 +284,91 @@ export const useClassStore = create<ClassStore>((set, get) => ({
   },
 
   bulkAssignTeacher: async (classIds: string[], teacherId: string) => {
-    const classes = get().classes.map(c => 
-      classIds.includes(c.id) 
-        ? { 
-            ...c, 
-            teachers: [...new Set([...c.teachers, teacherId])],
-            updatedAt: new Date().toISOString() 
-          }
-        : c
-    );
-    set({ classes });
-    saveToStorage(classes);
+    try {
+      const { error } = await (supabase as any)
+        .from('classes')
+        .update({ main_teacher_id: teacherId })
+        .in('id', classIds);
+
+      if (error) throw error;
+
+      await get().loadClasses();
+      toast.success('Professor atribuído às turmas');
+    } catch (error: any) {
+      console.error('Error assigning teacher:', error);
+      toast.error(error.message || 'Erro ao atribuir professor');
+      throw error;
+    }
   },
 
   addStudents: async (classId: string, studentIds: string[]) => {
-    const schoolClass = get().getClass(classId);
-    if (schoolClass) {
-      const students = [...new Set([...schoolClass.students, ...studentIds])];
-      await get().updateClass(classId, { students });
+    try {
+      const classStudents = studentIds.map(studentId => ({
+        class_id: classId,
+        student_id: studentId,
+      }));
+
+      const { error } = await (supabase as any)
+        .from('class_students')
+        .insert(classStudents);
+
+      if (error) throw error;
+
+      await get().loadClasses();
+      toast.success('Alunos adicionados à turma');
+    } catch (error: any) {
+      console.error('Error adding students:', error);
+      toast.error(error.message || 'Erro ao adicionar alunos');
+      throw error;
     }
   },
 
   removeStudent: async (classId: string, studentId: string) => {
-    const schoolClass = get().getClass(classId);
-    if (schoolClass) {
-      const students = schoolClass.students.filter(id => id !== studentId);
-      await get().updateClass(classId, { students });
+    try {
+      const { error } = await (supabase as any)
+        .from('class_students')
+        .delete()
+        .eq('class_id', classId)
+        .eq('student_id', studentId);
+
+      if (error) throw error;
+
+      await get().loadClasses();
+      toast.success('Aluno removido da turma');
+    } catch (error: any) {
+      console.error('Error removing student:', error);
+      toast.error(error.message || 'Erro ao remover aluno');
+      throw error;
     }
   },
 
   transferStudents: async (fromClassId: string, toClassId: string, studentIds: string[]) => {
-    const fromClass = get().getClass(fromClassId);
-    const toClass = get().getClass(toClassId);
-    
-    if (fromClass && toClass) {
-      // Remove from source
-      const fromStudents = fromClass.students.filter(id => !studentIds.includes(id));
-      await get().updateClass(fromClassId, { students: fromStudents });
-      
-      // Add to destination
-      const toStudents = [...new Set([...toClass.students, ...studentIds])];
-      await get().updateClass(toClassId, { students: toStudents });
+    try {
+      // Remove from source class
+      await (supabase as any)
+        .from('class_students')
+        .delete()
+        .eq('class_id', fromClassId)
+        .in('student_id', studentIds);
+
+      // Add to destination class
+      const classStudents = studentIds.map(studentId => ({
+        class_id: toClassId,
+        student_id: studentId,
+      }));
+
+      const { error } = await (supabase as any)
+        .from('class_students')
+        .insert(classStudents);
+
+      if (error) throw error;
+
+      await get().loadClasses();
+      toast.success('Alunos transferidos');
+    } catch (error: any) {
+      console.error('Error transferring students:', error);
+      toast.error(error.message || 'Erro ao transferir alunos');
+      throw error;
     }
   },
 
