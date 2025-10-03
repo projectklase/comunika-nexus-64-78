@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Person, Guardian, StudentExtra, TeacherExtra } from '@/types/class';
 import { validatePersonData, ValidationResult } from '@/lib/data-hygiene';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PeopleStore {
   people: Person[];
@@ -36,136 +38,78 @@ interface PeopleStore {
   importStudents: (csvData: string) => Promise<Person[]>;
 }
 
-const STORAGE_KEY = 'comunika_people_v3'; // v3 para limpar dados mock de professores
+// Helper to map Supabase row to Person
+const dbRowToPerson = async (row: any): Promise<Person> => {
+  const person: Person = {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role === 'aluno' ? 'ALUNO' : row.role === 'professor' ? 'PROFESSOR' : row.role.toUpperCase(),
+    isActive: row.is_active ?? true,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 
-const generateId = () => crypto.randomUUID();
+  // Load student-specific data
+  if (person.role === 'ALUNO') {
+    const { data: guardians } = await (supabase as any)
+      .from('guardians')
+      .select('*')
+      .eq('student_id', row.id);
 
-const saveToStorage = (people: Person[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(people));
-};
+    // Get class IDs from class_students
+    const { data: classLinks } = await (supabase as any)
+      .from('class_students')
+      .select('class_id')
+      .eq('student_id', row.id);
 
-const loadFromStorage = (): Person[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : getMockPeople();
-  } catch {
-    return getMockPeople();
+    person.student = {
+      dob: row.dob,
+      phones: row.phone ? [row.phone] : [],
+      email: row.email,
+      classIds: classLinks?.map((cl: any) => cl.class_id) || [],
+      guardians: guardians?.map((g: any) => ({
+        id: g.id,
+        name: g.name,
+        relation: g.relation,
+        phone: g.phone,
+        email: g.email,
+        isPrimary: g.is_primary
+      })) || []
+    };
   }
-};
 
-const getMockPeople = (): Person[] => [
-  // Apenas alunos com dados StudentExtra - professores agora vêm do Supabase
-  { 
-    id: '3', 
-    name: 'Ana Costa', 
-    email: 'aluno@comunika.com', 
-    role: 'ALUNO', 
-    isActive: true, 
-    createdAt: '2024-01-01T00:00:00Z',
-    student: {
-      dob: '2007-05-15',
-      phones: ['(11) 99999-3333'],
-      email: 'aluno@comunika.com'
-    }
-  },
-  { 
-    id: '6', 
-    name: 'Pedro Almeida', 
-    role: 'ALUNO', 
-    isActive: true, 
-    createdAt: '2024-01-01T00:00:00Z',
-    student: {
-      dob: '2010-03-15',
-      phones: ['(11) 99999-1234'],
-      email: 'pedro.almeida@estudante.com',
-      guardians: [
-        {
-          id: generateId(),
-          name: 'Maria Almeida',
-          relation: 'MAE',
-          phone: '(11) 99999-5678',
-          isPrimary: true
-        }
-      ]
-    }
-  },
-  { 
-    id: '7', 
-    name: 'Ana Beatriz', 
-    role: 'ALUNO', 
-    isActive: true, 
-    createdAt: '2024-01-01T00:00:00Z',
-    student: {
-      dob: '2005-07-22',
-      phones: ['(11) 88888-1234'],
-      email: 'ana.beatriz@estudante.com'
-    }
-  },
-  { 
-    id: '8', 
-    name: 'Lucas Ferreira', 
-    role: 'ALUNO', 
-    isActive: true, 
-    createdAt: '2024-01-01T00:00:00Z',
-    student: {
-      dob: '2008-11-08',
-      phones: ['(11) 77777-1234'],
-      guardians: [
-        {
-          id: generateId(),
-          name: 'Carlos Ferreira',
-          relation: 'PAI',
-          phone: '(11) 77777-5678',
-          isPrimary: true
-        }
-      ]
-    }
-  },
-  { 
-    id: '9', 
-    name: 'Sophia Rodrigues', 
-    role: 'ALUNO', 
-    isActive: true, 
-    createdAt: '2024-01-01T00:00:00Z',
-    student: {
-      dob: '2009-01-12',
-      phones: ['(11) 66666-1234'],
-      guardians: [
-        {
-          id: generateId(),
-          name: 'Julia Rodrigues',
-          relation: 'MAE',
-          phone: '(11) 66666-5678',
-          isPrimary: true
-        }
-      ]
-    }
-  },
-  { 
-    id: '10', 
-    name: 'Gabriel Martins', 
-    role: 'ALUNO', 
-    isActive: true, 
-    createdAt: '2024-01-01T00:00:00Z',
-    student: {
-      dob: '2006-05-30',
-      phones: ['(11) 55555-1234'],
-      email: 'gabriel.martins@estudante.com'
-    }
-  }
-];
+  return person;
+};
 
 export const usePeopleStore = create<PeopleStore>((set, get) => ({
   people: [],
   loading: false,
   lastCreatedId: null,
 
-  loadPeople: () => {
-    const people = loadFromStorage();
-    set({ people });
-    // Save mock data if first time
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      saveToStorage(people);
+  loadPeople: async () => {
+    set({ loading: true });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'aluno');
+
+      if (error) throw error;
+
+      const people: Person[] = [];
+      if (data) {
+        for (const row of data) {
+          const person = await dbRowToPerson(row);
+          people.push(person);
+        }
+      }
+
+      set({ people, loading: false });
+    } catch (error) {
+      console.error('Error loading people:', error);
+      toast.error('Erro ao carregar pessoas');
+      set({ loading: false });
     }
   },
 
@@ -174,24 +118,41 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   },
 
   createPerson: async (personData) => {
-    // Validate and sanitize data
     const validation = validatePersonData(personData);
     if (!validation.isValid) {
       throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
     }
 
-    const newPerson: Person = {
-      ...validation.data,
-      id: generateId(),
-      isActive: validation.data.isActive ?? true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const people = [...get().people, newPerson];
-    set({ people, lastCreatedId: newPerson.id });
-    saveToStorage(people);
-    return newPerson;
+    set({ loading: true });
+    try {
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .insert([{
+          name: validation.data.name,
+          email: validation.data.email || '',
+          role: validation.data.role.toLowerCase(),
+          is_active: validation.data.isActive ?? true
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newPerson = await dbRowToPerson(data);
+      set({ 
+        people: [...get().people, newPerson], 
+        lastCreatedId: newPerson.id,
+        loading: false 
+      });
+      
+      toast.success('Pessoa criada com sucesso');
+      return newPerson;
+    } catch (error) {
+      console.error('Error creating person:', error);
+      toast.error('Erro ao criar pessoa');
+      set({ loading: false });
+      throw error;
+    }
   },
 
   updatePerson: async (id: string, updates) => {
@@ -204,47 +165,102 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
       throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
     }
 
-    const people = get().people.map(p => 
-      p.id === id ? { ...validation.data, updatedAt: new Date().toISOString() } : p
-    );
-    set({ people });
-    saveToStorage(people);
+    set({ loading: true });
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: validation.data.name,
+          email: validation.data.email || '',
+          is_active: validation.data.isActive
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      const updatedPerson = await dbRowToPerson({ ...currentPerson, ...validation.data });
+      const people = get().people.map(p => p.id === id ? updatedPerson : p);
+      set({ people, loading: false });
+      
+      toast.success('Pessoa atualizada com sucesso');
+    } catch (error) {
+      console.error('Error updating person:', error);
+      toast.error('Erro ao atualizar pessoa');
+      set({ loading: false });
+      throw error;
+    }
   },
 
   createStudent: async (studentData) => {
-    // Validate and sanitize data
     const validation = validatePersonData(studentData);
     if (!validation.isValid) {
       throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
     }
 
-    const newStudent: Person = {
-      ...validation.data,
-      id: generateId(),
-      isActive: validation.data.isActive ?? true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const people = [...get().people, newStudent];
-    set({ people });
-    saveToStorage(people);
-    
-    // Update class enrollments if classIds provided
-    if (studentData.student.classIds?.length) {
-      const classesData = localStorage.getItem('comunika_classes');
-      if (classesData) {
-        const classes = JSON.parse(classesData);
-        const updatedClasses = classes.map(c => 
-          studentData.student.classIds?.includes(c.id)
-            ? { ...c, students: [...new Set([...c.students, newStudent.id])] }
-            : c
-        );
-        localStorage.setItem('comunika_classes', JSON.stringify(updatedClasses));
+    set({ loading: true });
+    try {
+      // Create profile
+      const { data: profile, error: profileError } = await (supabase as any)
+        .from('profiles')
+        .insert([{
+          name: validation.data.name,
+          email: validation.data.email || '',
+          role: 'aluno',
+          phone: studentData.student?.phones?.[0],
+          is_active: validation.data.isActive ?? true,
+          dob: studentData.student?.dob
+        }])
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Create guardians if provided
+      if (studentData.student?.guardians?.length) {
+        const guardiansToInsert = studentData.student.guardians.map(g => ({
+          student_id: profile.id,
+          name: g.name,
+          relation: g.relation,
+          phone: g.phone,
+          email: g.email,
+          is_primary: g.isPrimary
+        }));
+
+        const { error: guardianError } = await (supabase as any)
+          .from('guardians')
+          .insert(guardiansToInsert);
+
+        if (guardianError) throw guardianError;
       }
+
+      // Link to classes if provided
+      if (studentData.student?.classIds?.length) {
+        const classLinks = studentData.student.classIds.map(classId => ({
+          student_id: profile.id,
+          class_id: classId
+        }));
+
+        const { error: linkError } = await (supabase as any)
+          .from('class_students')
+          .insert(classLinks);
+
+        if (linkError) throw linkError;
+      }
+
+      const newStudent = await dbRowToPerson(profile);
+      set({ 
+        people: [...get().people, newStudent],
+        loading: false 
+      });
+      
+      toast.success('Aluno criado com sucesso');
+      return newStudent;
+    } catch (error) {
+      console.error('Error creating student:', error);
+      toast.error('Erro ao criar aluno');
+      set({ loading: false });
+      throw error;
     }
-    
-    return newStudent;
   },
 
   updateStudent: async (id: string, updates) => {
@@ -262,30 +278,82 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
       throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
     }
 
-    const people = get().people.map(p => 
-      p.id === id ? { ...validation.data, updatedAt: new Date().toISOString() } : p
-    );
-    set({ people });
-    saveToStorage(people);
+    set({ loading: true });
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: validation.data.name,
+          email: validation.data.email || '',
+          phone: updates.student?.phones?.[0],
+          is_active: validation.data.isActive,
+          dob: updates.student?.dob
+        })
+        .eq('id', id);
 
-    // Update class enrollments if classIds changed
-    if (updates.student?.classIds) {
-      const classesData = localStorage.getItem('comunika_classes');
-      if (classesData) {
-        const classes = JSON.parse(classesData);
-        const updatedClasses = classes.map(c => {
-          const shouldInclude = updates.student.classIds?.includes(c.id);
-          const currentlyIncluded = c.students.includes(id);
-          
-          if (shouldInclude && !currentlyIncluded) {
-            return { ...c, students: [...c.students, id] };
-          } else if (!shouldInclude && currentlyIncluded) {
-            return { ...c, students: c.students.filter(sid => sid !== id) };
-          }
-          return c;
-        });
-        localStorage.setItem('comunika_classes', JSON.stringify(updatedClasses));
+      if (profileError) throw profileError;
+
+      // Update guardians if provided
+      if (updates.student?.guardians) {
+        // Delete existing guardians
+        await (supabase as any)
+          .from('guardians')
+          .delete()
+          .eq('student_id', id);
+
+        // Insert new guardians
+        if (updates.student.guardians.length > 0) {
+          const guardiansToInsert = updates.student.guardians.map(g => ({
+            student_id: id,
+            name: g.name,
+            relation: g.relation,
+            phone: g.phone,
+            email: g.email,
+            is_primary: g.isPrimary
+          }));
+
+          const { error: guardianError } = await (supabase as any)
+            .from('guardians')
+            .insert(guardiansToInsert);
+
+          if (guardianError) throw guardianError;
+        }
       }
+
+      // Update class links if provided
+      if (updates.student?.classIds !== undefined) {
+        // Delete existing links
+        await (supabase as any)
+          .from('class_students')
+          .delete()
+          .eq('student_id', id);
+
+        // Insert new links
+        if (updates.student.classIds.length > 0) {
+          const classLinks = updates.student.classIds.map(classId => ({
+            student_id: id,
+            class_id: classId
+          }));
+
+          const { error: linkError } = await (supabase as any)
+            .from('class_students')
+            .insert(classLinks);
+
+          if (linkError) throw linkError;
+        }
+      }
+
+      const updatedStudent = await dbRowToPerson({ ...currentStudent, ...validation.data });
+      const people = get().people.map(p => p.id === id ? updatedStudent : p);
+      set({ people, loading: false });
+      
+      toast.success('Aluno atualizado com sucesso');
+    } catch (error) {
+      console.error('Error updating student:', error);
+      toast.error('Erro ao atualizar aluno');
+      set({ loading: false });
+      throw error;
     }
   },
 
@@ -294,46 +362,13 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   },
 
   createTeacher: async (teacherData) => {
-    // Validate and sanitize data
-    const validation = validatePersonData(teacherData);
-    if (!validation.isValid) {
-      throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
-    }
-
-    const newTeacher: Person = {
-      ...validation.data,
-      id: generateId(),
-      isActive: validation.data.isActive ?? true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const people = [...get().people, newTeacher];
-    set({ people });
-    saveToStorage(people);
-    return newTeacher;
+    // Teachers are now created via Supabase edge function or admin panel
+    throw new Error('Teacher creation should be done via Supabase admin');
   },
 
   updateTeacher: async (id: string, updates) => {
-    const currentTeacher = get().people.find(p => p.id === id);
-    if (!currentTeacher || currentTeacher.role !== 'PROFESSOR') return;
-
-    const mergedData = {
-      ...currentTeacher,
-      ...updates,
-      teacher: currentTeacher.teacher ? { ...currentTeacher.teacher, ...updates.teacher } : updates.teacher
-    };
-
-    const validation = validatePersonData(mergedData);
-    if (!validation.isValid) {
-      throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
-    }
-
-    const people = get().people.map(p => 
-      p.id === id ? { ...validation.data, updatedAt: new Date().toISOString() } : p
-    );
-    set({ people });
-    saveToStorage(people);
+    // Teachers are now managed via Supabase
+    throw new Error('Teacher updates should be done via useTeachers hook');
   },
 
   archiveTeacher: async (id: string) => {
@@ -368,9 +403,25 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   },
 
   deletePerson: async (id: string) => {
-    const people = get().people.filter(p => p.id !== id);
-    set({ people });
-    saveToStorage(people);
+    set({ loading: true });
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      const people = get().people.filter(p => p.id !== id);
+      set({ people, loading: false });
+      
+      toast.success('Pessoa removida com sucesso');
+    } catch (error) {
+      console.error('Error deleting person:', error);
+      toast.error('Erro ao remover pessoa');
+      set({ loading: false });
+      throw error;
+    }
   },
 
   archivePerson: async (id: string) => {
@@ -406,43 +457,72 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   },
 
   importStudents: async (csvData: string) => {
-    // Get class store data from localStorage to avoid circular dependency
-    const classesData = localStorage.getItem('comunika_classes');
-    const classes = classesData ? JSON.parse(classesData) : [];
-    const lines = csvData.trim().split('\n');
-    const newStudents: Person[] = [];
-    
-    for (const line of lines) {
-      const [name, email, classCodesStr] = line.split(';').map(s => s.trim());
-      if (name) {
-        const student = await get().createPerson({
-          name,
-          email: email || undefined,
-          role: 'ALUNO',
-          isActive: true
-        });
-        
-        // Vincular às turmas pelos códigos
-        if (classCodesStr) {
-          const classCodes = classCodesStr.split(',').map(s => s.trim());
-          for (const code of classCodes) {
-            const schoolClass = classes.find(c => c.code === code);
-            if (schoolClass) {
-              // Add student to class by updating the classes array
-              const updatedClasses = classes.map(c => 
-                c.id === schoolClass.id 
-                  ? { ...c, students: [...new Set([...c.students, student.id])] }
-                  : c
-              );
-              localStorage.setItem('comunika_classes', JSON.stringify(updatedClasses));
+    set({ loading: true });
+    try {
+      // Get classes from Supabase
+      const { data: classes } = await supabase
+        .from('classes')
+        .select('id, code');
+
+      const lines = csvData.trim().split('\n');
+      const newStudents: Person[] = [];
+      
+      for (const line of lines) {
+        const [name, email, classCodesStr] = line.split(';').map(s => s.trim());
+        if (name) {
+          // Create student profile
+          const { data: profile, error: profileError } = await (supabase as any)
+            .from('profiles')
+            .insert([{
+              name,
+              email: email || 'temp@temp.com',
+              role: 'aluno',
+              is_active: true
+            }])
+            .select()
+            .single();
+
+          if (profileError) {
+            console.error('Error creating student:', profileError);
+            continue;
+          }
+
+          // Link to classes by code
+          if (classCodesStr && classes) {
+            const classCodes = classCodesStr.split(',').map(s => s.trim());
+            const classIds = classes
+              .filter(c => classCodes.includes(c.code))
+              .map(c => c.id);
+
+            if (classIds.length > 0) {
+              const classLinks = classIds.map(classId => ({
+                student_id: profile.id,
+                class_id: classId
+              }));
+
+              await (supabase as any)
+                .from('class_students')
+                .insert(classLinks);
             }
           }
+
+          const student = await dbRowToPerson(profile);
+          newStudents.push(student);
         }
-        
-        newStudents.push(student);
       }
+      
+      set({ 
+        people: [...get().people, ...newStudents],
+        loading: false 
+      });
+      
+      toast.success(`${newStudents.length} alunos importados com sucesso`);
+      return newStudents;
+    } catch (error) {
+      console.error('Error importing students:', error);
+      toast.error('Erro ao importar alunos');
+      set({ loading: false });
+      throw error;
     }
-    
-    return newStudents;
   },
 }));

@@ -14,6 +14,139 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_students: {
+        Row: {
+          class_id: string
+          student_id: string
+        }
+        Insert: {
+          class_id: string
+          student_id: string
+        }
+        Update: {
+          class_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_subjects: {
+        Row: {
+          class_id: string
+          subject_id: string
+        }
+        Insert: {
+          class_id: string
+          subject_id: string
+        }
+        Update: {
+          class_id?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_subjects_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          end_time: string | null
+          id: string
+          level_id: string | null
+          main_teacher_id: string | null
+          modality_id: string | null
+          name: string
+          series: string | null
+          start_time: string | null
+          status: string
+          updated_at: string | null
+          week_days: string[] | null
+          year: number
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          level_id?: string | null
+          main_teacher_id?: string | null
+          modality_id?: string | null
+          name: string
+          series?: string | null
+          start_time?: string | null
+          status?: string
+          updated_at?: string | null
+          week_days?: string[] | null
+          year: number
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          level_id?: string | null
+          main_teacher_id?: string | null
+          modality_id?: string | null
+          name?: string
+          series?: string | null
+          start_time?: string | null
+          status?: string
+          updated_at?: string | null
+          week_days?: string[] | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_main_teacher_id_fkey"
+            columns: ["main_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_modality_id_fkey"
+            columns: ["modality_id"]
+            isOneToOne: false
+            referencedRelation: "modalities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deliveries: {
         Row: {
           class_id: string
@@ -99,6 +232,50 @@ export type Database = {
             columns: ["delivery_id"]
             isOneToOne: false
             referencedRelation: "deliveries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guardians: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          name: string
+          phone: string | null
+          relation: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          phone?: string | null
+          relation: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          phone?: string | null
+          relation?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -211,13 +388,17 @@ export type Database = {
           class_id: string | null
           created_at: string | null
           default_school_slug: string | null
+          dob: string | null
           email: string
+          enrollment_number: string | null
           id: string
+          is_active: boolean | null
           must_change_password: boolean | null
           name: string
           phone: string | null
           preferences: Json | null
           role: string
+          student_notes: string | null
           updated_at: string | null
         }
         Insert: {
@@ -225,13 +406,17 @@ export type Database = {
           class_id?: string | null
           created_at?: string | null
           default_school_slug?: string | null
+          dob?: string | null
           email: string
+          enrollment_number?: string | null
           id: string
+          is_active?: boolean | null
           must_change_password?: boolean | null
           name: string
           phone?: string | null
           preferences?: Json | null
           role: string
+          student_notes?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -239,13 +424,17 @@ export type Database = {
           class_id?: string | null
           created_at?: string | null
           default_school_slug?: string | null
+          dob?: string | null
           email?: string
+          enrollment_number?: string | null
           id?: string
+          is_active?: boolean | null
           must_change_password?: boolean | null
           name?: string
           phone?: string | null
           preferences?: Json | null
           role?: string
+          student_notes?: string | null
           updated_at?: string | null
         }
         Relationships: []

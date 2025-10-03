@@ -37,16 +37,29 @@ export function useStudents() {
       let query = supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'aluno');
+        .eq('role', 'aluno')
+        .eq('is_active', true);
 
       // Apply search filter
       if (filters.search) {
         query = query.or(`name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
       }
 
-      // Apply class filter
+      // Apply class filter via join
       if (filters.class_id && filters.class_id !== 'all') {
-        query = query.eq('class_id', filters.class_id);
+        const { data: classStudents } = await (supabase as any)
+          .from('class_students')
+          .select('student_id')
+          .eq('class_id', filters.class_id);
+
+        const studentIds = classStudents?.map((cs: any) => cs.student_id) || [];
+        if (studentIds.length > 0) {
+          query = query.in('id', studentIds);
+        } else {
+          setStudents([]);
+          setLoading(false);
+          return;
+        }
       }
 
       const { data, error } = await query.order('name');

@@ -3,7 +3,7 @@ import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
 
 /**
- * Obtém todas as turmas de um aluno
+ * Obtém todas as turmas de um aluno (agora do Supabase via student.classIds)
  */
 export function getStudentClasses(userId: string, schoolId?: string): SchoolClass[] {
   const { classes } = useClassStore.getState();
@@ -12,26 +12,14 @@ export function getStudentClasses(userId: string, schoolId?: string): SchoolClas
   // Buscar o aluno no PeopleStore
   const student = people.find(p => p.id === userId && p.role === 'ALUNO');
   
-  // Conjunto para evitar duplicatas
-  const classIds = new Set<string>();
-  
-  // A) Classes onde aluno está em students[]
-  classes.forEach(schoolClass => {
-    if (schoolClass.students.includes(userId)) {
-      classIds.add(schoolClass.id);
-    }
-  });
-  
-  // B) Classes listadas em student.classIds (se existir)
-  if (student?.student?.classIds) {
-    student.student.classIds.forEach(id => classIds.add(id));
-  }
+  // Pegar classIds do student (que agora vem do Supabase via class_students)
+  const classIds = student?.student?.classIds || [];
   
   // Mapear IDs para objetos de classe e filtrar
-  const studentClasses = Array.from(classIds)
+  const studentClasses = classIds
     .map(id => classes.find(c => c.id === id))
     .filter((c): c is SchoolClass => c !== undefined)
-    .filter(c => c.status === 'ATIVA'); // Apenas turmas ativas
+    .filter(c => c.status === 'ATIVA');
   
   // Filtrar por schoolId se fornecido (multi-tenant)
   if (schoolId) {
