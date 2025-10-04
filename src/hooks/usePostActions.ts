@@ -3,15 +3,26 @@ import { useState } from 'react';
 import { Post, PostInput } from '@/types/post';
 import { postStore } from '@/stores/post-store';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function usePostActions() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const createPost = async (postInput: PostInput, authorName: string): Promise<boolean> => {
+    if (!user?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     setIsLoading(true);
     try {
-      postStore.create(postInput, authorName);
+      await postStore.create(postInput, authorName, user.id);
       toast({
         title: "Post criado",
         description: "O post foi criado com sucesso.",
@@ -32,7 +43,7 @@ export function usePostActions() {
   const updatePost = async (id: string, postInput: PostInput): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const result = postStore.update(id, postInput);
+      const result = await postStore.update(id, postInput);
       if (result) {
         toast({
           title: "Post atualizado",
@@ -57,7 +68,7 @@ export function usePostActions() {
   const archivePost = async (id: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const success = postStore.archive(id);
+      const success = await postStore.archive(id);
       if (success) {
         toast({
           title: "Post arquivado",
@@ -82,7 +93,7 @@ export function usePostActions() {
   const deletePost = async (id: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const success = postStore.delete(id);
+      const success = await postStore.delete(id);
       if (success) {
         toast({
           title: "Post excluído",
@@ -105,11 +116,20 @@ export function usePostActions() {
   };
 
   const duplicatePost = async (id: string, authorName: string): Promise<boolean> => {
+    if (!user?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     setIsLoading(true);
     try {
-      const duplicateData = postStore.duplicate(id);
+      const duplicateData = await postStore.duplicate(id);
       if (duplicateData) {
-        postStore.create(duplicateData, authorName);
+        await postStore.create(duplicateData, authorName, user.id);
         toast({
           title: "Post duplicado",
           description: "Uma cópia do post foi criada com sucesso.",
@@ -130,10 +150,10 @@ export function usePostActions() {
     }
   };
 
-  const getPostForEdit = (id: string): (PostInput & { originalId: string }) | null => {
+  const getPostForEdit = async (id: string): Promise<(PostInput & { originalId: string }) | null> => {
     try {
       console.log('getPostForEdit called with id:', id);
-      const post = postStore.getById(id);
+      const post = await postStore.getById(id);
       console.log('Post found:', post);
       
       if (!post) {

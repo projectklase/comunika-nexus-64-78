@@ -18,20 +18,17 @@ export function usePost(postId: string | null) {
     setIsLoading(true);
     setError(null);
 
-    try {
-      // Get post from store
-      const foundPost = postStore.getById(postId);
-      
+    postStore.getById(postId).then(foundPost => {
       if (foundPost) {
         setPost(foundPost);
       } else {
         setError('Post não encontrado');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar post');
-    } finally {
       setIsLoading(false);
-    }
+    }).catch(err => {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar post');
+      setIsLoading(false);
+    });
   }, [postId]);
 
   return { post, isLoading, error };

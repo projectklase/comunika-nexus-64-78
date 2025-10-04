@@ -85,9 +85,9 @@ export default function SecretariaFeed() {
   //   }
   // }, [targetPostId]);
 
-  const loadPosts = () => {
+  const loadPosts = async () => {
     const { saved, quickFilter, ...baseFilters } = filters;
-    let filteredPosts = postStore.list(baseFilters);
+    let filteredPosts = await postStore.list(baseFilters);
     
     // Apply specific logic for secretaria quick filter
     if (quickFilter === 'secretaria') {

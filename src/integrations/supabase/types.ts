@@ -382,6 +382,86 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          activity_meta: Json | null
+          attachments: Json | null
+          audience: string
+          author_id: string | null
+          author_name: string
+          author_role: string | null
+          body: string | null
+          class_id: string | null
+          class_ids: string[] | null
+          created_at: string
+          due_at: string | null
+          event_end_at: string | null
+          event_location: string | null
+          event_start_at: string | null
+          id: string
+          meta: Json | null
+          publish_at: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          activity_meta?: Json | null
+          attachments?: Json | null
+          audience: string
+          author_id?: string | null
+          author_name: string
+          author_role?: string | null
+          body?: string | null
+          class_id?: string | null
+          class_ids?: string[] | null
+          created_at?: string
+          due_at?: string | null
+          event_end_at?: string | null
+          event_location?: string | null
+          event_start_at?: string | null
+          id?: string
+          meta?: Json | null
+          publish_at?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          activity_meta?: Json | null
+          attachments?: Json | null
+          audience?: string
+          author_id?: string | null
+          author_name?: string
+          author_role?: string | null
+          body?: string | null
+          class_id?: string | null
+          class_ids?: string[] | null
+          created_at?: string
+          due_at?: string | null
+          event_end_at?: string | null
+          event_location?: string | null
+          event_start_at?: string | null
+          id?: string
+          meta?: Json | null
+          publish_at?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar: string | null
