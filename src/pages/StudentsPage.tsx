@@ -413,6 +413,9 @@ export default function StudentsPage() {
             }
           }}
           student={selectedStudent}
+          onSave={() => {
+            fetchStudents();
+          }}
         />
 
         <LinkStudentToClassModal

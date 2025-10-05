@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -13,7 +14,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { InputPhone } from '@/components/ui/input-phone';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
@@ -32,13 +44,10 @@ import {
 import { cn } from '@/lib/utils';
 import { validatePhone } from '@/lib/validation';
 import { Person, Guardian, StudentExtra } from '@/types/class';
-
-// --- CORREÇÕES ---
-// Importar hooks do Supabase em vez dos stores antigos
 import { useClasses } from '@/hooks/useClasses';
 import { usePrograms } from '@/hooks/usePrograms';
 import { useLevels } from '@/hooks/useLevels';
-import { supabase } from '@/integrations/supabase/client'; // Importar o cliente Supabase
+import { supabase } from '@/integrations/supabase/client';
 
 interface StudentFormStepsProps {
   open: boolean;
@@ -71,13 +80,6 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Person & { student: StudentExtra }>>({ /* estado inicial */ });
 
-  // Usar os hooks que buscam dados reais do Supabase
-  const { classes } = useClasses();
-  const { programs } = usePrograms();
-  const { levels } = useLevels();
-// ------------------------------------
-  // --- CORREÇÕES ---
-  // Usar os hooks que buscam dados reais do Supabase
   const { classes } = useClasses();
   const { programs } = usePrograms();
   const { levels } = useLevels();
@@ -113,8 +115,50 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     // ... (sua lógica de validação pode permanecer a mesma)
     return true; // Simplificado para o exemplo
   };
-  
-  // ... (as funções de navegação nextStep, prevStep e de gerenciamento de responsáveis podem permanecer as mesmas)
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      const currentIndex = availableSteps.findIndex(s => s.id === currentStep);
+      if (currentIndex < availableSteps.length - 1) {
+        setCurrentStep(availableSteps[currentIndex + 1].id);
+      }
+    }
+  };
+
+  const prevStep = () => {
+    const currentIndex = availableSteps.findIndex(s => s.id === currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(availableSteps[currentIndex - 1].id);
+    }
+  };
+
+  const addGuardian = () => {
+    const newGuardian: Guardian = {
+      id: `temp-${Date.now()}`,
+      name: '',
+      relation: 'MAE',
+      phone: '',
+      email: '',
+      isPrimary: (formData.student?.guardians?.length || 0) === 0,
+    };
+    updateFormData({
+      student: {
+        guardians: [...(formData.student?.guardians || []), newGuardian]
+      }
+    });
+  };
+
+  const removeGuardian = (index: number) => {
+    const guardians = [...(formData.student?.guardians || [])];
+    guardians.splice(index, 1);
+    updateFormData({ student: { guardians } });
+  };
+
+  const updateGuardian = (index: number, updates: Partial<Guardian>) => {
+    const guardians = [...(formData.student?.guardians || [])];
+    guardians[index] = { ...guardians[index], ...updates };
+    updateFormData({ student: { guardians } });
+  };
   
   // --- CORREÇÃO PRINCIPAL ---
   // A nova função handleSubmit que integra tudo com o Supabase
