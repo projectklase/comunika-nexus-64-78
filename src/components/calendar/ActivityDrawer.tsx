@@ -184,7 +184,13 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
   const { post, isLoading } = usePost(postId);
   
   // Get delivery for student
-  const delivery = user && post ? deliveryStore.getByStudentAndPost(user.id, post.id) : null;
+  const [delivery, setDelivery] = useState<any>(null);
+  
+  useEffect(() => {
+    if (user && post) {
+      deliveryStore.getByStudentAndPost(user.id, post.id).then(setDelivery);
+    }
+  }, [user, post]);
 
   const config = post ? TYPE_CONFIG[post.type as keyof typeof TYPE_CONFIG] : null;
   const Icon = config?.icon || FileText;

@@ -32,9 +32,19 @@ export function useProfessorMetrics() {
   
   const classIds = professorClasses.map(c => c.id);
 
+  const [deliveries, setDeliveries] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const loadDeliveries = async () => {
+      const allDeliveries = await deliveryStore.list({ classId: classIds.length > 0 ? classIds[0] : undefined });
+      const professorDeliveries = allDeliveries.filter(d => classIds.includes(d.classId));
+      setDeliveries(professorDeliveries);
+    };
+    loadDeliveries();
+  }, [classIds]);
+
   // Get deliveries for professor's classes
-  const allDeliveries = deliveryStore.list({ classId: classIds.length > 0 ? classIds[0] : undefined });
-  const professorDeliveries = allDeliveries.filter(d => classIds.includes(d.classId));
+  const professorDeliveries = deliveries;
 
   // Pending deliveries (waiting for review)
   const pendingDeliveries = professorDeliveries.filter(d => d.reviewStatus === 'AGUARDANDO');

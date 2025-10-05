@@ -1,4 +1,4 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, memo, useState, useEffect } from 'react';
 import { format, isToday, addDays, isWithinInterval } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -102,9 +102,23 @@ export const TodaySectionDashboard = memo(function TodaySectionDashboard({
     );
   };
 
+  const [deliveredPosts, setDeliveredPosts] = useState<Set<string>>(new Set());
+  
+  useEffect(() => {
+    const checkDeliveries = async () => {
+      if (!user) return;
+      const delivered = new Set<string>();
+      for (const post of todayItems) {
+        const del = await deliveryStore.getByStudentAndPost(user.id, post.id);
+        if (del) delivered.add(post.id);
+      }
+      setDeliveredPosts(delivered);
+    };
+    checkDeliveries();
+  }, [user, todayItems]);
+
   const isDelivered = (post: Post) => {
-    if (!user) return false;
-    return deliveryStore.getByStudentAndPost(user.id, post.id) !== null;
+    return deliveredPosts.has(post.id);
   };
 
   if (todayItems.length === 0) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -58,7 +58,13 @@ export function ImmersivePostCard({
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
 
   const isActivity = ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type);
-  const delivery = isActivity && user ? deliveryStore.getByStudentAndPost(user.id, post.id) : null;
+  const [delivery, setDelivery] = useState<any>(null);
+  
+  useEffect(() => {
+    if (isActivity && user) {
+      deliveryStore.getByStudentAndPost(user.id, post.id).then(setDelivery);
+    }
+  }, [isActivity, user, post.id]);
   const isNewPost = !isRead(post.id);
   const isPostSaved = isSaved(post.id);
   const isOverdue = post.dueAt ? new Date() > new Date(post.dueAt) : false;

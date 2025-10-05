@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -103,17 +103,25 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
     postId: ''
   });
   // Memoize expensive computations
+  const [delivery, setDelivery] = useState<any>(null);
+  
+  useEffect(() => {
+    const isActivity = ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type);
+    if (isActivity && user) {
+      deliveryStore.getByStudentAndPost(user.id, post.id).then(setDelivery);
+    }
+  }, [post.type, user, post.id]);
+
   const memoizedData = useMemo(() => {
     const isActivity = ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type);
-    const delivery = isActivity && user ? deliveryStore.getByStudentAndPost(user.id, post.id) : null;
     const isNewPost = !isRead(post.id);
     const isPostSaved = isSaved(post.id);
     const isOverdue = post.dueAt ? new Date() > new Date(post.dueAt) : false;
     
-    return { isActivity, delivery, isNewPost, isPostSaved, isOverdue };
-  }, [post.type, post.id, post.dueAt, user, isRead, isSaved]);
+    return { isActivity, isNewPost, isPostSaved, isOverdue };
+  }, [post.type, post.id, post.dueAt, isRead, isSaved]);
   
-  const { isActivity, delivery, isNewPost, isPostSaved, isOverdue } = memoizedData;
+  const { isActivity, isNewPost, isPostSaved, isOverdue } = memoizedData;
   
   const getTypeColor = (type: PostType) => {
     switch (type) {

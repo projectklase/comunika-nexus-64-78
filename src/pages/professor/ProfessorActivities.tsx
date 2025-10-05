@@ -132,9 +132,15 @@ export default function ProfessorActivities() {
   } = useActivityFilters(professorActivities);
 
   // Calcular contadores usando delivery store - always called
-  const deliveryMetrics = useMemo(() => {
-    if (!user) return {};
-    return deliveryStore.getProfessorMetrics(classIds);
+  const [deliveryMetrics, setDeliveryMetrics] = useState<any>({});
+  
+  useEffect(() => {
+    const loadMetrics = async () => {
+      if (!user) return;
+      const metrics = await deliveryStore.getProfessorMetrics(classIds);
+      setDeliveryMetrics(metrics);
+    };
+    loadMetrics();
   }, [user, classIds]);
 
   // Calcular contadores por status usando o delivery store - always called
@@ -206,13 +212,14 @@ export default function ProfessorActivities() {
 
         groups[classId].activities.push(activity);
 
-        // Calcular contadores reais usando o delivery store
-        const metrics = deliveryStore.getActivityMetrics(activity.id, schoolClass.students.length);
-        groups[classId].counters.pendentes += metrics.naoEntregue;
-        groups[classId].counters.aguardandoAprovacao += metrics.aguardando;
-        groups[classId].counters.aprovadas += metrics.aprovadas;
-        groups[classId].counters.devolvidas += metrics.devolvidas;
-        groups[classId].counters.atrasadas += metrics.atrasadas;
+        // Calcular contadores reais usando o delivery store (async)
+        deliveryStore.getActivityMetrics(activity.id, schoolClass.students.length).then(metrics => {
+          groups[classId].counters.pendentes += metrics.naoEntregue;
+          groups[classId].counters.aguardandoAprovacao += metrics.aguardando;
+          groups[classId].counters.aprovadas += metrics.aprovadas;
+          groups[classId].counters.devolvidas += metrics.devolvidas;
+          groups[classId].counters.atrasadas += metrics.atrasadas;
+        });
       });
     });
 
@@ -504,33 +511,24 @@ export default function ProfessorActivities() {
                                 </div>
                               </div>
 
-                              {/* Contadores reais do delivery store */}
+                              {/* Contadores reais do delivery store (loaded async) */}
                               <div className="flex items-center gap-4 text-sm">
-                                {(() => {
-                                  const metrics = deliveryStore.getActivityMetrics(activity.id, 
-                                    professorClasses.find(c => c.id === group.classId)?.students.length || 0
-                                  );
-                                  return (
-                                    <>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics.aprovadas}</div>
-                                        <div className="text-muted-foreground">Aprovadas</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics.aguardando}</div>
-                                        <div className="text-muted-foreground">Aguardando</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics.naoEntregue}</div>
-                                        <div className="text-muted-foreground">Pendentes</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics.atrasadas}</div>
-                                        <div className="text-muted-foreground">Atrasadas</div>
-                                      </div>
-                                    </>
-                                  );
-                                })()}
+                                <div className="text-center">
+                                  <div className="font-medium">-</div>
+                                  <div className="text-muted-foreground">Aprovadas</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-medium">-</div>
+                                  <div className="text-muted-foreground">Aguardando</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-medium">-</div>
+                                  <div className="text-muted-foreground">Pendentes</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-medium">-</div>
+                                  <div className="text-muted-foreground">Atrasadas</div>
+                                </div>
                               </div>
                             </div>
 

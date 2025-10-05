@@ -1,364 +1,393 @@
 import { Delivery, DeliveryInput, DeliveryReview, DeliveryFilter, ActivityMetrics, ReviewStatus } from '@/types/delivery';
-import { Post } from '@/types/post';
+import { supabase } from '@/integrations/supabase/client';
 
 class DeliveryStore {
-  private deliveries: Delivery[] = [];
-  private storageKey = 'comunika_deliveries';
+  private subscribers: Set<() => void> = new Set();
 
   constructor() {
-    // Limpar dados antigos do localStorage com IDs inválidos
-    this.clearOldData();
-    this.loadFromStorage();
-    this.initializeWithMockData();
-    // Debug: log deliveries on initialization
-    console.log('DeliveryStore initialized with', this.deliveries.length, 'deliveries');
+    console.log('DeliveryStore initialized with Supabase');
   }
 
-  private clearOldData() {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        const data = JSON.parse(stored);
-        // Verificar se há dados com IDs inválidos (não UUID)
-        const hasInvalidIds = data.some((delivery: any) => 
-          delivery.studentId && !this.isValidUUID(delivery.studentId)
-        );
-        
-        if (hasInvalidIds) {
-          console.log('Clearing old delivery data with invalid UUIDs');
-          localStorage.removeItem(this.storageKey);
-        }
+  private notifySubscribers() {
+    this.subscribers.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('Error in delivery store subscriber:', error);
       }
-    } catch (error) {
-      console.error('Error clearing old data:', error);
-      localStorage.removeItem(this.storageKey);
-    }
+    });
   }
 
-  private isValidUUID(str: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(str);
+  subscribe(callback: () => void): () => void {
+    this.subscribers.add(callback);
+    return () => {
+      this.subscribers.delete(callback);
+    };
   }
 
-  private loadFromStorage() {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        this.deliveries = JSON.parse(stored);
-      }
-    } catch (error) {
-      console.error('Error loading deliveries from storage:', error);
-    }
-  }
-
-  private saveToStorage() {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.deliveries));
-      console.log('Deliveries saved to storage:', this.deliveries.length, 'total');
-    } catch (error) {
-      console.error('Error saving deliveries to storage:', error);
-    }
-  }
-
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  private dbRowToDelivery(row: any): Delivery {
+    return {
+      id: row.id,
+      postId: row.post_id,
+      studentId: row.student_id,
+      studentName: row.student_name,
+      classId: row.class_id,
+      submittedAt: row.submitted_at,
+      reviewStatus: row.review_status as ReviewStatus,
+      reviewNote: row.review_note,
+      reviewedBy: row.reviewed_by,
+      reviewedAt: row.reviewed_at,
+      isLate: row.is_late,
+      notes: row.notes,
+      attachments: row.attachments,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
   }
 
   // Criar uma entrega
-  submit(input: DeliveryInput, dueAt?: string): Delivery {
-    // Verificar se já existe entrega para este aluno nesta atividade
-    const existing = this.deliveries.find(
-      d => d.postId === input.postId && d.studentId === input.studentId
-    );
+  async submit(input: DeliveryInput, dueAt?: string): Promise<Delivery> {
+    try {
+      // Verificar se já existe entrega para este aluno nesta atividade
+      const { data: existing } = await supabase
+        .from('deliveries')
+        .select('id')
+        .eq('post_id', input.postId)
+        .eq('student_id', input.studentId)
+        .maybeSingle();
 
-    if (existing) {
-      throw new Error('Entrega já existe para este aluno nesta atividade');
+      if (existing) {
+        throw new Error('Entrega já existe para este aluno nesta atividade');
+      }
+
+      const now = new Date().toISOString();
+      const isLate = dueAt ? new Date(now) > new Date(dueAt) : false;
+
+      const { data, error } = await supabase
+        .from('deliveries')
+        .insert({
+          post_id: input.postId,
+          student_id: input.studentId,
+          student_name: input.studentName,
+          class_id: input.classId,
+          submitted_at: now,
+          review_status: 'AGUARDANDO',
+          is_late: isLate,
+          notes: input.notes,
+          // Attachments would be handled separately in delivery_attachments table
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('New delivery submitted:', data.id, 'for post:', data.post_id);
+      this.notifySubscribers();
+      return this.dbRowToDelivery(data);
+    } catch (error) {
+      console.error('Error submitting delivery:', error);
+      throw error;
     }
-
-    const now = new Date().toISOString();
-    const isLate = dueAt ? new Date(now) > new Date(dueAt) : false;
-
-    const delivery: Delivery = {
-      id: this.generateId(),
-      ...input,
-      submittedAt: now,
-      reviewStatus: 'AGUARDANDO',
-      isLate,
-      createdAt: now,
-      updatedAt: now
-    };
-
-    this.deliveries.push(delivery);
-    this.saveToStorage();
-    console.log('New delivery submitted:', delivery.id, 'for post:', delivery.postId);
-    return delivery;
   }
 
   // Reenviar uma entrega (quando devolvida)
-  resubmit(deliveryId: string, input: Partial<DeliveryInput>, dueAt?: string): Delivery | null {
-    const index = this.deliveries.findIndex(d => d.id === deliveryId);
-    if (index === -1) return null;
+  async resubmit(deliveryId: string, input: Partial<DeliveryInput>, dueAt?: string): Promise<Delivery | null> {
+    try {
+      const now = new Date().toISOString();
+      const isLate = dueAt ? new Date(now) > new Date(dueAt) : false;
 
-    const delivery = this.deliveries[index];
-    const now = new Date().toISOString();
-    const isLate = dueAt ? new Date(now) > new Date(dueAt) : false;
+      const { data, error } = await supabase
+        .from('deliveries')
+        .update({
+          submitted_at: now,
+          review_status: 'AGUARDANDO',
+          is_late: isLate,
+          review_note: null,
+          reviewed_by: null,
+          reviewed_at: null,
+          notes: input.notes,
+          updated_at: now
+        })
+        .eq('id', deliveryId)
+        .select()
+        .single();
 
-    this.deliveries[index] = {
-      ...delivery,
-      ...input,
-      submittedAt: now,
-      reviewStatus: 'AGUARDANDO',
-      isLate,
-      reviewNote: undefined, // Limpar feedback anterior
-      reviewedBy: undefined,
-      reviewedAt: undefined,
-      updatedAt: now
-    };
+      if (error) throw error;
 
-    this.saveToStorage();
-    return this.deliveries[index];
+      this.notifySubscribers();
+      return data ? this.dbRowToDelivery(data) : null;
+    } catch (error) {
+      console.error('Error resubmitting delivery:', error);
+      return null;
+    }
   }
 
   // Revisar uma entrega (aprovar/devolver)
-  review(deliveryId: string, review: DeliveryReview): Delivery | null {
-    const index = this.deliveries.findIndex(d => d.id === deliveryId);
-    if (index === -1) return null;
+  async review(deliveryId: string, review: DeliveryReview): Promise<Delivery | null> {
+    try {
+      const now = new Date().toISOString();
 
-    const now = new Date().toISOString();
-    this.deliveries[index] = {
-      ...this.deliveries[index],
-      reviewStatus: review.reviewStatus,
-      reviewNote: review.reviewNote,
-      reviewedBy: review.reviewedBy,
-      reviewedAt: now,
-      updatedAt: now
-    };
+      const { data, error } = await supabase
+        .from('deliveries')
+        .update({
+          review_status: review.reviewStatus,
+          review_note: review.reviewNote,
+          reviewed_by: review.reviewedBy,
+          reviewed_at: now,
+          updated_at: now
+        })
+        .eq('id', deliveryId)
+        .select()
+        .single();
 
-    this.saveToStorage();
-    return this.deliveries[index];
+      if (error) throw error;
+
+      this.notifySubscribers();
+      return data ? this.dbRowToDelivery(data) : null;
+    } catch (error) {
+      console.error('Error reviewing delivery:', error);
+      return null;
+    }
   }
 
   // Revisar múltiplas entregas
-  reviewMultiple(deliveryIds: string[], review: DeliveryReview): Delivery[] {
-    const updated: Delivery[] = [];
-    const now = new Date().toISOString();
+  async reviewMultiple(deliveryIds: string[], review: DeliveryReview): Promise<Delivery[]> {
+    try {
+      const now = new Date().toISOString();
 
-    deliveryIds.forEach(id => {
-      const index = this.deliveries.findIndex(d => d.id === id);
-      if (index !== -1) {
-        this.deliveries[index] = {
-          ...this.deliveries[index],
-          reviewStatus: review.reviewStatus,
-          reviewNote: review.reviewNote,
-          reviewedBy: review.reviewedBy,
-          reviewedAt: now,
-          updatedAt: now
-        };
-        updated.push(this.deliveries[index]);
-      }
-    });
+      const { data, error } = await supabase
+        .from('deliveries')
+        .update({
+          review_status: review.reviewStatus,
+          review_note: review.reviewNote,
+          reviewed_by: review.reviewedBy,
+          reviewed_at: now,
+          updated_at: now
+        })
+        .in('id', deliveryIds)
+        .select();
 
-    this.saveToStorage();
-    return updated;
+      if (error) throw error;
+
+      this.notifySubscribers();
+      return data ? data.map(row => this.dbRowToDelivery(row)) : [];
+    } catch (error) {
+      console.error('Error reviewing multiple deliveries:', error);
+      return [];
+    }
   }
 
   // Marcar entrega manual (para entregas offline)
-  markAsReceived(postId: string, studentId: string, studentName: string, classId: string, reviewedBy: string): Delivery {
-    // Verificar se já existe
-    const existing = this.deliveries.find(
-      d => d.postId === postId && d.studentId === studentId
-    );
+  async markAsReceived(postId: string, studentId: string, studentName: string, classId: string, reviewedBy: string): Promise<Delivery> {
+    try {
+      // Verificar se já existe
+      const { data: existing } = await supabase
+        .from('deliveries')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('student_id', studentId)
+        .maybeSingle();
 
-    if (existing) {
-      throw new Error('Entrega já existe para este aluno');
+      if (existing) {
+        throw new Error('Entrega já existe para este aluno');
+      }
+
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('deliveries')
+        .insert({
+          post_id: postId,
+          student_id: studentId,
+          student_name: studentName,
+          class_id: classId,
+          submitted_at: now,
+          review_status: 'APROVADA',
+          review_note: 'Entrega recebida manualmente',
+          reviewed_by: reviewedBy,
+          reviewed_at: now,
+          is_late: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      this.notifySubscribers();
+      return this.dbRowToDelivery(data);
+    } catch (error) {
+      console.error('Error marking delivery as received:', error);
+      throw error;
     }
-
-    const now = new Date().toISOString();
-    const delivery: Delivery = {
-      id: this.generateId(),
-      postId,
-      studentId,
-      studentName,
-      classId,
-      submittedAt: now,
-      reviewStatus: 'APROVADA',
-      reviewNote: 'Entrega recebida manualmente',
-      reviewedBy,
-      reviewedAt: now,
-      isLate: false,
-      createdAt: now,
-      updatedAt: now
-    };
-
-    this.deliveries.push(delivery);
-    this.saveToStorage();
-    return delivery;
   }
 
   // Listar entregas com filtros
-  list(filter?: DeliveryFilter): Delivery[] {
-    console.log('Listing deliveries with filter:', filter, 'Total deliveries:', this.deliveries.length);
-    let filtered = [...this.deliveries];
+  async list(filter?: DeliveryFilter): Promise<Delivery[]> {
+    try {
+      let query = supabase.from('deliveries').select('*');
 
-    if (filter?.postId) {
-      filtered = filtered.filter(d => d.postId === filter.postId);
+      if (filter?.postId) {
+        query = query.eq('post_id', filter.postId);
+      }
+
+      if (filter?.classId) {
+        query = query.eq('class_id', filter.classId);
+      }
+
+      if (filter?.studentId) {
+        query = query.eq('student_id', filter.studentId);
+      }
+
+      if (filter?.reviewStatus) {
+        query = query.eq('review_status', filter.reviewStatus);
+      }
+
+      if (filter?.isLate !== undefined) {
+        query = query.eq('is_late', filter.isLate);
+      }
+
+      // Ordenar por data de submissão (mais recente primeiro)
+      query = query.order('submitted_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const deliveries = data ? data.map(row => this.dbRowToDelivery(row)) : [];
+
+      // Filter by hasAttachments if specified (since attachments are in a separate table)
+      if (filter?.hasAttachments !== undefined) {
+        // TODO: Implement attachments filtering when delivery_attachments are integrated
+        console.warn('hasAttachments filter not yet implemented for Supabase');
+      }
+
+      console.log('Listing deliveries with filter:', filter, 'Total deliveries:', deliveries.length);
+      return deliveries;
+    } catch (error) {
+      console.error('Error listing deliveries:', error);
+      return [];
     }
-
-    if (filter?.classId) {
-      filtered = filtered.filter(d => d.classId === filter.classId);
-    }
-
-    if (filter?.studentId) {
-      filtered = filtered.filter(d => d.studentId === filter.studentId);
-    }
-
-    if (filter?.reviewStatus) {
-      filtered = filtered.filter(d => d.reviewStatus === filter.reviewStatus);
-    }
-
-    if (filter?.isLate !== undefined) {
-      filtered = filtered.filter(d => Boolean(d.isLate) === filter.isLate);
-    }
-
-    if (filter?.hasAttachments !== undefined) {
-      filtered = filtered.filter(d => {
-        const hasAttachments = Boolean(d.attachments && d.attachments.length > 0);
-        return hasAttachments === filter.hasAttachments;
-      });
-    }
-
-    // Ordenar por data de submissão (mais recente primeiro)
-    return filtered.sort((a, b) => 
-      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-    );
   }
 
   // Obter entrega por ID
-  getById(id: string): Delivery | null {
-    return this.deliveries.find(d => d.id === id) || null;
+  async getById(id: string): Promise<Delivery | null> {
+    try {
+      const { data, error } = await supabase
+        .from('deliveries')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return data ? this.dbRowToDelivery(data) : null;
+    } catch (error) {
+      console.error('Error getting delivery by ID:', error);
+      return null;
+    }
   }
 
   // Obter entrega de um aluno para uma atividade específica
-  getByStudentAndPost(studentId: string, postId: string): Delivery | null {
-    return this.deliveries.find(d => d.studentId === studentId && d.postId === postId) || null;
+  async getByStudentAndPost(studentId: string, postId: string): Promise<Delivery | null> {
+    try {
+      const { data, error } = await supabase
+        .from('deliveries')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('post_id', postId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return data ? this.dbRowToDelivery(data) : null;
+    } catch (error) {
+      console.error('Error getting delivery by student and post:', error);
+      return null;
+    }
   }
 
   // Calcular métricas de uma atividade
-  getActivityMetrics(postId: string, totalStudents: number): ActivityMetrics {
-    const deliveries = this.list({ postId });
-    
-    const aguardando = deliveries.filter(d => d.reviewStatus === 'AGUARDANDO').length;
-    const aprovadas = deliveries.filter(d => d.reviewStatus === 'APROVADA').length;
-    const devolvidas = deliveries.filter(d => d.reviewStatus === 'DEVOLVIDA').length;
-    const atrasadas = deliveries.filter(d => d.isLate).length;
-    const naoEntregue = totalStudents - deliveries.length;
-    
-    const percentualEntrega = totalStudents > 0 ? (deliveries.length / totalStudents) * 100 : 0;
-    const percentualAprovacao = deliveries.length > 0 ? (aprovadas / deliveries.length) * 100 : 0;
+  async getActivityMetrics(postId: string, totalStudents: number): Promise<ActivityMetrics> {
+    try {
+      const deliveries = await this.list({ postId });
+      
+      const aguardando = deliveries.filter(d => d.reviewStatus === 'AGUARDANDO').length;
+      const aprovadas = deliveries.filter(d => d.reviewStatus === 'APROVADA').length;
+      const devolvidas = deliveries.filter(d => d.reviewStatus === 'DEVOLVIDA').length;
+      const atrasadas = deliveries.filter(d => d.isLate).length;
+      const naoEntregue = totalStudents - deliveries.length;
+      
+      const percentualEntrega = totalStudents > 0 ? (deliveries.length / totalStudents) * 100 : 0;
+      const percentualAprovacao = deliveries.length > 0 ? (aprovadas / deliveries.length) * 100 : 0;
 
-    return {
-      total: totalStudents,
-      naoEntregue,
-      aguardando,
-      aprovadas,
-      devolvidas,
-      atrasadas,
-      percentualEntrega: Math.round(percentualEntrega),
-      percentualAprovacao: Math.round(percentualAprovacao)
-    };
+      return {
+        total: totalStudents,
+        naoEntregue,
+        aguardando,
+        aprovadas,
+        devolvidas,
+        atrasadas,
+        percentualEntrega: Math.round(percentualEntrega),
+        percentualAprovacao: Math.round(percentualAprovacao)
+      };
+    } catch (error) {
+      console.error('Error calculating activity metrics:', error);
+      return {
+        total: totalStudents,
+        naoEntregue: totalStudents,
+        aguardando: 0,
+        aprovadas: 0,
+        devolvidas: 0,
+        atrasadas: 0,
+        percentualEntrega: 0,
+        percentualAprovacao: 0
+      };
+    }
   }
 
   // Calcular contadores para um professor (todas as atividades)
-  getProfessorMetrics(classIds: string[]): {
+  async getProfessorMetrics(classIds: string[]): Promise<{
     pendingDeliveries: number;
     weeklyDeadlines: number;
-  } {
-    const deliveries = this.deliveries.filter(d => 
-      classIds.includes(d.classId) && d.reviewStatus === 'AGUARDANDO'
-    );
+  }> {
+    try {
+      const { data, error } = await supabase
+        .from('deliveries')
+        .select('id')
+        .in('class_id', classIds)
+        .eq('review_status', 'AGUARDANDO');
 
-    // TODO: Implementar cálculo de prazos da semana quando integrar com posts
-    return {
-      pendingDeliveries: deliveries.length,
-      weeklyDeadlines: 0
-    };
+      if (error) throw error;
+
+      // TODO: Implementar cálculo de prazos da semana quando integrar com posts
+      return {
+        pendingDeliveries: data ? data.length : 0,
+        weeklyDeadlines: 0
+      };
+    } catch (error) {
+      console.error('Error getting professor metrics:', error);
+      return {
+        pendingDeliveries: 0,
+        weeklyDeadlines: 0
+      };
+    }
   }
 
   // Deletar entrega
-  delete(id: string): boolean {
-    const initialLength = this.deliveries.length;
-    this.deliveries = this.deliveries.filter(d => d.id !== id);
-    const success = this.deliveries.length < initialLength;
-    if (success) {
-      this.saveToStorage();
-    }
-    return success;
-  }
+  async delete(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('deliveries')
+        .delete()
+        .eq('id', id);
 
-  // Dados mock para desenvolvimento
-  private initializeWithMockData() {
-    // Only initialize mock data if there are no deliveries at all in storage
-    const hasStoredData = localStorage.getItem(this.storageKey);
-    if (!hasStoredData && this.deliveries.length === 0) {
-// Adicionar função helper para gerar UUIDs mock
-const generateMockUUID = (suffix: string) => `550e8400-e29b-41d4-a716-44665544${suffix.padStart(4, '0')}`;
+      if (error) throw error;
 
-// Atualizar referências para usar UUIDs
-const mockDeliveries: Delivery[] = [
-        {
-          id: 'delivery-1',
-          postId: 'atividade-1',
-          studentId: generateMockUUID('1001'),
-          studentName: 'Ana Silva',
-          classId: 'class-3a',
-          submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
-          reviewStatus: 'AGUARDANDO',
-          isLate: false,
-          attachments: [
-            { name: 'relatorio-fisica.pdf', size: 1024000, type: 'application/pdf' }
-          ],
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 'delivery-2',
-          postId: 'trabalho-1',
-          studentId: generateMockUUID('1002'),
-          studentName: 'Carlos Santos',
-          classId: 'class-3a',
-          submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 dia atrás
-          reviewStatus: 'APROVADA',
-          reviewNote: 'Excelente trabalho! Boa análise dos impactos ambientais.',
-          reviewedBy: '550e8400-e29b-41d4-a716-446655440001',
-          reviewedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 horas atrás
-          isLate: false,
-          attachments: [
-            { name: 'redacao-impactos.docx', size: 512000, type: 'application/msword' }
-          ],
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 'delivery-3',
-          postId: 'prova-1',
-          studentId: generateMockUUID('1003'),
-          studentName: 'Maria Costa',
-          classId: 'class-3a',
-          submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias atrás
-          reviewStatus: 'DEVOLVIDA',
-          reviewNote: 'Revisar as questões sobre fontes exponenciais. Refazer e reenviar.',
-          reviewedBy: '550e8400-e29b-41d4-a716-446655440001',
-          reviewedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
-          isLate: true,
-          notes: 'Tive dificuldades com as questões 3 e 4',
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-
-      this.deliveries = mockDeliveries;
-      this.saveToStorage();
-      console.log('Mock deliveries initialized:', mockDeliveries.length);
+      this.notifySubscribers();
+      return true;
+    } catch (error) {
+      console.error('Error deleting delivery:', error);
+      return false;
     }
   }
 }

@@ -33,9 +33,15 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
     });
 
     const total = monthlyActivities.length;
-    const delivered = monthlyActivities.filter(post => {
-      return deliveryStore.getByStudentAndPost(user.id, post.id) !== null;
-    }).length;
+    // Calculate delivered count asynchronously
+    let delivered = 0;
+    const checkDeliveries = async () => {
+      for (const post of monthlyActivities) {
+        const del = await deliveryStore.getByStudentAndPost(user.id, post.id);
+        if (del) delivered++;
+      }
+    };
+    checkDeliveries();
 
     const percentage = total > 0 ? Math.round((delivered / total) * 100) : 0;
 
@@ -56,9 +62,15 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
       return isWithinInterval(dueDate, { start: oneWeekAgo, end: now });
     });
 
-    const completed = recentActivities.filter(post => {
-      return deliveryStore.getByStudentAndPost(user.id, post.id) !== null;
-    }).length;
+    // Calculate completed count asynchronously
+    let completed = 0;
+    const checkCompleted = async () => {
+      for (const post of recentActivities) {
+        const del = await deliveryStore.getByStudentAndPost(user.id, post.id);
+        if (del) completed++;
+      }
+    };
+    checkCompleted();
 
     const pending = recentActivities.length - completed;
 

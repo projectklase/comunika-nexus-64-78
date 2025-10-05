@@ -72,8 +72,8 @@ export const useActivityExport = () => {
     toast({ title: "Exportação concluída", description: `${activities.length} atividades exportadas` });
   }, [getClass, toast]);
 
-  const exportDeliveries = useCallback((activityId: string, activity: Post) => {
-    const deliveries = deliveryStore.list({ postId: activityId });
+  const exportDeliveries = useCallback(async (activityId: string, activity: Post) => {
+    const deliveries = await deliveryStore.list({ postId: activityId });
     
     if (deliveries.length === 0) {
       toast({ title: "Nenhuma entrega encontrada", variant: "destructive" });
