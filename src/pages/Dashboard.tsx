@@ -4,7 +4,7 @@ import { DashboardCard } from '@/components/Dashboard/DashboardCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { usePosts } from '@/hooks/usePosts'; // Assumindo que este hook busca posts do Supabase
+import { usePosts } from '@/hooks/usePosts';
 import { useNavigate } from 'react-router-dom';
 import { PostPreviewCard } from '@/components/dashboard/PostPreviewCard';
 import { PostComposer } from '@/components/feed/PostComposer';
@@ -13,24 +13,20 @@ import { useToast } from '@/hooks/use-toast';
 import { PostLinkBuilder, UserRole } from '@/utils/post-links';
 import { Bell, Calendar, Users, FileText, Plus } from 'lucide-react';
 
-// CORREÇÃO: Importar o cliente Supabase e o serviço de notificações
-import { supabase } from '@/lib/supabaseClient'; 
-import { addNotification } from '@/stores/notification-store'; // O nosso novo serviço de notificações
+// CORREÇÃO: Importar o cliente Supabase e o serviço de notificações com o caminho correto
+import { supabase } from "@/integrations/supabase/client"; 
+import { addNotification } from '@/stores/notification-store';
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { posts, invalidate: invalidatePosts } = usePosts(); // Assumindo que seu hook usePosts retorna uma função para invalidar/refazer a busca
+  const { posts, invalidate: invalidatePosts } = usePosts();
   const { toast } = useToast();
   const [showComposer, setShowComposer] = useState(false);
-  
-  // CORREÇÃO: Estado para armazenar o número de turmas ativas
   const [activeClassesCount, setActiveClassesCount] = useState(0);
 
-  // CORREÇÃO: Buscar dados agregados (como turmas ativas) do Supabase ao carregar
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // Busca a contagem de turmas ativas
       const { count, error } = await supabase
         .from('classes')
         .select('*', { count: 'exact', head: true })
@@ -47,7 +43,6 @@ const Dashboard = () => {
       fetchDashboardData();
     }
   }, [user]);
-
 
   if (isLoading) {
     return (
@@ -76,43 +71,37 @@ const Dashboard = () => {
 
   const buttonConfig = getButtonConfig();
 
-  // CORREÇÃO: Função handleCreatePost totalmente reescrita
   const handleCreatePost = async (postInput: PostInput) => {
     if (!user) return;
 
     try {
-      // 1. Salva o novo post no Supabase
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert({
           ...postInput,
           author_id: user.id,
           author_name: user.name,
-          // Mapeie outros campos se necessário (ex: class_ids para postInput.classIds)
         })
         .select()
         .single();
       
       if (postError) throw postError;
 
-      // 2. Cria uma notificação sobre o novo post (usando nosso novo serviço)
-      //    Você pode customizar a lógica para quem recebe a notificação (ex: todos os alunos)
       await addNotification({
-        user_id: user.id, // Ou o ID do usuário alvo
+        user_id: user.id,
         title: `Novo Post: ${newPost.title}`,
         message: `Um novo post foi publicado por ${user.name}.`,
         type: 'POST_NEW',
-        role_target: 'ALUNO', // Exemplo: notificar todos os alunos
+        role_target: 'ALUNO',
         link: PostLinkBuilder.buildPostUrl(newPost, 'aluno'),
       });
       
-      // 3. Fecha o composer, mostra o toast e invalida os dados para atualizar a lista
       setShowComposer(false);
       toast({
         title: "Post criado com sucesso",
         description: "Seu post foi publicado e a notificação enviada.",
       });
-      invalidatePosts(); // Atualiza a lista de posts na tela
+      invalidatePosts();
 
     } catch (error) {
       console.error('Erro ao criar post:', error);
@@ -125,9 +114,6 @@ const Dashboard = () => {
   };
 
   const renderSecretariaDashboard = () => {
-    // CORREÇÃO: Lógica de "não lidos" simplificada para não usar localStorage.
-    // Uma implementação completa usaria uma tabela de 'leituras' no Supabase.
-    // Por agora, vamos contar os avisos das últimas 24h como "novos".
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const unreadAnnouncements = posts.filter(p => 
       (p.type === 'AVISO' || p.type === 'COMUNICADO') && 
@@ -143,12 +129,10 @@ const Dashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <DashboardCard title="Novos Avisos" value={unreadAnnouncements} icon={Bell} variant="primary" description="Últimas 24 horas" />
           <DashboardCard title="Próximos Eventos" value={upcomingEvents.length} icon={Calendar} variant="secondary" />
-          {/* CORREÇÃO: Usando o valor real do Supabase */}
           <DashboardCard title="Turmas Ativas" value={activeClassesCount} icon={Users} variant="success" description="Contagem real" />
           <DashboardCard title="Total de Posts" value={posts.length} icon={FileText} />
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          {/* O resto do JSX para listar os posts e eventos permanece o mesmo */}
           <Card className="glass-card">
             <CardHeader><CardTitle>Últimas Publicações</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -178,17 +162,12 @@ const Dashboard = () => {
       </div>
     );
   };
-
-  // O resto do seu componente (renderDashboard, return principal) permanece praticamente o mesmo.
-  // Colei aqui para garantir que o arquivo fique completo e sem erros.
   
   const renderDashboard = () => {
     switch (user.role) {
       case 'secretaria':
         return renderSecretariaDashboard();
-      // ... outras roles
       default:
-        // Redirecionamento para outros dashboards ou mensagem de erro
         const dashboardPath = `/${user.role}/dashboard`;
         navigate(dashboardPath);
         return <div>Redirecionando...</div>;
