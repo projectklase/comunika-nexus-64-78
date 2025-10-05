@@ -13,17 +13,26 @@ import { useToast } from '@/hooks/use-toast';
 import { PostLinkBuilder, UserRole } from '@/utils/post-links';
 import { Bell, Calendar, Users, FileText, Plus } from 'lucide-react';
 
-// CORREÇÃO: Importar o cliente Supabase e o serviço de notificações com o caminho correto
+// CORREÇÃO: Importar o cliente Supabase e o notificationStore
 import { supabase } from "@/integrations/supabase/client"; 
-import { addNotification } from '@/stores/notification-store';
+import { notificationStore } from '@/stores/notification-store';
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { posts, invalidate: invalidatePosts } = usePosts();
+  const [allPosts, setAllPosts] = useState<any[]>([]);
   const { toast } = useToast();
   const [showComposer, setShowComposer] = useState(false);
   const [activeClassesCount, setActiveClassesCount] = useState(0);
+
+  // Load posts
+  useEffect(() => {
+    const loadPosts = async () => {
+      const posts = await usePosts();
+      setAllPosts(posts);
+    };
+    loadPosts();
+  }, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -75,7 +84,7 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      const { data: newPost, error: postError } = await supabase
+      const { data: newPostRow, error: postError } = await supabase
         .from('posts')
         .insert({
           ...postInput,
@@ -87,13 +96,31 @@ const Dashboard = () => {
       
       if (postError) throw postError;
 
-      await addNotification({
-        user_id: user.id,
+      // Convert DB row to Post format
+      const newPost = {
+        ...newPostRow,
+        authorName: newPostRow.author_name,
+        authorId: newPostRow.author_id,
+        createdAt: newPostRow.created_at,
+        updatedAt: newPostRow.updated_at,
+        classId: newPostRow.class_id,
+        classIds: newPostRow.class_ids,
+        publishAt: newPostRow.publish_at,
+        dueAt: newPostRow.due_at,
+        eventStartAt: newPostRow.event_start_at,
+        eventEndAt: newPostRow.event_end_at,
+        eventLocation: newPostRow.event_location,
+        activityMeta: newPostRow.activity_meta,
+        authorRole: newPostRow.author_role
+      };
+
+      await notificationStore.add({
+        userId: user.id,
         title: `Novo Post: ${newPost.title}`,
         message: `Um novo post foi publicado por ${user.name}.`,
         type: 'POST_NEW',
-        role_target: 'ALUNO',
-        link: PostLinkBuilder.buildPostUrl(newPost, 'aluno'),
+        roleTarget: 'ALUNO',
+        link: PostLinkBuilder.buildPostUrl(newPost as any, 'aluno'),
       });
       
       setShowComposer(false);
@@ -101,7 +128,10 @@ const Dashboard = () => {
         title: "Post criado com sucesso",
         description: "Seu post foi publicado e a notificação enviada.",
       });
-      invalidatePosts();
+      
+      // Reload posts
+      const posts = await usePosts();
+      setAllPosts(posts);
 
     } catch (error) {
       console.error('Erro ao criar post:', error);
@@ -115,14 +145,14 @@ const Dashboard = () => {
 
   const renderSecretariaDashboard = () => {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const unreadAnnouncements = posts.filter(p => 
+    const unreadAnnouncements = allPosts.filter(p => 
       (p.type === 'AVISO' || p.type === 'COMUNICADO') && 
       p.status === 'PUBLISHED' &&
-      new Date(p.created_at) > new Date(twentyFourHoursAgo)
+      new Date(p.createdAt) > new Date(twentyFourHoursAgo)
     ).length;
 
-    const upcomingEvents = posts.filter(p => p.type === 'EVENTO' && p.event_start_at && new Date(p.event_start_at) > new Date()).sort((a,b) => new Date(a.event_start_at).getTime() - new Date(b.event_start_at).getTime());
-    const latestPosts = [...posts].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3);
+    const upcomingEvents = allPosts.filter(p => p.type === 'EVENTO' && p.eventStartAt && new Date(p.eventStartAt) > new Date()).sort((a,b) => new Date(a.eventStartAt).getTime() - new Date(b.eventStartAt).getTime());
+    const latestPosts = [...allPosts].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
 
     return (
       <div className="space-y-6">
@@ -130,7 +160,7 @@ const Dashboard = () => {
           <DashboardCard title="Novos Avisos" value={unreadAnnouncements} icon={Bell} variant="primary" description="Últimas 24 horas" />
           <DashboardCard title="Próximos Eventos" value={upcomingEvents.length} icon={Calendar} variant="secondary" />
           <DashboardCard title="Turmas Ativas" value={activeClassesCount} icon={Users} variant="success" description="Contagem real" />
-          <DashboardCard title="Total de Posts" value={posts.length} icon={FileText} />
+          <DashboardCard title="Total de Posts" value={allPosts.length} icon={FileText} />
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="glass-card">
@@ -152,7 +182,7 @@ const Dashboard = () => {
                  <div key={event.id} className="flex items-center gap-3 p-3 glass rounded-lg cursor-pointer" onClick={() => navigate(PostLinkBuilder.buildPostUrl(event, user.role as UserRole))}>
                    <div className="flex-1">
                      <p className="font-medium text-sm">{event.title}</p>
-                     <p className="text-xs text-muted-foreground">{new Date(event.event_start_at).toLocaleDateString('pt-BR')}</p>
+                     <p className="text-xs text-muted-foreground">{new Date(event.eventStartAt).toLocaleDateString('pt-BR')}</p>
                    </div>
                  </div>
                ))}

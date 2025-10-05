@@ -1,6 +1,5 @@
-import { supabase } from './path/to/your/supabaseClient'; // <-- IMPORTANTE: Ajuste o caminho para seu cliente Supabase
+import { supabase } from '@/integrations/supabase/client';
 
-// As definições de tipo continuam as mesmas, estão perfeitas.
 export type NotificationType =
   | 'RESET_REQUESTED'
   | 'RESET_IN_PROGRESS'
@@ -23,133 +22,267 @@ export interface Notification {
   type: NotificationType;
   title: string;
   message: string;
-  role_target: RoleTarget; // snake_case para combinar com o banco de dados
+  roleTarget: RoleTarget;
   status: NotificationStatus;
-  created_at: string; // snake_case
+  createdAt: string;
   link?: string;
   meta?: Record<string, any>;
-  user_id: string; // Adicionado para ligar a notificação a um usuário
+  userId: string;
 }
 
-// Objeto de filtros para a função de listagem
 interface NotificationFilters {
   status?: NotificationStatus;
   search?: string;
   limit?: number;
   roleTarget?: RoleTarget;
   type?: NotificationType;
-  userId?: string; // Para buscar notificações de um usuário específico
+  userId?: string;
 }
 
-// NOVA ABORDAGEM: Funções de serviço que falam diretamente com o Supabase
+// Helper to convert DB row to app format
+function dbRowToNotification(row: any): Notification {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    message: row.message,
+    roleTarget: row.role_target,
+    status: row.status,
+    createdAt: row.created_at,
+    link: row.link,
+    meta: row.meta,
+    userId: row.user_id
+  };
+}
 
-/**
- * Lista as notificações com base nos filtros.
- * Substitui o método list() e loadFromStorage().
- */
-export const listNotifications = async (filters: NotificationFilters): Promise<Notification[]> => {
-  let query = supabase
-    .from('notifications')
-    .select('*')
-    .order('created_at', { ascending: false });
+// Store class for backward compatibility
+class NotificationStore {
+  private subscribers: Set<() => void> = new Set();
 
-  if (filters.userId) {
-    query = query.eq('user_id', filters.userId);
-  }
-  if (filters.status) {
-    query = query.eq('status', filters.status);
-  }
-  if (filters.roleTarget) {
-    query = query.eq('role_target', filters.roleTarget);
-  }
-  if (filters.type) {
-    query = query.eq('type', filters.type);
-  }
-  if (filters.limit) {
-    query = query.limit(filters.limit);
-  }
-  if (filters.search) {
-    // Busca por título OU mensagem
-    query = query.or(`title.ilike.%${filters.search}%,message.ilike.%${filters.search}%`);
+  subscribe(callback: () => void): () => void {
+    this.subscribers.add(callback);
+    return () => {
+      this.subscribers.delete(callback);
+    };
   }
 
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Erro ao listar notificações:', error);
-    throw error;
+  private notifySubscribers() {
+    this.subscribers.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('Error in notification store subscriber:', error);
+      }
+    });
   }
 
-  return data as Notification[];
-};
-
-/**
- * Adiciona uma nova notificação no banco de dados.
- * Substitui o método add().
- */
-export const addNotification = async (
-  notification: Omit<Notification, 'id' | 'created_at' | 'status'>
-): Promise<Notification> => {
-  const { data, error } = await supabase
-    .from('notifications')
-    .insert({
-      ...notification,
-      status: 'UNREAD',
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Erro ao adicionar notificação:', error);
-    throw error;
+  list(filters: NotificationFilters = {}): Notification[] {
+    // For backward compatibility, return empty array
+    // Components should use async version or subscribe to changes
+    console.warn('notificationStore.list() is deprecated. Use listAsync() instead.');
+    return [];
   }
-  return data as Notification;
-};
 
-/**
- * Marca uma notificação específica como lida.
- * Substitui o método markRead().
- */
-export const markAsRead = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ status: 'READ', is_read: true }) // Atualiza ambos os campos para compatibilidade
-    .eq('id', id);
+  async listAsync(filters: NotificationFilters = {}): Promise<Notification[]> {
+    let query = supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Erro ao marcar como lida:', error);
-    throw error;
+    if (filters.userId) {
+      query = query.eq('user_id', filters.userId);
+    }
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters.roleTarget) {
+      query = query.eq('role_target', filters.roleTarget);
+    }
+    if (filters.type) {
+      query = query.eq('type', filters.type);
+    }
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
+    if (filters.search) {
+      query = query.or(`title.ilike.%${filters.search}%,message.ilike.%${filters.search}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error listing notifications:', error);
+      throw error;
+    }
+
+    return (data || []).map(dbRowToNotification);
   }
-};
 
-/**
- * Marca todas as notificações não lidas de um perfil como lidas.
- * Substitui o método markAllRead().
- */
-export const markAllAsRead = async (userId: string): Promise<void> => {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ status: 'READ', is_read: true })
-    .eq('user_id', userId)
-    .eq('status', 'UNREAD');
+  async add(notification: Omit<Notification, 'id' | 'createdAt' | 'status' | 'userId'> & { roleTarget: RoleTarget; userId?: string }): Promise<Notification> {
+    // Try to infer userId from meta if not provided
+    const userId = notification.userId || 
+                   notification.meta?.studentId || 
+                   notification.meta?.userId || 
+                   '00000000-0000-0000-0000-000000000000'; // Fallback for system notifications
+    
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        role_target: notification.roleTarget,
+        user_id: userId,
+        link: notification.link || null,
+        meta: notification.meta || null,
+        status: 'UNREAD',
+        is_read: false
+      } as any) // Type cast to avoid TypeScript issues with status column
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Erro ao marcar todas como lidas:', error);
-    throw error;
+    if (error) {
+      console.error('Error adding notification:', error);
+      throw error;
+    }
+
+    this.notifySubscribers();
+    return dbRowToNotification(data);
   }
-};
 
-/**
- * Deleta uma notificação específica.
- * Substitui o método delete().
- */
-export const deleteNotification = async (id: string): Promise<void> => {
-  const { error } = await supabase.from('notifications').delete().eq('id', id);
+  async markRead(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ 
+        status: 'READ',
+        is_read: true 
+      })
+      .eq('id', id);
 
-  if (error) {
-    console.error('Erro ao deletar notificação:', error);
-    throw error;
+    if (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+
+    this.notifySubscribers();
   }
-};
 
-// ... Você pode adicionar outras funções como 'archive', 'getStats' seguindo o mesmo padrão de chamada ao Supabase.
+  async markAllRead(roleTarget: RoleTarget): Promise<void> {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ 
+        status: 'READ',
+        is_read: true 
+      })
+      .eq('role_target', roleTarget)
+      .eq('status', 'UNREAD');
+
+    if (error) {
+      console.error('Error marking all as read:', error);
+      throw error;
+    }
+
+    this.notifySubscribers();
+  }
+
+  async archive(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ status: 'ARCHIVED' })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error archiving notification:', error);
+      throw error;
+    }
+
+    this.notifySubscribers();
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+
+    this.notifySubscribers();
+  }
+
+  async clear(status?: NotificationStatus): Promise<void> {
+    let query = supabase.from('notifications').delete();
+    
+    if (status) {
+      query = query.eq('status', status);
+    } else {
+      // If no status specified, delete all
+      query = query.neq('id', '00000000-0000-0000-0000-000000000000'); // Match all
+    }
+
+    const { error } = await query;
+
+    if (error) {
+      console.error('Error clearing notifications:', error);
+      throw error;
+    }
+
+    this.notifySubscribers();
+  }
+
+  async deleteRead(roleTarget: RoleTarget): Promise<void> {
+    const { error} = await supabase
+      .from('notifications')
+      .delete()
+      .eq('role_target', roleTarget)
+      .eq('status', 'READ');
+
+    if (error) {
+      console.error('Error deleting read notifications:', error);
+      throw error;
+    }
+
+    this.notifySubscribers();
+  }
+
+  getStats(roleTarget: RoleTarget): {
+    total: number;
+    unread: number;
+    read: number;
+    archived: number;
+  } {
+    // For backward compatibility, return zeros
+    // Use getStatsAsync() for real data
+    console.warn('notificationStore.getStats() is synchronous fallback. Use getStatsAsync() for real data.');
+    return { total: 0, unread: 0, read: 0, archived: 0 };
+  }
+
+  async getStatsAsync(roleTarget: RoleTarget): Promise<{
+    total: number;
+    unread: number;
+    read: number;
+    archived: number;
+  }> {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('status, is_read')
+      .eq('role_target', roleTarget);
+
+    if (error) {
+      console.error('Error getting stats:', error);
+      return { total: 0, unread: 0, read: 0, archived: 0 };
+    }
+
+    const total = data?.length || 0;
+    const unread = data?.filter((n: any) => n.status === 'UNREAD' || !n.is_read).length || 0;
+    const read = data?.filter((n: any) => n.status === 'READ' || n.is_read).length || 0;
+    const archived = data?.filter((n: any) => n.status === 'ARCHIVED').length || 0;
+
+    return { total, unread, read, archived };
+  }
+}
+
+export const notificationStore = new NotificationStore();
