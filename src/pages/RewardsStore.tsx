@@ -27,6 +27,9 @@ export default function RewardsStore() {
     setSearchTerm,
     setSortBy,
     getStudentBalance,
+    loadStudentBalance,
+    loadItems,
+    loadTransactions,
     transactions,
     requestRedemption
   } = useRewardsStore();
@@ -36,6 +39,15 @@ export default function RewardsStore() {
   const [showHistory, setShowHistory] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('store');
+
+  // Load data on mount
+  useEffect(() => {
+    loadItems();
+    if (user) {
+      loadStudentBalance(user.id);
+      loadTransactions(user.id);
+    }
+  }, [user, loadItems, loadStudentBalance, loadTransactions]);
 
   // Check for URL params to determine active tab
   useEffect(() => {

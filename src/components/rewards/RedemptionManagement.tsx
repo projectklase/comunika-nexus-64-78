@@ -26,11 +26,11 @@ export function RedemptionManagement() {
   const pendingRedemptions = redemptions.filter(r => r.status === 'PENDING');
   const processedRedemptions = redemptions.filter(r => r.status !== 'PENDING');
 
-  const handleApprove = (redemptionId: string) => {
+  const handleApprove = async (redemptionId: string) => {
     if (!user) return;
     
     const redemption = redemptions.find(r => r.id === redemptionId);
-    const result = approveRedemption(redemptionId, user.id);
+    const result = await approveRedemption(redemptionId, user.id);
     
     if (result.success && redemption) {
       // Evento 4: Resgate do aluno é aprovado
@@ -65,11 +65,11 @@ export function RedemptionManagement() {
     }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!user || !rejectingId || !rejectionReason.trim()) return;
     
     const redemption = redemptions.find(r => r.id === rejectingId);
-    rejectRedemption(rejectingId, user.id, rejectionReason.trim());
+    const result = await rejectRedemption(rejectingId, user.id, rejectionReason.trim());
     
     if (redemption) {
       // Evento 5: Resgate do aluno é recusado

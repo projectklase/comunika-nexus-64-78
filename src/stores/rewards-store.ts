@@ -1,165 +1,366 @@
-import { supabase } from '@/integrations/supabase/client'; // Ajuste o caminho se for diferente
-import type { RewardItem, KoinTransaction, RedemptionRequest } from '@/types/rewards';
-import { User } from '@supabase/supabase-js';
+import { create } from 'zustand';
+import { supabase } from '@/integrations/supabase/client';
+import type { RewardItem, KoinTransaction, RedemptionRequest, KoinBalance, BonusEvent } from '@/types/rewards';
 
-// ========== FUNÇÕES DE LEITURA (GET) ==========
-
-/**
- * Busca os itens da loja, com filtros opcionais.
- */
-export const getRewardItems = async (filters: { searchTerm?: string; sortBy?: 'name' | 'price-asc' | 'price-desc' } = {}): Promise<RewardItem[]> => {
-  let query = supabase.from('reward_items').select('*').eq('is_active', true);
-
-  if (filters.searchTerm) {
-    query = query.ilike('name', `%${filters.searchTerm}%`);
-  }
-
-  switch (filters.sortBy) {
-    case 'price-asc':
-      query = query.order('price_koins', { ascending: true });
-      break;
-    case 'price-desc':
-      query = query.order('price_koins', { ascending: false });
-      break;
-    default:
-      query = query.order('name', { ascending: true });
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  // Mapear snake_case para camelCase se seus types usarem camelCase
-  return data.map(item => ({ ...item, koinPrice: item.price_koins, isActive: item.is_active })) as RewardItem[];
-};
-
-/**
- * Busca o saldo de Koins de um usuário específico.
- */
-export const getStudentKoinBalance = async (studentId: string): Promise<number> => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('koins')
-    .eq('id', studentId)
-    .single();
-
-  if (error) {
-    console.error('Erro ao buscar saldo de Koins:', error);
-    return 0;
-  }
-  return data?.koins ?? 0;
-};
-
-/**
- * Busca o histórico de transações de um usuário.
- */
-export const getKoinTransactions = async (studentId: string): Promise<KoinTransaction[]> => {
-  const { data, error } = await supabase
-    .from('koin_transactions')
-    .select('*')
-    .eq('user_id', studentId)
-    .order('created_at', { ascending: false });
+interface RewardsStore {
+  items: RewardItem[];
+  transactions: KoinTransaction[];
+  redemptions: RedemptionRequest[];
+  bonusEvents: BonusEvent[];
+  balances: Map<string, KoinBalance>;
+  searchTerm: string;
+  sortBy: 'name' | 'price-asc' | 'price-desc';
   
-  if (error) throw error;
-  // Mapear snake_case para camelCase se necessário
-  return data as KoinTransaction[];
-};
+  loadItems: () => Promise<void>;
+  loadTransactions: (studentId: string) => Promise<void>;
+  getFilteredItems: () => RewardItem[];
+  setSearchTerm: (term: string) => void;
+  setSortBy: (sort: 'name' | 'price-asc' | 'price-desc') => void;
+  getStudentBalance: (studentId: string) => KoinBalance;
+  loadStudentBalance: (studentId: string) => Promise<void>;
+  requestRedemption: (studentId: string, itemId: string) => { success: boolean; message: string };
+  approveRedemption: (redemptionId: string, approvedBy: string) => Promise<{ success: boolean; message: string }>;
+  rejectRedemption: (redemptionId: string, rejectedBy: string, reason: string) => Promise<{ success: boolean; message: string }>;
+  addTransaction: (transaction: Omit<KoinTransaction, 'id' | 'timestamp'>) => void;
+  createBonusEvent: (event: Omit<BonusEvent, 'id' | 'createdAt'>) => Promise<void>;
+  addItem: (item: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateItem: (id: string, updates: Partial<RewardItem>) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
+}
 
-/**
- * Busca os pedidos de resgate (para a Secretaria).
- */
-export const getRedemptionRequests = async (status: 'PENDING' | 'APPROVED' | 'REJECTED' = 'PENDING'): Promise<any[]> => {
-    // Query mais complexa para buscar nomes do aluno e do item
-    const { data, error } = await supabase
-    .from('redemption_requests')
-    .select(`
-      id,
-      status,
-      requested_at,
-      student:profiles!student_id(id, name),
-      item:reward_items!item_id(id, name, price_koins)
-    `)
-    .eq('status', status)
-    .order('requested_at', { ascending: true });
+export const useRewardsStore = create<RewardsStore>((set, get) => ({
+  items: [],
+  transactions: [],
+  redemptions: [],
+  bonusEvents: [],
+  balances: new Map(),
+  searchTerm: '',
+  sortBy: 'name',
 
-  if (error) throw error;
-  return data;
-};
+  loadItems: async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('reward_items')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
 
+      if (error) throw error;
 
-// ========== FUNÇÕES DE ESCRITA (AÇÕES) ==========
+      const items: RewardItem[] = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        images: item.image_url ? [item.image_url] : [],
+        koinPrice: item.price_koins,
+        stock: item.stock,
+        category: item.category,
+        isActive: item.is_active,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+      }));
 
-/**
- * Função central para adicionar ou remover Koins de um usuário.
- * IMPORTANTE: Esta função deve ser chamada por uma Edge Function segura para evitar manipulação.
- * @param studentId ID do aluno
- * @param amount Valor a ser adicionado (positivo) ou removido (negativo)
- * @param type Tipo da transação
- * @param description Descrição para o histórico
- * @param relatedEntityId ID da entidade relacionada (tarefa, resgate, etc.)
- * @param processedBy ID de quem processou a ação
- */
-export const addKoins = async (studentId: string, amount: number, type: KoinTransaction['type'], description: string, relatedEntityId?: string, processedBy?: string) => {
-  // 1. Chamar uma RPC (função no Supabase) para atualizar o saldo atomicamente e evitar condições de corrida
-  const { data: profile, error: rpcError } = await supabase.rpc('add_koins_to_user', {
-    user_id_in: studentId,
-    amount_in: amount
-  });
+      set({ items });
+    } catch (error) {
+      console.error('Error loading reward items:', error);
+    }
+  },
 
-  if (rpcError) throw rpcError;
+  loadTransactions: async (studentId: string) => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('koin_transactions')
+        .select('*')
+        .eq('user_id', studentId)
+        .order('created_at', { ascending: false });
 
-  // 2. Registrar a transação no histórico
-  const { error: txError } = await supabase.from('koin_transactions').insert({
-    user_id: studentId,
-    amount,
-    type,
-    description,
-    related_entity_id: relatedEntityId,
-    processed_by: processedBy,
-  });
+      if (error) throw error;
 
-  if (txError) throw txError;
+      const transactions: KoinTransaction[] = (data || []).map((tx: any) => ({
+        id: tx.id,
+        studentId: tx.user_id,
+        type: tx.type,
+        amount: tx.amount,
+        balanceBefore: 0,
+        balanceAfter: 0,
+        source: tx.related_entity_id || '',
+        description: tx.description || '',
+        timestamp: tx.created_at,
+        responsibleUserId: tx.processed_by,
+      }));
+
+      set({ transactions });
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    }
+  },
+
+  getFilteredItems: () => {
+    const { items, searchTerm, sortBy } = get();
+    let filtered = [...items];
+
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    switch (sortBy) {
+      case 'price-asc':
+        filtered.sort((a, b) => a.koinPrice - b.koinPrice);
+        break;
+      case 'price-desc':
+        filtered.sort((a, b) => b.koinPrice - a.koinPrice);
+        break;
+      default:
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return filtered;
+  },
+
+  setSearchTerm: (term: string) => set({ searchTerm: term }),
   
-  return profile;
-};
+  setSortBy: (sort: 'name' | 'price-asc' | 'price-desc') => set({ sortBy: sort }),
 
-/**
- * Aluno solicita o resgate de um item.
- */
-export const requestRedemption = async (studentId: string, itemId: string): Promise<void> => {
-  // Idealmente, a lógica de verificação de saldo e estoque ocorreria em uma Edge Function para segurança.
-  // Aqui, simulamos a chamada para a função que faria isso.
-  const { data, error } = await supabase.rpc('request_redemption', {
-    p_student_id: studentId,
-    p_item_id: itemId
-  });
+  getStudentBalance: (studentId: string): KoinBalance => {
+    const { balances } = get();
+    return balances.get(studentId) || {
+      studentId,
+      availableBalance: 0,
+      blockedBalance: 0,
+      totalEarned: 0,
+      totalSpent: 0,
+      lastUpdated: new Date().toISOString(),
+    };
+  },
 
-  if (error) throw new Error(error.message);
-  return data;
-};
+  loadStudentBalance: async (studentId: string) => {
+    try {
+      const { data: profile, error: profileError } = await (supabase as any)
+        .from('profiles')
+        .select('koins')
+        .eq('id', studentId)
+        .single();
 
-/**
- * Secretaria aprova um pedido de resgate.
- * IMPORTANTE: Deve ser chamada por uma Edge Function segura.
- */
-export const approveRedemption = async (redemptionId: string, approvedBy: string): Promise<void> => {
-  const { error } = await supabase.rpc('approve_redemption', {
-    p_redemption_id: redemptionId,
-    p_admin_id: approvedBy
-  });
-  if (error) throw new Error(error.message);
-};
+      if (profileError) throw profileError;
 
-/**
- * Secretaria rejeita um pedido de resgate.
- * IMPORTANTE: Deve ser chamada por uma Edge Function segura.
- */
-export const rejectRedemption = async (redemptionId: string, rejectedBy: string, reason: string): Promise<void> => {
-  const { error } = await supabase.rpc('reject_redemption', {
-    p_redemption_id: redemptionId,
-    p_admin_id: rejectedBy,
-    p_reason: reason
-  });
-  if (error) throw new Error(error.message);
-};
+      const { data: txData, error: txError } = await (supabase as any)
+        .from('koin_transactions')
+        .select('*')
+        .eq('user_id', studentId);
 
-// ... Funções para gerenciar itens da loja (addItem, updateItem, etc.) seguiriam o mesmo padrão
-// de exportar funções async que chamam o Supabase.
+      if (txError) throw txError;
+
+      const transactions = txData || [];
+      const totalEarned = transactions
+        .filter((tx: any) => tx.amount > 0)
+        .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+
+      const totalSpent = Math.abs(
+        transactions
+          .filter((tx: any) => tx.amount < 0)
+          .reduce((sum: number, tx: any) => sum + tx.amount, 0)
+      );
+
+      const { data: pendingRedemptions, error: redemptionError } = await (supabase as any)
+        .from('redemption_requests')
+        .select('item_id')
+        .eq('student_id', studentId)
+        .eq('status', 'PENDING');
+
+      if (redemptionError) throw redemptionError;
+
+      let blockedBalance = 0;
+      if (pendingRedemptions && pendingRedemptions.length > 0) {
+        const itemIds = pendingRedemptions.map((r: any) => r.item_id);
+        const { data: items } = await (supabase as any)
+          .from('reward_items')
+          .select('price_koins')
+          .in('id', itemIds);
+
+        if (items) {
+          blockedBalance = items.reduce((sum: number, item: any) => sum + item.price_koins, 0);
+        }
+      }
+
+      const balance: KoinBalance = {
+        studentId,
+        availableBalance: (profile?.koins || 0) - blockedBalance,
+        blockedBalance,
+        totalEarned,
+        totalSpent,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      set(state => {
+        const newBalances = new Map(state.balances);
+        newBalances.set(studentId, balance);
+        return { balances: newBalances };
+      });
+    } catch (error) {
+      console.error('Error loading student balance:', error);
+    }
+  },
+
+  requestRedemption: (studentId: string, itemId: string) => {
+    const { items } = get();
+    const item = items.find(i => i.id === itemId);
+    
+    if (!item) {
+      return { success: false, message: 'Item não encontrado' };
+    }
+
+    if (item.stock <= 0) {
+      return { success: false, message: 'Item esgotado' };
+    }
+
+    return { 
+      success: true, 
+      message: 'Resgate solicitado! Aguarde aprovação da secretaria.' 
+    };
+  },
+
+  approveRedemption: async (redemptionId: string, approvedBy: string) => {
+    try {
+      const { error } = await (supabase as any).rpc('approve_redemption', {
+        p_redemption_id: redemptionId,
+        p_admin_id: approvedBy
+      });
+      if (error) throw error;
+      return { success: true, message: 'Resgate aprovado com sucesso!' };
+    } catch (error) {
+      console.error('Error approving redemption:', error);
+      return { success: false, message: 'Erro ao aprovar resgate' };
+    }
+  },
+
+  rejectRedemption: async (redemptionId: string, rejectedBy: string, reason: string) => {
+    try {
+      const { error } = await (supabase as any).rpc('reject_redemption', {
+        p_redemption_id: redemptionId,
+        p_admin_id: rejectedBy,
+        p_reason: reason
+      });
+      if (error) throw error;
+      return { success: true, message: 'Resgate rejeitado com sucesso!' };
+    } catch (error) {
+      console.error('Error rejecting redemption:', error);
+      return { success: false, message: 'Erro ao rejeitar resgate' };
+    }
+  },
+
+  addTransaction: (transaction: Omit<KoinTransaction, 'id' | 'timestamp'>) => {
+    set(state => ({
+      transactions: [
+        {
+          ...transaction,
+          id: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+        },
+        ...state.transactions,
+      ],
+    }));
+  },
+
+  createBonusEvent: async (event: Omit<BonusEvent, 'id' | 'createdAt'>) => {
+    const newEvent: BonusEvent = {
+      ...event,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    
+    set(state => ({
+      bonusEvents: [...state.bonusEvents, newEvent],
+    }));
+  },
+
+  addItem: async (item: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('reward_items')
+        .insert({
+          name: item.name,
+          description: item.description,
+          price_koins: item.koinPrice,
+          stock: item.stock,
+          category: item.category,
+          image_url: item.images[0] || null,
+          is_active: item.isActive,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newItem: RewardItem = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        images: data.image_url ? [data.image_url] : [],
+        koinPrice: data.price_koins,
+        stock: data.stock,
+        category: data.category,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+
+      set(state => ({
+        items: [...state.items, newItem],
+      }));
+    } catch (error) {
+      console.error('Error adding item:', error);
+      throw error;
+    }
+  },
+
+  updateItem: async (id: string, updates: Partial<RewardItem>) => {
+    try {
+      const dbUpdates: any = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.koinPrice !== undefined) dbUpdates.price_koins = updates.koinPrice;
+      if (updates.stock !== undefined) dbUpdates.stock = updates.stock;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+      if (updates.images !== undefined && updates.images.length > 0) {
+        dbUpdates.image_url = updates.images[0];
+      }
+
+      const { error } = await (supabase as any)
+        .from('reward_items')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set(state => ({
+        items: state.items.map(item =>
+          item.id === id ? { ...item, ...updates } : item
+        ),
+      }));
+    } catch (error) {
+      console.error('Error updating item:', error);
+      throw error;
+    }
+  },
+
+  deleteItem: async (id: string) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('reward_items')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set(state => ({
+        items: state.items.filter(item => item.id !== id),
+      }));
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      throw error;
+    }
+  },
+}));

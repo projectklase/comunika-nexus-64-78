@@ -194,10 +194,11 @@ export const useStudentGamification = create<GamificationStore>()(
         return xpGained;
       },
 
-      syncWithKoins: (studentId: string) => {
+      syncWithKoins: async (studentId: string) => {
         // This method can be used to sync XP with Koin balance if needed
         // For now, both systems work independently but show together in UI
         const rewardsState = useRewardsStore.getState();
+        await rewardsState.loadStudentBalance(studentId);
         const balance = rewardsState.getStudentBalance(studentId);
         
         // Optional: Could add bonus XP based on Koin milestones
