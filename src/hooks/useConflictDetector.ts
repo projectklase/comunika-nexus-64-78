@@ -12,7 +12,7 @@ export interface ConflictInfo {
 
 export function useConflictDetector() {
   const { plannedBlocks, hasConflict, suggestTimeSlots } = useStudentPlannerStore();
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   // Get class events (EVENTO type posts)
   const classEvents = useMemo(() => {

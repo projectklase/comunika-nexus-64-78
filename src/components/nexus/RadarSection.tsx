@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
 export function RadarSection() {
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
   const { openInCalendar } = usePostActionsUnified();
   const { addBlock, suggestTimeSlots } = useStudentPlannerStore();
 

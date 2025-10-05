@@ -66,7 +66,7 @@ export function EnhancedPlannerSection() {
   const { smartSnooze } = useConflictDetector();
   const { trackDrag, trackAccept, trackSnooze } = useMetricsTracker();
 
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   // Get activities for drag source
   const activities = useMemo(() => {

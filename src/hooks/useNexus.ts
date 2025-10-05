@@ -6,7 +6,7 @@ import { UrgencyInfo, UrgencyLevel } from '@/types/nexus';
 
 export function useNexus() {
   const store = useNexusStore();
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   // Get all activities (posts that are activities)
   const activities = useMemo(() => {

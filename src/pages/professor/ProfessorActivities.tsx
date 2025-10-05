@@ -98,7 +98,7 @@ export default function ProfessorActivities() {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
   // Data hooks - always called in same order
-  const allPosts = usePosts();
+  const { posts: allPosts } = usePosts();
 
   // Obter turmas do professor - this needs user but we handle it safely
   const professorClasses = useMemo(() => {

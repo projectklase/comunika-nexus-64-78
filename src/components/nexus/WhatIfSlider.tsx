@@ -19,7 +19,7 @@ export function WhatIfSlider({ className }: WhatIfSliderProps) {
   const [daysOffset, setDaysOffset] = useState([0]);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
   const { getTopPriorityActivities, getActivityPriority } = useActivityPriority();
 
   // Get activities with due dates

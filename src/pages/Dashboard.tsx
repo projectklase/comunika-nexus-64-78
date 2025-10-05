@@ -15,7 +15,7 @@ import { Bell, Calendar, Users, FileText, Plus } from 'lucide-react';
 
 // CORREÇÃO: Importar o cliente Supabase e a FUNÇÃO addNotification
 import { supabase } from "@/integrations/supabase/client";
-import { addNotification } from '@/stores/notification-store';
+import { notificationStore } from '@/stores/notification-store';
 
 const Dashboard = () => {
   const { user, isLoading: isAuthLoading } = useAuth(); // Renomeado para evitar conflito
@@ -83,26 +83,41 @@ const Dashboard = () => {
 
     try {
       // 1. Inserir o post no Supabase (ajustado para o formato snake_case)
-      const { data: newPost, error: postError } = await supabase
+      const { data: newPostData, error: postError } = await supabase
         .from('posts')
-        .insert({
-          ...postInput, // Assume que postInput já está no formato correto ou precisa de mapeamento
-          author_id: user.id,
-          author_name: user.name,
-        })
+        .insert([
+          {
+            author_id: user.id,
+            author_name: user.name || 'Admin',
+            author_role: user.role || 'SECRETARIA',
+            audience: postInput.audience,
+            body: postInput.body,
+            title: postInput.title,
+            type: postInput.type,
+            status: postInput.status,
+            class_id: postInput.classId || null,
+            class_ids: postInput.classIds || [],
+            due_at: postInput.dueAt || null,
+            event_start_at: postInput.eventStartAt || null,
+            event_end_at: postInput.eventEndAt || null,
+            activity_meta: postInput.activityMeta as any,
+            attachments: postInput.attachments as any,
+            meta: postInput.meta as any,
+          }
+        ])
         .select()
         .single();
       
       if (postError) throw postError;
 
-      // 2. Chamar a nova função addNotification
-      await addNotification({
-        user_id: user.id, 
-        title: `Novo Post: ${newPost.title}`,
-        message: `Um novo post foi publicado por ${user.name}.`,
+      // 2. Criar notificação usando notificationStore
+      await notificationStore.add({
+        userId: user.id, 
+        title: `Novo Post: ${newPostData.title}`,
+        message: `Um novo post foi publicado por ${user.name || user.id}.`,
         type: 'POST_NEW',
-        role_target: 'ALUNO',
-        link: PostLinkBuilder.buildPostUrl(newPost as any, 'aluno'), // 'as any' para compatibilidade temporária de tipo
+        roleTarget: 'ALUNO',
+        link: PostLinkBuilder.buildPostUrl(newPostData as any, 'aluno'),
       });
       
       setShowComposer(false);

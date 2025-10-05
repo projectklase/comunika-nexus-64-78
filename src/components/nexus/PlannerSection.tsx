@@ -37,7 +37,7 @@ export function PlannerSection() {
     suggestTimeSlots
   } = useStudentPlannerStore();
 
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   // Get activities for drag source
   const activities = useMemo(() => {

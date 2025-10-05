@@ -39,7 +39,7 @@ export default function AlunoFeed() {
     ? { ...filter, saved: undefined } // Remove saved from the base filter
     : filter;
     
-  const allPosts = usePosts(baseFilter);
+  const { posts: allPosts } = usePosts(baseFilter);
   
   // Deep link navigation and focus functionality with auto-filter adjustment
   const { targetPostId, shouldFocus } = useScrollToFeedPost({

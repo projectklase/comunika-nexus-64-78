@@ -39,7 +39,7 @@ export function ThreeTwoOneWidget() {
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
   const intervalRef = useRef<NodeJS.Timeout>();
 
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   // Helper functions
   const getTodayKey = () => format(new Date(), 'yyyy-MM-dd');

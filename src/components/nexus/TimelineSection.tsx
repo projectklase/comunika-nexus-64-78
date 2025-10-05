@@ -18,7 +18,7 @@ export function TimelineSection() {
   const [startDate, setStartDate] = useState(new Date());
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('week');
   
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   // Get activities with due dates in the next 30 days
   const timelineActivities = useMemo(() => {

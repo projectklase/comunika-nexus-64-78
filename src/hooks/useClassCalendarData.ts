@@ -38,7 +38,7 @@ export function useClassCalendarData(
   const { showScheduled = false, typeFilters = [], statusFilters = [] } = options;
   
   // Get all activity posts for this class
-  const posts = usePosts({ 
+  const { posts } = usePosts({ 
     type: undefined // We'll filter in memo
   });
 

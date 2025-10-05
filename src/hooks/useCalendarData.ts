@@ -18,7 +18,7 @@ interface UseCalendarDataOptions {
 
 export function useCalendarData(startDate: Date, endDate: Date, options: UseCalendarDataOptions = {}) {
   const { classId } = options;
-  const posts = usePosts({ status: 'PUBLISHED' });
+  const { posts } = usePosts({ status: 'PUBLISHED' });
 
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];

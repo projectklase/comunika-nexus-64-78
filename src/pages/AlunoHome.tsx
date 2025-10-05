@@ -75,7 +75,7 @@ export default function AlunoHome() {
   };
 
   // Get all posts
-  const allPosts = usePosts({
+  const { posts: allPosts } = usePosts({
     status: 'PUBLISHED'
   });
 

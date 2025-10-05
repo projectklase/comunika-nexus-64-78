@@ -20,7 +20,7 @@ export function UniversalNexusOrb({ className }: UniversalNexusOrbProps) {
   const [isHovering, setIsHovering] = useState(false);
   
   // Get posts and user's classes
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
   const { getClassesByStudent } = useClassStore();
   
   // Calculate badge count

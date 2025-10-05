@@ -16,7 +16,7 @@ export function useAdvancedCalendarData({
   endDate, 
   filters 
 }: UseAdvancedCalendarDataOptions) {
-  const posts = usePosts({ status: 'PUBLISHED' });
+  const { posts } = usePosts({ status: 'PUBLISHED' });
 
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];

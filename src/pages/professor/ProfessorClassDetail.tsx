@@ -74,7 +74,8 @@ export default function ProfessorClassDetail() {
   const info = getClassDisplayInfo(schoolClass, levels, modalities);
   
   // Buscar atividades desta turma (todos os tipos)
-  const allClassActivities = usePosts({ classId: schoolClass.id }).filter(post => 
+  const { posts: allClassPosts } = usePosts({ classId: schoolClass.id });
+  const allClassActivities = allClassPosts.filter(post =>
     ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)
   );
   

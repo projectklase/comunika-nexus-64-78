@@ -18,7 +18,7 @@ export interface StudentPostsFilter {
  */
 export function useStudentPosts(filter: StudentPostsFilter = {}) {
   const { user } = useAuth();
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   const filteredPosts = useMemo(() => {
     if (!user || user.role !== 'aluno') return [];

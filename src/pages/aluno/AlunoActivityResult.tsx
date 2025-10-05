@@ -45,7 +45,7 @@ export default function AlunoActivityResult() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const posts = usePosts();
+  const { posts } = usePosts();
   const activity = posts.find(p => p.id === activityId);
 
   useEffect(() => {

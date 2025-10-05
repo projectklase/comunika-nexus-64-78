@@ -22,7 +22,7 @@ interface TimeRibbonProps {
 
 export function TimeRibbon({ currentWeek, highlightOptimalSlots = false, dragDate, dragTime }: TimeRibbonProps) {
   const { getBlocksForWeek } = useStudentPlannerStore();
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   // Get class events for the week
   const weekEvents = useMemo(() => {

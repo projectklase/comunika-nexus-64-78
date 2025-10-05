@@ -6,7 +6,7 @@ import { StudyBlock } from '@/types/nexus';
 
 export function useSmartAgenda() {
   const store = useNexusStore();
-  const allPosts = usePosts({ status: 'PUBLISHED' });
+  const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
 
   const activities = useMemo(() => {
     return allPosts.filter(post => 

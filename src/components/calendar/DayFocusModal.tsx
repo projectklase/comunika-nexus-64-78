@@ -66,7 +66,7 @@ export function DayFocusModal() {
   const weightsEnabled = useWeightsEnabled();
   const { isOpen, date, closeModal } = useDayFocusModal();
   const { isModalOpen, openModal, closeModal: closeCalendarModal } = useCalendarModal();
-  const posts = usePosts({ status: user?.role === 'aluno' ? 'PUBLISHED' : undefined });
+  const { posts } = usePosts({ status: user?.role === 'aluno' ? 'PUBLISHED' : undefined });
   
   const [activeFilter, setActiveFilter] = useState<DayItemFilter>('all');
   const showPostComposer = isModalOpen(MODAL_IDS.POST_COMPOSER);

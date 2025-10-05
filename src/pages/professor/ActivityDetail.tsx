@@ -58,7 +58,7 @@ export default function ActivityDetail() {
   }
 
   // Buscar dados
-  const posts = usePosts();
+  const { posts } = usePosts();
   const activity = posts.find(p => p.id === postId);
   const { classes } = useClassStore();
   const schoolClass = classes.find(c => c.id === classId);

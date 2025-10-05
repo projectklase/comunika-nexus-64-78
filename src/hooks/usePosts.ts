@@ -42,17 +42,24 @@ export function usePosts(filter?: PostFilter) {
       const formattedData = data.map(p => ({
         id: p.id,
         title: p.title,
-        content: p.content,
+        body: p.body,
         type: p.type,
         status: p.status,
+        audience: p.audience,
         authorId: p.author_id,
         authorName: p.author_name,
+        authorRole: p.author_role,
+        classId: p.class_id,
+        classIds: p.class_ids || [],
         createdAt: p.created_at,
         updatedAt: p.updated_at,
+        publishedAt: p.publish_at,
         dueAt: p.due_at,
         eventStartAt: p.event_start_at,
         eventEndAt: p.event_end_at,
-        classIds: p.class_ids,
+        activityMeta: p.activity_meta,
+        attachments: (p.attachments || []) as any,
+        meta: p.meta,
       })) as Post[];
 
       setPosts(formattedData);
