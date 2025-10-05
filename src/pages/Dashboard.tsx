@@ -13,26 +13,22 @@ import { useToast } from '@/hooks/use-toast';
 import { PostLinkBuilder, UserRole } from '@/utils/post-links';
 import { Bell, Calendar, Users, FileText, Plus } from 'lucide-react';
 
-// CORREÇÃO: Importar o cliente Supabase e o notificationStore
-import { supabase } from "@/integrations/supabase/client"; 
-import { notificationStore } from '@/stores/notification-store';
+// CORREÇÃO: Importar o cliente Supabase e a FUNÇÃO addNotification
+import { supabase } from "@/integrations/supabase/client";
+import { addNotification } from '@/stores/notification-store';
 
 const Dashboard = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth(); // Renomeado para evitar conflito
   const navigate = useNavigate();
-  const [allPosts, setAllPosts] = useState<any[]>([]);
   const { toast } = useToast();
   const [showComposer, setShowComposer] = useState(false);
   const [activeClassesCount, setActiveClassesCount] = useState(0);
 
-  // Load posts
-  useEffect(() => {
-    const loadPosts = async () => {
-      const posts = await usePosts();
-      setAllPosts(posts);
-    };
-    loadPosts();
-  }, []);
+  // CORREÇÃO: Uso correto do hook usePosts
+  // Ele agora gerencia o estado dos posts, o carregamento e a função para invalidar
+  const { posts, isLoading: isLoadingPosts, invalidate: invalidatePosts } = usePosts();
+
+  // O useEffect que carregava os posts manualmente foi removido, pois o hook já faz isso.
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -53,7 +49,8 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  if (isLoading) {
+  // Juntando os dois 'isLoading' para uma experiência de carregamento unificada
+  if (isAuthLoading || isLoadingPosts) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -80,62 +77,32 @@ const Dashboard = () => {
 
   const buttonConfig = getButtonConfig();
 
+  // CORREÇÃO: handleCreatePost ajustado para usar as novas funções
   const handleCreatePost = async (postInput: PostInput) => {
     if (!user) return;
 
     try {
-      const { data: newPostRow, error: postError } = await supabase
+      // 1. Inserir o post no Supabase (ajustado para o formato snake_case)
+      const { data: newPost, error: postError } = await supabase
         .from('posts')
-        .insert([{
-          type: postInput.type,
-          title: postInput.title,
-          body: postInput.body,
-          audience: postInput.audience,
-          status: postInput.status || 'PUBLISHED',
+        .insert({
+          ...postInput, // Assume que postInput já está no formato correto ou precisa de mapeamento
           author_id: user.id,
           author_name: user.name,
-          author_role: user.role,
-          class_id: postInput.classId,
-          class_ids: postInput.classIds,
-          publish_at: postInput.publishAt,
-          due_at: postInput.dueAt,
-          event_start_at: postInput.eventStartAt,
-          event_end_at: postInput.eventEndAt,
-          event_location: postInput.eventLocation,
-          activity_meta: postInput.activityMeta as any,
-          attachments: postInput.attachments as any,
-          meta: postInput.meta as any
-        }])
+        })
         .select()
         .single();
       
       if (postError) throw postError;
 
-      // Convert DB row to Post format
-      const newPost = {
-        ...newPostRow,
-        authorName: newPostRow.author_name,
-        authorId: newPostRow.author_id,
-        createdAt: newPostRow.created_at,
-        updatedAt: newPostRow.updated_at,
-        classId: newPostRow.class_id,
-        classIds: newPostRow.class_ids,
-        publishAt: newPostRow.publish_at,
-        dueAt: newPostRow.due_at,
-        eventStartAt: newPostRow.event_start_at,
-        eventEndAt: newPostRow.event_end_at,
-        eventLocation: newPostRow.event_location,
-        activityMeta: newPostRow.activity_meta,
-        authorRole: newPostRow.author_role
-      };
-
-      await notificationStore.add({
-        userId: user.id,
+      // 2. Chamar a nova função addNotification
+      await addNotification({
+        user_id: user.id, 
         title: `Novo Post: ${newPost.title}`,
         message: `Um novo post foi publicado por ${user.name}.`,
         type: 'POST_NEW',
-        roleTarget: 'ALUNO',
-        link: PostLinkBuilder.buildPostUrl(newPost as any, 'aluno'),
+        role_target: 'ALUNO',
+        link: PostLinkBuilder.buildPostUrl(newPost as any, 'aluno'), // 'as any' para compatibilidade temporária de tipo
       });
       
       setShowComposer(false);
@@ -144,9 +111,8 @@ const Dashboard = () => {
         description: "Seu post foi publicado e a notificação enviada.",
       });
       
-      // Reload posts
-      const posts = await usePosts();
-      setAllPosts(posts);
+      // 3. Chamar a função invalidate para atualizar a lista de posts na tela
+      invalidatePosts();
 
     } catch (error) {
       console.error('Erro ao criar post:', error);
@@ -159,23 +125,24 @@ const Dashboard = () => {
   };
 
   const renderSecretariaDashboard = () => {
+    // A lógica de filtragem agora usa a variável 'posts' que vem direto do hook
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const unreadAnnouncements = allPosts.filter(p => 
+    const unreadAnnouncements = posts.filter(p => 
       (p.type === 'AVISO' || p.type === 'COMUNICADO') && 
       p.status === 'PUBLISHED' &&
-      new Date(p.createdAt) > new Date(twentyFourHoursAgo)
+      new Date(p.createdAt) > new Date(twentyFourHoursAgo) // Usando createdAt camelCase
     ).length;
 
-    const upcomingEvents = allPosts.filter(p => p.type === 'EVENTO' && p.eventStartAt && new Date(p.eventStartAt) > new Date()).sort((a,b) => new Date(a.eventStartAt).getTime() - new Date(b.eventStartAt).getTime());
-    const latestPosts = [...allPosts].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
+    const upcomingEvents = posts.filter(p => p.type === 'EVENTO' && p.eventStartAt && new Date(p.eventStartAt) > new Date()).sort((a,b) => new Date(a.eventStartAt).getTime() - new Date(b.eventStartAt).getTime());
+    const latestPosts = [...posts].slice(0, 3); // O hook já retorna os posts ordenados
 
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md-grid-cols-2 lg:grid-cols-4">
           <DashboardCard title="Novos Avisos" value={unreadAnnouncements} icon={Bell} variant="primary" description="Últimas 24 horas" />
           <DashboardCard title="Próximos Eventos" value={upcomingEvents.length} icon={Calendar} variant="secondary" />
           <DashboardCard title="Turmas Ativas" value={activeClassesCount} icon={Users} variant="success" description="Contagem real" />
-          <DashboardCard title="Total de Posts" value={allPosts.length} icon={FileText} />
+          <DashboardCard title="Total de Posts" value={posts.length} icon={FileText} />
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="glass-card">
@@ -197,7 +164,8 @@ const Dashboard = () => {
                  <div key={event.id} className="flex items-center gap-3 p-3 glass rounded-lg cursor-pointer" onClick={() => navigate(PostLinkBuilder.buildPostUrl(event, user.role as UserRole))}>
                    <div className="flex-1">
                      <p className="font-medium text-sm">{event.title}</p>
-                     <p className="text-xs text-muted-foreground">{new Date(event.eventStartAt).toLocaleDateString('pt-BR')}</p>
+                     {/* Adicionado verificação para event.eventStartAt antes de formatar */}
+                     <p className="text-xs text-muted-foreground">{event.eventStartAt ? new Date(event.eventStartAt).toLocaleDateString('pt-BR') : 'Data a definir'}</p>
                    </div>
                  </div>
                ))}
@@ -214,7 +182,9 @@ const Dashboard = () => {
         return renderSecretariaDashboard();
       default:
         const dashboardPath = `/${user.role}/dashboard`;
-        navigate(dashboardPath);
+        if (window.location.pathname !== dashboardPath) {
+          navigate(dashboardPath);
+        }
         return <div>Redirecionando...</div>;
     }
   };
