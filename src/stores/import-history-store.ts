@@ -1,77 +1,107 @@
-import { create } from 'zustand';
-import { ImportRecord, ImportHistoryFilters } from '@/types/import';
+import { supabase } from '@/integrations/supabase/client'; // Ajuste o caminho se for diferente
+import type { ImportRecord, ImportHistoryFilters } from '@/types/import';
 
-interface ImportHistoryStore {
-  importHistory: ImportRecord[];
-  filters: ImportHistoryFilters;
-  setFilters: (filters: Partial<ImportHistoryFilters>) => void;
-  addImportRecord: (record: Omit<ImportRecord, 'id' | 'importedAt'>) => void;
-  getFilteredHistory: () => ImportRecord[];
-  loadFromStorage: () => void;
-  saveToStorage: () => void;
-}
-
-const STORAGE_KEY = 'import-history';
-
-export const useImportHistoryStore = create<ImportHistoryStore>((set, get) => ({
-  importHistory: [],
-  filters: {
-    search: '',
-    type: undefined,
-  },
-
-  setFilters: (newFilters) => {
-    set((state) => ({
-      filters: { ...state.filters, ...newFilters }
-    }));
-  },
-
-  addImportRecord: (recordData) => {
-    const record: ImportRecord = {
+/**
+ * Adiciona um novo registro de importação no Supabase.
+ * Esta função deve ser chamada quando uma importação começa.
+ * @param recordData Os dados iniciais do registro de importação.
+ * @returns O registro completo criado no banco de dados.
+ */
+export const addImportRecord = async (
+  recordData: Omit<ImportRecord, 'id' | 'importedAt' | 'createdAt'>
+): Promise<ImportRecord> => {
+  const { data, error } = await supabase
+    .from('import_history')
+    .insert({
       ...recordData,
-      id: crypto.randomUUID(),
-      importedAt: new Date().toISOString(),
-    };
-    
-    set((state) => ({
-      importHistory: [record, ...state.importHistory]
-    }));
-    
-    get().saveToStorage();
-  },
+      // Mapeia os nomes para snake_case do banco de dados
+      file_name: recordData.fileName,
+      import_type: recordData.type,
+      rows_processed: recordData.rowsProcessed,
+      imported_by: recordData.importedBy,
+    })
+    .select()
+    .single();
 
-  getFilteredHistory: () => {
-    const { importHistory, filters } = get();
-    
-    return importHistory.filter((record) => {
-      const matchesSearch = !filters.search || 
-        record.fileName.toLowerCase().includes(filters.search.toLowerCase());
-      
-      const matchesType = !filters.type || 
-        record.type === filters.type;
-      
-      return matchesSearch && matchesType;
-    });
-  },
+  if (error) {
+    console.error('Erro ao adicionar registro de importação:', error);
+    throw error;
+  }
 
-  loadFromStorage: () => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const importHistory = JSON.parse(stored);
-        set({ importHistory });
-      }
-    } catch (error) {
-      console.error('Erro ao carregar histórico de importações:', error);
-    }
-  },
+  // Mapeia de volta para camelCase para o frontend
+  return {
+    ...data,
+    fileName: data.file_name,
+    type: data.import_type,
+    rowsProcessed: data.rows_processed,
+    rowsSucceeded: data.rows_succeeded,
+    rowsFailed: data.rows_failed,
+    errorLog: data.error_log,
+    importedBy: data.imported_by,
+    importedAt: data.created_at, // O campo 'importedAt' do seu tipo corresponde ao 'created_at' do banco
+  } as ImportRecord;
+};
 
-  saveToStorage: () => {
-    try {
-      const { importHistory } = get();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(importHistory));
-    } catch (error) {
-      console.error('Erro ao salvar histórico de importações:', error);
-    }
-  },
-}));
+/**
+ * Atualiza um registro de importação existente, geralmente ao finalizar o processo.
+ * @param id O ID do registro de importação a ser atualizado.
+ * @param updates Os campos a serem atualizados (ex: status, contagem de linhas).
+ */
+export const updateImportRecord = async (id: string, updates: Partial<ImportRecord>): Promise<void> => {
+  const { error } = await supabase
+    .from('import_history')
+    .update({
+      // Mapeia os nomes para snake_case do banco de dados
+      status: updates.status,
+      rows_processed: updates.rowsProcessed,
+      rows_succeeded: updates.rowsSucceeded,
+      rows_failed: updates.rowsFailed,
+      error_log: updates.errorLog,
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao atualizar registro de importação:', error);
+    throw error;
+  }
+};
+
+/**
+ * Busca e filtra o histórico de importações do Supabase.
+ * @param filters Filtros de busca e tipo.
+ * @returns Uma lista de registros de importação.
+ */
+export const getFilteredHistory = async (filters?: ImportHistoryFilters): Promise<ImportRecord[]> => {
+  let query = supabase
+    .from('import_history')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (filters?.search) {
+    query = query.ilike('file_name', `%${filters.search}%`);
+  }
+
+  if (filters?.type) {
+    query = query.eq('import_type', filters.type);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Erro ao buscar histórico de importações:', error);
+    throw error;
+  }
+
+  // Mapeia os resultados de volta para camelCase para o frontend
+  return data.map(item => ({
+    ...item,
+    fileName: item.file_name,
+    type: item.import_type,
+    rowsProcessed: item.rows_processed,
+    rowsSucceeded: item.rows_succeeded,
+    rowsFailed: item.rows_failed,
+    errorLog: item.error_log,
+    importedBy: item.imported_by,
+    importedAt: item.created_at,
+  })) as ImportRecord[];
+};
