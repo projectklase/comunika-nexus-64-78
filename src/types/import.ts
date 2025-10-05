@@ -1,17 +1,19 @@
 export interface ImportRecord {
   id: string;
-  type: 'turmas' | 'alunos' | 'professores';
   fileName: string;
-  totalRecords: number;
-  successCount: number;
-  errorCount: number;
-  errors: string[];
-  importedAt: string;
+  importType: 'turmas' | 'alunos' | 'professores';
+  status: 'processing' | 'completed' | 'failed';
+  rowsProcessed: number;
+  rowsSucceeded: number;
+  rowsFailed: number;
+  errorLog: Array<{ row: number; field: string; message: string; value: any }>;
+  importedBy: string;
+  createdAt: string;
 }
 
 export interface ImportHistoryFilters {
   search: string;
-  type?: 'turmas' | 'alunos' | 'professores';
+  importType?: 'turmas' | 'alunos' | 'professores';
 }
 
 export interface ColumnMapping {

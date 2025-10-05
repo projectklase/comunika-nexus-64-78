@@ -54,7 +54,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { parseCSV, processImport, previewData, setPreviewData, isLoading } = useCSVImport();
-  const { addImportRecord } = useImportHistoryStore();
+  const { addRecord } = useImportHistoryStore();
   const { createClass } = useClassStore();
   const { createPerson } = usePeopleStore();
   const { programs } = useProgramStore();
@@ -210,13 +210,20 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       }
 
       // Salvar no histórico
-      addImportRecord({
-        type: importType,
+      await addRecord({
+        importType: importType,
         fileName: selectedFile.name,
-        totalRecords: result.totalRows,
-        successCount,
-        errorCount: errors.length,
-        errors,
+        status: errors.length === 0 ? 'completed' : (successCount > 0 ? 'completed' : 'failed'),
+        rowsProcessed: result.totalRows,
+        rowsSucceeded: successCount,
+        rowsFailed: errors.length,
+        errorLog: errors.map((err, idx) => ({
+          row: idx + 1,
+          field: 'unknown',
+          message: err,
+          value: null
+        })),
+        importedBy: '', // Will be set by the backend
       });
 
       toast({

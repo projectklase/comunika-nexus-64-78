@@ -15,18 +15,18 @@ export function ImportHistoryModal() {
   const [selectedRecord, setSelectedRecord] = useState<ImportRecord | null>(null);
   
   const { 
-    importHistory, 
+    history, 
     filters, 
     setFilters, 
     getFilteredHistory, 
-    loadFromStorage 
+    loadHistory 
   } = useImportHistoryStore();
 
   useEffect(() => {
     if (isOpen) {
-      loadFromStorage();
+      loadHistory();
     }
-  }, [isOpen, loadFromStorage]);
+  }, [isOpen, loadHistory]);
 
   const filteredHistory = getFilteredHistory();
 
@@ -36,10 +36,10 @@ export function ImportHistoryModal() {
   };
 
   const getStatusBadge = (record: ImportRecord) => {
-    if (record.errorCount === 0) {
+    if (record.rowsFailed === 0) {
       return <Badge className="bg-green-100 text-green-800">Sucesso</Badge>;
     }
-    if (record.successCount > 0) {
+    if (record.rowsSucceeded > 0) {
       return <Badge className="bg-yellow-100 text-yellow-800">Parcial</Badge>;
     }
     return <Badge className="bg-red-100 text-red-800">Erro</Badge>;
@@ -70,8 +70,8 @@ export function ImportHistoryModal() {
           </div>
 
           <Select
-            value={filters.type || 'all'}
-            onValueChange={(value) => setFilters({ type: value === 'all' ? undefined : value as any })}
+            value={filters.importType || 'all'}
+            onValueChange={(value) => setFilters({ search: filters.search, importType: value === 'all' ? undefined : value as any })}
           >
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Tipo" />
@@ -84,11 +84,11 @@ export function ImportHistoryModal() {
             </SelectContent>
           </Select>
 
-          {(filters.search || filters.type) && (
+          {(filters.search || filters.importType) && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setFilters({ search: '', type: undefined })}
+              onClick={() => setFilters({ search: '', importType: undefined })}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -121,13 +121,13 @@ export function ImportHistoryModal() {
                   filteredHistory.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell className="font-medium">{record.fileName}</TableCell>
-                      <TableCell>{getTypeLabel(record.type)}</TableCell>
-                      <TableCell>{record.totalRecords}</TableCell>
-                      <TableCell className="text-green-600">{record.successCount}</TableCell>
-                      <TableCell className="text-red-600">{record.errorCount}</TableCell>
+                      <TableCell>{getTypeLabel(record.importType)}</TableCell>
+                      <TableCell>{record.rowsProcessed}</TableCell>
+                      <TableCell className="text-green-600">{record.rowsSucceeded}</TableCell>
+                      <TableCell className="text-red-600">{record.rowsFailed}</TableCell>
                       <TableCell>{getStatusBadge(record)}</TableCell>
                       <TableCell>
-                        {new Date(record.importedAt).toLocaleDateString('pt-BR', {
+                        {new Date(record.createdAt).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric',
@@ -136,7 +136,7 @@ export function ImportHistoryModal() {
                         })}
                       </TableCell>
                       <TableCell>
-                        {record.errors.length > 0 && (
+                        {record.errorLog.length > 0 && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -168,27 +168,27 @@ export function ImportHistoryModal() {
                     <strong>Arquivo:</strong> {selectedRecord.fileName}
                   </div>
                   <div>
-                    <strong>Tipo:</strong> {getTypeLabel(selectedRecord.type)}
+                    <strong>Tipo:</strong> {getTypeLabel(selectedRecord.importType)}
                   </div>
                   <div>
-                    <strong>Total de registros:</strong> {selectedRecord.totalRecords}
+                    <strong>Total de registros:</strong> {selectedRecord.rowsProcessed}
                   </div>
                   <div>
-                    <strong>Importados com sucesso:</strong> {selectedRecord.successCount}
+                    <strong>Importados com sucesso:</strong> {selectedRecord.rowsSucceeded}
                   </div>
                 </div>
 
-                {selectedRecord.errors.length > 0 && (
+                {selectedRecord.errorLog.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-2 flex items-center">
                       <AlertCircle className="w-4 h-4 mr-2 text-red-500" />
-                      Erros encontrados ({selectedRecord.errors.length})
+                      Erros encontrados ({selectedRecord.errorLog.length})
                     </h4>
                     <ScrollArea className="h-40 border rounded p-2">
                       <div className="space-y-1">
-                        {selectedRecord.errors.map((error, index) => (
+                        {selectedRecord.errorLog.map((error, index) => (
                           <div key={index} className="text-sm text-red-600">
-                            {error}
+                            Linha {error.row}: {error.field} - {error.message}
                           </div>
                         ))}
                       </div>
