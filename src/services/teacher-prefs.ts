@@ -1,6 +1,6 @@
 import { ActivityType, ActivityMeta } from '@/types/post';
 import { DEFAULT_SELECT_TOKENS } from '@/hooks/useSelectState';
-import { isWeightsEnabled } from '@/stores/school-settings-store';
+import { useSchoolSettingsStore } from '@/stores/school-settings-store';
 
 export interface TeacherActivityDefaults {
   defaultType: ActivityType;
@@ -37,8 +37,7 @@ export class TeacherPrefsService {
     }
 
     // Return sensible defaults based on school settings
-    const weightsEnabledForSchool = isWeightsEnabled();
-    const defaultWeight = weightsEnabledForSchool ? 1 : null;
+    const weightsEnabledForSchool = useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
     
     return {
       defaultType: 'ATIVIDADE',
@@ -65,7 +64,7 @@ export class TeacherPrefsService {
 
   static getMetaDefaults(type: ActivityType, prefs: TeacherActivityDefaults): ActivityMeta & { usePeso?: boolean } {
     // Só incluir peso se estiver habilitado na escola, preferência do professor ativa, e peso não for null
-    const schoolWeightsEnabled = isWeightsEnabled();
+    const schoolWeightsEnabled = useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
     const useWeight = schoolWeightsEnabled && prefs.defaultUsePeso && prefs.defaultWeights[type] !== null;
     const weight = useWeight ? prefs.defaultWeights[type] : null;
     const base = weight !== null ? { peso: weight, usePeso: schoolWeightsEnabled } : { usePeso: schoolWeightsEnabled };

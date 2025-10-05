@@ -1,67 +1,137 @@
-import { supabase } from '@/integrations/supabase/client'; // Ajuste o caminho se for diferente
+import { create } from 'zustand';
+import { supabase } from '@/integrations/supabase/client';
+import type { SchoolSettings, SchoolSettingsStore } from '@/types/school-settings';
 
-/**
- * Interface para o VALOR de uma configuração.
- * O VALOR é um objeto JSONB, o que nos dá flexibilidade.
- */
-export interface SchoolSettingValue {
-  enabled?: boolean;
-  // Podemos adicionar outros campos no futuro, ex: value: number, options: string[]
-  [key: string]: any; 
-}
+const STORAGE_KEY = 'school_settings';
+const DEFAULT_SCHOOL_SLUG = 'default';
 
-/**
- * Busca o valor de uma configuração específica no Supabase.
- * @param key A chave da configuração (ex: 'use_activity_weights')
- * @returns O objeto de valor da configuração, ou null se não for encontrado.
- */
-export const getSetting = async (key: string): Promise<SchoolSettingValue | null> => {
+export const useSchoolSettingsStore = create<SchoolSettingsStore>((set, get) => ({
+  settings: {},
+
+  getSchoolSettings: (schoolSlug: string) => {
+    const settings = get().settings[schoolSlug];
+    if (settings) return settings;
+
+    // Return default settings if not found
+    return {
+      schoolSlug,
+      weightsEnabled: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  },
+
+  updateSchoolSettings: (schoolSlug: string, updates: Partial<SchoolSettings>) => {
+    set((state) => ({
+      settings: {
+        ...state.settings,
+        [schoolSlug]: {
+          ...state.getSchoolSettings(schoolSlug),
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    }));
+    get().saveToStorage();
+    
+    // Update Supabase asynchronously
+    updateSupabaseSettings(updates).catch(console.error);
+  },
+
+  isWeightsEnabled: (schoolSlug: string) => {
+    return get().getSchoolSettings(schoolSlug).weightsEnabled;
+  },
+
+  getCurrentSchoolSettings: () => {
+    return get().getSchoolSettings(DEFAULT_SCHOOL_SLUG);
+  },
+
+  updateCurrentSchoolSettings: (updates: Partial<SchoolSettings>) => {
+    get().updateSchoolSettings(DEFAULT_SCHOOL_SLUG, updates);
+  },
+
+  loadFromStorage: () => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        set({ settings: JSON.parse(stored) });
+      } else {
+        // Initialize with default settings
+        set({
+          settings: {
+            [DEFAULT_SCHOOL_SLUG]: {
+              schoolSlug: DEFAULT_SCHOOL_SLUG,
+              weightsEnabled: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        });
+      }
+      
+      // Load from Supabase asynchronously
+      loadSupabaseSettings().then((settings) => {
+        if (settings) {
+          set((state) => ({
+            settings: {
+              ...state.settings,
+              [DEFAULT_SCHOOL_SLUG]: settings,
+            },
+          }));
+          get().saveToStorage();
+        }
+      }).catch(console.error);
+    } catch (error) {
+      console.error('Error loading school settings:', error);
+    }
+  },
+
+  saveToStorage: () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(get().settings));
+    } catch (error) {
+      console.error('Error saving school settings:', error);
+    }
+  },
+}));
+
+// Async helper to load from Supabase
+async function loadSupabaseSettings(): Promise<SchoolSettings | null> {
   const { data, error } = await supabase
     .from('school_settings')
     .select('value')
-    .eq('key', key)
+    .eq('key', 'use_activity_weights')
     .single();
 
-  // O erro 'PGRST116' significa 'nenhuma linha encontrada', o que é normal.
-  // Tratamos qualquer outro erro como um problema real.
   if (error && error.code !== 'PGRST116') {
-    console.error(`Erro ao buscar configuração '${key}':`, error);
+    console.error('Error loading settings from Supabase:', error);
     return null;
   }
 
-  return data ? (data.value as SchoolSettingValue) : null;
-};
+  if (!data) return null;
 
-/**
- * Atualiza ou cria uma configuração no Supabase.
- * @param key A chave da configuração (ex: 'use_activity_weights')
- * @param value O novo objeto de valor para a configuração.
- */
-export const updateSetting = async (key: string, value: SchoolSettingValue): Promise<void> => {
-  const { error } = await supabase
-    .from('school_settings')
-    .upsert({ key, value }, { onConflict: 'key' }); // Upsert é perfeito: cria se não existir, atualiza se já existir.
+  const value = data.value as { enabled?: boolean };
+  return {
+    schoolSlug: DEFAULT_SCHOOL_SLUG,
+    weightsEnabled: value?.enabled ?? true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
 
-  if (error) {
-    console.error(`Erro ao atualizar configuração '${key}':`, error);
-    throw error;
+// Async helper to update Supabase
+async function updateSupabaseSettings(updates: Partial<SchoolSettings>): Promise<void> {
+  if (updates.weightsEnabled !== undefined) {
+    const { error } = await supabase
+      .from('school_settings')
+      .upsert(
+        { key: 'use_activity_weights', value: { enabled: updates.weightsEnabled } },
+        { onConflict: 'key' }
+      );
+
+    if (error) {
+      console.error('Error updating settings in Supabase:', error);
+      throw error;
+    }
   }
-};
-
-/**
- * Helper assíncrono para verificar se o sistema de pesos de atividades está habilitado.
- * Retorna 'true' como padrão se a configuração não existir.
- */
-export const isWeightsEnabled = async (): Promise<boolean> => {
-  const setting = await getSetting('use_activity_weights');
-  // Se a configuração não existir (null) ou a propriedade 'enabled' não estiver definida,
-  // retornamos 'true' como um padrão seguro.
-  return setting?.enabled ?? true;
-};
-
-/**
- * Helper assíncrono para ATUALIZAR o estado do sistema de pesos.
- */
-export const setWeightsEnabled = async (enabled: boolean): Promise<void> => {
-  await updateSetting('use_activity_weights', { enabled });
-};
+}

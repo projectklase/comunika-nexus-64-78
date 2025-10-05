@@ -1,4 +1,4 @@
-import { isWeightsEnabled } from '@/stores/school-settings-store';
+import { useSchoolSettingsStore } from '@/stores/school-settings-store';
 
 /**
  * Utilitários para trabalhar com pesos baseado nas configurações da escola
@@ -8,7 +8,9 @@ import { isWeightsEnabled } from '@/stores/school-settings-store';
  * Filtra campos relacionados a peso baseado na configuração da escola
  */
 export function filterWeightFields<T extends Record<string, any>>(data: T): T {
-  if (isWeightsEnabled()) {
+  const weightsEnabled = useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
+  
+  if (weightsEnabled) {
     return data;
   }
 
@@ -25,21 +27,24 @@ export function filterWeightFields<T extends Record<string, any>>(data: T): T {
  * Valida se um peso é necessário baseado na configuração da escola
  */
 export function isWeightRequired(): boolean {
-  return isWeightsEnabled();
+  return useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
 }
 
 /**
  * Retorna um peso padrão seguro baseado na configuração da escola
  */
 export function getSafeDefaultWeight(defaultValue: number = 1): number | null {
-  return isWeightsEnabled() ? defaultValue : null;
+  const weightsEnabled = useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
+  return weightsEnabled ? defaultValue : null;
 }
 
 /**
  * Formata exibição de peso para UI
  */
 export function formatWeightDisplay(weight: number | null, usePeso?: boolean): string {
-  if (!isWeightsEnabled() || weight === null || usePeso === false) {
+  const weightsEnabled = useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
+  
+  if (!weightsEnabled || weight === null || usePeso === false) {
     return '';
   }
   
@@ -50,7 +55,7 @@ export function formatWeightDisplay(weight: number | null, usePeso?: boolean): s
  * Valida se dados de atividade estão consistentes com configuração de peso
  */
 export function validateActivityWeight(activityData: any): { isValid: boolean; message?: string } {
-  const weightsEnabled = isWeightsEnabled();
+  const weightsEnabled = useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
   
   // Se pesos estão desabilitados na escola, não deve haver campo peso
   if (!weightsEnabled && activityData.peso !== undefined && activityData.peso !== null) {
