@@ -5,7 +5,7 @@ import { PostInput } from '@/types/post';
  * Mini teste para demonstrar funcionamento do UniversalNexusOrb
  * Cria atividades para testar o badge count
  */
-export function createTestActivities() {
+export async function createTestActivities() {
   const now = new Date();
   const today = new Date();
   today.setHours(23, 59, 0, 0); // Final do dia de hoje
@@ -45,9 +45,9 @@ export function createTestActivities() {
   };
   
   try {
-    postStore.create(overdueActivity, 'Sistema de Teste');
-    postStore.create(todayActivity1, 'Sistema de Teste');
-    postStore.create(todayActivity2, 'Sistema de Teste');
+    await postStore.create(overdueActivity, 'Sistema de Teste', 'system');
+    await postStore.create(todayActivity1, 'Sistema de Teste', 'system');
+    await postStore.create(todayActivity2, 'Sistema de Teste', 'system');
     
     console.log('✅ Atividades de teste criadas:');
     console.log('  - 1 atividade atrasada (ontem)');
@@ -71,9 +71,9 @@ export function createTestActivities() {
 /**
  * Remove as atividades de teste criadas
  */
-export function clearTestActivities() {
-  const posts = postStore.list();
-  const testPosts = posts.filter(post => 
+export async function clearTestActivities() {
+  const posts = await postStore.list();
+  const testPosts = posts.filter(post =>
     post.title.includes('ATRASADA') || 
     post.title.includes('HOJE')
   );
@@ -92,8 +92,8 @@ export function clearTestActivities() {
 /**
  * Simula marcar uma atividade como entregue
  */
-export function markActivityAsDelivered(title: string) {
-  const posts = postStore.list();
+export async function markActivityAsDelivered(title: string) {
+  const posts = await postStore.list();
   const activity = posts.find(post => post.title.includes(title));
   
   if (activity) {

@@ -13,7 +13,7 @@ export interface UnifiedPostActionHandlers {
   editPost: (post: Post | NormalizedCalendarEvent, userRole: string, navigate: Function) => void;
   
   // CRUD operations
-  duplicatePost: (post: Post | NormalizedCalendarEvent, authorName: string) => Promise<boolean>;
+  duplicatePost: (post: Post | NormalizedCalendarEvent, authorName: string, authorId: string) => Promise<boolean>;
   publishNow: (post: Post | NormalizedCalendarEvent) => Promise<boolean>;
   archivePost: (post: Post | NormalizedCalendarEvent) => Promise<boolean>;
   deletePost: (post: Post | NormalizedCalendarEvent) => Promise<boolean>;
@@ -217,13 +217,13 @@ export function editPost(post: Post | NormalizedCalendarEvent, userRole: string,
 }
 
 // CRUD Operations
-export async function duplicatePost(post: Post | NormalizedCalendarEvent, authorName: string): Promise<boolean> {
+export async function duplicatePost(post: Post | NormalizedCalendarEvent, authorName: string, authorId: string): Promise<boolean> {
   const postData = extractPost(post);
   
   try {
-    const duplicateData = postStore.duplicate(postData.id);
+    const duplicateData = await postStore.duplicate(postData.id);
     if (duplicateData) {
-      postStore.create(duplicateData, authorName);
+      await postStore.create(duplicateData, authorName, authorId);
       return true;
     }
     return false;

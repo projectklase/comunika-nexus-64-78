@@ -81,15 +81,15 @@ export function PostActionHandler({ post, onEdit, onDuplicate, onRefresh }: Post
     }
   };
 
-  const handleDuplicateClick = () => {
+  const handleDuplicateClick = async () => {
     if (onDuplicate) {
       onDuplicate(post.id);
     } else {
       // Fallback: create duplicate directly
       try {
-        const duplicateData = postStore.duplicate(post.id);
+        const duplicateData = await postStore.duplicate(post.id);
         if (duplicateData) {
-          postStore.create(duplicateData, post.authorName);
+          await postStore.create(duplicateData, post.authorName, post.authorId || '');
           toast({
             title: "Post duplicado",
             description: "Uma cópia do post foi criada com sucesso.",

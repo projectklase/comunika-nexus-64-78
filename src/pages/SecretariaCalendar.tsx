@@ -306,10 +306,10 @@ export default function SecretariaCalendar() {
               </DialogHeader>
               <PostComposer
                 allowedTypes={['AVISO', 'COMUNICADO', 'EVENTO'] as PostType[]}
-                onSubmit={(postInput: PostInput) => {
+                onSubmit={async (postInput: PostInput) => {
                   if (!user) return;
                   
-                  postStore.create(postInput, user.name);
+                  await postStore.create(postInput, user.name, user.id);
                   setShowEventComposer(false);
                   
                   toast({

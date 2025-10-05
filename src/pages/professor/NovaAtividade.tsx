@@ -70,31 +70,32 @@ export default function NovaAtividade() {
   // Load existing post for editing
   useEffect(() => {
     if (isEditMode && editId) {
-      const existingPost = postStore.getById(editId);
-      if (existingPost) {
-        setActivityType(existingPost.type as ActivityType);
-        setFormData({
-          title: existingPost.title,
-          body: existingPost.body || '',
-          classId: existingPost.classIds?.[0] || existingPost.classId || '',
-          dueDate: existingPost.dueAt ? new Date(existingPost.dueAt) : null,
-          dueTime: existingPost.dueAt ? format(new Date(existingPost.dueAt), 'HH:mm') : '23:59'
-        });
-        if (existingPost.activityMeta) {
-          setActivityMeta(existingPost.activityMeta);
+      postStore.getById(editId).then(existingPost => {
+        if (existingPost) {
+          setActivityType(existingPost.type as ActivityType);
+          setFormData({
+            title: existingPost.title,
+            body: existingPost.body || '',
+            classId: existingPost.classIds?.[0] || existingPost.classId || '',
+            dueDate: existingPost.dueAt ? new Date(existingPost.dueAt) : null,
+            dueTime: existingPost.dueAt ? format(new Date(existingPost.dueAt), 'HH:mm') : '23:59'
+          });
+          if (existingPost.activityMeta) {
+            setActivityMeta(existingPost.activityMeta);
+          }
+          // Remove edit param after loading
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('edit');
+          setSearchParams(newParams, { replace: true });
+        } else {
+          toast({
+            title: "Erro",
+            description: "Atividade não encontrada para edição.",
+            variant: "destructive",
+          });
+          navigate('/professor/atividades');
         }
-        // Remove edit param after loading
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete('edit');
-        setSearchParams(newParams, { replace: true });
-      } else {
-        toast({
-          title: "Erro",
-          description: "Atividade não encontrada para edição.",
-          variant: "destructive",
-        });
-        navigate('/professor/atividades');
-      }
+      });
     }
   }, [isEditMode, editId, searchParams, setSearchParams, navigate, toast]);
 
@@ -223,7 +224,7 @@ export default function NovaAtividade() {
         });
       } else {
         // Create new post
-        postStore.create({
+        await postStore.create({
           type: activityType as PostType,
           title: formData.title,
           body: formData.body || undefined,
@@ -232,7 +233,7 @@ export default function NovaAtividade() {
           dueAt,
           status: 'PUBLISHED',
           activityMeta: finalMeta
-        }, user.name, allowPastDeadline);
+        }, user.name, user.id);
       }
       
       const typeLabel = activityType === 'ATIVIDADE' ? 'Atividade' : 

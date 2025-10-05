@@ -65,15 +65,16 @@ export default function ProfessorFeed() {
   useEffect(() => {
     const editId = searchParams.get('edit');
     if (editId && canEdit && !editingPost) {
-      const editData = getPostForEdit(editId);
-      if (editData) {
-        setEditingPost(editData);
+      getPostForEdit(editId).then(editData => {
+        if (editData) {
+          setEditingPost(editData);
         setShowComposer(true);
         // Remove edit param from URL
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('edit');
         setSearchParams(newParams, { replace: true });
-      }
+        }
+      });
     }
   }, [searchParams, canEdit, editingPost, getPostForEdit, setSearchParams]);
 
@@ -100,19 +101,19 @@ export default function ProfessorFeed() {
   };
 
   const handleEdit = (id: string) => {
-    const editData = getPostForEdit(id);
-    
-    if (editData) {
-      setEditingPost(editData);
+    getPostForEdit(id).then(editData => {
+      if (editData) {
+        setEditingPost(editData);
       setShowComposer(true);
       setUpdateKey(prev => prev + 1);
-    } else {
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os dados da atividade para edição.",
-        variant: "destructive",
-      });
-    }
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os dados da atividade para edição.",
+          variant: "destructive",
+        });
+      }
+    });
   };
 
   const handleCopyLink = async (post: Post) => {
@@ -238,14 +239,14 @@ export default function ProfessorFeed() {
                       </p>
                       <div className="flex gap-2 mt-1">
                         {metrics.pendingByClass.map(item => (
-                          <Badge key={item.classId} variant="secondary" className="text-xs">
-                            {item.className}: {item.count}
+                          <Badge key={item.class.id} variant="secondary" className="text-xs">
+                            {item.class.name}: {item.pending}
                           </Badge>
                         ))}
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" onClick={() => handleGoToCorrect(metrics.pendingByClass[0]?.classId)}>
+                  <Button size="sm" onClick={() => handleGoToCorrect(metrics.pendingByClass[0]?.class.id)}>
                     Corrigir Agora
                   </Button>
                 </div>

@@ -17,29 +17,30 @@ export function PostFallback() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!id || !user) {
-      // Redirect to appropriate dashboard if no ID or user
-      const fallbackRoute = user?.role === 'aluno' ? '/aluno/feed' : 
-                           user?.role === 'professor' ? '/professor/dashboard' : 
-                           '/dashboard';
-      navigate(fallbackRoute, { replace: true });
-      return;
-    }
+    const handleRedirect = async () => {
+      if (!id || !user) {
+        // Redirect to appropriate dashboard if no ID or user
+        const fallbackRoute = user?.role === 'aluno' ? '/aluno/feed' : 
+                             user?.role === 'professor' ? '/professor/dashboard' : 
+                             '/dashboard';
+        navigate(fallbackRoute, { replace: true });
+        return;
+      }
 
-    // Try to find the post
-    const post = postStore.getById(id);
-    
-    if (post) {
-      // Post found, redirect to correct destination
-      const destinationUrl = PostLinkBuilder.buildPostUrl(post, user.role);
+      // Try to find the post
+      const post = await postStore.getById(id);
       
-      toast({
-        title: 'Redirecionando...',
-        description: `Abrindo "${post.title}" no ${PostLinkBuilder.getDestinationName(post)}.`,
-      });
-      
-      navigate(destinationUrl, { replace: true });
-    } else {
+      if (post) {
+        // Post found, redirect to correct destination
+        const destinationUrl = PostLinkBuilder.buildPostUrl(post, user.role);
+        
+        toast({
+          title: 'Redirecionando...',
+          description: `Abrindo "${post.title}" no ${PostLinkBuilder.getDestinationName(post)}.`,
+        });
+        
+        navigate(destinationUrl, { replace: true });
+      } else {
       // Post not found, show error and redirect to feed
       toast({
         title: 'Post não encontrado',
@@ -52,7 +53,9 @@ export function PostFallback() {
                            '/secretaria/feed';
       
       navigate(fallbackRoute, { replace: true });
-    }
+      }
+    };
+    handleRedirect();
   }, [id, user, navigate, toast]);
 
   return (

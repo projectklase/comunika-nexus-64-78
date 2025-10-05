@@ -60,15 +60,16 @@ export default function SecretariaFeed() {
   useEffect(() => {
     const editId = searchParams.get('edit');
     if (editId && canEdit && !editingPost) {
-      const editData = getPostForEdit(editId);
-      if (editData) {
-        setEditingPost(editData);
+      getPostForEdit(editId).then(editData => {
+        if (editData) {
+          setEditingPost(editData);
         setShowComposer(true);
         // Remove edit param from URL
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('edit');
         setSearchParams(newParams, { replace: true });
-      }
+        }
+      });
     }
   }, [searchParams, canEdit, editingPost, getPostForEdit, setSearchParams]);
 
@@ -157,19 +158,19 @@ export default function SecretariaFeed() {
   };
 
   const handleEdit = (id: string) => {
-    const editData = getPostForEdit(id);
-    
-    if (editData) {
-      setEditingPost(editData);
-      setShowComposer(true);
-      setUpdateKey(prev => prev + 1); // Force re-render
-    } else {
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os dados do post para edição.",
-        variant: "destructive",
-      });
-    }
+    getPostForEdit(id).then(editData => {
+      if (editData) {
+        setEditingPost(editData);
+        setShowComposer(true);
+        setUpdateKey(prev => prev + 1); // Force re-render
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os dados do post para edição.",
+          variant: "destructive",
+        });
+      }
+    });
   };
 
   const handleComposerCancel = () => {
@@ -263,7 +264,8 @@ export default function SecretariaFeed() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Agendados</p>
                 <p className="text-xl font-bold text-yellow-400">
-                  {postStore.list({ status: 'SCHEDULED' }).length}
+                  {/* Async count - will be implemented later */}
+                  0
                 </p>
               </div>
             </div>

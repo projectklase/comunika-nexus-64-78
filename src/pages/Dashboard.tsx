@@ -82,10 +82,10 @@ const Dashboard = () => {
 
   const buttonConfig = getButtonConfig();
 
-  const handleCreatePost = (postInput: PostInput) => {
+  const handleCreatePost = async (postInput: PostInput) => {
     if (!user) return;
     
-    postStore.create(postInput, user.name);
+    await postStore.create(postInput, user.name, user.id);
     setShowComposer(false);
     toast({
       title: "Post criado com sucesso",

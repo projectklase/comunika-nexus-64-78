@@ -31,16 +31,6 @@ class PostStore {
     };
   }
 
-  private notifySubscribers() {
-    this.subscribers.forEach(callback => {
-      try {
-        callback();
-      } catch (error) {
-        console.error('Error in post store subscriber:', error);
-      }
-    });
-  }
-
   private dbRowToPost(row: any): Post {
     return {
       id: row.id,

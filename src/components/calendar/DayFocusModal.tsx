@@ -424,10 +424,10 @@ export function DayFocusModal() {
               <PostComposer
                 allowedTypes={getAllowedTypes()}
                 preselectedDate={date}
-                onSubmit={(postInput: PostInput) => {
+                onSubmit={async (postInput: PostInput) => {
                   if (!user) return;
                   
-                  postStore.create(postInput, user.name);
+                  await postStore.create(postInput, user.name, user.id);
                   closeCalendarModal(MODAL_IDS.POST_COMPOSER);
                   
                   toast({

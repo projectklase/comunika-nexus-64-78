@@ -63,7 +63,7 @@ export function usePostActionsUnified() {
     
     setIsLoading('create');
     try {
-      postStore.create(postInput, authorName);
+      await postStore.create(postInput, authorName, user?.id || '');
       toast({
         title: "Post criado",
         description: "O post foi criado com sucesso.",
@@ -85,7 +85,7 @@ export function usePostActionsUnified() {
   const updatePost = async (id: string, postInput: PostInput, options?: PostActionOptions): Promise<boolean> => {
     if (isLoading) return false;
     
-    const post = postStore.getById(id);
+    const post = await postStore.getById(id);
     if (!post || !canPerformAction('edit', post)) {
       toast({
         title: "Sem permissão",
@@ -123,7 +123,7 @@ export function usePostActionsUnified() {
   const archivePost = async (id: string, options?: PostActionOptions): Promise<boolean> => {
     if (isLoading) return false;
     
-    const post = postStore.getById(id);
+    const post = await postStore.getById(id);
     if (!post || !canPerformAction('archive', post)) {
       toast({
         title: "Sem permissão",
@@ -161,7 +161,7 @@ export function usePostActionsUnified() {
   const deletePost = async (id: string, options?: PostActionOptions): Promise<boolean> => {
     if (isLoading) return false;
     
-    const post = postStore.getById(id);
+    const post = await postStore.getById(id);
     if (!post || !canPerformAction('delete', post)) {
       toast({
         title: "Sem permissão",
@@ -199,7 +199,7 @@ export function usePostActionsUnified() {
   const duplicatePost = async (id: string, authorName: string, options?: PostActionOptions): Promise<boolean> => {
     if (isLoading) return false;
     
-    const post = postStore.getById(id);
+    const post = await postStore.getById(id);
     if (!post || !canPerformAction('duplicate', post)) {
       toast({
         title: "Sem permissão",
@@ -211,9 +211,9 @@ export function usePostActionsUnified() {
 
     setIsLoading('duplicate');
     try {
-      const duplicateData = postStore.duplicate(id);
+      const duplicateData = await postStore.duplicate(id);
       if (duplicateData) {
-        postStore.create(duplicateData, authorName);
+        await postStore.create(duplicateData, authorName, user?.id || '');
         toast({
           title: "Post duplicado",
           description: "Uma cópia do post foi criada com sucesso.",
@@ -238,7 +238,7 @@ export function usePostActionsUnified() {
   const publishNow = async (id: string, options?: PostActionOptions): Promise<boolean> => {
     if (isLoading) return false;
     
-    const post = postStore.getById(id);
+    const post = await postStore.getById(id);
     if (!post || !canPerformAction('publishNow', post)) {
       toast({
         title: "Sem permissão",
@@ -355,9 +355,9 @@ export function usePostActionsUnified() {
 
 
 
-  const getPostForEdit = (id: string): (PostInput & { originalId: string }) | null => {
+  const getPostForEdit = async (id: string): Promise<(PostInput & { originalId: string }) | null> => {
     try {
-      const post = postStore.getById(id);
+      const post = await postStore.getById(id);
       
       if (!post) {
         return null;
