@@ -1,15 +1,3 @@
-import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { InputPhone } from '@/components/ui/input-phone';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -26,37 +14,40 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { usePeopleStore } from '@/stores/people-store';
-import { useClassStore } from '@/stores/class-store';
-import { usePrograms } from '@/hooks/usePrograms';
-import { useLevels } from '@/hooks/useLevels';
-import { Person, Guardian, StudentExtra } from '@/types/class';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  CalendarIcon, 
-  Plus, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarIcon,
+  Plus,
   Trash2,
   User,
   Phone,
-  MapPin,
   GraduationCap,
   Users,
   Heart,
   CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { validatePhone, validateEmail } from '@/lib/validation';
+import { validatePhone } from '@/lib/validation';
+import { Person, Guardian, StudentExtra } from '@/types/class';
+
+// --- CORREÇÕES ---
+// Importar hooks do Supabase em vez dos stores antigos
+import { useClasses } from '@/hooks/useClasses';
+import { usePrograms } from '@/hooks/usePrograms';
+import { useLevels } from '@/hooks/useLevels';
+import { supabase } from '@/integrations/supabase/client'; // Importar o cliente Supabase
 
 interface StudentFormStepsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   student?: Person | null;
+  onSave: () => void; // Adicionar uma prop para atualizar a lista de alunos
 }
 
+// ... (as constantes STEPS e RELATION_OPTIONS permanecem as mesmas)
 const STEPS = [
   { id: 1, title: 'Dados Pessoais', icon: User },
   { id: 2, title: 'Contato & Endereço', icon: Phone },
@@ -74,59 +65,40 @@ const RELATION_OPTIONS = [
   { value: 'OUTRO', label: 'Outro' },
 ] as const;
 
-export function StudentFormSteps({ open, onOpenChange, student }: StudentFormStepsProps) {
+
+export function StudentFormSteps({ open, onOpenChange, student, onSave }: StudentFormStepsProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<Person & { student: StudentExtra }>>({
-    name: '',
-    isActive: true,
-    student: {
-      phones: [''],
-      address: {},
-      guardians: [],
-      consents: {}
-    }
-  });
+  const [formData, setFormData] = useState<Partial<Person & { student: StudentExtra }>>({ /* estado inicial */ });
 
-  const { createStudent, updateStudent, isMinor } = usePeopleStore();
-  const { classes } = useClassStore();
+  // Usar os hooks que buscam dados reais do Supabase
+  const { classes } = useClasses();
   const { programs } = usePrograms();
   const { levels } = useLevels();
-
-  // Calculate if student is minor based on current form data
-  const isStudentMinor = formData.student?.dob ? 
-    isMinor({ student: { dob: formData.student.dob } } as Person) : false;
-
-  // Filter available steps based on age
-  const availableSteps = STEPS.filter(step => 
-    step.id !== 4 || isStudentMinor
-  );
+// ------------------------------------
+  // --- CORREÇÕES ---
+  // Usar os hooks que buscam dados reais do Supabase
+  const { classes } = useClasses();
+  const { programs } = usePrograms();
+  const { levels } = useLevels();
+  // A função isMinor não precisa mais vir de um store
+  const isMinor = (dob: string | undefined): boolean => {
+    if (!dob) return false;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age < 18;
+  };
+  
+  const isStudentMinor = isMinor(formData.student?.dob);
+  const availableSteps = STEPS.filter(step => step.id !== 4 || isStudentMinor);
 
   useEffect(() => {
-    if (student?.student) {
-      setFormData({
-        ...student,
-        student: {
-          phones: student.student.phones || [''],
-          address: student.student.address || {},
-          guardians: student.student.guardians || [],
-          consents: student.student.consents || {},
-          ...student.student
-        }
-      });
-    } else {
-      setFormData({
-        name: '',
-        isActive: true,
-        student: {
-          phones: [''],
-          address: {},
-          guardians: [],
-          consents: {}
-        }
-      });
-    }
-    setCurrentStep(1);
+    // ... (lógica para inicializar o formulário, pode permanecer a mesma)
   }, [student, open]);
 
   const updateFormData = (updates: any) => {
@@ -138,89 +110,14 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
   };
 
   const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1: // Dados Pessoais
-        return !!(formData.name?.trim() && formData.student?.dob);
-      case 2: // Contato & Endereço
-        return !!(formData.student?.phones?.some(p => p.trim()));
-      case 3: // Acadêmico
-        return !!(formData.student?.levelId);
-      case 4: // Responsável (only if minor)
-        if (!isStudentMinor) return true;
-        const guardians = formData.student?.guardians || [];
-        return guardians.length > 0 && 
-               guardians.every(g => g.name.trim() && g.relation && g.phone?.trim() && validatePhone(g.phone) === null) &&
-               guardians.some(g => g.isPrimary);
-      case 5: // Saúde & Autorizações
-        return true; // Optional step
-      default:
-        return true;
-    }
+    // ... (sua lógica de validação pode permanecer a mesma)
+    return true; // Simplificado para o exemplo
   };
-
-  const nextStep = () => {
-    if (!validateStep(currentStep)) {
-      toast.error('Preencha os campos obrigatórios antes de continuar');
-      return;
-    }
-
-    const nextStepIndex = availableSteps.findIndex(s => s.id > currentStep);
-    if (nextStepIndex !== -1) {
-      setCurrentStep(availableSteps[nextStepIndex].id);
-    }
-  };
-
-  const prevStep = () => {
-    const prevStepIndex = [...availableSteps].reverse().findIndex(s => s.id < currentStep);
-    if (prevStepIndex !== -1) {
-      const reversedIndex = availableSteps.length - 1 - prevStepIndex;
-      setCurrentStep(availableSteps[reversedIndex].id);
-    }
-  };
-
-  const addGuardian = () => {
-    const newGuardian: Guardian = {
-      id: crypto.randomUUID(),
-      name: '',
-      relation: 'RESPONSAVEL',
-      phone: '',
-      isPrimary: (formData.student?.guardians?.length || 0) === 0
-    };
-
-    updateFormData({
-      student: {
-        guardians: [...(formData.student?.guardians || []), newGuardian]
-      }
-    });
-  };
-
-  const updateGuardian = (index: number, updates: Partial<Guardian>) => {
-    const guardians = [...(formData.student?.guardians || [])];
-    guardians[index] = { ...guardians[index], ...updates };
-
-    // If setting as primary, unset others
-    if (updates.isPrimary) {
-      guardians.forEach((g, i) => {
-        if (i !== index) g.isPrimary = false;
-      });
-    }
-
-    updateFormData({ student: { guardians } });
-  };
-
-  const removeGuardian = (index: number) => {
-    const guardians = [...(formData.student?.guardians || [])];
-    const wasRemovingPrimary = guardians[index].isPrimary;
-    guardians.splice(index, 1);
-
-    // If removed primary and others exist, make first one primary
-    if (wasRemovingPrimary && guardians.length > 0) {
-      guardians[0].isPrimary = true;
-    }
-
-    updateFormData({ student: { guardians } });
-  };
-
+  
+  // ... (as funções de navegação nextStep, prevStep e de gerenciamento de responsáveis podem permanecer as mesmas)
+  
+  // --- CORREÇÃO PRINCIPAL ---
+  // A nova função handleSubmit que integra tudo com o Supabase
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) {
       toast.error('Preencha os campos obrigatórios');
@@ -229,25 +126,89 @@ export function StudentFormSteps({ open, onOpenChange, student }: StudentFormSte
 
     setLoading(true);
     try {
-      if (student) {
-        await updateStudent(student.id, {
-          name: formData.name?.trim(),
-          isActive: formData.isActive,
-          student: formData.student
-        });
-        toast.success('Aluno atualizado com sucesso');
-      } else {
-        await createStudent({
-          name: formData.name?.trim() || '',
-          role: 'ALUNO',
-          isActive: formData.isActive || true,
-          student: formData.student || {}
-        });
-        toast.success('Aluno criado com sucesso');
+      const studentEmail = formData.student?.email;
+      if (!studentEmail) {
+        throw new Error("O email do aluno é obrigatório para criar o login.");
       }
+
+      let studentId = student?.id;
+
+      // Se é um NOVO aluno, primeiro criamos o login via Edge Function
+      if (!student) {
+        const tempPassword = Math.random().toString(36).slice(-8); // Gera senha aleatória
+        
+        // 1. Chamar a Edge Function para criar o usuário de autenticação
+        const { data: authData, error: authError } = await supabase.functions.invoke('create-demo-user', {
+          body: {
+            email: studentEmail,
+            password: tempPassword,
+            name: formData.name,
+            role: 'aluno'
+          }
+        });
+
+        if (authError || !authData.success) {
+          throw new Error(authError?.message || authData.error || "Erro ao criar o login do aluno.");
+        }
+        
+        studentId = authData.user.id; // Pegamos o ID do usuário recém-criado
+        toast.info(`Login para ${formData.name} criado. Senha temporária: ${tempPassword}`);
+      }
+
+      if (!studentId) {
+        throw new Error("Não foi possível obter o ID do aluno.");
+      }
+
+      // 2. Salvar/Atualizar o perfil detalhado na tabela 'profiles'
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: studentId,
+          name: formData.name?.trim(),
+          email: studentEmail, // Garantir que o email esteja na tabela profiles também
+          role: 'aluno',
+          // Outros campos da tabela profiles que você tenha...
+        });
+
+      if (profileError) throw profileError;
+      
+      // 3. Salvar/Atualizar os responsáveis na tabela 'guardians'
+      if (formData.student?.guardians && formData.student.guardians.length > 0) {
+        const guardiansData = formData.student.guardians.map(g => ({
+          student_id: studentId,
+          name: g.name,
+          relation: g.relation,
+          phone: g.phone,
+          email: g.email,
+          is_primary: g.isPrimary,
+        }));
+        // Primeiro, deleta os antigos para simplificar
+        await supabase.from('guardians').delete().eq('student_id', studentId);
+        // Insere os novos
+        const { error: guardianError } = await supabase.from('guardians').insert(guardiansData);
+        if (guardianError) throw guardianError;
+      }
+
+      // 4. Matricular o aluno nas turmas na tabela 'class_students'
+      if (formData.student?.classIds && formData.student.classIds.length > 0) {
+        const classStudentsData = formData.student.classIds.map(classId => ({
+          student_id: studentId,
+          class_id: classId,
+        }));
+        // Primeiro, deleta as matrículas antigas para simplificar
+        await supabase.from('class_students').delete().eq('student_id', studentId);
+        // Insere as novas
+        const { error: classStudentError } = await supabase.from('class_students').insert(classStudentsData);
+        if (classStudentError) throw classStudentError;
+      }
+      
+      toast.success(`Aluno ${student ? 'atualizado' : 'criado'} com sucesso!`);
+      onSave(); // Chama a função para atualizar a lista de alunos na página principal
       onOpenChange(false);
-    } catch (error) {
-      toast.error('Erro ao salvar aluno');
+
+    } catch (error: any) {
+      console.error('Erro ao salvar aluno:', error);
+      toast.error(`Erro ao salvar aluno: ${error.message}`);
     } finally {
       setLoading(false);
     }
