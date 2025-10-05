@@ -40,7 +40,7 @@ export const useAuditStore = create<AuditStore>((set, get) => ({
       if (error) throw error;
 
       set({ 
-        events: (data || []).map((event: any) => ({
+        events: ((data || []) as any[]).map((event: any) => ({
           ...event,
           school_id: event.school_id || 'default',
         })) as AuditEvent[],
@@ -157,7 +157,7 @@ export const logAudit = async (params: CreateAuditEventParams & {
     return;
   }
 
-  const newEventData = {
+  const newEventData: any = {
     actor_id,
     actor_name,
     actor_email: actor_email || '',
