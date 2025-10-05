@@ -86,11 +86,26 @@ const Dashboard = () => {
     try {
       const { data: newPostRow, error: postError } = await supabase
         .from('posts')
-        .insert({
-          ...postInput,
+        .insert([{
+          type: postInput.type,
+          title: postInput.title,
+          body: postInput.body,
+          audience: postInput.audience,
+          status: postInput.status || 'PUBLISHED',
           author_id: user.id,
           author_name: user.name,
-        })
+          author_role: user.role,
+          class_id: postInput.classId,
+          class_ids: postInput.classIds,
+          publish_at: postInput.publishAt,
+          due_at: postInput.dueAt,
+          event_start_at: postInput.eventStartAt,
+          event_end_at: postInput.eventEndAt,
+          event_location: postInput.eventLocation,
+          activity_meta: postInput.activityMeta as any,
+          attachments: postInput.attachments as any,
+          meta: postInput.meta as any
+        }])
         .select()
         .single();
       

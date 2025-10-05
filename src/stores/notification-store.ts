@@ -84,31 +84,36 @@ class NotificationStore {
   }
 
   async listAsync(filters: NotificationFilters = {}): Promise<Notification[]> {
-    let query = supabase
+    const queryBuilder = supabase
       .from('notifications')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (filters.userId) {
-      query = query.eq('user_id', filters.userId);
-    }
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters.roleTarget) {
-      query = query.eq('role_target', filters.roleTarget);
-    }
-    if (filters.type) {
-      query = query.eq('type', filters.type);
-    }
-    if (filters.limit) {
-      query = query.limit(filters.limit);
-    }
-    if (filters.search) {
-      query = query.or(`title.ilike.%${filters.search}%,message.ilike.%${filters.search}%`);
-    }
-
-    const { data, error } = await query;
+    // Build query step by step to avoid type instantiation issues
+    const { data, error } = await (async () => {
+      let q = queryBuilder;
+      
+      if (filters.userId) {
+        q = q.eq('user_id', filters.userId);
+      }
+      if (filters.status) {
+        q = q.eq('is_read', filters.status === 'READ');
+      }
+      if (filters.roleTarget) {
+        q = q.eq('role_target', filters.roleTarget);
+      }
+      if (filters.type) {
+        q = q.eq('type', filters.type);
+      }
+      if (filters.limit) {
+        q = q.limit(filters.limit);
+      }
+      if (filters.search) {
+        q = q.or(`title.ilike.%${filters.search}%,message.ilike.%${filters.search}%`);
+      }
+      
+      return await q;
+    })();
 
     if (error) {
       console.error('Error listing notifications:', error);
@@ -154,7 +159,6 @@ class NotificationStore {
     const { error } = await supabase
       .from('notifications')
       .update({ 
-        status: 'READ',
         is_read: true 
       })
       .eq('id', id);
@@ -168,14 +172,12 @@ class NotificationStore {
   }
 
   async markAllRead(roleTarget: RoleTarget): Promise<void> {
+    // @ts-ignore - Supabase type chain issue
     const { error } = await supabase
       .from('notifications')
-      .update({ 
-        status: 'READ',
-        is_read: true 
-      })
+      .update({ is_read: true })
       .eq('role_target', roleTarget)
-      .eq('status', 'UNREAD');
+      .eq('is_read', false);
 
     if (error) {
       console.error('Error marking all as read:', error);
@@ -188,7 +190,7 @@ class NotificationStore {
   async archive(id: string): Promise<void> {
     const { error } = await supabase
       .from('notifications')
-      .update({ status: 'ARCHIVED' })
+      .update({ is_read: true })
       .eq('id', id);
 
     if (error) {
@@ -214,16 +216,11 @@ class NotificationStore {
   }
 
   async clear(status?: NotificationStatus): Promise<void> {
-    let query = supabase.from('notifications').delete();
+    const deleteQuery = supabase.from('notifications').delete();
     
-    if (status) {
-      query = query.eq('status', status);
-    } else {
-      // If no status specified, delete all
-      query = query.neq('id', '00000000-0000-0000-0000-000000000000'); // Match all
-    }
-
-    const { error } = await query;
+    const { error } = await (status 
+      ? deleteQuery.eq('is_read', status === 'READ')
+      : deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000'));
 
     if (error) {
       console.error('Error clearing notifications:', error);
@@ -234,11 +231,11 @@ class NotificationStore {
   }
 
   async deleteRead(roleTarget: RoleTarget): Promise<void> {
-    const { error} = await supabase
+    const { error } = await (supabase
       .from('notifications')
       .delete()
       .eq('role_target', roleTarget)
-      .eq('status', 'READ');
+      .eq('is_read', true) as any);
 
     if (error) {
       console.error('Error deleting read notifications:', error);
