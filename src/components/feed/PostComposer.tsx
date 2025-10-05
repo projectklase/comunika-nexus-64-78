@@ -28,7 +28,7 @@ import { useClasses } from '@/hooks/useClasses';
 import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
 import { useSubjects } from '@/hooks/useSubjects';
-import { usePeople } from '@/hooks/usePeople';
+import { usePeopleStore } from '@/stores/people-store';
 import { orderClassesBySchedule, getClassDisplayInfo, resolveSubjectNames } from '@/utils/class-helpers';
 import { validateTitle, validateDescription, clampLen } from '@/lib/validation';
 import { formatDateTime } from '@/lib/format';
@@ -77,7 +77,7 @@ export function PostComposer({
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const { subjects } = useSubjects();
-  const { people } = usePeople();
+  const { people } = usePeopleStore();
   
   // Generate unique temp ID for this composer instance
   const tempId = useRef(initialData?.originalId || `composer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`).current;
@@ -309,8 +309,8 @@ export function PostComposer({
 
   // Get available classes based on user role
   const availableClasses = user?.role === 'professor'
-  ? classes.filter(c => c.main_teacher_id === user.id)
-  : classes.filter(c => c.status === 'Ativa');
+  ? classes.filter(c => c.teachers.includes(user.id))
+  : classes.filter(c => c.status === 'ATIVA');
 
   // Filter and order classes
   const filteredClasses = orderClassesBySchedule(
