@@ -390,7 +390,7 @@ export default function StudentsPage() {
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(student.id, student.name)}}>
+                            <DropdownMenuItem onClick={() => handleDelete(student.id, student.name)}>
                               <Trash2 className="h-4 w-4 mr-2" />
                               Excluir
                             </DropdownMenuItem>
