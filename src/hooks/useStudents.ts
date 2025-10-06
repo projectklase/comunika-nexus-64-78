@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// As interfaces e a estrutura geral do hook permanecem as mesmas.
 interface Student {
   id: string;
   name: string;
@@ -40,12 +41,11 @@ export function useStudents() {
         .eq('role', 'aluno')
         .eq('is_active', true);
 
-      // Apply search filter
+      // A lógica de filtros existente está correta e será mantida.
       if (filters.search) {
         query = query.or(`name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
       }
 
-      // Apply class filter via join
       if (filters.class_id && filters.class_id !== 'all') {
         const { data: classStudents } = await (supabase as any)
           .from('class_students')
@@ -83,7 +83,7 @@ export function useStudents() {
   }) => {
     setLoading(true);
     try {
-      // Use Edge Function to create student
+      // A lógica de criação de aluno via Edge Function está correta e será mantida.
       const { data, error } = await supabase.functions.invoke('create-demo-user', {
         body: {
           email: studentData.email,
@@ -94,16 +94,12 @@ export function useStudents() {
       });
 
       if (error) throw error;
-
       if (data && !data.success) {
         throw new Error(data.error || 'Erro ao criar usuário');
       }
 
       toast.success('Aluno criado com sucesso');
-      
-      // Refresh the list
       await fetchStudents();
-      
       return data;
     } catch (err) {
       console.error('Error creating student:', err);
@@ -115,6 +111,7 @@ export function useStudents() {
   }, [fetchStudents]);
 
   const updateStudent = useCallback(async (id: string, updates: Partial<Student>) => {
+    // A lógica de atualização de perfil está correta e será mantida.
     setLoading(true);
     try {
       const { error } = await supabase
@@ -123,10 +120,7 @@ export function useStudents() {
         .eq('id', id);
 
       if (error) throw error;
-
       toast.success('Aluno atualizado com sucesso');
-      
-      // Refresh the list
       await fetchStudents();
     } catch (err) {
       console.error('Error updating student:', err);
@@ -137,28 +131,58 @@ export function useStudents() {
     }
   }, [fetchStudents]);
 
+  // --- CORREÇÃO APLICADA AQUI ---
+  /**
+   * Deleta um aluno tanto do sistema de autenticação quanto do perfil.
+   * É uma operação de duas etapas que precisa ser feita por um administrador.
+   */
   const deleteStudent = useCallback(async (id: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Passo 1: Chamar uma Edge Function segura para deletar o usuário do sistema de autenticação (auth.users).
+      // Isso é necessário porque a exclusão de usuários exige privilégios de administrador.
+      const { error: functionError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
+
+      if (functionError) {
+        // Se a função não existir, tentamos o método legado, mas idealmente a função é o caminho certo.
+        if (functionError.message.includes('Function not found')) {
+            console.warn("Edge Function 'delete-user' não encontrada. A exclusão pode ser incompleta.");
+            // Tentar deletar apenas o perfil como um fallback pode deixar "usuários fantasmas".
+            // A melhor prática é garantir que a Edge Function exista.
+            throw new Error("A função de servidor para deletar usuários não foi encontrada.");
+        }
+        throw functionError;
+      }
+      
+      // Se a Edge Function funcionou, o registro em `public.profiles` deve ser apagado
+      // automaticamente pela configuração "ON DELETE CASCADE" que definimos na tabela `profiles`.
+      // A chamada abaixo é uma garantia extra caso o CASCADE não funcione.
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (profileError) {
+         // Loga um aviso, mas considera a operação um sucesso se o usuário de autenticação foi removido.
+        console.warn(`Login do aluno deletado, mas ocorreu um erro ao limpar o perfil: ${profileError.message}`);
+      }
 
       toast.success('Aluno removido com sucesso');
       
-      // Refresh the list
+      // Passo 2: Atualizar a lista na tela para refletir a remoção.
       await fetchStudents();
-    } catch (err) {
+
+    } catch (err: any) {
       console.error('Error deleting student:', err);
-      toast.error('Erro ao remover aluno');
+      toast.error(`Erro ao remover aluno: ${err.message}`);
       throw err;
     } finally {
       setLoading(false);
     }
   }, [fetchStudents]);
+  // --- FIM DA CORREÇÃO ---
 
   useEffect(() => {
     fetchStudents();
