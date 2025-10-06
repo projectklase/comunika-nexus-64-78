@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_events: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          actor_name: string | null
+          actor_role: string | null
+          at: string | null
+          class_name: string | null
+          diff_json: Json | null
+          entity: string
+          entity_id: string | null
+          entity_label: string | null
+          id: string
+          meta: Json | null
+          scope: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          at?: string | null
+          class_name?: string | null
+          diff_json?: Json | null
+          entity: string
+          entity_id?: string | null
+          entity_label?: string | null
+          id?: string
+          meta?: Json | null
+          scope?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          at?: string | null
+          class_name?: string | null
+          diff_json?: Json | null
+          entity?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          id?: string
+          meta?: Json | null
+          scope?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_students: {
         Row: {
           class_id: string
@@ -280,6 +339,101 @@ export type Database = {
           },
         ]
       }
+      import_history: {
+        Row: {
+          created_at: string | null
+          error_log: Json | null
+          file_name: string | null
+          id: string
+          import_type: string
+          imported_by: string | null
+          rows_failed: number | null
+          rows_processed: number | null
+          rows_succeeded: number | null
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_log?: Json | null
+          file_name?: string | null
+          id?: string
+          import_type: string
+          imported_by?: string | null
+          rows_failed?: number | null
+          rows_processed?: number | null
+          rows_succeeded?: number | null
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          error_log?: Json | null
+          file_name?: string | null
+          id?: string
+          import_type?: string
+          imported_by?: string | null
+          rows_failed?: number | null
+          rows_processed?: number | null
+          rows_succeeded?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_history_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      koin_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          processed_by: string | null
+          related_entity_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          processed_by?: string | null
+          related_entity_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          processed_by?: string | null
+          related_entity_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "koin_transactions_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "koin_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       levels: {
         Row: {
           code: string | null
@@ -351,6 +505,8 @@ export type Database = {
           link: string | null
           message: string
           meta: Json | null
+          role_target: string | null
+          status: string
           title: string
           type: string
           updated_at: string
@@ -363,6 +519,8 @@ export type Database = {
           link?: string | null
           message: string
           meta?: Json | null
+          role_target?: string | null
+          status?: string
           title: string
           type: string
           updated_at?: string
@@ -375,6 +533,8 @@ export type Database = {
           link?: string | null
           message?: string
           meta?: Json | null
+          role_target?: string | null
+          status?: string
           title?: string
           type?: string
           updated_at?: string
@@ -473,6 +633,7 @@ export type Database = {
           enrollment_number: string | null
           id: string
           is_active: boolean | null
+          koins: number
           must_change_password: boolean | null
           name: string
           phone: string | null
@@ -491,6 +652,7 @@ export type Database = {
           enrollment_number?: string | null
           id: string
           is_active?: boolean | null
+          koins?: number
           must_change_password?: boolean | null
           name: string
           phone?: string | null
@@ -509,6 +671,7 @@ export type Database = {
           enrollment_number?: string | null
           id?: string
           is_active?: boolean | null
+          koins?: number
           must_change_password?: boolean | null
           name?: string
           phone?: string | null
@@ -549,6 +712,107 @@ export type Database = {
           is_active?: boolean
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      redemption_requests: {
+        Row: {
+          debit_transaction_id: string | null
+          id: string
+          item_id: string
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          debit_transaction_id?: string | null
+          id?: string
+          item_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string | null
+          status?: string
+          student_id: string
+        }
+        Update: {
+          debit_transaction_id?: string | null
+          id?: string
+          item_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemption_requests_debit_transaction_id_fkey"
+            columns: ["debit_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "koin_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemption_requests_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "reward_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemption_requests_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemption_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_items: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price_koins: number
+          stock: number
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price_koins: number
+          stock?: number
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price_koins?: number
+          stock?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -608,7 +872,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_koins_to_user: {
+        Args: { amount_in: number; user_id_in: string }
+        Returns: {
+          avatar: string | null
+          class_id: string | null
+          created_at: string | null
+          default_school_slug: string | null
+          dob: string | null
+          email: string
+          enrollment_number: string | null
+          id: string
+          is_active: boolean | null
+          koins: number
+          must_change_password: boolean | null
+          name: string
+          phone: string | null
+          preferences: Json | null
+          role: string
+          student_notes: string | null
+          updated_at: string | null
+        }[]
+      }
+      approve_redemption: {
+        Args: { p_admin_id: string; p_redemption_id: string }
+        Returns: undefined
+      }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: string
+      }
+      reject_redemption: {
+        Args: { p_admin_id: string; p_reason: string; p_redemption_id: string }
+        Returns: undefined
+      }
+      request_redemption: {
+        Args: { p_item_id: string; p_student_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
