@@ -66,18 +66,22 @@ export function useTeachers() {
     name: string;
     email: string;
     password?: string;
+    phone?: string;
   }) => {
     setLoading(true);
     try {
       console.log('🔵 [useTeachers] Tentando criar professor:', teacherData);
       
-      // Use Edge Function to create teacher
+      // Generate password if not provided
+      const password = teacherData.password || `Prof${Math.floor(Math.random() * 10000)}!`;
+      
       const { data, error } = await supabase.functions.invoke('create-demo-user', {
         body: {
           email: teacherData.email,
-          password: teacherData.password || '123456',
+          password: password,
           name: teacherData.name,
           role: 'professor',
+          phone: teacherData.phone,
         }
       });
 
@@ -94,12 +98,11 @@ export function useTeachers() {
       }
 
       console.log('✅ [useTeachers] Professor criado com sucesso');
-      toast.success('Professor criado com sucesso');
       
-      // Refresh the list
       await fetchTeachers();
       
-      return data;
+      // Return data with password for display
+      return { ...data, password };
     } catch (err) {
       console.error('🔴 [useTeachers] Erro ao criar professor:', err);
       toast.error(err instanceof Error ? err.message : 'Erro ao criar professor');

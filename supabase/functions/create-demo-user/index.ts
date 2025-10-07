@@ -10,6 +10,9 @@ interface DemoUserRequest {
   password: string
   name: string
   role: string
+  dob?: string
+  phone?: string
+  enrollment_number?: string
 }
 
 Deno.serve(async (req) => {
@@ -83,7 +86,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { email, password, name, role }: DemoUserRequest = await req.json()
+    const { email, password, name, role, dob, phone, enrollment_number }: DemoUserRequest = await req.json()
 
     // Validações de entrada
     if (!email || !password || !name || !role) {
@@ -206,6 +209,31 @@ Deno.serve(async (req) => {
     }
 
     console.log('Demo user created successfully:', data.user?.email)
+
+    // Criar ou atualizar o perfil na tabela profiles com todos os dados
+    const profileData: any = {
+      id: data.user.id,
+      email: email,
+      name: name,
+      role: role,
+      is_active: true,
+    }
+
+    // Adicionar campos opcionais se fornecidos
+    if (dob) profileData.dob = dob
+    if (phone) profileData.phone = phone
+    if (enrollment_number) profileData.enrollment_number = enrollment_number
+
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .upsert(profileData, {
+        onConflict: 'id'
+      })
+
+    if (profileError) {
+      console.error('Error creating profile:', profileError)
+      // Não falhar completamente, mas avisar
+    }
 
     // Criar entrada na tabela user_roles
     const { error: roleInsertError } = await supabaseAdmin

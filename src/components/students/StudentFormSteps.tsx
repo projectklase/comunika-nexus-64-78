@@ -57,7 +57,9 @@ import { Person, Guardian, StudentExtra } from '@/types/class';
 import { useClasses } from '@/hooks/useClasses';
 import { usePrograms } from '@/hooks/usePrograms';
 import { useLevels } from '@/hooks/useLevels';
+import { useStudents } from '@/hooks/useStudents';
 import { supabase } from '@/integrations/supabase/client';
+import { CredentialsDialog } from './CredentialsDialog';
 
 interface StudentFormStepsProps {
   open: boolean;
@@ -90,10 +92,17 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Person & { student: StudentExtra }>>({ /* estado inicial */ });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showCredentials, setShowCredentials] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    email: string;
+    password: string;
+    name: string;
+  } | null>(null);
 
   const { classes } = useClasses();
   const { programs } = usePrograms();
   const { levels } = useLevels();
+  const { createStudent, updateStudent } = useStudents();
   // A função isMinor não precisa mais vir de um store
   const isMinor = (dob: string | undefined): boolean => {
     if (!dob) return false;
@@ -244,46 +253,42 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
       let studentId = student?.id;
 
-      // Se é um NOVO aluno, primeiro criamos o login via Edge Function
+      // Se é um NOVO aluno, primeiro criamos o login via hook useStudents
       if (!student) {
-        const tempPassword = Math.random().toString(36).slice(-8); // Gera senha aleatória
-        
-        // 1. Chamar a Edge Function para criar o usuário de autenticação
-        const { data: authData, error: authError } = await supabase.functions.invoke('create-demo-user', {
-          body: {
-            email: studentEmail,
-            password: tempPassword,
-            name: formData.name,
-            role: 'aluno'
-          }
+        const result = await createStudent({
+          name: formData.name || '',
+          email: studentEmail,
+          dob: formData.student?.dob,
+          phone: formData.student?.phones?.[0],
+          enrollment_number: formData.student?.enrollmentNumber,
         });
-
-        if (authError || !authData.success) {
-          throw new Error(authError?.message || authData.error || "Erro ao criar o login do aluno.");
+        
+        // Mostrar credenciais
+        if (result?.password) {
+          setCreatedCredentials({
+            email: studentEmail,
+            password: result.password,
+            name: formData.name || '',
+          });
         }
         
-        studentId = authData.user.id; // Pegamos o ID do usuário recém-criado
-        toast.info(`Login para ${formData.name} criado. Senha temporária: ${tempPassword}`);
+        studentId = result?.user?.id;
+      } else {
+        // Atualizar aluno existente
+        await updateStudent(studentId, {
+          name: formData.name?.trim(),
+          email: studentEmail,
+          dob: formData.student?.dob,
+          phone: formData.student?.phones?.[0],
+          enrollment_number: formData.student?.enrollmentNumber,
+        } as any);
       }
 
       if (!studentId) {
         throw new Error("Não foi possível obter o ID do aluno.");
       }
 
-      // 2. Salvar/Atualizar o perfil detalhado na tabela 'profiles'
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: studentId,
-          name: formData.name?.trim(),
-          email: studentEmail, // Garantir que o email esteja na tabela profiles também
-          role: 'aluno',
-          // Outros campos da tabela profiles que você tenha...
-        });
-
-      if (profileError) throw profileError;
-      
-      // 3. Salvar/Atualizar os responsáveis na tabela 'guardians'
+      // Salvar/Atualizar os responsáveis na tabela 'guardians'
       if (formData.student?.guardians && formData.student.guardians.length > 0) {
         const guardiansData = formData.student.guardians.map(g => ({
           student_id: studentId,
@@ -293,29 +298,35 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           email: g.email,
           is_primary: g.isPrimary,
         }));
-        // Primeiro, deleta os antigos para simplificar
+        // Primeiro, deleta os antigos
         await supabase.from('guardians').delete().eq('student_id', studentId);
         // Insere os novos
         const { error: guardianError } = await supabase.from('guardians').insert(guardiansData);
         if (guardianError) throw guardianError;
       }
 
-      // 4. Matricular o aluno nas turmas na tabela 'class_students'
+      // Matricular o aluno nas turmas
       if (formData.student?.classIds && formData.student.classIds.length > 0) {
         const classStudentsData = formData.student.classIds.map(classId => ({
           student_id: studentId,
           class_id: classId,
         }));
-        // Primeiro, deleta as matrículas antigas para simplificar
         await supabase.from('class_students').delete().eq('student_id', studentId);
-        // Insere as novas
         const { error: classStudentError } = await supabase.from('class_students').insert(classStudentsData);
         if (classStudentError) throw classStudentError;
       }
       
-      toast.success(`Aluno ${student ? 'atualizado' : 'criado'} com sucesso!`);
-      onSave(); // Chama a função para atualizar a lista de alunos na página principal
+      if (student) {
+        toast.success('Aluno atualizado com sucesso!');
+      }
+      
+      onSave();
       onOpenChange(false);
+      
+      // Mostrar dialog de credenciais após fechar o modal principal
+      if (!student && createdCredentials) {
+        setTimeout(() => setShowCredentials(true), 300);
+      }
 
     } catch (error: any) {
       console.error('Erro ao salvar aluno:', error);
@@ -1011,6 +1022,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const isLastStep = currentStepIndex === availableSteps.length - 1;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -1092,5 +1104,17 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         </div>
       </DialogContent>
     </Dialog>
+    
+    {createdCredentials && (
+      <CredentialsDialog
+        open={showCredentials}
+        onOpenChange={setShowCredentials}
+        name={createdCredentials.name}
+        email={createdCredentials.email}
+        password={createdCredentials.password}
+        role="aluno"
+      />
+    )}
+    </>
   );
 }

@@ -80,16 +80,24 @@ export function useStudents() {
     name: string;
     email: string;
     password?: string;
+    dob?: string;
+    phone?: string;
+    enrollment_number?: string;
   }) => {
     setLoading(true);
     try {
-      // A lógica de criação de aluno via Edge Function está correta e será mantida.
+      // Generate password if not provided
+      const password = studentData.password || `Aluno${Math.floor(Math.random() * 10000)}!`;
+      
       const { data, error } = await supabase.functions.invoke('create-demo-user', {
         body: {
           email: studentData.email,
-          password: studentData.password || '123456',
+          password: password,
           name: studentData.name,
           role: 'aluno',
+          dob: studentData.dob,
+          phone: studentData.phone,
+          enrollment_number: studentData.enrollment_number,
         }
       });
 
@@ -98,9 +106,9 @@ export function useStudents() {
         throw new Error(data.error || 'Erro ao criar usuário');
       }
 
-      toast.success('Aluno criado com sucesso');
+      // Return data with the password for display
       await fetchStudents();
-      return data;
+      return { ...data, password };
     } catch (err) {
       console.error('Error creating student:', err);
       toast.error(err instanceof Error ? err.message : 'Erro ao criar aluno');

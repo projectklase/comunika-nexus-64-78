@@ -325,9 +325,20 @@ export default function StudentsPage() {
                 filteredStudents.map((student) => {
                   const studentClasses = getStudentClasses(student.id);
                   
-                  // Calculate age from created_at as placeholder
-                  const createdDate = new Date(student.created_at);
-                  const age = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+                  // Calculate age from dob if available
+                  let age = 15; // default
+                  let isMinor = false;
+                  
+                  if ((student as any).dob) {
+                    const birthDate = new Date((student as any).dob);
+                    const today = new Date();
+                    age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                      age--;
+                    }
+                    isMinor = age < 18;
+                  }
 
                   return (
                     <TableRow key={student.id}>
@@ -340,8 +351,8 @@ export default function StudentsPage() {
                       <TableCell className="font-medium">{student.name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span>{Math.max(15, age)} anos</span>
-                          {age < 3 && <Badge variant="outline" className="text-xs">Menor</Badge>}
+                          <span>{age} anos</span>
+                          {isMinor && <Badge variant="outline" className="text-xs">Menor</Badge>}
                         </div>
                       </TableCell>
                       <TableCell>
