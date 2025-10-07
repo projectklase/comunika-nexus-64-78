@@ -44,7 +44,17 @@ export const validateBio = (v = '') => {
 export const validateEmail = (v = '') => {
   const req = required(v);
   if (req) return req;
-  return isEmail(v) ? null : 'Email inválido';
+  
+  // Validação mais rigorosa de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(v)) return 'Email inválido';
+  
+  // Verificar caracteres perigosos
+  if (/[<>\"'`]/.test(v)) return 'Email contém caracteres inválidos';
+  
+  if (v.length > 254) return 'Email muito longo (máximo 254 caracteres)';
+  
+  return null;
 };
 
 export const validatePhone = (v = '') => {
@@ -90,4 +100,92 @@ export const validateEventDates = (startDate = '', endDate = '') => {
   } catch {
     return { startError: null, endError: 'Erro ao validar datas' };
   }
+};
+
+// Validações específicas para estudantes
+export const validateName = (v = '') => {
+  const req = required(v);
+  if (req) return req;
+  
+  const trimmed = normalizeSpaces(v);
+  if (trimmed.length < 3) return 'Nome deve ter no mínimo 3 caracteres';
+  if (trimmed.length > 100) return 'Nome deve ter no máximo 100 caracteres';
+  
+  // Verificar caracteres perigosos (XSS prevention)
+  if (/[<>\"'`]/.test(trimmed)) return 'Nome contém caracteres inválidos';
+  
+  // Validar se tem pelo menos um sobrenome
+  const parts = trimmed.split(' ').filter(p => p.length > 0);
+  if (parts.length < 2) return 'Digite o nome completo (nome e sobrenome)';
+  
+  return null;
+};
+
+export const validateCPF = (cpf = '') => {
+  if (!cpf) return null; // CPF é opcional
+  
+  const digits = onlyDigits(cpf);
+  if (digits.length !== 11) return 'CPF deve ter 11 dígitos';
+  
+  // Validar CPFs inválidos conhecidos
+  if (/^(\d)\1{10}$/.test(digits)) return 'CPF inválido';
+  
+  // Validação do dígito verificador
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(digits.charAt(i)) * (10 - i);
+  }
+  let rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(digits.charAt(9))) return 'CPF inválido';
+  
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(digits.charAt(i)) * (11 - i);
+  }
+  rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(digits.charAt(10))) return 'CPF inválido';
+  
+  return null;
+};
+
+export const validatePassword = (v = '') => {
+  const req = required(v);
+  if (req) return req;
+  
+  if (v.length < 6) return 'Senha deve ter no mínimo 6 caracteres';
+  if (v.length > 100) return 'Senha muito longa (máximo 100 caracteres)';
+  
+  return null;
+};
+
+export const validateEnrollmentNumber = (v = '') => {
+  if (!v) return null; // Matrícula é opcional
+  
+  const trimmed = v.trim();
+  if (trimmed.length < 3) return 'Matrícula muito curta';
+  if (trimmed.length > 20) return 'Matrícula muito longa (máximo 20 caracteres)';
+  
+  // Apenas letras, números e hífens
+  if (!/^[A-Za-z0-9-]+$/.test(trimmed)) return 'Matrícula deve conter apenas letras, números e hífens';
+  
+  return null;
+};
+
+export const sanitizeString = (v = '', maxLength = 1000) => {
+  // Remove caracteres perigosos e limita o tamanho
+  return v
+    .replace(/[<>\"'`]/g, '')
+    .trim()
+    .slice(0, maxLength);
+};
+
+export const validateZipCode = (v = '') => {
+  if (!v) return null; // CEP é opcional
+  
+  const digits = onlyDigits(v);
+  if (digits.length !== 8) return 'CEP deve ter 8 dígitos';
+  
+  return null;
 };

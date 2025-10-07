@@ -42,7 +42,17 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { validatePhone } from '@/lib/validation';
+import { 
+  validatePhone, 
+  validateName, 
+  validateEmail, 
+  validateCPF, 
+  validateEnrollmentNumber,
+  validateZipCode,
+  sanitizeString,
+  normalizeSpaces,
+  onlyDigits
+} from '@/lib/validation';
 import { Person, Guardian, StudentExtra } from '@/types/class';
 import { useClasses } from '@/hooks/useClasses';
 import { usePrograms } from '@/hooks/usePrograms';
@@ -79,6 +89,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Person & { student: StudentExtra }>>({ /* estado inicial */ });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { classes } = useClasses();
   const { programs } = usePrograms();
@@ -112,8 +123,64 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   };
 
   const validateStep = (step: number): boolean => {
-    // ... (sua lógica de validação pode permanecer a mesma)
-    return true; // Simplificado para o exemplo
+    const newErrors: Record<string, string> = {};
+    
+    switch (step) {
+      case 1: // Dados Pessoais
+        const nameError = validateName(formData.name);
+        if (nameError) newErrors.name = nameError;
+        
+        if (!formData.student?.dob) {
+          newErrors.dob = 'Data de nascimento é obrigatória';
+        }
+        
+        const cpfError = validateCPF(formData.student?.document);
+        if (cpfError) newErrors.document = cpfError;
+        
+        const enrollmentError = validateEnrollmentNumber(formData.student?.enrollmentNumber);
+        if (enrollmentError) newErrors.enrollmentNumber = enrollmentError;
+        break;
+        
+      case 2: // Contato & Endereço
+        if (!formData.student?.phones || formData.student.phones.length === 0) {
+          newErrors.phones = 'Pelo menos um telefone é obrigatório';
+        } else {
+          formData.student.phones.forEach((phone, idx) => {
+            const phoneError = validatePhone(phone);
+            if (phoneError) newErrors[`phone_${idx}`] = phoneError;
+          });
+        }
+        
+        const emailError = validateEmail(formData.student?.email || '');
+        if (emailError) newErrors.email = emailError;
+        
+        const zipError = validateZipCode(formData.student?.address?.zip);
+        if (zipError) newErrors.zip = zipError;
+        break;
+        
+      case 4: // Responsável
+        if (isStudentMinor && (!formData.student?.guardians || formData.student.guardians.length === 0)) {
+          newErrors.guardians = 'Alunos menores de idade devem ter pelo menos um responsável';
+        }
+        
+        formData.student?.guardians?.forEach((guardian, idx) => {
+          if (!guardian.name || guardian.name.trim().length < 3) {
+            newErrors[`guardian_${idx}_name`] = 'Nome do responsável é obrigatório';
+          }
+          const guardianPhoneError = validatePhone(guardian.phone || '');
+          if (guardianPhoneError) newErrors[`guardian_${idx}_phone`] = guardianPhoneError;
+        });
+        break;
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Por favor, corrija os erros no formulário');
+      return false;
+    }
+    
+    return true;
   };
 
   const nextStep = () => {
@@ -268,10 +335,24 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               <Input
                 id="name"
                 value={formData.name || ''}
-                onChange={(e) => updateFormData({ name: e.target.value })}
-                placeholder="Digite o nome completo"
+                onChange={(e) => {
+                  const sanitized = sanitizeString(e.target.value, 100);
+                  updateFormData({ name: sanitized });
+                  // Validar em tempo real
+                  const error = validateName(sanitized);
+                  setErrors(prev => ({...prev, name: error || ''}));
+                }}
+                placeholder="Digite o nome completo (nome e sobrenome)"
                 required
+                maxLength={100}
+                className={errors.name ? 'border-destructive' : ''}
               />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {(formData.name || '').length}/100 caracteres
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -280,14 +361,15 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 <Input
                   type="date"
                   value={formData.student?.dob || ''}
-                  onChange={(e) => 
+                  onChange={(e) => {
                     updateFormData({ 
                       student: { dob: e.target.value || undefined } 
-                    })
-                  }
+                    });
+                    setErrors(prev => ({...prev, dob: ''}));
+                  }}
                   max={format(new Date(), 'yyyy-MM-dd')}
                   min="1900-01-01"
-                  className="pr-10"
+                  className={cn("pr-10", errors.dob && 'border-destructive')}
                   placeholder="dd/mm/aaaa"
                 />
                 <Popover>
@@ -305,11 +387,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     <Calendar
                       mode="single"
                       selected={formData.student?.dob ? new Date(formData.student.dob) : undefined}
-                      onSelect={(date) => 
+                      onSelect={(date) => {
                         updateFormData({ 
                           student: { dob: date ? format(date, 'yyyy-MM-dd') : undefined } 
-                        })
-                      }
+                        });
+                        setErrors(prev => ({...prev, dob: ''}));
+                      }}
                       disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                       initialFocus
                       className="pointer-events-auto"
@@ -317,16 +400,54 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   </PopoverContent>
                 </Popover>
               </div>
+              {errors.dob && (
+                <p className="text-sm text-destructive">{errors.dob}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="document">Documento (CPF/RG)</Label>
+              <Label htmlFor="document">Documento (CPF)</Label>
               <Input
                 id="document"
                 value={formData.student?.document || ''}
-                onChange={(e) => updateFormData({ student: { document: e.target.value } })}
+                onChange={(e) => {
+                  const digits = onlyDigits(e.target.value);
+                  const formatted = digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                  updateFormData({ student: { document: formatted } });
+                  // Validar em tempo real
+                  const error = validateCPF(formatted);
+                  setErrors(prev => ({...prev, document: error || ''}));
+                }}
                 placeholder="000.000.000-00"
+                maxLength={14}
+                className={errors.document ? 'border-destructive' : ''}
               />
+              {errors.document && (
+                <p className="text-sm text-destructive">{errors.document}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="enrollmentNumber">Matrícula</Label>
+              <Input
+                id="enrollmentNumber"
+                value={formData.student?.enrollmentNumber || ''}
+                onChange={(e) => {
+                  const sanitized = e.target.value.replace(/[^A-Za-z0-9-]/g, '').slice(0, 20);
+                  updateFormData({ student: { enrollmentNumber: sanitized } });
+                  const error = validateEnrollmentNumber(sanitized);
+                  setErrors(prev => ({...prev, enrollmentNumber: error || ''}));
+                }}
+                placeholder="2024-ABC-001"
+                maxLength={20}
+                className={errors.enrollmentNumber ? 'border-destructive' : ''}
+              />
+              {errors.enrollmentNumber && (
+                <p className="text-sm text-destructive">{errors.enrollmentNumber}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Apenas letras, números e hífens
+              </p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -345,6 +466,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Telefones *</Label>
+              {errors.phones && (
+                <p className="text-sm text-destructive">{errors.phones}</p>
+              )}
               {formData.student?.phones?.map((phone, index) => (
                 <div key={index} className="flex gap-2">
                   <InputPhone
@@ -353,8 +477,16 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                       const phones = [...(formData.student?.phones || [])];
                       phones[index] = value;
                       updateFormData({ student: { phones } });
+                      // Limpar erro específico deste telefone
+                      setErrors(prev => {
+                        const newErrors = {...prev};
+                        delete newErrors[`phone_${index}`];
+                        delete newErrors.phones;
+                        return newErrors;
+                      });
                     }}
                     placeholder="(11) 99999-0000"
+                    error={errors[`phone_${index}`]}
                   />
                   {formData.student?.phones && formData.student.phones.length > 1 && (
                     <Button 
@@ -387,14 +519,28 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.student?.email || ''}
-                onChange={(e) => updateFormData({ student: { email: e.target.value } })}
+                onChange={(e) => {
+                  const sanitized = sanitizeString(e.target.value, 254);
+                  updateFormData({ student: { email: sanitized } });
+                  // Validar em tempo real
+                  const error = validateEmail(sanitized);
+                  setErrors(prev => ({...prev, email: error || ''}));
+                }}
                 placeholder="email@exemplo.com"
+                maxLength={254}
+                className={errors.email ? 'border-destructive' : ''}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Este email será usado para criar o login do aluno
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -405,25 +551,40 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   <Input
                     id="zip"
                     value={formData.student?.address?.zip || ''}
-                    onChange={(e) => updateFormData({ 
-                      student: { 
-                        address: { ...formData.student?.address, zip: e.target.value } 
-                      } 
-                    })}
+                    onChange={(e) => {
+                      const digits = onlyDigits(e.target.value);
+                      const formatted = digits.slice(0, 8).replace(/(\d{5})(\d{3})/, '$1-$2');
+                      updateFormData({ 
+                        student: { 
+                          address: { ...formData.student?.address, zip: formatted } 
+                        } 
+                      });
+                      const error = validateZipCode(formatted);
+                      setErrors(prev => ({...prev, zip: error || ''}));
+                    }}
                     placeholder="00000-000"
+                    maxLength={9}
+                    className={errors.zip ? 'border-destructive' : ''}
                   />
+                  {errors.zip && (
+                    <p className="text-sm text-destructive">{errors.zip}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="city">Cidade</Label>
                   <Input
                     id="city"
                     value={formData.student?.address?.city || ''}
-                    onChange={(e) => updateFormData({ 
-                      student: { 
-                        address: { ...formData.student?.address, city: e.target.value } 
-                      } 
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeString(e.target.value, 100);
+                      updateFormData({ 
+                        student: { 
+                          address: { ...formData.student?.address, city: sanitized } 
+                        } 
+                      });
+                    }}
                     placeholder="São Paulo"
+                    maxLength={100}
                   />
                 </div>
               </div>
@@ -434,12 +595,16 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   <Input
                     id="street"
                     value={formData.student?.address?.street || ''}
-                    onChange={(e) => updateFormData({ 
-                      student: { 
-                        address: { ...formData.student?.address, street: e.target.value } 
-                      } 
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeString(e.target.value, 200);
+                      updateFormData({ 
+                        student: { 
+                          address: { ...formData.student?.address, street: sanitized } 
+                        } 
+                      });
+                    }}
                     placeholder="Rua das Flores"
+                    maxLength={200}
                   />
                 </div>
                 <div>
@@ -447,12 +612,16 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   <Input
                     id="number"
                     value={formData.student?.address?.number || ''}
-                    onChange={(e) => updateFormData({ 
-                      student: { 
-                        address: { ...formData.student?.address, number: e.target.value } 
-                      } 
-                    })}
+                    onChange={(e) => {
+                      const sanitized = e.target.value.slice(0, 10);
+                      updateFormData({ 
+                        student: { 
+                          address: { ...formData.student?.address, number: sanitized } 
+                        } 
+                      });
+                    }}
                     placeholder="123"
+                    maxLength={10}
                   />
                 </div>
               </div>
@@ -463,12 +632,16 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   <Input
                     id="district"
                     value={formData.student?.address?.district || ''}
-                    onChange={(e) => updateFormData({ 
-                      student: { 
-                        address: { ...formData.student?.address, district: e.target.value } 
-                      } 
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeString(e.target.value, 100);
+                      updateFormData({ 
+                        student: { 
+                          address: { ...formData.student?.address, district: sanitized } 
+                        } 
+                      });
+                    }}
                     placeholder="Centro"
+                    maxLength={100}
                   />
                 </div>
                 <div>
@@ -476,12 +649,16 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   <Input
                     id="state"
                     value={formData.student?.address?.state || ''}
-                    onChange={(e) => updateFormData({ 
-                      student: { 
-                        address: { ...formData.student?.address, state: e.target.value } 
-                      } 
-                    })}
+                    onChange={(e) => {
+                      const sanitized = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+                      updateFormData({ 
+                        student: { 
+                          address: { ...formData.student?.address, state: sanitized } 
+                        } 
+                      });
+                    }}
                     placeholder="SP"
+                    maxLength={2}
                   />
                 </div>
               </div>

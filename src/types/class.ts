@@ -65,6 +65,7 @@ export interface TeacherExtra {
 export interface StudentExtra {
   dob?: string;           // YYYY-MM-DD
   document?: string;      // CPF/RG/passaporte
+  enrollmentNumber?: string; // Número de matrícula
   phones?: string[];      // [celular, fixo...]
   email?: string;
   address?: {
