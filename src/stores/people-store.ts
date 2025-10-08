@@ -90,18 +90,33 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   loadPeople: async () => {
     set({ loading: true });
     try {
-      // Buscar alunos via JOIN - invertido: buscar de profiles com user_roles
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(role)
-        `)
-        .eq('user_roles.role', 'aluno');
+      // Primeiro, buscar IDs de estudantes
+      const { data: studentRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'aluno');
 
-      if (error) {
-        console.error('Error loading people:', error);
-        throw error;
+      if (rolesError) {
+        console.error('Error loading student roles:', rolesError);
+        throw rolesError;
+      }
+
+      const studentIds = studentRoles?.map(r => r.user_id) || [];
+      
+      if (studentIds.length === 0) {
+        set({ people: [], loading: false });
+        return;
+      }
+
+      // Depois, buscar profiles desses IDs
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', studentIds);
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        throw profilesError;
       }
 
       const people: Person[] = [];

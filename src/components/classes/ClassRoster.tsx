@@ -64,32 +64,42 @@ export function ClassRoster({
   const loadRosterData = async () => {
     setLoading(true);
     try {
-      // Load students via JOIN with user_roles
-      const { data: studentRoles } = await supabase
+      // Load students - query separada
+      const { data: studentRoleIds } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          profiles!inner(id, name, email, avatar)
-        `)
+        .select('user_id')
         .eq('role', 'aluno')
         .in('user_id', schoolClass.students);
       
-      if (studentRoles) {
-        setStudents(studentRoles.map((sr: any) => sr.profiles));
+      if (studentRoleIds && studentRoleIds.length > 0) {
+        const studentIds = studentRoleIds.map(sr => sr.user_id);
+        const { data: studentProfiles } = await supabase
+          .from('profiles')
+          .select('id, name, email, avatar')
+          .in('id', studentIds);
+        
+        if (studentProfiles) {
+          setStudents(studentProfiles);
+        }
       }
 
-      // Load teachers via JOIN with user_roles
-      const { data: teacherRoles } = await supabase
+      // Load teachers - query separada
+      const { data: teacherRoleIds } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          profiles!inner(id, name, email, avatar)
-        `)
+        .select('user_id')
         .eq('role', 'professor')
         .in('user_id', schoolClass.teachers);
       
-      if (teacherRoles) {
-        setTeachers(teacherRoles.map((tr: any) => tr.profiles));
+      if (teacherRoleIds && teacherRoleIds.length > 0) {
+        const teacherIds = teacherRoleIds.map(tr => tr.user_id);
+        const { data: teacherProfiles } = await supabase
+          .from('profiles')
+          .select('id, name, email, avatar')
+          .in('id', teacherIds);
+        
+        if (teacherProfiles) {
+          setTeachers(teacherProfiles);
+        }
       }
     } catch (error) {
       console.error('Error loading roster:', error);

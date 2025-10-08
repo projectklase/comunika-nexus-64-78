@@ -59,19 +59,30 @@ export function useStudents() {
     setError(null);
 
     try {
-      // Buscar profiles que são estudantes via JOIN com user_roles
-      const { data: studentProfiles, error: studentsError } = await supabase
+      // Primeiro, buscar IDs de estudantes
+      const { data: studentRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          profiles!inner(*)
-        `)
+        .select('user_id')
         .eq('role', 'aluno');
 
-      if (studentsError) throw studentsError;
+      if (rolesError) throw rolesError;
 
-      // Extrair os profiles dos resultados
-      const data = studentProfiles?.map((item: any) => item.profiles) || [];
+      const studentIds = studentRoles?.map(r => r.user_id) || [];
+      
+      if (studentIds.length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      // Depois, buscar profiles desses IDs
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', studentIds);
+
+      if (profilesError) throw profilesError;
+
+      const data = profiles || [];
 
       // Aplicar filtros client-side (search e class_id)
       let filteredData = data;

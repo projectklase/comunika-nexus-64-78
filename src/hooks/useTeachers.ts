@@ -33,19 +33,31 @@ export function useTeachers() {
     setError(null);
 
     try {
-      // Buscar profiles que são professores via JOIN com user_roles
-      const { data: teacherRoles, error: teachersError } = await supabase
+      // Primeiro, buscar IDs de professores
+      const { data: teacherRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          profiles!inner(*)
-        `)
+        .select('user_id')
         .eq('role', 'professor');
 
-      if (teachersError) throw teachersError;
+      if (rolesError) throw rolesError;
 
-      // Extrair os profiles dos resultados
-      let data = teacherRoles?.map((item: any) => item.profiles) || [];
+      const teacherIds = teacherRoles?.map(r => r.user_id) || [];
+      
+      if (teacherIds.length === 0) {
+        setTeachers([]);
+        setLoading(false);
+        return;
+      }
+
+      // Depois, buscar profiles desses IDs
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', teacherIds);
+
+      if (profilesError) throw profilesError;
+
+      let data = profiles || [];
 
       // Apply search filter
       if (filters.search) {
