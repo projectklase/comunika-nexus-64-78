@@ -156,6 +156,8 @@ class NotificationStore {
   }
 
   async markRead(id: string): Promise<void> {
+    console.log('[NotificationStore] Marking notification as read:', id);
+    
     const { error } = await supabase
       .from('notifications')
       .update({ 
@@ -164,14 +166,17 @@ class NotificationStore {
       .eq('id', id);
 
     if (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('[NotificationStore] Error marking notification as read:', error);
       throw error;
     }
 
+    console.log('[NotificationStore] Successfully marked as read:', id);
     this.notifySubscribers();
   }
 
   async markAllRead(roleTarget: RoleTarget): Promise<void> {
+    console.log('[NotificationStore] Marking all as read for role:', roleTarget);
+    
     // @ts-ignore - Supabase type chain issue
     const { error } = await supabase
       .from('notifications')
@@ -180,10 +185,11 @@ class NotificationStore {
       .eq('is_read', false);
 
     if (error) {
-      console.error('Error marking all as read:', error);
+      console.error('[NotificationStore] Error marking all as read:', error);
       throw error;
     }
 
+    console.log('[NotificationStore] Successfully marked all as read for:', roleTarget);
     this.notifySubscribers();
   }
 

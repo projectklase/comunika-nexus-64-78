@@ -133,21 +133,30 @@ export function useNotificationPanel() {
   }, [categorizedNotifications]);
   
   const markAsRead = async (notificationId: string) => {
+    console.log('[useNotificationPanel] markAsRead called for:', notificationId);
     try {
       await notificationStore.markRead(notificationId);
       await loadNotifications();
+      console.log('[useNotificationPanel] markAsRead completed successfully');
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('[useNotificationPanel] Error marking notification as read:', error);
     }
   };
   
   const markAllAsRead = async (tab?: NotificationTab) => {
-    if (!roleTarget || !user) return;
+    if (!roleTarget || !user) {
+      console.warn('[useNotificationPanel] markAllAsRead called without roleTarget or user');
+      return;
+    }
+    
+    console.log('[useNotificationPanel] markAllAsRead called for tab:', tab, 'roleTarget:', roleTarget);
     
     try {
       if (tab) {
         // Mark specific tab as read
         const tabNotifications = categorizedNotifications[tab];
+        console.log('[useNotificationPanel] Marking', tabNotifications.length, 'notifications in tab:', tab);
+        
         await Promise.all(
           tabNotifications
             .filter(n => n.status === 'UNREAD')
@@ -159,6 +168,8 @@ export function useNotificationPanel() {
           description: `Todas as notificações de ${tab === 'importantes' ? 'Importantes' : 'Novidades'} foram marcadas como lidas.`
         });
       } else {
+        console.log('[useNotificationPanel] Marking ALL notifications as read for roleTarget:', roleTarget);
+        
         // Mark all as read using the async store method
         await notificationStore.markAllRead(roleTarget);
         
@@ -170,8 +181,9 @@ export function useNotificationPanel() {
       
       // Refresh notifications
       await loadNotifications();
+      console.log('[useNotificationPanel] markAllAsRead completed successfully');
     } catch (error) {
-      console.error('Error marking notifications as read:', error);
+      console.error('[useNotificationPanel] Error marking notifications as read:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível marcar as notificações como lidas.',
