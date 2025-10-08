@@ -13,6 +13,7 @@ interface DemoUserRequest {
   dob?: string
   phone?: string
   enrollment_number?: string
+  student_notes?: string
   userId?: string // Para atualizar senha de usuário existente
   updatePasswordOnly?: boolean // Flag para indicar que é apenas update de senha
 }
@@ -88,7 +89,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { email, password, name, role, dob, phone, enrollment_number, userId, updatePasswordOnly }: DemoUserRequest = await req.json()
+    const { email, password, name, role, dob, phone, enrollment_number, student_notes, userId, updatePasswordOnly }: DemoUserRequest = await req.json()
 
     // Se é apenas para atualizar senha
     if (updatePasswordOnly && userId) {
@@ -272,6 +273,7 @@ Deno.serve(async (req) => {
     if (dob) profileData.dob = dob
     if (phone) profileData.phone = phone
     if (enrollment_number) profileData.enrollment_number = enrollment_number
+    if (student_notes) profileData.student_notes = student_notes
 
     const { error: profileError } = await supabaseAdmin
       .from('profiles')

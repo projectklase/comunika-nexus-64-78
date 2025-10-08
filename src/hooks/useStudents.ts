@@ -83,6 +83,7 @@ export function useStudents() {
     dob?: string;
     phone?: string;
     enrollment_number?: string;
+    student_notes?: string;
   }) => {
     setLoading(true);
     try {
@@ -98,6 +99,7 @@ export function useStudents() {
           dob: studentData.dob,
           phone: studentData.phone,
           enrollment_number: studentData.enrollment_number,
+          student_notes: studentData.student_notes,
         }
       });
 
@@ -118,7 +120,7 @@ export function useStudents() {
     }
   }, [fetchStudents]);
 
-  const updateStudent = useCallback(async (id: string, updates: Partial<Student> & { password?: string }) => {
+  const updateStudent = useCallback(async (id: string, updates: Partial<Student> & { password?: string; student_notes?: string }) => {
     // A lógica de atualização de perfil está correta e será mantida.
     setLoading(true);
     try {

@@ -451,6 +451,16 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
       if (!student) {
         // Criando novo aluno - usa a senha gerada automaticamente
+        // Monta o student_notes com TODOS os dados extras
+        const studentNotesData = {
+          document: formData.student?.document,
+          address: formData.student?.address,
+          programId: formData.student?.programId,
+          levelId: formData.student?.levelId,
+          healthNotes: formData.student?.healthNotes,
+          consents: formData.student?.consents
+        };
+
         const result = await createStudent({
           name: formData.name || '',
           email: studentEmail,
@@ -458,6 +468,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           dob: formData.student?.dob,
           phone: formData.student?.phones?.[0],
           enrollment_number: formData.student?.enrollmentNumber,
+          student_notes: JSON.stringify(studentNotesData)
         });
         
         if (result?.password) {
@@ -472,12 +483,23 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         studentId = result?.user?.id;
       } else {
         // Atualizando aluno existente
+        // Monta o student_notes com TODOS os dados extras
+        const studentNotesData = {
+          document: formData.student?.document,
+          address: formData.student?.address,
+          programId: formData.student?.programId,
+          levelId: formData.student?.levelId,
+          healthNotes: formData.student?.healthNotes,
+          consents: formData.student?.consents
+        };
+
         const updateData: any = {
           name: formData.name?.trim(),
           email: studentEmail,
           dob: formData.student?.dob,
           phone: formData.student?.phones?.[0],
           enrollment_number: formData.student?.enrollmentNumber,
+          student_notes: JSON.stringify(studentNotesData)
         };
 
         // Se resetou a senha, inclui no update
