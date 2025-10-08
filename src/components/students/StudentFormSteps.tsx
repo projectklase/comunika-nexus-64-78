@@ -102,6 +102,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   } | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [dobInput, setDobInput] = useState<string>('');
 
   const { classes } = useClasses();
   const { programs } = usePrograms();
@@ -115,6 +116,10 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           ...student,
           student: student.student || {}
         });
+        // Inicializa dobInput com a data formatada se existir
+        if (student.student?.dob) {
+          setDobInput(format(new Date(student.student.dob), "dd/MM/yyyy"));
+        }
       } else {
         setFormData({
           name: '',
@@ -157,6 +162,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       setErrors({});
       setGeneratedPassword('');
       setShowResetPassword(false);
+      setDobInput('');
     }
   }, [open, student]);
 
@@ -466,21 +472,31 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               <Label htmlFor="dob">Data de Nascimento</Label>
               <Input
                 id="dob"
-                value={formData.student?.dob ? format(new Date(formData.student.dob), "dd/MM/yyyy") : ''}
+                value={dobInput}
                 onChange={(e) => {
-                  let value = e.target.value.replace(/\D/g, '');
+                  const input = e.target.value;
+                  let digits = input.replace(/\D/g, '');
                   
                   // Aplica máscara DD/MM/YYYY
-                  if (value.length >= 2) {
-                    value = value.slice(0, 2) + '/' + value.slice(2);
-                  }
-                  if (value.length >= 5) {
-                    value = value.slice(0, 5) + '/' + value.slice(5, 9);
+                  let formatted = '';
+                  if (digits.length > 0) {
+                    formatted = digits.slice(0, 2);
+                    if (digits.length >= 3) {
+                      formatted += '/' + digits.slice(2, 4);
+                    }
+                    if (digits.length >= 5) {
+                      formatted += '/' + digits.slice(4, 8);
+                    }
                   }
                   
+                  setDobInput(formatted);
+                  
                   // Tenta converter para ISO quando completo
-                  if (value.length === 10) {
-                    const [day, month, year] = value.split('/');
+                  if (digits.length === 8) {
+                    const day = digits.slice(0, 2);
+                    const month = digits.slice(2, 4);
+                    const year = digits.slice(4, 8);
+                    
                     const dayNum = parseInt(day, 10);
                     const monthNum = parseInt(month, 10);
                     const yearNum = parseInt(year, 10);
@@ -489,7 +505,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     if (dayNum >= 1 && dayNum <= 31 && 
                         monthNum >= 1 && monthNum <= 12 && 
                         yearNum >= 1900 && yearNum <= new Date().getFullYear()) {
-                      const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                      const isoDate = `${year}-${month}-${day}`;
                       updateFormData({ student: { dob: isoDate } });
                       
                       // Limpa erro se havia
@@ -500,7 +516,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                         });
                       }
                     }
-                  } else if (value.length < 10) {
+                  } else {
                     // Ainda está digitando, limpa a data
                     updateFormData({ student: { dob: undefined } });
                   }
