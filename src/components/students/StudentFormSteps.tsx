@@ -968,7 +968,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             <div className="border-t pt-4">
               <h4 className="font-medium mb-3">Autorizações</h4>
               
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2 mb-3">
                 <Checkbox
                   id="consent-image"
                   checked={formData.student?.consents?.image || false}
@@ -981,10 +981,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     } 
                   })}
                 />
-                <Label htmlFor="consent-image">Autorizo o uso de imagem</Label>
+                <Label htmlFor="consent-image" className="cursor-pointer font-normal">
+                  Autorizo o uso de imagem
+                </Label>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2 mb-3">
                 <Checkbox
                   id="consent-fieldtrip"
                   checked={formData.student?.consents?.fieldTrip || false}
@@ -997,10 +999,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     } 
                   })}
                 />
-                <Label htmlFor="consent-fieldtrip">Autorizo participação em saídas pedagógicas</Label>
+                <Label htmlFor="consent-fieldtrip" className="cursor-pointer font-normal">
+                  Autorizo participação em saídas pedagógicas
+                </Label>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Checkbox
                   id="consent-whatsapp"
                   checked={formData.student?.consents?.whatsapp || false}
@@ -1013,7 +1017,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     } 
                   })}
                 />
-                <Label htmlFor="consent-whatsapp">Autorizo contato via WhatsApp</Label>
+                <Label htmlFor="consent-whatsapp" className="cursor-pointer font-normal">
+                  Autorizo contato via WhatsApp
+                </Label>
               </div>
             </div>
           </div>
@@ -1152,57 +1158,69 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               </div>
             )}
 
-            <h3 className="text-lg font-semibold">Revisão dos Dados</h3>
+            <h3 className="text-lg font-semibold mt-6 mb-4">Revisão dos Dados</h3>
             
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-2">Dados Pessoais</h4>
-                <p><strong>Nome:</strong> {formData.name}</p>
-                <p><strong>Data de Nascimento:</strong> {
-                  formData.student?.dob ? 
-                    format(new Date(formData.student.dob), "dd/MM/yyyy") : 
-                    'Não informado'
-                }</p>
-                {isStudentMinor && <Badge variant="secondary">Menor de idade</Badge>}
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-card p-4">
+                <h4 className="font-medium mb-3 text-base">Dados Pessoais</h4>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-muted-foreground">Nome:</span> <span className="font-medium">{formData.name}</span></p>
+                  <p><span className="text-muted-foreground">Data de Nascimento:</span> <span className="font-medium">{
+                    formData.student?.dob ? 
+                      format(new Date(formData.student.dob), "dd/MM/yyyy") : 
+                      'Não informado'
+                  }</span></p>
+                  {isStudentMinor && <Badge variant="secondary" className="mt-2">Menor de idade</Badge>}
+                </div>
               </div>
 
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-2">Contato</h4>
-                <p><strong>Telefones:</strong> {formData.student?.phones?.filter(p => p.trim()).join(', ') || 'Nenhum'}</p>
-                <p><strong>Email:</strong> {formData.student?.email || 'Não informado'}</p>
+              <div className="rounded-lg border bg-card p-4">
+                <h4 className="font-medium mb-3 text-base">Contato</h4>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-muted-foreground">Telefones:</span> <span className="font-medium">{formData.student?.phones?.filter(p => p.trim()).join(', ') || 'Nenhum'}</span></p>
+                  <p><span className="text-muted-foreground">Email:</span> <span className="font-medium">{formData.student?.email || 'Não informado'}</span></p>
+                </div>
               </div>
 
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-2">Acadêmico</h4>
-                <p><strong>Programa:</strong> {
-                  programs.find(p => p.id === formData.student?.programId)?.name || 'Não selecionado'
-                }</p>
-                <p><strong>Nível:</strong> {
-                  levels.find(l => l.id === formData.student?.levelId)?.name || 'Não selecionado'
-                }</p>
-                <p><strong>Turmas:</strong> {
-                  formData.student?.classIds?.length ? 
-                    classes
-                      .filter(c => formData.student?.classIds?.includes(c.id))
-                      .map(c => c.name)
-                      .join(', ') : 
-                    'Nenhuma'
-                }</p>
+              <div className="rounded-lg border bg-card p-4">
+                <h4 className="font-medium mb-3 text-base">Acadêmico</h4>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-muted-foreground">Programa:</span> <span className="font-medium">{
+                    programs.find(p => p.id === formData.student?.programId)?.name || 'Não selecionado'
+                  }</span></p>
+                  <p><span className="text-muted-foreground">Nível:</span> <span className="font-medium">{
+                    levels.find(l => l.id === formData.student?.levelId)?.name || 'Não selecionado'
+                  }</span></p>
+                  <p><span className="text-muted-foreground">Turmas:</span> <span className="font-medium">{
+                    formData.student?.classIds?.length ? 
+                      classes
+                        .filter(c => formData.student?.classIds?.includes(c.id))
+                        .map(c => c.name)
+                        .join(', ') : 
+                      'Nenhuma'
+                  }</span></p>
+                </div>
               </div>
 
               {isStudentMinor && formData.student?.guardians?.length && (
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-2">Responsáveis</h4>
-                  {formData.student.guardians.map((guardian, index) => (
-                    <div key={guardian.id} className="mb-2">
-                      <p><strong>{guardian.name}</strong> - {
-                        RELATION_OPTIONS.find(r => r.value === guardian.relation)?.label
-                      } {guardian.isPrimary && <Badge variant="default" className="ml-2">Principal</Badge>}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {guardian.phone} {guardian.email && `• ${guardian.email}`}
-                      </p>
-                    </div>
-                  ))}
+                <div className="rounded-lg border bg-card p-4">
+                  <h4 className="font-medium mb-3 text-base">Responsáveis</h4>
+                  <div className="space-y-3">
+                    {formData.student.guardians.map((guardian) => (
+                      <div key={guardian.id} className="text-sm">
+                        <p className="font-medium flex items-center gap-2">
+                          {guardian.name}
+                          <span className="text-muted-foreground font-normal">- {
+                            RELATION_OPTIONS.find(r => r.value === guardian.relation)?.label
+                          }</span>
+                          {guardian.isPrimary && <Badge variant="default" className="text-xs">Principal</Badge>}
+                        </p>
+                        <p className="text-muted-foreground mt-1">
+                          {guardian.phone} {guardian.email && `• ${guardian.email}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1225,7 +1243,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         </DialogHeader>
 
         {/* Step Indicators */}
-        <div className="flex items-center justify-between mb-6 px-4">
+        <div className="flex items-start justify-between mb-8 px-2">
           {STEPS.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
@@ -1235,33 +1253,39 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               <div
                 key={step.id}
                 className={cn(
-                  "flex flex-col items-center gap-2 flex-1",
-                  index !== 0 && "relative before:absolute before:right-[50%] before:top-4 before:h-0.5 before:w-full before:bg-border"
+                  "flex flex-col items-center gap-2 flex-1 relative",
+                  index !== 0 && "before:absolute before:right-[calc(50%+1.5rem)] before:top-4 before:h-0.5 before:w-[calc(100%-3rem)] before:bg-border"
                 )}
               >
                 <div
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors",
+                    "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors z-10 bg-background",
                     isActive && "border-primary bg-primary text-primary-foreground",
                     isCompleted && "border-primary bg-primary/10 text-primary",
-                    !isActive && !isCompleted && "border-muted-foreground/25 bg-background"
+                    !isActive && !isCompleted && "border-muted-foreground/25"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{step.title}</span>
+                  <Icon className="h-5 w-5" />
                 </div>
+                <span className={cn(
+                  "text-xs text-center leading-tight max-w-[80px]",
+                  isActive && "text-primary font-medium",
+                  !isActive && "text-muted-foreground"
+                )}>
+                  {step.title}
+                </span>
               </div>
             );
           })}
         </div>
 
         {/* Step Content */}
-        <div className="py-6 min-h-[400px]">
+        <div className="px-1">
           {renderStepContent()}
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between pt-4 border-t">
+        <div className="flex justify-between items-center pt-6 mt-6 border-t">
           <Button
             type="button"
             variant="outline"
@@ -1273,7 +1297,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             Anterior
           </Button>
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button 
               type="button" 
               variant="outline" 
