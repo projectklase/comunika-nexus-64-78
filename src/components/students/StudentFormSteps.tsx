@@ -1314,15 +1314,15 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   Gerenciar Senha
                 </h3>
                 {!showResetPassword ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleResetPassword}
-                    className="w-full"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Gerar Nova Senha Aleatória
-                  </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetPassword}
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Gerar Nova Senha
+                </Button>
                 ) : (
                   <div className="space-y-3">
                     <div>
