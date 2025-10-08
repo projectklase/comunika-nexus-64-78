@@ -81,9 +81,9 @@ export default function StudentsPage() {
   // Students are now filtered by the hook based on the filters state
   const filteredStudents = students;
 
-  const getStudentClasses = (studentId: string) => {
-    // For now, return empty array since we don't have class relationships in Supabase yet
-    return [];
+  const getStudentClasses = (student: any) => {
+    // Return classes from enriched data
+    return student.classes || [];
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -117,13 +117,13 @@ export default function StudentsPage() {
 
   const handleExportCSV = () => {
     const csvData = filteredStudents.map(student => {
-      const studentClasses = getStudentClasses(student.id);
+      const studentClasses = getStudentClasses(student);
       return [
         student.id,
         student.name,
         student.email || '',
         'Ativo',
-        studentClasses.map(c => c.name).join(',')
+        studentClasses.map((c: any) => c.name).join(',')
       ].join(';');
     }).join('\n');
 
@@ -323,7 +323,7 @@ export default function StudentsPage() {
                 </TableRow>
               ) : (
                 filteredStudents.map((student) => {
-                  const studentClasses = getStudentClasses(student.id);
+                  const studentClasses = getStudentClasses(student);
                   
                   // Calculate age from dob if available
                   let age = 15; // default
@@ -339,6 +339,15 @@ export default function StudentsPage() {
                     }
                     isMinor = age < 18;
                   }
+
+                  // Get program/level display
+                  const programLevel = (student as any).program_name && (student as any).level_name
+                    ? `${(student as any).program_name} / ${(student as any).level_name}`
+                    : (student as any).program_name || (student as any).level_name || null;
+
+                  // Get primary guardian
+                  const primaryGuardian = (student as any).guardians?.find((g: any) => g.is_primary);
+                  const guardianDisplay = primaryGuardian?.name || (student as any).guardians?.[0]?.name;
 
                   return (
                     <TableRow key={student.id}>
@@ -356,13 +365,17 @@ export default function StudentsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground text-sm">Não definido</span>
+                        {programLevel ? (
+                          <span className="text-sm">{programLevel}</span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Não definido</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
                           {studentClasses.length > 0 ? (
                             <>
-                              {studentClasses.slice(0, 2).map((c, index) => (
+                              {studentClasses.slice(0, 2).map((c: any, index: number) => (
                                 <Badge key={index} variant="secondary" className="text-xs">
                                   {c.name}
                                 </Badge>
@@ -379,7 +392,11 @@ export default function StudentsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground text-sm">-</span>
+                        {guardianDisplay ? (
+                          <span className="text-sm">{guardianDisplay}</span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="default">

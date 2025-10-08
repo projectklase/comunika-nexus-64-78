@@ -3,6 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // As interfaces e a estrutura geral do hook permanecem as mesmas.
+interface Guardian {
+  id: string;
+  name: string;
+  relation: string;
+  phone?: string;
+  email?: string;
+  is_primary: boolean;
+}
+
+interface StudentClass {
+  id: string;
+  name: string;
+  code?: string;
+}
+
 interface Student {
   id: string;
   name: string;
@@ -10,11 +25,20 @@ interface Student {
   role: string;
   avatar?: string;
   phone?: string;
+  dob?: string;
   class_id?: string;
   preferences?: any;
   must_change_password?: boolean;
   created_at: string;
   updated_at: string;
+  student_notes?: string;
+  // Related data
+  guardians?: Guardian[];
+  classes?: StudentClass[];
+  program_id?: string;
+  program_name?: string;
+  level_id?: string;
+  level_name?: string;
 }
 
 interface StudentFilters {
@@ -66,7 +90,75 @@ export function useStudents() {
 
       if (error) throw error;
 
-      setStudents(data || []);
+      // Enrich students with related data (guardians, classes, program, level)
+      const enrichedStudents = await Promise.all((data || []).map(async (student) => {
+        // Parse student_notes to get program/level info
+        let programId, levelId, programName, levelName;
+        try {
+          if (student.student_notes) {
+            const notes = JSON.parse(student.student_notes);
+            programId = notes.programId;
+            levelId = notes.levelId;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+
+        // Fetch program and level names if IDs exist
+        if (programId) {
+          const { data: programData } = await supabase
+            .from('programs')
+            .select('name')
+            .eq('id', programId)
+            .single();
+          programName = programData?.name;
+        }
+
+        if (levelId) {
+          const { data: levelData } = await supabase
+            .from('levels')
+            .select('name')
+            .eq('id', levelId)
+            .single();
+          levelName = levelData?.name;
+        }
+
+        // Fetch guardians
+        const { data: guardiansData } = await supabase
+          .from('guardians')
+          .select('*')
+          .eq('student_id', student.id)
+          .order('is_primary', { ascending: false });
+
+        // Fetch classes
+        const { data: classStudentsData } = await supabase
+          .from('class_students')
+          .select('class_id')
+          .eq('student_id', student.id);
+
+        const classIds = classStudentsData?.map(cs => cs.class_id) || [];
+        let classes: StudentClass[] = [];
+
+        if (classIds.length > 0) {
+          const { data: classesData } = await supabase
+            .from('classes')
+            .select('id, name, code')
+            .in('id', classIds);
+          classes = classesData || [];
+        }
+
+        return {
+          ...student,
+          guardians: guardiansData || [],
+          classes: classes,
+          program_id: programId,
+          program_name: programName,
+          level_id: levelId,
+          level_name: levelName,
+        };
+      }));
+
+      setStudents(enrichedStudents);
     } catch (err) {
       console.error('Error fetching students:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar alunos');
