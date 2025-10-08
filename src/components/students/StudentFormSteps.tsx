@@ -464,39 +464,51 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
             <div className="space-y-2">
               <Label htmlFor="dob">Data de Nascimento</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.student?.dob && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.student?.dob ? (
-                      format(new Date(formData.student.dob), "dd/MM/yyyy")
-                    ) : (
-                      <span>Selecione uma data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.student?.dob ? new Date(formData.student.dob) : undefined}
-                    onSelect={(date) => {
-                      updateFormData({ 
-                        student: { dob: date?.toISOString().split('T')[0] }
-                      });
-                    }}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
+              <Input
+                id="dob"
+                value={formData.student?.dob ? format(new Date(formData.student.dob), "dd/MM/yyyy") : ''}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '');
+                  
+                  // Aplica máscara DD/MM/YYYY
+                  if (value.length >= 2) {
+                    value = value.slice(0, 2) + '/' + value.slice(2);
+                  }
+                  if (value.length >= 5) {
+                    value = value.slice(0, 5) + '/' + value.slice(5, 9);
+                  }
+                  
+                  // Tenta converter para ISO quando completo
+                  if (value.length === 10) {
+                    const [day, month, year] = value.split('/');
+                    const dayNum = parseInt(day, 10);
+                    const monthNum = parseInt(month, 10);
+                    const yearNum = parseInt(year, 10);
+                    
+                    // Validação básica
+                    if (dayNum >= 1 && dayNum <= 31 && 
+                        monthNum >= 1 && monthNum <= 12 && 
+                        yearNum >= 1900 && yearNum <= new Date().getFullYear()) {
+                      const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                      updateFormData({ student: { dob: isoDate } });
+                      
+                      // Limpa erro se havia
+                      if (errors.dob) {
+                        setErrors(prev => {
+                          const { dob, ...rest } = prev;
+                          return rest;
+                        });
+                      }
                     }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                  } else if (value.length < 10) {
+                    // Ainda está digitando, limpa a data
+                    updateFormData({ student: { dob: undefined } });
+                  }
+                }}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+                className={errors.dob ? 'border-destructive' : ''}
+              />
               {formData.student?.dob && isStudentMinor && (
                 <Badge variant="secondary">Menor de idade</Badge>
               )}
