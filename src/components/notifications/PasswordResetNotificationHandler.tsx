@@ -16,8 +16,8 @@ export function PasswordResetNotificationHandler() {
   useEffect(() => {
     if (!user || user.role !== 'secretaria') return;
 
-    const unsubscribe = notificationStore.subscribe(() => {
-      const newNotifications = notificationStore.list({
+    const unsubscribe = notificationStore.subscribe(async () => {
+      const newNotifications = await notificationStore.listAsync({
         roleTarget: 'SECRETARIA',
         status: 'UNREAD',
         limit: 1

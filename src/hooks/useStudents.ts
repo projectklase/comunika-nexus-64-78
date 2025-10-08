@@ -59,39 +59,43 @@ export function useStudents() {
     setError(null);
 
     try {
-      let query = supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'aluno')
-        .eq('is_active', true);
+      // Buscar profiles que são estudantes via JOIN com user_roles
+      const { data: studentProfiles, error: studentsError } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          profiles!inner(*)
+        `)
+        .eq('role', 'aluno');
 
-      // A lógica de filtros existente está correta e será mantida.
+      if (studentsError) throw studentsError;
+
+      // Extrair os profiles dos resultados
+      const data = studentProfiles?.map((item: any) => item.profiles) || [];
+
+      // Aplicar filtros client-side (search e class_id)
+      let filteredData = data;
+
       if (filters.search) {
-        query = query.or(`name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+        const searchLower = filters.search.toLowerCase();
+        filteredData = filteredData.filter((student: any) =>
+          student.name?.toLowerCase().includes(searchLower) ||
+          student.email?.toLowerCase().includes(searchLower)
+        );
       }
 
       if (filters.class_id && filters.class_id !== 'all') {
-        const { data: classStudents } = await (supabase as any)
+        const { data: classStudents } = await supabase
           .from('class_students')
           .select('student_id')
           .eq('class_id', filters.class_id);
 
         const studentIds = classStudents?.map((cs: any) => cs.student_id) || [];
-        if (studentIds.length > 0) {
-          query = query.in('id', studentIds);
-        } else {
-          setStudents([]);
-          setLoading(false);
-          return;
-        }
+        filteredData = filteredData.filter((student: any) => studentIds.includes(student.id));
       }
 
-      const { data, error } = await query.order('name');
-
-      if (error) throw error;
-
-      // Enrich students with related data (guardians, classes, program, level)
-      const enrichedStudents = await Promise.all((data || []).map(async (student) => {
+      // Enrich students with related data
+      const enrichedStudents = await Promise.all(filteredData.map(async (student: any) => {
         // Parse student_notes to get program/level info
         let programId, levelId, programName, levelName;
         try {
@@ -149,6 +153,7 @@ export function useStudents() {
 
         return {
           ...student,
+          role: 'aluno', // Garantir que role existe
           guardians: guardiansData || [],
           classes: classes,
           program_id: programId,
@@ -157,6 +162,9 @@ export function useStudents() {
           level_name: levelName,
         };
       }));
+
+      // Ordenar por nome
+      enrichedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
       setStudents(enrichedStudents);
     } catch (err) {

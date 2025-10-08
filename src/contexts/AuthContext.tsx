@@ -44,25 +44,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      // SEGURANÇA: Buscar role da tabela user_roles separada
+      // SEGURANÇA: Buscar role APENAS da tabela user_roles
       const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .maybeSingle();
+        .single();
 
       if (roleError) {
         console.error('Error fetching user role:', roleError);
+        return null; // Sem role = sem acesso
       }
-
-      // Usar role da tabela user_roles se disponível, senão fallback para profiles
-      const role = userRole?.role || profile.role;
 
       return {
         id: profile.id,
         name: profile.name,
         email: profile.email,
-        role: role as 'secretaria' | 'professor' | 'aluno',
+        role: userRole.role as 'secretaria' | 'professor' | 'aluno',
         avatar: profile.avatar,
         phone: profile.phone,
         classId: profile.class_id,

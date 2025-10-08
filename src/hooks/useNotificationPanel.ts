@@ -51,14 +51,14 @@ export function useNotificationPanel() {
   }, [user, roleTarget]);
   
   // Load notifications from store
-  const loadNotifications = () => {
+  const loadNotifications = async () => {
     if (!roleTarget) {
       setNotifications([]);
       setLoading(false);
       return;
     }
     
-    const allNotifications = notificationStore.list({
+    const allNotifications = await notificationStore.listAsync({
       roleTarget,
       limit: 100
     });

@@ -33,26 +33,44 @@ export function useTeachers() {
     setError(null);
 
     try {
-      let query = supabase
-        .from('profiles')
-        .select('*')
+      // Buscar profiles que são professores via JOIN com user_roles
+      const { data: teacherRoles, error: teachersError } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          profiles!inner(*)
+        `)
         .eq('role', 'professor');
+
+      if (teachersError) throw teachersError;
+
+      // Extrair os profiles dos resultados
+      let data = teacherRoles?.map((item: any) => item.profiles) || [];
 
       // Apply search filter
       if (filters.search) {
-        query = query.or(`name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+        const searchLower = filters.search.toLowerCase();
+        data = data.filter((teacher: any) =>
+          teacher.name?.toLowerCase().includes(searchLower) ||
+          teacher.email?.toLowerCase().includes(searchLower)
+        );
       }
 
       // Apply class filter
       if (filters.class_id && filters.class_id !== 'all') {
-        query = query.eq('class_id', filters.class_id);
+        data = data.filter((teacher: any) => teacher.class_id === filters.class_id);
       }
 
-      const { data, error } = await query.order('name');
+      // Sort by name
+      data.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
 
-      if (error) throw error;
+      // Add role field
+      const teachersWithRole = data.map((teacher: any) => ({
+        ...teacher,
+        role: 'professor'
+      }));
 
-      setTeachers(data || []);
+      setTeachers(teachersWithRole);
     } catch (err) {
       console.error('Error fetching teachers:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar professores');

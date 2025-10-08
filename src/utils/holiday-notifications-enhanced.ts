@@ -7,7 +7,7 @@ import { toZonedTime } from 'date-fns-tz';
 /**
  * Generate weekly holiday notifications with timezone awareness and deduplication
  */
-export function generateWeeklyHolidayNotifications(userId: string, userRole: RoleTarget): void {
+export async function generateWeeklyHolidayNotifications(userId: string, userRole: RoleTarget): Promise<void> {
   const brazilTimeZone = 'America/Sao_Paulo';
   const currentDateBR = toZonedTime(new Date(), brazilTimeZone);
   const weekStart = startOfWeek(currentDateBR, { locale: ptBR, weekStartsOn: 1 });
@@ -16,7 +16,7 @@ export function generateWeeklyHolidayNotifications(userId: string, userRole: Rol
   const weekHolidays = getCurrentWeekHolidays(currentDateBR);
   
   // Track existing notifications to avoid duplicates
-  const existingNotifications = notificationStore.list({
+  const existingNotifications = await notificationStore.listAsync({
     roleTarget: userRole,
     type: 'HOLIDAY'
   });
@@ -59,8 +59,8 @@ export function generateWeeklyHolidayNotifications(userId: string, userRole: Rol
 /**
  * Initialize holiday notifications for new user session
  */
-export function initializeHolidayNotifications(userId: string, userRole: RoleTarget): void {
-  generateWeeklyHolidayNotifications(userId, userRole);
+export async function initializeHolidayNotifications(userId: string, userRole: RoleTarget): Promise<void> {
+  await generateWeeklyHolidayNotifications(userId, userRole);
   
   // Schedule check for next week's holidays (in a real app, this would be handled by a cron job)
   const nextWeekDate = new Date();
@@ -75,9 +75,9 @@ export function initializeHolidayNotifications(userId: string, userRole: RoleTar
 /**
  * Force refresh holiday notifications (for when holiday list changes)
  */
-export function refreshHolidayNotifications(userId: string, userRole: RoleTarget): void {
+export async function refreshHolidayNotifications(userId: string, userRole: RoleTarget): Promise<void> {
   // Clear existing holiday notifications for this user
-  const existing = notificationStore.list({ roleTarget: userRole, type: 'HOLIDAY' });
+  const existing = await notificationStore.listAsync({ roleTarget: userRole, type: 'HOLIDAY' });
   existing.forEach(n => {
     if (n.meta?.userId === userId) {
       notificationStore.markRead(n.id);
@@ -85,5 +85,5 @@ export function refreshHolidayNotifications(userId: string, userRole: RoleTarget
   });
   
   // Generate fresh notifications
-  generateWeeklyHolidayNotifications(userId, userRole);
+  await generateWeeklyHolidayNotifications(userId, userRole);
 }

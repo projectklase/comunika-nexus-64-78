@@ -64,14 +64,19 @@ export function ClassRoster({
   const loadRosterData = async () => {
     setLoading(true);
     try {
-      // Load students from profiles table filtered by class_id
-      const { data: studentData } = await supabase
-        .from('profiles')
-        .select('id, name, email, avatar')
+      // Load students via JOIN with user_roles
+      const { data: studentRoles } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          profiles!inner(id, name, email, avatar)
+        `)
         .eq('role', 'aluno')
-        .in('id', schoolClass.students);
+        .in('user_id', schoolClass.students);
       
-      if (studentData) setStudents(studentData);
+      if (studentRoles) {
+        setStudents(studentRoles.map((sr: any) => sr.profiles));
+      }
 
       // Load teachers
       const { data: teacherData } = await supabase

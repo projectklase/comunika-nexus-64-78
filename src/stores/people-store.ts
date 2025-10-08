@@ -90,17 +90,21 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   loadPeople: async () => {
     set({ loading: true });
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
+      // Buscar alunos via JOIN com user_roles
+      const { data: studentRoles, error } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          profiles!inner(*)
+        `)
         .eq('role', 'aluno');
 
       if (error) throw error;
 
       const people: Person[] = [];
-      if (data) {
-        for (const row of data) {
-          const person = await dbRowToPerson(row);
+      if (studentRoles) {
+        for (const row of studentRoles) {
+          const person = await dbRowToPerson(row.profiles);
           people.push(person);
         }
       }
