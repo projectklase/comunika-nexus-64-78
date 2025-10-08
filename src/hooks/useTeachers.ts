@@ -130,15 +130,44 @@ export function useTeachers() {
     }
   }, [fetchTeachers]);
 
-  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher>) => {
+  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string }) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', id);
+      // If password is being updated, use edge function
+      if (updates.password) {
+        const { data, error } = await supabase.functions.invoke('create-demo-user', {
+          body: {
+            userId: id,
+            password: updates.password,
+            updatePasswordOnly: true,
+          }
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+        if (data && !data.success) {
+          throw new Error(data.error || 'Erro ao atualizar senha');
+        }
+
+        // Remove password from updates object before updating profile
+        const { password, ...profileUpdates } = updates;
+        
+        if (Object.keys(profileUpdates).length > 0) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update(profileUpdates)
+            .eq('id', id);
+
+          if (profileError) throw profileError;
+        }
+      } else {
+        // Regular profile update
+        const { error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', id);
+
+        if (error) throw error;
+      }
 
       toast.success('Professor atualizado com sucesso');
       

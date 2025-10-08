@@ -6,10 +6,10 @@ const corsHeaders = {
 }
 
 interface DemoUserRequest {
-  email: string
-  password: string
-  name: string
-  role: string
+  email?: string
+  password?: string
+  name?: string
+  role?: string
   dob?: string
   phone?: string
   enrollment_number?: string

@@ -32,6 +32,10 @@ const teacherSchema = z.object({
   email: z.string().min(1, 'E-mail é obrigatório').refine((val) => {
     return validateEmail(val) === null;
   }, 'E-mail inválido'),
+  password: z.string().optional().refine((val) => {
+    if (!val || val.length === 0) return true;
+    return val.length >= 6;
+  }, 'Senha deve ter no mínimo 6 caracteres'),
   phones: z.array(z.string()).optional().refine((phones) => {
     if (!phones || phones.length === 0) return true;
     return phones.every(phone => validatePhone(phone) === null);
@@ -203,11 +207,18 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       };
 
       if (teacher) {
-        // Atualizando professor existente - usando apenas os dados básicos
-        await updateTeacher(teacher.id, {
+        // Atualizando professor existente
+        const updates: any = {
           name: data.name,
           email: data.email,
-        });
+        };
+        
+        // Only include password if it was provided
+        if (data.password && data.password.trim().length > 0) {
+          updates.password = data.password;
+        }
+        
+        await updateTeacher(teacher.id, updates);
 
         // Update class enrollments
         if (data.classIds) {
@@ -396,6 +407,29 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           </FormItem>
         )}
       />
+
+      {teacher && (
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nova Senha (opcional)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="password" 
+                  placeholder="Deixe em branco para manter a senha atual" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+              <p className="text-xs text-muted-foreground">
+                Preencha apenas se desejar alterar a senha do professor
+              </p>
+            </FormItem>
+          )}
+        />
+      )}
 
       <div className="space-y-2">
         <Label>Telefones</Label>
