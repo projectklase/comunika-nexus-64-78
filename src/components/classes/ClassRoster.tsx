@@ -78,14 +78,19 @@ export function ClassRoster({
         setStudents(studentRoles.map((sr: any) => sr.profiles));
       }
 
-      // Load teachers
-      const { data: teacherData } = await supabase
-        .from('profiles')
-        .select('id, name, email, avatar')
+      // Load teachers via JOIN with user_roles
+      const { data: teacherRoles } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          profiles!inner(id, name, email, avatar)
+        `)
         .eq('role', 'professor')
-        .in('id', schoolClass.teachers);
+        .in('user_id', schoolClass.teachers);
       
-      if (teacherData) setTeachers(teacherData);
+      if (teacherRoles) {
+        setTeachers(teacherRoles.map((tr: any) => tr.profiles));
+      }
     } catch (error) {
       console.error('Error loading roster:', error);
     } finally {
