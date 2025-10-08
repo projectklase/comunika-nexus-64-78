@@ -118,18 +118,40 @@ export function useStudents() {
     }
   }, [fetchStudents]);
 
-  const updateStudent = useCallback(async (id: string, updates: Partial<Student>) => {
+  const updateStudent = useCallback(async (id: string, updates: Partial<Student> & { password?: string }) => {
     // A lógica de atualização de perfil está correta e será mantida.
     setLoading(true);
     try {
+      // Se uma nova senha foi fornecida, atualiza via Edge Function para garantir segurança
+      if (updates.password) {
+        const { error: passwordError } = await supabase.functions.invoke('create-demo-user', {
+          body: {
+            userId: id,
+            password: updates.password,
+            updatePasswordOnly: true,
+          }
+        });
+        
+        if (passwordError) {
+          console.error('Erro ao atualizar senha:', passwordError);
+          throw new Error('Erro ao atualizar senha do aluno');
+        }
+      }
+
+      // Atualiza o perfil (remove password do objeto updates antes de salvar no perfil)
+      const { password, ...profileUpdates } = updates;
+      
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(profileUpdates)
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('Aluno atualizado com sucesso');
+      toast.success(password ? 'Aluno e senha atualizados com sucesso' : 'Aluno atualizado com sucesso');
       await fetchStudents();
+      
+      // Retorna a senha se foi atualizada
+      return password ? { password } : undefined;
     } catch (err) {
       console.error('Error updating student:', err);
       toast.error('Erro ao atualizar aluno');

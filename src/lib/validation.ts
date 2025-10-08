@@ -180,6 +180,36 @@ export const sanitizeString = (v = '', maxLength = 1000) => {
     .slice(0, maxLength);
 };
 
+/**
+ * Gera uma senha segura aleatória
+ * Formato: 3 palavras + 3 números + 1 símbolo especial
+ * Exemplo: Tigre-Mesa-Rio-847!
+ */
+export const generateSecurePassword = (): string => {
+  const words = [
+    'Tigre', 'Mesa', 'Rio', 'Sol', 'Lua', 'Mar', 'Flor', 'Casa', 'Gato', 'Vento',
+    'Chuva', 'Neve', 'Lago', 'Monte', 'Vale', 'Bosque', 'Praia', 'Campo', 'Serra', 'Ilha'
+  ];
+  
+  const symbols = ['!', '@', '#', '$', '%', '&', '*'];
+  
+  // Seleciona 3 palavras aleatórias
+  const selectedWords = Array.from({ length: 3 }, () => 
+    words[Math.floor(Math.random() * words.length)]
+  );
+  
+  // Gera 3 números aleatórios
+  const numbers = Array.from({ length: 3 }, () => 
+    Math.floor(Math.random() * 10)
+  ).join('');
+  
+  // Seleciona 1 símbolo aleatório
+  const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+  
+  // Monta a senha: Palavra-Palavra-Palavra-123!
+  return `${selectedWords.join('-')}-${numbers}${symbol}`;
+};
+
 export const validateZipCode = (v = '') => {
   if (!v) return null; // CEP é opcional
   

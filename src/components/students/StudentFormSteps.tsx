@@ -39,7 +39,10 @@ import {
   GraduationCap,
   Users,
   Heart,
-  CheckCircle
+  CheckCircle,
+  Copy,
+  RefreshCw,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -51,7 +54,8 @@ import {
   validateZipCode,
   sanitizeString,
   normalizeSpaces,
-  onlyDigits
+  onlyDigits,
+  generateSecurePassword
 } from '@/lib/validation';
 import { Person, Guardian, StudentExtra } from '@/types/class';
 import { useClasses } from '@/hooks/useClasses';
@@ -65,10 +69,9 @@ interface StudentFormStepsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   student?: Person | null;
-  onSave: () => void; // Adicionar uma prop para atualizar a lista de alunos
+  onSave: () => void;
 }
 
-// ... (as constantes STEPS e RELATION_OPTIONS permanecem as mesmas)
 const STEPS = [
   { id: 1, title: 'Dados Pessoais', icon: User },
   { id: 2, title: 'Contato & Endereço', icon: Phone },
@@ -86,11 +89,10 @@ const RELATION_OPTIONS = [
   { value: 'OUTRO', label: 'Outro' },
 ] as const;
 
-
 export function StudentFormSteps({ open, onOpenChange, student, onSave }: StudentFormStepsProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<Person & { student: StudentExtra }>>({ /* estado inicial */ });
+  const [formData, setFormData] = useState<Partial<Person & { student: StudentExtra }>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCredentials, setShowCredentials] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<{
@@ -98,128 +100,195 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     password: string;
     name: string;
   } | null>(null);
+  const [generatedPassword, setGeneratedPassword] = useState<string>('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const { classes } = useClasses();
   const { programs } = usePrograms();
   const { levels } = useLevels();
   const { createStudent, updateStudent } = useStudents();
-  // A função isMinor não precisa mais vir de um store
-  const isMinor = (dob: string | undefined): boolean => {
-    if (!dob) return false;
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age < 18;
-  };
-  
-  const isStudentMinor = isMinor(formData.student?.dob);
-  const availableSteps = STEPS.filter(step => step.id !== 4 || isStudentMinor);
 
   useEffect(() => {
-    // ... (lógica para inicializar o formulário, pode permanecer a mesma)
-  }, [student, open]);
+    if (open) {
+      if (student) {
+        setFormData({
+          ...student,
+          student: student.student || {}
+        });
+      } else {
+        setFormData({
+          name: '',
+          email: '',
+          role: 'ALUNO',
+          student: {
+            dob: undefined,
+            phones: [''],
+            email: '',
+            address: {
+              street: '',
+              number: '',
+              complement: '',
+              neighborhood: '',
+              city: '',
+              state: '',
+              zipCode: ''
+            },
+            emergencyContact: {
+              name: '',
+              relation: '',
+              phone: ''
+            },
+            guardians: [{
+              id: crypto.randomUUID(),
+              name: '',
+              relation: 'MAE' as const,
+              phone: '',
+              email: '',
+              isPrimary: true
+            }],
+            enrollmentNumber: '',
+            programId: undefined,
+            levelId: undefined,
+            classIds: [],
+            medicalInfo: {
+              allergies: [],
+              medications: [],
+              conditions: [],
+              bloodType: '',
+              healthInsurance: ''
+            },
+            consents: {
+              image: false,
+              fieldTrip: false,
+              whatsapp: false
+            },
+            notes: ''
+          }
+        });
+      }
+      setCurrentStep(1);
+      setErrors({});
+      setGeneratedPassword('');
+      setShowResetPassword(false);
+    }
+  }, [open, student]);
 
-  const updateFormData = (updates: any) => {
+  // Gera senha automaticamente quando chega no step 6 (revisão) para novos alunos
+  useEffect(() => {
+    if (currentStep === 6 && !student && !generatedPassword) {
+      const newPassword = generateSecurePassword();
+      setGeneratedPassword(newPassword);
+    }
+  }, [currentStep, student, generatedPassword]);
+
+  const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({
       ...prev,
       ...updates,
-      student: prev.student ? { ...prev.student, ...updates.student } : updates.student
+      student: {
+        ...prev.student,
+        ...updates.student
+      }
     }));
   };
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     switch (step) {
       case 1: // Dados Pessoais
-        const nameError = validateName(formData.name);
-        if (nameError) newErrors.name = nameError;
-        
-        if (!formData.student?.dob) {
-          newErrors.dob = 'Data de nascimento é obrigatória';
-        }
-        
-        const cpfError = validateCPF(formData.student?.document);
-        if (cpfError) newErrors.document = cpfError;
-        
-        const enrollmentError = validateEnrollmentNumber(formData.student?.enrollmentNumber);
-        if (enrollmentError) newErrors.enrollmentNumber = enrollmentError;
-        break;
-        
-      case 2: // Contato & Endereço
-        if (!formData.student?.phones || formData.student.phones.length === 0) {
-          newErrors.phones = 'Pelo menos um telefone é obrigatório';
+        if (!formData.name?.trim()) {
+          newErrors.name = 'Nome é obrigatório';
         } else {
-          formData.student.phones.forEach((phone, idx) => {
-            const phoneError = validatePhone(phone);
-            if (phoneError) newErrors[`phone_${idx}`] = phoneError;
-          });
-        }
-        
-        const emailError = validateEmail(formData.student?.email || '');
-        if (emailError) newErrors.email = emailError;
-        
-        const zipError = validateZipCode(formData.student?.address?.zip);
-        if (zipError) newErrors.zip = zipError;
-        break;
-        
-      case 4: // Responsável
-        if (isStudentMinor && (!formData.student?.guardians || formData.student.guardians.length === 0)) {
-          newErrors.guardians = 'Alunos menores de idade devem ter pelo menos um responsável';
-        }
-        
-        formData.student?.guardians?.forEach((guardian, idx) => {
-          if (!guardian.name || guardian.name.trim().length < 3) {
-            newErrors[`guardian_${idx}_name`] = 'Nome do responsável é obrigatório';
+          const nameValidation = validateName(formData.name);
+          if (nameValidation) {
+            newErrors.name = nameValidation;
           }
-          const guardianPhoneError = validatePhone(guardian.phone || '');
-          if (guardianPhoneError) newErrors[`guardian_${idx}_phone`] = guardianPhoneError;
+        }
+
+        if (formData.student?.dob) {
+          const birthDate = new Date(formData.student.dob);
+          const today = new Date();
+          const age = today.getFullYear() - birthDate.getFullYear();
+          if (age > 120 || age < 0) {
+            newErrors.dob = 'Data de nascimento inválida';
+          }
+        }
+        break;
+
+      case 2: // Contato & Endereço
+        if (formData.student?.email) {
+          const emailValidation = validateEmail(formData.student.email);
+          if (emailValidation) {
+            newErrors.email = emailValidation;
+          }
+        }
+
+        formData.student?.phones?.forEach((phone, index) => {
+          if (phone && validatePhone(phone)) {
+            newErrors[`phone${index}`] = validatePhone(phone) || 'Telefone inválido';
+          }
         });
+
+        if (formData.student?.address?.zipCode) {
+          const zipValidation = validateZipCode(formData.student.address.zipCode);
+          if (zipValidation) {
+            newErrors.zipCode = zipValidation;
+          }
+        }
+        break;
+
+      case 3: // Acadêmico
+        if (!formData.student?.email) {
+          newErrors.studentEmail = 'Email é obrigatório para criar login';
+        }
+        break;
+
+      case 4: // Responsável
+        const isMinor = formData.student?.dob ? 
+          (new Date().getFullYear() - new Date(formData.student.dob).getFullYear()) < 18 : 
+          true;
+
+        if (isMinor) {
+          if (!formData.student?.guardians?.length || 
+              !formData.student.guardians.some(g => g.name.trim())) {
+            newErrors.guardians = 'Ao menos um responsável é obrigatório para menores';
+          }
+        }
         break;
     }
-    
+
     setErrors(newErrors);
-    
-    if (Object.keys(newErrors).length > 0) {
-      toast.error('Por favor, corrija os erros no formulário');
-      return false;
-    }
-    
-    return true;
+    return Object.keys(newErrors).length === 0;
   };
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      const currentIndex = availableSteps.findIndex(s => s.id === currentStep);
-      if (currentIndex < availableSteps.length - 1) {
-        setCurrentStep(availableSteps[currentIndex + 1].id);
-      }
+      setCurrentStep(prev => Math.min(prev + 1, 6));
+    } else {
+      toast.error('Preencha os campos obrigatórios corretamente');
     }
   };
 
   const prevStep = () => {
-    const currentIndex = availableSteps.findIndex(s => s.id === currentStep);
-    if (currentIndex > 0) {
-      setCurrentStep(availableSteps[currentIndex - 1].id);
-    }
+    setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const addGuardian = () => {
-    const newGuardian: Guardian = {
-      id: `temp-${Date.now()}`,
-      name: '',
-      relation: 'MAE',
-      phone: '',
-      email: '',
-      isPrimary: (formData.student?.guardians?.length || 0) === 0,
-    };
+    const guardians = formData.student?.guardians || [];
     updateFormData({
       student: {
-        guardians: [...(formData.student?.guardians || []), newGuardian]
+        guardians: [
+          ...guardians,
+          {
+            id: crypto.randomUUID(),
+            name: '',
+            relation: 'RESPONSAVEL' as const,
+            phone: '',
+            email: '',
+            isPrimary: false
+          }
+        ]
       }
     });
   };
@@ -235,9 +304,13 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     guardians[index] = { ...guardians[index], ...updates };
     updateFormData({ student: { guardians } });
   };
-  
-  // --- CORREÇÃO PRINCIPAL ---
-  // A nova função handleSubmit que integra tudo com o Supabase
+
+  const handleResetPassword = () => {
+    const newPassword = generateSecurePassword();
+    setGeneratedPassword(newPassword);
+    setShowResetPassword(true);
+  };
+
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) {
       toast.error('Preencha os campos obrigatórios');
@@ -253,88 +326,119 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
       let studentId = student?.id;
 
-      // Se é um NOVO aluno, primeiro criamos o login via hook useStudents
       if (!student) {
+        // Criando novo aluno - usa a senha gerada automaticamente
         const result = await createStudent({
           name: formData.name || '',
           email: studentEmail,
+          password: generatedPassword,
           dob: formData.student?.dob,
           phone: formData.student?.phones?.[0],
           enrollment_number: formData.student?.enrollmentNumber,
         });
         
-        // Mostrar credenciais
         if (result?.password) {
           setCreatedCredentials({
             email: studentEmail,
             password: result.password,
             name: formData.name || '',
           });
+          setShowCredentials(true);
         }
         
         studentId = result?.user?.id;
       } else {
-        // Atualizar aluno existente
-        await updateStudent(studentId, {
+        // Atualizando aluno existente
+        const updateData: any = {
           name: formData.name?.trim(),
           email: studentEmail,
           dob: formData.student?.dob,
           phone: formData.student?.phones?.[0],
           enrollment_number: formData.student?.enrollmentNumber,
-        } as any);
+        };
+
+        // Se resetou a senha, inclui no update
+        if (showResetPassword && generatedPassword) {
+          updateData.password = generatedPassword;
+        }
+        
+        const result = await updateStudent(studentId, updateData);
+        
+        // Se resetou a senha, mostra as credenciais
+        if (showResetPassword && generatedPassword && result?.password) {
+          setCreatedCredentials({
+            name: formData.name || '',
+            email: studentEmail,
+            password: generatedPassword
+          });
+          setShowCredentials(true);
+        }
       }
 
       if (!studentId) {
         throw new Error("Não foi possível obter o ID do aluno.");
       }
 
-      // Salvar/Atualizar os responsáveis na tabela 'guardians'
-      if (formData.student?.guardians && formData.student.guardians.length > 0) {
-        const guardiansData = formData.student.guardians.map(g => ({
-          student_id: studentId,
-          name: g.name,
-          relation: g.relation,
-          phone: g.phone,
-          email: g.email,
-          is_primary: g.isPrimary,
+      // Salvar relacionamentos de turmas
+      if (formData.student?.classIds && formData.student.classIds.length > 0) {
+        // Remove relacionamentos existentes
+        await supabase
+          .from('class_students')
+          .delete()
+          .eq('student_id', studentId);
+
+        // Adiciona novos relacionamentos
+        const classStudents = formData.student.classIds.map(classId => ({
+          class_id: classId,
+          student_id: studentId
         }));
-        // Primeiro, deleta os antigos
-        await supabase.from('guardians').delete().eq('student_id', studentId);
-        // Insere os novos
-        const { error: guardianError } = await supabase.from('guardians').insert(guardiansData);
-        if (guardianError) throw guardianError;
+
+        await supabase
+          .from('class_students')
+          .insert(classStudents);
       }
 
-      // Matricular o aluno nas turmas
-      if (formData.student?.classIds && formData.student.classIds.length > 0) {
-        const classStudentsData = formData.student.classIds.map(classId => ({
-          student_id: studentId,
-          class_id: classId,
-        }));
-        await supabase.from('class_students').delete().eq('student_id', studentId);
-        const { error: classStudentError } = await supabase.from('class_students').insert(classStudentsData);
-        if (classStudentError) throw classStudentError;
+      // Salvar guardiões
+      if (formData.student?.guardians && formData.student.guardians.length > 0) {
+        await supabase
+          .from('guardians')
+          .delete()
+          .eq('student_id', studentId);
+
+        const validGuardians = formData.student.guardians
+          .filter(g => g.name.trim())
+          .map(g => ({
+            student_id: studentId,
+            name: g.name,
+            relation: g.relation,
+            phone: g.phone || null,
+            email: g.email || null,
+            is_primary: g.isPrimary || false
+          }));
+
+        if (validGuardians.length > 0) {
+          await supabase
+            .from('guardians')
+            .insert(validGuardians);
+        }
       }
-      
-      if (student) {
-        toast.success('Aluno atualizado com sucesso!');
-      }
-      
+
       onSave();
       onOpenChange(false);
-      
-      // Mostrar dialog de credenciais após fechar o modal principal
-      if (!student && createdCredentials) {
-        setTimeout(() => setShowCredentials(true), 300);
-      }
-
     } catch (error: any) {
       console.error('Erro ao salvar aluno:', error);
-      toast.error(`Erro ao salvar aluno: ${error.message}`);
+      toast.error(error.message || 'Erro ao salvar aluno');
     } finally {
       setLoading(false);
     }
   };
+
+  const isStudentMinor = formData.student?.dob ? 
+    (new Date().getFullYear() - new Date(formData.student.dob).getFullYear()) < 18 : 
+    true;
+
+  const currentStepIndex = currentStep - 1;
+  const isLastStep = currentStep === STEPS.length;
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -349,12 +453,17 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 onChange={(e) => {
                   const sanitized = sanitizeString(e.target.value, 100);
                   updateFormData({ name: sanitized });
-                  // Validar em tempo real
-                  const error = validateName(sanitized);
-                  setErrors(prev => ({...prev, name: error || ''}));
+                  if (errors.name) {
+                    const validation = validateName(sanitized);
+                    if (!validation) {
+                      setErrors(prev => {
+                        const { name, ...rest } = prev;
+                        return rest;
+                      });
+                    }
+                  }
                 }}
-                placeholder="Digite o nome completo (nome e sobrenome)"
-                required
+                placeholder="Nome completo do aluno"
                 maxLength={100}
                 className={errors.name ? 'border-destructive' : ''}
               />
@@ -362,112 +471,71 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 <p className="text-sm text-destructive">{errors.name}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                {(formData.name || '').length}/100 caracteres
+                {formData.name?.length || 0}/100 caracteres
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label>Data de Nascimento *</Label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  value={formData.student?.dob || ''}
-                  onChange={(e) => {
-                    updateFormData({ 
-                      student: { dob: e.target.value || undefined } 
-                    });
-                    setErrors(prev => ({...prev, dob: ''}));
-                  }}
-                  max={format(new Date(), 'yyyy-MM-dd')}
-                  min="1900-01-01"
-                  className={cn("pr-10", errors.dob && 'border-destructive')}
-                  placeholder="dd/mm/aaaa"
-                />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      type="button"
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.student?.dob ? new Date(formData.student.dob) : undefined}
-                      onSelect={(date) => {
-                        updateFormData({ 
-                          student: { dob: date ? format(date, 'yyyy-MM-dd') : undefined } 
-                        });
-                        setErrors(prev => ({...prev, dob: ''}));
-                      }}
-                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+              <Label htmlFor="dob">Data de Nascimento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.student?.dob && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.student?.dob ? (
+                      format(new Date(formData.student.dob), "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione uma data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.student?.dob ? new Date(formData.student.dob) : undefined}
+                    onSelect={(date) => {
+                      updateFormData({ 
+                        student: { dob: date?.toISOString().split('T')[0] }
+                      });
+                    }}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {formData.student?.dob && isStudentMinor && (
+                <Badge variant="secondary">Menor de idade</Badge>
+              )}
               {errors.dob && (
                 <p className="text-sm text-destructive">{errors.dob}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="document">Documento (CPF)</Label>
+              <Label htmlFor="document">CPF</Label>
               <Input
                 id="document"
                 value={formData.student?.document || ''}
                 onChange={(e) => {
                   const digits = onlyDigits(e.target.value);
-                  const formatted = digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-                  updateFormData({ student: { document: formatted } });
-                  // Validar em tempo real
-                  const error = validateCPF(formatted);
-                  setErrors(prev => ({...prev, document: error || ''}));
+                  const formatted = digits.length <= 11 ? 
+                    digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') :
+                    digits.slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                  
+                  updateFormData({ 
+                    student: { document: formatted }
+                  });
                 }}
                 placeholder="000.000.000-00"
                 maxLength={14}
-                className={errors.document ? 'border-destructive' : ''}
               />
-              {errors.document && (
-                <p className="text-sm text-destructive">{errors.document}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="enrollmentNumber">Matrícula</Label>
-              <Input
-                id="enrollmentNumber"
-                value={formData.student?.enrollmentNumber || ''}
-                onChange={(e) => {
-                  const sanitized = e.target.value.replace(/[^A-Za-z0-9-]/g, '').slice(0, 20);
-                  updateFormData({ student: { enrollmentNumber: sanitized } });
-                  const error = validateEnrollmentNumber(sanitized);
-                  setErrors(prev => ({...prev, enrollmentNumber: error || ''}));
-                }}
-                placeholder="2024-ABC-001"
-                maxLength={20}
-                className={errors.enrollmentNumber ? 'border-destructive' : ''}
-              />
-              {errors.enrollmentNumber && (
-                <p className="text-sm text-destructive">{errors.enrollmentNumber}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Apenas letras, números e hífens
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isActive"
-                checked={formData.isActive || false}
-                onCheckedChange={(checked) => updateFormData({ isActive: checked })}
-              />
-              <Label htmlFor="isActive">Ativo</Label>
             </div>
           </div>
         );
@@ -475,37 +543,45 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       case 2:
         return (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Telefones *</Label>
-              {errors.phones && (
-                <p className="text-sm text-destructive">{errors.phones}</p>
-              )}
-              {formData.student?.phones?.map((phone, index) => (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Telefones</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const phones = formData.student?.phones || [''];
+                    updateFormData({ 
+                      student: { phones: [...phones, ''] }
+                    });
+                  }}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar Telefone
+                </Button>
+              </div>
+
+              {(formData.student?.phones || ['']).map((phone, index) => (
                 <div key={index} className="flex gap-2">
                   <InputPhone
                     value={phone}
                     onChange={(value) => {
-                      const phones = [...(formData.student?.phones || [])];
+                      const phones = [...(formData.student?.phones || [''])];
                       phones[index] = value;
                       updateFormData({ student: { phones } });
-                      // Limpar erro específico deste telefone
-                      setErrors(prev => {
-                        const newErrors = {...prev};
-                        delete newErrors[`phone_${index}`];
-                        delete newErrors.phones;
-                        return newErrors;
-                      });
                     }}
-                    placeholder="(11) 99999-0000"
-                    error={errors[`phone_${index}`]}
+                    placeholder="(00) 00000-0000"
                   />
-                  {formData.student?.phones && formData.student.phones.length > 1 && (
-                    <Button 
+                  {(formData.student?.phones?.length || 0) > 1 && (
+                    <Button
                       type="button"
-                      variant="outline" 
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => {
-                        const phones = formData.student?.phones?.filter((_, i) => i !== index);
+                        const phones = [...(formData.student?.phones || [''])];
+                        phones.splice(index, 1);
                         updateFormData({ student: { phones } });
                       }}
                     >
@@ -514,160 +590,154 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   )}
                 </div>
               ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const phones = [...(formData.student?.phones || []), ''];
-                  updateFormData({ student: { phones } });
-                }}
-                className="gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Adicionar Telefone
-              </Button>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="studentEmail">Email *</Label>
               <Input
-                id="email"
+                id="studentEmail"
                 type="email"
                 value={formData.student?.email || ''}
                 onChange={(e) => {
-                  const sanitized = sanitizeString(e.target.value, 254);
-                  updateFormData({ student: { email: sanitized } });
-                  // Validar em tempo real
-                  const error = validateEmail(sanitized);
-                  setErrors(prev => ({...prev, email: error || ''}));
+                  const sanitized = sanitizeString(e.target.value, 255).toLowerCase();
+                  updateFormData({ 
+                    student: { email: sanitized }
+                  });
                 }}
-                placeholder="email@exemplo.com"
-                maxLength={254}
-                className={errors.email ? 'border-destructive' : ''}
+                placeholder="aluno@email.com"
+                maxLength={255}
+                className={errors.studentEmail || errors.email ? 'border-destructive' : ''}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
+              {(errors.studentEmail || errors.email) && (
+                <p className="text-sm text-destructive">{errors.studentEmail || errors.email}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Este email será usado para criar o login do aluno
+                Este email será usado para login no sistema
               </p>
             </div>
 
-            <div className="space-y-4">
-              <Label>Endereço</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="zip">CEP</Label>
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Endereço</h4>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>CEP</Label>
                   <Input
-                    id="zip"
-                    value={formData.student?.address?.zip || ''}
+                    value={formData.student?.address?.zipCode || ''}
                     onChange={(e) => {
                       const digits = onlyDigits(e.target.value);
                       const formatted = digits.slice(0, 8).replace(/(\d{5})(\d{3})/, '$1-$2');
                       updateFormData({ 
                         student: { 
-                          address: { ...formData.student?.address, zip: formatted } 
-                        } 
+                          address: { 
+                            ...formData.student?.address,
+                            zipCode: formatted 
+                          } 
+                        }
                       });
-                      const error = validateZipCode(formatted);
-                      setErrors(prev => ({...prev, zip: error || ''}));
                     }}
                     placeholder="00000-000"
                     maxLength={9}
-                    className={errors.zip ? 'border-destructive' : ''}
-                  />
-                  {errors.zip && (
-                    <p className="text-sm text-destructive">{errors.zip}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="city">Cidade</Label>
-                  <Input
-                    id="city"
-                    value={formData.student?.address?.city || ''}
-                    onChange={(e) => {
-                      const sanitized = sanitizeString(e.target.value, 100);
-                      updateFormData({ 
-                        student: { 
-                          address: { ...formData.student?.address, city: sanitized } 
-                        } 
-                      });
-                    }}
-                    placeholder="São Paulo"
-                    maxLength={100}
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2">
-                  <Label htmlFor="street">Rua</Label>
+
+                <div className="space-y-2">
+                  <Label>Rua</Label>
                   <Input
-                    id="street"
                     value={formData.student?.address?.street || ''}
-                    onChange={(e) => {
-                      const sanitized = sanitizeString(e.target.value, 200);
-                      updateFormData({ 
-                        student: { 
-                          address: { ...formData.student?.address, street: sanitized } 
+                    onChange={(e) => updateFormData({ 
+                      student: { 
+                        address: { 
+                          ...formData.student?.address,
+                          street: sanitizeString(e.target.value, 200)
                         } 
-                      });
-                    }}
-                    placeholder="Rua das Flores"
+                      }
+                    })}
+                    placeholder="Nome da rua"
                     maxLength={200}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="number">Número</Label>
+
+                <div className="space-y-2">
+                  <Label>Número</Label>
                   <Input
-                    id="number"
                     value={formData.student?.address?.number || ''}
-                    onChange={(e) => {
-                      const sanitized = e.target.value.slice(0, 10);
-                      updateFormData({ 
-                        student: { 
-                          address: { ...formData.student?.address, number: sanitized } 
+                    onChange={(e) => updateFormData({ 
+                      student: { 
+                        address: { 
+                          ...formData.student?.address,
+                          number: sanitizeString(e.target.value, 10)
                         } 
-                      });
-                    }}
+                      }
+                    })}
                     placeholder="123"
                     maxLength={10}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="district">Bairro</Label>
+                <div className="space-y-2">
+                  <Label>Complemento</Label>
                   <Input
-                    id="district"
-                    value={formData.student?.address?.district || ''}
-                    onChange={(e) => {
-                      const sanitized = sanitizeString(e.target.value, 100);
-                      updateFormData({ 
-                        student: { 
-                          address: { ...formData.student?.address, district: sanitized } 
+                    value={formData.student?.address?.complement || ''}
+                    onChange={(e) => updateFormData({ 
+                      student: { 
+                        address: { 
+                          ...formData.student?.address,
+                          complement: sanitizeString(e.target.value, 100)
                         } 
-                      });
-                    }}
-                    placeholder="Centro"
+                      }
+                    })}
+                    placeholder="Apto, Bloco, etc"
                     maxLength={100}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="state">Estado</Label>
+
+                <div className="space-y-2">
+                  <Label>Bairro</Label>
                   <Input
-                    id="state"
-                    value={formData.student?.address?.state || ''}
-                    onChange={(e) => {
-                      const sanitized = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
-                      updateFormData({ 
-                        student: { 
-                          address: { ...formData.student?.address, state: sanitized } 
+                    value={formData.student?.address?.neighborhood || ''}
+                    onChange={(e) => updateFormData({ 
+                      student: { 
+                        address: { 
+                          ...formData.student?.address,
+                          neighborhood: sanitizeString(e.target.value, 100)
                         } 
-                      });
-                    }}
+                      }
+                    })}
+                    placeholder="Bairro"
+                    maxLength={100}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cidade</Label>
+                  <Input
+                    value={formData.student?.address?.city || ''}
+                    onChange={(e) => updateFormData({ 
+                      student: { 
+                        address: { 
+                          ...formData.student?.address,
+                          city: sanitizeString(e.target.value, 100)
+                        } 
+                      }
+                    })}
+                    placeholder="Cidade"
+                    maxLength={100}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Estado</Label>
+                  <Input
+                    value={formData.student?.address?.state || ''}
+                    onChange={(e) => updateFormData({ 
+                      student: { 
+                        address: { 
+                          ...formData.student?.address,
+                          state: sanitizeString(e.target.value.toUpperCase(), 2)
+                        } 
+                      }
+                    })}
                     placeholder="SP"
                     maxLength={2}
                   />
@@ -678,29 +748,30 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         );
 
       case 3:
-        const filteredClasses = classes.filter(c => 
-          c.status === 'ATIVA' &&
-          (!formData.student?.levelId || c.levelId === formData.student.levelId)
-        );
-
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Programa *</Label>
-              <Select 
-                 value={formData.student?.programId || ''} 
-                onValueChange={(value) => {
-                  updateFormData({ 
-                    student: { 
-                      programId: value,
-                      levelId: undefined,
-                      classIds: []
-                    } 
-                  });
-                }}
+              <Label>Número de Matrícula</Label>
+              <Input
+                value={formData.student?.enrollmentNumber || ''}
+                onChange={(e) => updateFormData({ 
+                  student: { enrollmentNumber: sanitizeString(e.target.value, 50) }
+                })}
+                placeholder="Ex: 2024001"
+                maxLength={50}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Programa</Label>
+              <Select
+                value={formData.student?.programId}
+                onValueChange={(value) => updateFormData({ 
+                  student: { programId: value }
+                })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um programa" />
+                  <SelectValue placeholder="Selecione o programa" />
                 </SelectTrigger>
                 <SelectContent>
                   {programs.map((program) => (
@@ -713,70 +784,56 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             </div>
 
             <div className="space-y-2">
-              <Label>Nível *</Label>
-              <Select 
-                value={formData.student?.levelId || ''} 
-                onValueChange={(value) => {
-                  updateFormData({ 
-                    student: { 
-                      levelId: value,
-                      classIds: []
-                    } 
-                  });
-                }}
-                disabled={!formData.student?.programId}
+              <Label>Nível</Label>
+              <Select
+                value={formData.student?.levelId}
+                onValueChange={(value) => updateFormData({ 
+                  student: { levelId: value }
+                })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um nível" />
+                  <SelectValue placeholder="Selecione o nível" />
                 </SelectTrigger>
                 <SelectContent>
                   {levels.map((level) => (
-                      <SelectItem key={level.id} value={level.id}>
-                        {level.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem key={level.id} value={level.id}>
+                      {level.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label>Turmas</Label>
-              <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
-                {filteredClasses.length > 0 ? (
-                  filteredClasses.map((cls) => (
-                    <div key={cls.id} className="flex items-center space-x-2 py-1">
-                      <Checkbox
-                        id={`class-${cls.id}`}
-                        checked={formData.student?.classIds?.includes(cls.id) || false}
-                        onCheckedChange={(checked) => {
-                          const classIds = formData.student?.classIds || [];
-                          const newClassIds = checked
-                            ? [...classIds, cls.id]
-                            : classIds.filter(id => id !== cls.id);
-                          updateFormData({ student: { classIds: newClassIds } });
-                        }}
-                      />
-                      <Label htmlFor={`class-${cls.id}`} className="text-sm">
-                        {cls.name} {cls.code && `(${cls.code})`}
-                      </Label>
-                    </div>
-                  ))
-                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {!formData.student?.levelId
-                      ? 'Selecione um nível para ver as turmas'
-                      : 'Nenhuma turma disponível para este nível'
-                    }
-                  </p>
-                )}
+              <div className="border rounded-lg p-3 space-y-2 max-h-[200px] overflow-y-auto">
+                {classes.map((cls) => (
+                  <div key={cls.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`class-${cls.id}`}
+                      checked={formData.student?.classIds?.includes(cls.id) || false}
+                      onCheckedChange={(checked) => {
+                        const currentIds = formData.student?.classIds || [];
+                        const newIds = checked
+                          ? [...currentIds, cls.id]
+                          : currentIds.filter(id => id !== cls.id);
+                        updateFormData({ student: { classIds: newIds } });
+                      }}
+                    />
+                    <Label 
+                      htmlFor={`class-${cls.id}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {cls.name}
+                    </Label>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         );
 
       case 4:
-        if (!isStudentMinor) return null;
-
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -814,16 +871,17 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     <Label>Nome *</Label>
                     <Input
                       value={guardian.name}
-                      onChange={(e) => updateGuardian(index, { name: e.target.value })}
+                      onChange={(e) => updateGuardian(index, { name: sanitizeString(e.target.value, 100) })}
                       placeholder="Nome completo"
                       required
+                      maxLength={100}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>Parentesco *</Label>
-                    <Select 
-                      value={guardian.relation} 
+                    <Select
+                      value={guardian.relation}
                       onValueChange={(value) => updateGuardian(index, { relation: value as any })}
                     >
                       <SelectTrigger>
@@ -840,11 +898,11 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Telefone *</Label>
+                    <Label>Telefone</Label>
                     <InputPhone
-                      value={guardian.phone || ''}
+                      value={guardian.phone}
                       onChange={(value) => updateGuardian(index, { phone: value })}
-                      placeholder="(11) 99999-0000"
+                      placeholder="(00) 00000-0000"
                     />
                   </div>
 
@@ -852,31 +910,37 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     <Label>Email</Label>
                     <Input
                       type="email"
-                      value={guardian.email || ''}
-                      onChange={(e) => updateGuardian(index, { email: e.target.value })}
+                      value={guardian.email}
+                      onChange={(e) => updateGuardian(index, { email: sanitizeString(e.target.value.toLowerCase(), 255) })}
                       placeholder="email@exemplo.com"
+                      maxLength={255}
                     />
                   </div>
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`primary-${guardian.id}`}
-                    checked={guardian.isPrimary || false}
-                    onCheckedChange={(checked) => updateGuardian(index, { isPrimary: checked as boolean })}
-                  />
-                  <Label htmlFor={`primary-${guardian.id}`}>Responsável Principal</Label>
+                  <div className="col-span-2 flex items-center space-x-2">
+                    <Switch
+                      checked={guardian.isPrimary || false}
+                      onCheckedChange={(checked) => {
+                        // Se marcar como principal, desmarca os outros
+                        if (checked) {
+                          const guardians = formData.student?.guardians?.map((g, i) => ({
+                            ...g,
+                            isPrimary: i === index
+                          })) || [];
+                          updateFormData({ student: { guardians } });
+                        } else {
+                          updateGuardian(index, { isPrimary: false });
+                        }
+                      }}
+                    />
+                    <Label>Responsável Principal</Label>
+                  </div>
                 </div>
               </div>
             ))}
 
-            {(!formData.student?.guardians?.length) && (
-              <div className="text-center py-6">
-                <p className="text-muted-foreground mb-3">Nenhum responsável adicionado</p>
-                <Button variant="outline" onClick={addGuardian}>
-                  Adicionar Primeiro Responsável
-                </Button>
-              </div>
+            {errors.guardians && (
+              <p className="text-sm text-destructive">{errors.guardians}</p>
             )}
           </div>
         );
@@ -884,19 +948,106 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       case 5:
         return (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="healthNotes">Observações de Saúde</Label>
-              <Textarea
-                id="healthNotes"
-                value={formData.student?.healthNotes || ''}
-                onChange={(e) => updateFormData({ student: { healthNotes: e.target.value } })}
-                placeholder="Alergias, medicamentos, observações médicas..."
-                rows={3}
-              />
+            <div className="space-y-3">
+              <h4 className="font-medium">Informações Médicas</h4>
+              
+              <div className="space-y-2">
+                <Label>Tipo Sanguíneo</Label>
+                <Select
+                  value={formData.student?.medicalInfo?.bloodType || ''}
+                  onValueChange={(value) => updateFormData({ 
+                    student: { 
+                      medicalInfo: { 
+                        ...formData.student?.medicalInfo,
+                        bloodType: value 
+                      } 
+                    }
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Alergias</Label>
+                <Textarea
+                  value={formData.student?.medicalInfo?.allergies?.join(', ') || ''}
+                  onChange={(e) => updateFormData({ 
+                    student: { 
+                      medicalInfo: { 
+                        ...formData.student?.medicalInfo,
+                        allergies: e.target.value.split(',').map(a => a.trim()).filter(Boolean)
+                      } 
+                    }
+                  })}
+                  placeholder="Liste as alergias separadas por vírgula"
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Medicamentos em Uso</Label>
+                <Textarea
+                  value={formData.student?.medicalInfo?.medications?.join(', ') || ''}
+                  onChange={(e) => updateFormData({ 
+                    student: { 
+                      medicalInfo: { 
+                        ...formData.student?.medicalInfo,
+                        medications: e.target.value.split(',').map(m => m.trim()).filter(Boolean)
+                      } 
+                    }
+                  })}
+                  placeholder="Liste os medicamentos separados por vírgula"
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Condições Médicas</Label>
+                <Textarea
+                  value={formData.student?.medicalInfo?.conditions?.join(', ') || ''}
+                  onChange={(e) => updateFormData({ 
+                    student: { 
+                      medicalInfo: { 
+                        ...formData.student?.medicalInfo,
+                        conditions: e.target.value.split(',').map(c => c.trim()).filter(Boolean)
+                      } 
+                    }
+                  })}
+                  placeholder="Liste as condições médicas separadas por vírgula"
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Plano de Saúde</Label>
+                <Input
+                  value={formData.student?.medicalInfo?.healthInsurance || ''}
+                  onChange={(e) => updateFormData({ 
+                    student: { 
+                      medicalInfo: { 
+                        ...formData.student?.medicalInfo,
+                        healthInsurance: sanitizeString(e.target.value, 100)
+                      } 
+                    }
+                  })}
+                  placeholder="Nome do plano de saúde"
+                  maxLength={100}
+                />
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <Label>Autorizações</Label>
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Autorizações</h4>
               
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -952,6 +1103,136 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       case 6:
         return (
           <div className="space-y-4">
+            {/* Credenciais - Apenas para novos alunos */}
+            {!student && generatedPassword && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2 text-primary">
+                  <Shield className="h-5 w-5" />
+                  Credenciais de Acesso Geradas
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Email de Login</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input value={formData.student?.email || ''} readOnly className="font-mono bg-background" />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(formData.student?.email || '');
+                          toast.success('Email copiado!');
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Senha Gerada</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input value={generatedPassword} readOnly className="font-mono bg-background text-lg font-bold" />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedPassword);
+                          toast.success('Senha copiada!');
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      const text = `Email: ${formData.student?.email}\nSenha: ${generatedPassword}`;
+                      navigator.clipboard.writeText(text);
+                      toast.success('Dados completos copiados!');
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copiar Todos os Dados de Login
+                  </Button>
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    ⚠️ Guarde estas credenciais em local seguro e envie para o aluno/responsável
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Resetar Senha - Apenas para alunos existentes */}
+            {student && (
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                  <Shield className="h-5 w-5" />
+                  Gerenciar Senha
+                </h3>
+                {!showResetPassword ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleResetPassword}
+                    className="w-full"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Gerar Nova Senha Aleatória
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Nova Senha Gerada</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input value={generatedPassword} readOnly className="font-mono bg-background text-lg font-bold" />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(generatedPassword);
+                            toast.success('Nova senha copiada!');
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleResetPassword}
+                        className="flex-1"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Gerar Outra
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const text = `Email: ${formData.student?.email}\nNova Senha: ${generatedPassword}`;
+                          navigator.clipboard.writeText(text);
+                          toast.success('Dados completos copiados!');
+                        }}
+                        className="flex-1"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copiar Tudo
+                      </Button>
+                    </div>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      ⚠️ Esta senha será aplicada ao salvar o aluno
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <h3 className="text-lg font-semibold">Revisão dos Dados</h3>
             
             <div className="space-y-4">
@@ -998,17 +1279,13 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                       <p><strong>{guardian.name}</strong> - {
                         RELATION_OPTIONS.find(r => r.value === guardian.relation)?.label
                       } {guardian.isPrimary && <Badge variant="default" className="ml-2">Principal</Badge>}</p>
-                      <p className="text-sm text-muted-foreground">{guardian.phone}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {guardian.phone} {guardian.email && `• ${guardian.email}`}
+                      </p>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-
-            <div className="flex items-center justify-center gap-2 pt-4">
-              <Button onClick={handleSubmit} disabled={loading} className="gap-2">
-                {loading ? 'Salvando...' : student ? 'Atualizar Aluno' : 'Criar Aluno'}
-              </Button>
             </div>
           </div>
         );
@@ -1018,38 +1295,42 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     }
   };
 
-  const currentStepIndex = availableSteps.findIndex(s => s.id === currentStep);
-  const isLastStep = currentStepIndex === availableSteps.length - 1;
-
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {student ? 'Editar Aluno' : 'Novo Aluno'}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Steps Navigation */}
-        <div className="flex flex-wrap justify-center gap-2 py-4 border-b">
-          {availableSteps.map((step, index) => {
+        {/* Step Indicators */}
+        <div className="flex items-center justify-between mb-6 px-4">
+          {STEPS.map((step, index) => {
             const Icon = step.icon;
-            const isActive = step.id === currentStep;
-            const isCompleted = availableSteps.findIndex(s => s.id === currentStep) > index;
-            
+            const isActive = currentStep === step.id;
+            const isCompleted = currentStep > step.id;
+
             return (
               <div
                 key={step.id}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
-                  isActive && "bg-primary text-primary-foreground",
-                  isCompleted && !isActive && "bg-muted text-muted-foreground",
-                  !isActive && !isCompleted && "text-muted-foreground"
+                  "flex flex-col items-center gap-2 flex-1",
+                  index !== 0 && "relative before:absolute before:right-[50%] before:top-4 before:h-0.5 before:w-full before:bg-border"
                 )}
               >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{step.title}</span>
+                <div
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors",
+                    isActive && "border-primary bg-primary text-primary-foreground",
+                    isCompleted && "border-primary bg-primary/10 text-primary",
+                    !isActive && !isCompleted && "border-muted-foreground/25 bg-background"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{step.title}</span>
+                </div>
               </div>
             );
           })}
