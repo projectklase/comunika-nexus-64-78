@@ -174,10 +174,9 @@ export const validateEnrollmentNumber = (v = '') => {
 };
 
 export const sanitizeString = (v = '', maxLength = 1000) => {
-  // Remove caracteres perigosos e limita o tamanho
+  // Remove apenas caracteres perigosos, preserva espaços durante digitação
   return v
-    .replace(/[<>\"'`]/g, '')
-    .trim()
+    .replace(/[<>]/g, '')
     .slice(0, maxLength);
 };
 
