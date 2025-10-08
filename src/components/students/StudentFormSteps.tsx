@@ -112,14 +112,77 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   useEffect(() => {
     if (open) {
       if (student) {
-        setFormData({
-          ...student,
-          student: student.student || {}
-        });
-        // Inicializa dobInput com a data formatada se existir
-        if (student.student?.dob) {
-          setDobInput(format(new Date(student.student.dob), "dd/MM/yyyy"));
-        }
+        // Carrega dados do aluno para edição
+        const loadStudentData = async () => {
+          // Busca guardians
+          const { data: guardiansData } = await supabase
+            .from('guardians')
+            .select('*')
+            .eq('student_id', student.id);
+
+          // Busca turmas
+          const { data: classStudents } = await supabase
+            .from('class_students')
+            .select('class_id')
+            .eq('student_id', student.id);
+
+          const classIds = classStudents?.map(cs => cs.class_id) || [];
+
+          // Mapeia guardians
+          const guardians = guardiansData?.map(g => ({
+            id: g.id || crypto.randomUUID(),
+            name: g.name || '',
+            relation: g.relation as any || 'RESPONSAVEL',
+            phone: g.phone || '',
+            email: g.email || '',
+            isPrimary: g.is_primary || false
+          })) || [];
+
+          setFormData({
+            name: student.name || '',
+            email: student.email || '',
+            role: student.role || 'ALUNO',
+            student: {
+              dob: student.student?.dob,
+              phones: student.student?.phones?.length ? student.student.phones : [''],
+              email: student.email || '',
+              document: student.student?.document || '',
+              address: {
+                street: student.student?.address?.street || '',
+                number: student.student?.address?.number || '',
+                district: student.student?.address?.district || '',
+                city: student.student?.address?.city || '',
+                state: student.student?.address?.state || '',
+                zip: student.student?.address?.zip || ''
+              },
+              guardians: guardians.length > 0 ? guardians : [{
+                id: crypto.randomUUID(),
+                name: '',
+                relation: 'MAE' as const,
+                phone: '',
+                email: '',
+                isPrimary: true
+              }],
+              enrollmentNumber: student.student?.enrollmentNumber || '',
+              programId: student.student?.programId,
+              levelId: student.student?.levelId,
+              classIds,
+              healthNotes: student.student?.healthNotes || '',
+              consents: {
+                image: student.student?.consents?.image || false,
+                fieldTrip: student.student?.consents?.fieldTrip || false,
+                whatsapp: student.student?.consents?.whatsapp || false
+              }
+            }
+          });
+
+          // Inicializa dobInput com a data formatada se existir
+          if (student.student?.dob) {
+            setDobInput(format(new Date(student.student.dob), "dd/MM/yyyy"));
+          }
+        };
+
+        loadStudentData();
       } else {
         setFormData({
           name: '',
