@@ -13,6 +13,8 @@ interface DemoUserRequest {
   dob?: string
   phone?: string
   enrollment_number?: string
+  userId?: string // Para atualizar senha de usuário existente
+  updatePasswordOnly?: boolean // Flag para indicar que é apenas update de senha
 }
 
 Deno.serve(async (req) => {
@@ -86,9 +88,56 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { email, password, name, role, dob, phone, enrollment_number }: DemoUserRequest = await req.json()
+    const { email, password, name, role, dob, phone, enrollment_number, userId, updatePasswordOnly }: DemoUserRequest = await req.json()
 
-    // Validações de entrada
+    // Se é apenas para atualizar senha
+    if (updatePasswordOnly && userId) {
+      if (!password || password.length < 6) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Senha deve ter no mínimo 6 caracteres' 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400 
+          }
+        )
+      }
+
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        userId,
+        { password }
+      )
+
+      if (updateError) {
+        console.error('Error updating password:', updateError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: updateError.message 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400 
+          }
+        )
+      }
+
+      console.log('Password updated successfully for user:', userId)
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Senha atualizada com sucesso'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      )
+    }
+
+    // Validações de entrada para criação de usuário
     if (!email || !password || !name || !role) {
       console.error('Missing required fields')
       return new Response(

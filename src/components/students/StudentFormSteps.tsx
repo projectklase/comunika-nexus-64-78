@@ -124,47 +124,34 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             dob: undefined,
             phones: [''],
             email: '',
-            address: {
-              street: '',
-              number: '',
-              complement: '',
-              neighborhood: '',
-              city: '',
-              state: '',
-              zipCode: ''
-            },
-            emergencyContact: {
-              name: '',
-              relation: '',
-              phone: ''
-            },
-            guardians: [{
-              id: crypto.randomUUID(),
-              name: '',
-              relation: 'MAE' as const,
-              phone: '',
-              email: '',
-              isPrimary: true
-            }],
-            enrollmentNumber: '',
-            programId: undefined,
-            levelId: undefined,
-            classIds: [],
-            medicalInfo: {
-              allergies: [],
-              medications: [],
-              conditions: [],
-              bloodType: '',
-              healthInsurance: ''
-            },
-            consents: {
-              image: false,
-              fieldTrip: false,
-              whatsapp: false
-            },
-            notes: ''
+          address: {
+            street: '',
+            number: '',
+            district: '',
+            city: '',
+            state: '',
+            zip: ''
+          },
+          guardians: [{
+            id: crypto.randomUUID(),
+            name: '',
+            relation: 'MAE' as const,
+            phone: '',
+            email: '',
+            isPrimary: true
+          }],
+          enrollmentNumber: '',
+          programId: undefined,
+          levelId: undefined,
+          classIds: [],
+          healthNotes: '',
+          consents: {
+            image: false,
+            fieldTrip: false,
+            whatsapp: false
           }
-        });
+        }
+      });
       }
       setCurrentStep(1);
       setErrors({});
@@ -230,8 +217,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           }
         });
 
-        if (formData.student?.address?.zipCode) {
-          const zipValidation = validateZipCode(formData.student.address.zipCode);
+        if (formData.student?.address?.zip) {
+          const zipValidation = validateZipCode(formData.student.address.zip);
           if (zipValidation) {
             newErrors.zipCode = zipValidation;
           }
@@ -623,7 +610,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 <div className="space-y-2">
                   <Label>CEP</Label>
                   <Input
-                    value={formData.student?.address?.zipCode || ''}
+                    value={formData.student?.address?.zip || ''}
                     onChange={(e) => {
                       const digits = onlyDigits(e.target.value);
                       const formatted = digits.slice(0, 8).replace(/(\d{5})(\d{3})/, '$1-$2');
@@ -631,7 +618,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                         student: { 
                           address: { 
                             ...formData.student?.address,
-                            zipCode: formatted 
+                            zip: formatted 
                           } 
                         }
                       });
@@ -676,31 +663,14 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Complemento</Label>
-                  <Input
-                    value={formData.student?.address?.complement || ''}
-                    onChange={(e) => updateFormData({ 
-                      student: { 
-                        address: { 
-                          ...formData.student?.address,
-                          complement: sanitizeString(e.target.value, 100)
-                        } 
-                      }
-                    })}
-                    placeholder="Apto, Bloco, etc"
-                    maxLength={100}
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <Label>Bairro</Label>
                   <Input
-                    value={formData.student?.address?.neighborhood || ''}
+                    value={formData.student?.address?.district || ''}
                     onChange={(e) => updateFormData({ 
                       student: { 
                         address: { 
                           ...formData.student?.address,
-                          neighborhood: sanitizeString(e.target.value, 100)
+                          district: sanitizeString(e.target.value, 100)
                         } 
                       }
                     })}
@@ -949,99 +919,20 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         return (
           <div className="space-y-4">
             <div className="space-y-3">
-              <h4 className="font-medium">Informações Médicas</h4>
+              <h4 className="font-medium">Informações de Saúde</h4>
               
               <div className="space-y-2">
-                <Label>Tipo Sanguíneo</Label>
-                <Select
-                  value={formData.student?.medicalInfo?.bloodType || ''}
-                  onValueChange={(value) => updateFormData({ 
-                    student: { 
-                      medicalInfo: { 
-                        ...formData.student?.medicalInfo,
-                        bloodType: value 
-                      } 
-                    }
-                  })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Alergias</Label>
+                <Label>Observações de Saúde</Label>
                 <Textarea
-                  value={formData.student?.medicalInfo?.allergies?.join(', ') || ''}
+                  value={formData.student?.healthNotes || ''}
                   onChange={(e) => updateFormData({ 
                     student: { 
-                      medicalInfo: { 
-                        ...formData.student?.medicalInfo,
-                        allergies: e.target.value.split(',').map(a => a.trim()).filter(Boolean)
-                      } 
+                      healthNotes: sanitizeString(e.target.value, 1000)
                     }
                   })}
-                  placeholder="Liste as alergias separadas por vírgula"
-                  maxLength={500}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Medicamentos em Uso</Label>
-                <Textarea
-                  value={formData.student?.medicalInfo?.medications?.join(', ') || ''}
-                  onChange={(e) => updateFormData({ 
-                    student: { 
-                      medicalInfo: { 
-                        ...formData.student?.medicalInfo,
-                        medications: e.target.value.split(',').map(m => m.trim()).filter(Boolean)
-                      } 
-                    }
-                  })}
-                  placeholder="Liste os medicamentos separados por vírgula"
-                  maxLength={500}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Condições Médicas</Label>
-                <Textarea
-                  value={formData.student?.medicalInfo?.conditions?.join(', ') || ''}
-                  onChange={(e) => updateFormData({ 
-                    student: { 
-                      medicalInfo: { 
-                        ...formData.student?.medicalInfo,
-                        conditions: e.target.value.split(',').map(c => c.trim()).filter(Boolean)
-                      } 
-                    }
-                  })}
-                  placeholder="Liste as condições médicas separadas por vírgula"
-                  maxLength={500}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Plano de Saúde</Label>
-                <Input
-                  value={formData.student?.medicalInfo?.healthInsurance || ''}
-                  onChange={(e) => updateFormData({ 
-                    student: { 
-                      medicalInfo: { 
-                        ...formData.student?.medicalInfo,
-                        healthInsurance: sanitizeString(e.target.value, 100)
-                      } 
-                    }
-                  })}
-                  placeholder="Nome do plano de saúde"
-                  maxLength={100}
+                  placeholder="Alergias, medicamentos, condições médicas, plano de saúde, etc."
+                  maxLength={1000}
+                  className="min-h-[120px]"
                 />
               </div>
             </div>
