@@ -84,30 +84,49 @@ export function useNotifications() {
     }
   };
 
-  // Configurar realtime
+  // Configurar realtime (only once per user session)
   useEffect(() => {
     if (!user) return;
 
     let channel: any;
+    let mounted = true;
 
     const setupRealtime = () => {
+      // Check if already subscribed
+      const subscriptionKey = `notifications_subscribed_${user.id}`;
+      if (sessionStorage.getItem(subscriptionKey)) {
+        console.log('Realtime already subscribed for user:', user.id);
+        return;
+      }
+
       channel = notificationService.subscribeToNotifications(user.id, (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        if (!notification.isRead) {
-          setUnreadCount(prev => prev + 1);
+        if (mounted) {
+          setNotifications(prev => {
+            // Check for duplicates
+            const exists = prev.some(n => n.id === notification.id);
+            if (exists) return prev;
+            return [notification, ...prev];
+          });
+          if (!notification.isRead) {
+            setUnreadCount(prev => prev + 1);
+          }
         }
       });
+      
+      sessionStorage.setItem(subscriptionKey, 'true');
     };
 
     setupRealtime();
     loadNotifications();
 
     return () => {
+      mounted = false;
       if (channel) {
         channel.unsubscribe();
+        sessionStorage.removeItem(`notifications_subscribed_${user.id}`);
       }
     };
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id
 
   return {
     notifications,

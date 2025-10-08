@@ -43,12 +43,18 @@ export function useNotificationPanel() {
     }
   }, [user]);
   
-  // Initialize notifications for user
+  // Initialize notifications for user (only once per session)
   useEffect(() => {
     if (user && roleTarget) {
-      initializeHolidayNotifications(user.id, roleTarget);
+      const key = `holiday_notifications_initialized_${user.id}`;
+      const initialized = sessionStorage.getItem(key);
+      
+      if (!initialized) {
+        initializeHolidayNotifications(user.id, roleTarget);
+        sessionStorage.setItem(key, 'true');
+      }
     }
-  }, [user, roleTarget]);
+  }, [user?.id, roleTarget]); // Only depend on user.id, not full user object
   
   // Load notifications from store
   const loadNotifications = async () => {
@@ -67,16 +73,23 @@ export function useNotificationPanel() {
     setLoading(false);
   };
   
-  // Subscribe to store changes
+  // Subscribe to store changes (only once)
   useEffect(() => {
+    if (!roleTarget) return;
+    
     loadNotifications();
     
     const unsubscribe = notificationStore.subscribe(() => {
-      loadNotifications();
+      // Debounce rapid changes
+      const timeoutId = setTimeout(() => {
+        loadNotifications();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     });
     
     return unsubscribe;
-  }, [roleTarget]);
+  }, [roleTarget]); // Only depend on roleTarget
   
   // Categorize notifications into tabs
   const categorizedNotifications = useMemo(() => {

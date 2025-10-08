@@ -197,7 +197,7 @@ export const useEnhancedNotifications = (roleTarget?: RoleTarget) => {
     }
   };
 
-  // Update notifications
+  // Update notifications with ref to prevent infinite loops
   const updateNotifications = useCallback(() => {
     if (!user || (roleTarget && user.role.toUpperCase() !== roleTarget)) return;
 
@@ -215,10 +215,36 @@ export const useEnhancedNotifications = (roleTarget?: RoleTarget) => {
         const priority = getNotificationPriority(notification);
         
         // Play sound
-        playNotificationSound(priority);
+        if (preferences.soundEnabled && soundsRef.current) {
+          const sound = soundsRef.current[priority];
+          sound.play();
+        }
         
         // Show browser notification
-        showBrowserNotification(notification);
+        if (preferences.pushEnabled && Notification.permission === 'granted') {
+          try {
+            const browserNotification = new Notification(notification.title, {
+              body: notification.message,
+              icon: '/favicon.ico',
+              badge: '/favicon.ico',
+              tag: notification.id,
+              requireInteraction: notification.type === 'RESET_REQUESTED'
+            });
+
+            browserNotification.onclick = () => {
+              window.focus();
+              notificationStore.markRead(notification.id);
+              if (notification.link && window.location.pathname !== notification.link) {
+                window.location.href = notification.link;
+              }
+              browserNotification.close();
+            };
+
+            setTimeout(() => browserNotification.close(), 8000);
+          } catch (error) {
+            console.warn('Failed to show browser notification:', error);
+          }
+        }
         
         // Show toast for very recent notifications
         const isVeryRecent = Date.now() - new Date(notification.createdAt).getTime() < 5000;
@@ -235,7 +261,7 @@ export const useEnhancedNotifications = (roleTarget?: RoleTarget) => {
     lastNotificationCount.current = newCount;
     setNotifications(latest);
     setLastCheck(new Date());
-  }, [user, roleTarget, playNotificationSound, showBrowserNotification, toast]);
+  }, [user, roleTarget, preferences.soundEnabled, preferences.pushEnabled, toast]);
 
   // Auto-refresh notifications
   useEffect(() => {
@@ -272,11 +298,19 @@ export const useEnhancedNotifications = (roleTarget?: RoleTarget) => {
     };
   }, [updateNotifications]);
 
-  // Subscribe to notification store changes
+  // Subscribe to notification store changes (only once)
   useEffect(() => {
-    const unsubscribe = notificationStore.subscribe(updateNotifications);
+    if (!user) return;
+    
+    const handleStoreChange = () => {
+      // Use a ref to prevent calling updateNotifications if already scheduled
+      if (intervalRef.current) return; // Skip if auto-refresh is active
+      updateNotifications();
+    };
+    
+    const unsubscribe = notificationStore.subscribe(handleStoreChange);
     return unsubscribe;
-  }, [updateNotifications]);
+  }, [user]); // Only depend on user
 
   // Manual refresh
   const refresh = useCallback(() => {
