@@ -272,9 +272,54 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       ...updates,
       student: {
         ...prev.student,
-        ...updates.student
+        ...updates.student,
+        // Preserva corretamente o endereço aninhado
+        address: updates.student?.address 
+          ? { ...prev.student?.address, ...updates.student.address }
+          : prev.student?.address
       }
     }));
+  };
+
+  // Função para buscar endereço pelo CEP usando ViaCEP
+  const fetchAddressByCep = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    
+    if (cleanCep.length !== 8) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error('CEP não encontrado');
+        return;
+      }
+
+      // Atualiza os campos do endereço com os dados retornados
+      updateFormData({
+        student: {
+          address: {
+            ...formData.student?.address,
+            zip: cep,
+            street: data.logradouro || '',
+            district: data.bairro || '',
+            city: data.localidade || '',
+            state: data.uf || ''
+          }
+        }
+      });
+
+      toast.success('Endereço encontrado!');
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+      toast.error('Erro ao buscar CEP');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validateStep = (step: number): boolean => {
@@ -815,23 +860,50 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>CEP</Label>
-                  <Input
-                    value={formData.student?.address?.zip || ''}
-                    onChange={(e) => {
-                      const digits = onlyDigits(e.target.value);
-                      const formatted = digits.slice(0, 8).replace(/(\d{5})(\d{3})/, '$1-$2');
-                      updateFormData({ 
-                        student: { 
-                          address: { 
-                            ...formData.student?.address,
-                            zip: formatted 
-                          } 
+                  <div className="flex gap-2">
+                    <Input
+                      value={formData.student?.address?.zip || ''}
+                      onChange={(e) => {
+                        const digits = onlyDigits(e.target.value);
+                        const formatted = digits.slice(0, 8).replace(/(\d{5})(\d{3})/, '$1-$2');
+                        updateFormData({ 
+                          student: { 
+                            address: { 
+                              ...formData.student?.address,
+                              zip: formatted 
+                            } 
+                          }
+                        });
+                      }}
+                      onBlur={(e) => {
+                        const digits = onlyDigits(e.target.value);
+                        if (digits.length === 8) {
+                          fetchAddressByCep(e.target.value);
                         }
-                      });
-                    }}
-                    placeholder="00000-000"
-                    maxLength={9}
-                  />
+                      }}
+                      placeholder="00000-000"
+                      maxLength={9}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const cep = formData.student?.address?.zip;
+                        if (cep) {
+                          fetchAddressByCep(cep);
+                        } else {
+                          toast.error('Digite um CEP válido');
+                        }
+                      }}
+                      title="Buscar endereço pelo CEP"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Digite o CEP e pressione Tab ou clique no botão para buscar automaticamente
+                  </p>
                 </div>
 
                 <div className="space-y-2">
