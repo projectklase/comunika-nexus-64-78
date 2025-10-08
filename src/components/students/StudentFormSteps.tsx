@@ -114,71 +114,100 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       if (student) {
         // Carrega dados do aluno para edição
         const loadStudentData = async () => {
-          // Busca guardians
-          const { data: guardiansData } = await supabase
-            .from('guardians')
-            .select('*')
-            .eq('student_id', student.id);
+          setLoading(true);
+          try {
+            // Busca guardians
+            const { data: guardiansData } = await supabase
+              .from('guardians')
+              .select('*')
+              .eq('student_id', student.id);
 
-          // Busca turmas
-          const { data: classStudents } = await supabase
-            .from('class_students')
-            .select('class_id')
-            .eq('student_id', student.id);
+            // Busca turmas
+            const { data: classStudents } = await supabase
+              .from('class_students')
+              .select('class_id')
+              .eq('student_id', student.id);
 
-          const classIds = classStudents?.map(cs => cs.class_id) || [];
+            // Busca o perfil completo do aluno
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', student.id)
+              .single();
 
-          // Mapeia guardians
-          const guardians = guardiansData?.map(g => ({
-            id: g.id || crypto.randomUUID(),
-            name: g.name || '',
-            relation: g.relation as any || 'RESPONSAVEL',
-            phone: g.phone || '',
-            email: g.email || '',
-            isPrimary: g.is_primary || false
-          })) || [];
+            const classIds = classStudents?.map(cs => cs.class_id) || [];
 
-          setFormData({
-            name: student.name || '',
-            email: student.email || '',
-            role: student.role || 'ALUNO',
-            student: {
-              dob: student.student?.dob,
-              phones: student.student?.phones?.length ? student.student.phones : [''],
-              email: student.email || '',
-              document: student.student?.document || '',
-              address: {
-                street: student.student?.address?.street || '',
-                number: student.student?.address?.number || '',
-                district: student.student?.address?.district || '',
-                city: student.student?.address?.city || '',
-                state: student.student?.address?.state || '',
-                zip: student.student?.address?.zip || ''
-              },
-              guardians: guardians.length > 0 ? guardians : [{
-                id: crypto.randomUUID(),
-                name: '',
-                relation: 'MAE' as const,
-                phone: '',
-                email: '',
-                isPrimary: true
-              }],
-              enrollmentNumber: student.student?.enrollmentNumber || '',
-              programId: student.student?.programId,
-              levelId: student.student?.levelId,
-              classIds,
-              healthNotes: student.student?.healthNotes || '',
-              consents: {
-                image: student.student?.consents?.image || false,
-                fieldTrip: student.student?.consents?.fieldTrip || false,
-                whatsapp: student.student?.consents?.whatsapp || false
+            // Mapeia guardians
+            const guardians = guardiansData?.map(g => ({
+              id: g.id || crypto.randomUUID(),
+              name: g.name || '',
+              relation: g.relation as any || 'RESPONSAVEL',
+              phone: g.phone || '',
+              email: g.email || '',
+              isPrimary: g.is_primary || false
+            })) || [];
+
+            // Extrai informações do student_notes (JSON)
+            let studentData: any = {};
+            try {
+              if (profileData?.student_notes) {
+                studentData = typeof profileData.student_notes === 'string' 
+                  ? JSON.parse(profileData.student_notes)
+                  : profileData.student_notes;
               }
+            } catch (e) {
+              console.error('Erro ao parsear student_notes:', e);
             }
-          });
 
-          // Inicializa dobInput com a data formatada se existir
-          if (student.student?.dob) {
-            setDobInput(format(new Date(student.student.dob), "dd/MM/yyyy"));
+            // Preenche o formulário com TODOS os dados
+            setFormData({
+              name: student.name || '',
+              email: student.email || '',
+              role: student.role || 'ALUNO',
+              student: {
+                dob: profileData?.dob || student.student?.dob,
+                phones: (profileData?.phone ? [profileData.phone] : student.student?.phones) || [''],
+                email: student.email || '',
+                document: studentData.document || student.student?.document || '',
+                address: {
+                  street: studentData.address?.street || student.student?.address?.street || '',
+                  number: studentData.address?.number || student.student?.address?.number || '',
+                  district: studentData.address?.district || student.student?.address?.district || '',
+                  city: studentData.address?.city || student.student?.address?.city || '',
+                  state: studentData.address?.state || student.student?.address?.state || '',
+                  zip: studentData.address?.zip || student.student?.address?.zip || ''
+                },
+                guardians: guardians.length > 0 ? guardians : [{
+                  id: crypto.randomUUID(),
+                  name: '',
+                  relation: 'MAE' as const,
+                  phone: '',
+                  email: '',
+                  isPrimary: true
+                }],
+                enrollmentNumber: profileData?.enrollment_number || student.student?.enrollmentNumber || '',
+                programId: studentData.programId || student.student?.programId,
+                levelId: studentData.levelId || student.student?.levelId,
+                classIds,
+                healthNotes: studentData.healthNotes || student.student?.healthNotes || '',
+                consents: {
+                  image: studentData.consents?.image || student.student?.consents?.image || false,
+                  fieldTrip: studentData.consents?.fieldTrip || student.student?.consents?.fieldTrip || false,
+                  whatsapp: studentData.consents?.whatsapp || student.student?.consents?.whatsapp || false
+                }
+              }
+            });
+
+            // Inicializa dobInput com a data formatada se existir
+            const dob = profileData?.dob || student.student?.dob;
+            if (dob) {
+              setDobInput(format(new Date(dob), "dd/MM/yyyy"));
+            }
+          } catch (error) {
+            console.error('Erro ao carregar dados do aluno:', error);
+            toast.error('Erro ao carregar dados do aluno');
+          } finally {
+            setLoading(false);
           }
         };
 
@@ -192,34 +221,34 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             dob: undefined,
             phones: [''],
             email: '',
-          address: {
-            street: '',
-            number: '',
-            district: '',
-            city: '',
-            state: '',
-            zip: ''
-          },
-          guardians: [{
-            id: crypto.randomUUID(),
-            name: '',
-            relation: 'MAE' as const,
-            phone: '',
-            email: '',
-            isPrimary: true
-          }],
-          enrollmentNumber: '',
-          programId: undefined,
-          levelId: undefined,
-          classIds: [],
-          healthNotes: '',
-          consents: {
-            image: false,
-            fieldTrip: false,
-            whatsapp: false
+            address: {
+              street: '',
+              number: '',
+              district: '',
+              city: '',
+              state: '',
+              zip: ''
+            },
+            guardians: [{
+              id: crypto.randomUUID(),
+              name: '',
+              relation: 'MAE' as const,
+              phone: '',
+              email: '',
+              isPrimary: true
+            }],
+            enrollmentNumber: '',
+            programId: undefined,
+            levelId: undefined,
+            classIds: [],
+            healthNotes: '',
+            consents: {
+              image: false,
+              fieldTrip: false,
+              whatsapp: false
+            }
           }
-        }
-      });
+        });
       }
       setCurrentStep(1);
       setErrors({});
@@ -253,6 +282,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
     switch (step) {
       case 1: // Dados Pessoais
+        // Nome obrigatório
         if (!formData.name?.trim()) {
           newErrors.name = 'Nome é obrigatório';
         } else {
@@ -262,7 +292,10 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           }
         }
 
-        if (formData.student?.dob) {
+        // Data de nascimento obrigatória
+        if (!formData.student?.dob) {
+          newErrors.dob = 'Data de nascimento é obrigatória';
+        } else {
           const birthDate = new Date(formData.student.dob);
           const today = new Date();
           const age = today.getFullYear() - birthDate.getFullYear();
@@ -273,18 +306,33 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         break;
 
       case 2: // Contato & Endereço
-        if (formData.student?.email) {
+        // Email obrigatório
+        if (!formData.student?.email) {
+          newErrors.studentEmail = 'Email é obrigatório para criar login';
+        } else {
           const emailValidation = validateEmail(formData.student.email);
           if (emailValidation) {
             newErrors.email = emailValidation;
           }
         }
 
+        // Valida telefones se preenchidos
         formData.student?.phones?.forEach((phone, index) => {
           if (phone && validatePhone(phone)) {
             newErrors[`phone${index}`] = validatePhone(phone) || 'Telefone inválido';
           }
         });
+
+        // Pelo menos um telefone obrigatório (do aluno ou do responsável se menor)
+        const isMinor = formData.student?.dob ? 
+          (new Date().getFullYear() - new Date(formData.student.dob).getFullYear()) < 18 : 
+          true;
+        
+        const hasStudentPhone = formData.student?.phones?.some(p => p.trim().length > 0);
+        
+        if (!hasStudentPhone && !isMinor) {
+          newErrors.phones = 'Pelo menos um telefone é obrigatório';
+        }
 
         if (formData.student?.address?.zip) {
           const zipValidation = validateZipCode(formData.student.address.zip);
@@ -295,21 +343,40 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         break;
 
       case 3: // Acadêmico
+        // Email já validado no step 2
         if (!formData.student?.email) {
           newErrors.studentEmail = 'Email é obrigatório para criar login';
         }
         break;
 
       case 4: // Responsável
-        const isMinor = formData.student?.dob ? 
+        const studentIsMinor = formData.student?.dob ? 
           (new Date().getFullYear() - new Date(formData.student.dob).getFullYear()) < 18 : 
           true;
 
-        if (isMinor) {
-          if (!formData.student?.guardians?.length || 
-              !formData.student.guardians.some(g => g.name.trim())) {
-            newErrors.guardians = 'Ao menos um responsável é obrigatório para menores';
+        if (studentIsMinor) {
+          // Menor de idade: pelo menos um responsável com nome E telefone obrigatório
+          const hasValidGuardian = formData.student?.guardians?.some(g => 
+            g.name.trim() && g.phone.trim()
+          );
+          
+          if (!hasValidGuardian) {
+            newErrors.guardians = 'Ao menos um responsável com nome e telefone é obrigatório para menores';
           }
+
+          // Valida telefones dos responsáveis
+          formData.student?.guardians?.forEach((guardian, index) => {
+            if (guardian.phone && validatePhone(guardian.phone)) {
+              newErrors[`guardian_phone${index}`] = 'Telefone do responsável inválido';
+            }
+          });
+
+          // Valida emails dos responsáveis se preenchidos
+          formData.student?.guardians?.forEach((guardian, index) => {
+            if (guardian.email && validateEmail(guardian.email)) {
+              newErrors[`guardian_email${index}`] = 'Email do responsável inválido';
+            }
+          });
         }
         break;
     }
@@ -532,7 +599,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dob">Data de Nascimento</Label>
+              <Label htmlFor="dob">Data de Nascimento *</Label>
               <Input
                 id="dob"
                 value={dobInput}
@@ -589,7 +656,14 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 className={errors.dob ? 'border-destructive' : ''}
               />
               {formData.student?.dob && isStudentMinor && (
-                <Badge variant="secondary">Menor de idade</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Menor de idade - Telefone do responsável será obrigatório
+                </Badge>
+              )}
+              {formData.student?.dob && !isStudentMinor && (
+                <Badge variant="outline" className="text-xs">
+                  Maior de idade
+                </Badge>
               )}
               {errors.dob && (
                 <p className="text-sm text-destructive">{errors.dob}</p>
@@ -623,7 +697,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           <div className="space-y-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Telefones</Label>
+                <Label>
+                  Telefones {!isStudentMinor && '*'}
+                </Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -641,6 +717,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 </Button>
               </div>
 
+              {isStudentMinor && (
+                <p className="text-xs text-muted-foreground">
+                  Para menores de idade, o telefone do aluno é opcional. Você pode adicionar apenas o telefone do responsável na próxima etapa.
+                </p>
+              )}
+
               {(formData.student?.phones || ['']).map((phone, index) => (
                 <div key={index} className="flex gap-2">
                   <InputPhone
@@ -649,6 +731,14 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                       const phones = [...(formData.student?.phones || [''])];
                       phones[index] = value;
                       updateFormData({ student: { phones } });
+                      
+                      // Limpa erro de telefone se preencher
+                      if (errors.phones && value.trim()) {
+                        setErrors(prev => {
+                          const { phones, ...rest } = prev;
+                          return rest;
+                        });
+                      }
                     }}
                     placeholder="(00) 00000-0000"
                   />
@@ -668,6 +758,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   )}
                 </div>
               ))}
+              {errors.phones && (
+                <p className="text-sm text-destructive">{errors.phones}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -898,7 +991,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Responsáveis *</Label>
+              <Label>
+                Responsáveis {isStudentMinor && '*'}
+              </Label>
               <Button
                 type="button"
                 variant="outline"
@@ -910,6 +1005,18 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 Adicionar Responsável
               </Button>
             </div>
+            
+            {isStudentMinor && (
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>Atenção:</strong> Para alunos menores de idade, é obrigatório cadastrar ao menos um responsável com nome e telefone.
+                </p>
+              </div>
+            )}
+            
+            {errors.guardians && (
+              <p className="text-sm text-destructive">{errors.guardians}</p>
+            )}
 
             {formData.student?.guardians?.map((guardian, index) => (
               <div key={guardian.id} className="border rounded-lg p-4 space-y-3">
@@ -929,18 +1036,27 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Nome *</Label>
+                    <Label>Nome {isStudentMinor && '*'}</Label>
                     <Input
                       value={guardian.name}
-                      onChange={(e) => updateGuardian(index, { name: sanitizeString(e.target.value, 100) })}
+                      onChange={(e) => {
+                        updateGuardian(index, { name: sanitizeString(e.target.value, 100) });
+                        
+                        // Limpa erro se preencher
+                        if (errors.guardians && e.target.value.trim()) {
+                          setErrors(prev => {
+                            const { guardians, ...rest } = prev;
+                            return rest;
+                          });
+                        }
+                      }}
                       placeholder="Nome completo"
-                      required
                       maxLength={100}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Parentesco *</Label>
+                    <Label>Parentesco {isStudentMinor && '*'}</Label>
                     <Select
                       value={guardian.relation}
                       onValueChange={(value) => updateGuardian(index, { relation: value as any })}
@@ -959,11 +1075,22 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Telefone</Label>
+                    <Label>Telefone {isStudentMinor && '*'}</Label>
                     <InputPhone
                       value={guardian.phone}
-                      onChange={(value) => updateGuardian(index, { phone: value })}
+                      onChange={(value) => {
+                        updateGuardian(index, { phone: value });
+                        
+                        // Limpa erro se preencher
+                        if (errors.guardians && value.trim()) {
+                          setErrors(prev => {
+                            const { guardians, ...rest } = prev;
+                            return rest;
+                          });
+                        }
+                      }}
                       placeholder="(00) 00000-0000"
+                      error={errors[`guardian_phone${index}`]}
                     />
                   </div>
 
@@ -975,7 +1102,11 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                       onChange={(e) => updateGuardian(index, { email: sanitizeString(e.target.value.toLowerCase(), 255) })}
                       placeholder="email@exemplo.com"
                       maxLength={255}
+                      className={errors[`guardian_email${index}`] ? 'border-destructive' : ''}
                     />
+                    {errors[`guardian_email${index}`] && (
+                      <p className="text-xs text-destructive">{errors[`guardian_email${index}`]}</p>
+                    )}
                   </div>
 
                   <div className="col-span-2 flex items-center space-x-2">
