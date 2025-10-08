@@ -132,54 +132,90 @@ export function useNotificationPanel() {
     };
   }, [categorizedNotifications]);
   
-  // Actions
-  const markAsRead = (notificationId: string) => {
-    notificationStore.markRead(notificationId);
+  const markAsRead = async (notificationId: string) => {
+    try {
+      await notificationStore.markRead(notificationId);
+      await loadNotifications();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
   
-  const markAllAsRead = (tab?: NotificationTab) => {
-    if (!roleTarget) return;
+  const markAllAsRead = async (tab?: NotificationTab) => {
+    if (!roleTarget || !user) return;
     
-    if (tab) {
-      // Mark specific tab as read
-      const tabNotifications = categorizedNotifications[tab];
-      tabNotifications.forEach(notification => {
-        if (notification.status === 'UNREAD') {
-          notificationStore.markRead(notification.id);
-        }
-      });
+    try {
+      if (tab) {
+        // Mark specific tab as read
+        const tabNotifications = categorizedNotifications[tab];
+        await Promise.all(
+          tabNotifications
+            .filter(n => n.status === 'UNREAD')
+            .map(n => notificationStore.markRead(n.id))
+        );
+        
+        toast({
+          title: 'Marcadas como lidas',
+          description: `Todas as notificações de ${tab === 'importantes' ? 'Importantes' : 'Novidades'} foram marcadas como lidas.`
+        });
+      } else {
+        // Mark all as read using the async store method
+        await notificationStore.markAllRead(roleTarget);
+        
+        toast({
+          title: 'Todas marcadas como lidas',
+          description: `${unreadCounts.total} notificações foram marcadas como lidas.`
+        });
+      }
       
+      // Refresh notifications
+      await loadNotifications();
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
       toast({
-        title: 'Marcadas como lidas',
-        description: `Todas as notificações de ${tab === 'importantes' ? 'Importantes' : 'Novidades'} foram marcadas como lidas.`
-      });
-    } else {
-      // Mark all as read
-      notificationStore.markAllRead(roleTarget);
-      
-      toast({
-        title: 'Todas marcadas como lidas',
-        description: `${unreadCounts.total} notificações foram marcadas como lidas.`
+        title: 'Erro',
+        description: 'Não foi possível marcar as notificações como lidas.',
+        variant: 'destructive'
       });
     }
   };
   
-  const archiveNotification = (notificationId: string) => {
-    notificationStore.archive(notificationId);
-    
-    toast({
-      title: 'Notificação arquivada',
-      description: 'A notificação foi movida para o arquivo.'
-    });
+  const archiveNotification = async (notificationId: string) => {
+    try {
+      await notificationStore.archive(notificationId);
+      await loadNotifications();
+      
+      toast({
+        title: 'Notificação arquivada',
+        description: 'A notificação foi movida para o arquivo.'
+      });
+    } catch (error) {
+      console.error('Error archiving notification:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível arquivar a notificação.',
+        variant: 'destructive'
+      });
+    }
   };
   
-  const deleteNotification = (notificationId: string) => {
-    notificationStore.delete(notificationId);
-    
-    toast({
-      title: 'Notificação removida',
-      description: 'A notificação foi removida permanentemente.'
-    });
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      await notificationStore.delete(notificationId);
+      await loadNotifications();
+      
+      toast({
+        title: 'Notificação removida',
+        description: 'A notificação foi removida permanentemente.'
+      });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover a notificação.',
+        variant: 'destructive'
+      });
+    }
   };
   
   const hideNotification = (notificationId: string) => {

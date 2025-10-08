@@ -75,7 +75,7 @@ export function NotificationPanel() {
   
   // Handle notification actions
   const handleOpen = async (notification: Notification) => {
-    markAsRead(notification.id);
+    await markAsRead(notification.id);
     
     // Record post view if this is a post notification
     if (notification.meta?.postId && user) {
@@ -101,7 +101,7 @@ export function NotificationPanel() {
   };
   
   const handleViewInCalendar = async (notification: Notification) => {
-    markAsRead(notification.id);
+    await markAsRead(notification.id);
     
     // Record post view if this is a post notification
     if (notification.meta?.postId && user) {
@@ -465,7 +465,7 @@ export function NotificationPanel() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => markAllAsRead()}
+              onClick={async () => await markAllAsRead()}
               className="text-xs h-7 px-3 bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
             >
               <CheckCheck className="w-3 h-3 mr-1.5" />
