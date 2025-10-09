@@ -230,9 +230,9 @@ export function useNotificationPanel() {
     }
   };
   
-  const hideNotification = (notificationId: string) => {
-    // Hide is the same as archive in our system
-    archiveNotification(notificationId);
+  const hideNotification = async (notificationId: string) => {
+    // Hide permanently removes the notification
+    await deleteNotification(notificationId);
   };
   
   return {

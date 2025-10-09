@@ -39,12 +39,19 @@ interface PeopleStore {
 }
 
 // Helper to map Supabase row to Person
-const dbRowToPerson = async (row: any): Promise<Person> => {
+const dbRowToPerson = async (row: any, role?: 'aluno' | 'professor'): Promise<Person> => {
+  // Determine role - either passed explicitly or from row
+  const personRole = role || row.role;
+  
+  if (!personRole || (personRole !== 'aluno' && personRole !== 'professor')) {
+    throw new Error(`Invalid role for person: ${personRole}`);
+  }
+  
   const person: Person = {
     id: row.id,
     name: row.name,
     email: row.email,
-    role: row.role === 'aluno' ? 'ALUNO' : row.role === 'professor' ? 'PROFESSOR' : row.role.toUpperCase(),
+    role: personRole === 'aluno' ? 'ALUNO' : 'PROFESSOR',
     isActive: row.is_active ?? true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -122,7 +129,7 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
       const people: Person[] = [];
       if (profiles) {
         for (const row of profiles) {
-          const person = await dbRowToPerson(row);
+          const person = await dbRowToPerson(row, 'aluno'); // Explicitly pass role
           people.push(person);
         }
       }

@@ -194,9 +194,10 @@ class NotificationStore {
   }
 
   async archive(id: string): Promise<void> {
+    // Archive means delete for now - we can add archived status later if needed
     const { error } = await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .delete()
       .eq('id', id);
 
     if (error) {
