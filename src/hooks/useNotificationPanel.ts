@@ -91,6 +91,48 @@ export function useNotificationPanel() {
     return unsubscribe;
   }, [roleTarget]); // Only depend on roleTarget
   
+  // Auto-cleanup: Delete read notifications older than 7 days (like Instagram/Facebook)
+  useEffect(() => {
+    if (!roleTarget || !user) return;
+    
+    const cleanupOldReadNotifications = async () => {
+      try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        // Get all read notifications older than 7 days
+        const allNotifications = await notificationStore.listAsync({
+          roleTarget,
+          userId: user.id
+        });
+        
+        const oldReadNotifications = allNotifications.filter(n => {
+          const isRead = n.status === 'READ';
+          const isOld = new Date(n.createdAt) < sevenDaysAgo;
+          return isRead && isOld;
+        });
+        
+        // Delete old read notifications
+        if (oldReadNotifications.length > 0) {
+          console.log(`[NotificationPanel] Auto-cleaning ${oldReadNotifications.length} old read notifications`);
+          await Promise.all(
+            oldReadNotifications.map(n => notificationStore.delete(n.id))
+          );
+        }
+      } catch (error) {
+        console.error('[NotificationPanel] Error cleaning old notifications:', error);
+      }
+    };
+    
+    // Run cleanup on mount
+    cleanupOldReadNotifications();
+    
+    // Run cleanup daily
+    const cleanupInterval = setInterval(cleanupOldReadNotifications, 24 * 60 * 60 * 1000);
+    
+    return () => clearInterval(cleanupInterval);
+  }, [roleTarget, user?.id]);
+  
   // Categorize notifications into tabs
   const categorizedNotifications = useMemo(() => {
     const importantes: Notification[] = [];
