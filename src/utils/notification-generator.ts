@@ -18,23 +18,22 @@ function generateNotificationKey(
 }
 
 /**
- * Check if notification already exists
+ * Check if notification already exists (async version)
  */
-function notificationExists(key: string): boolean {
-  const existing = notificationStore.list({});
-  return existing.some(n => n.meta?.notificationKey === key);
+async function notificationExistsAsync(key: string, userId: string): Promise<boolean> {
+  const existing = await notificationStore.listAsync({ userId });
+  return existing.some(n => n.meta?.notificationKey?.includes(key));
 }
 
 /**
  * Generate notifications for new/updated posts
  */
-export function generatePostNotifications(
+export async function generatePostNotifications(
   post: Post,
   action: 'created' | 'updated' | 'deadline_changed',
   oldPost?: Partial<Post>
-): void {
+): Promise<void> {
   const isImportant = post.meta?.important || false;
-  const today = new Date().toISOString().split('T')[0];
   
   // Determine scope for deduplication
   const scope = post.audience === 'CLASS' && post.classIds?.length 
@@ -43,12 +42,7 @@ export function generatePostNotifications(
     
   // Generate unique key
   const actionKey = action === 'deadline_changed' ? 'deadline' : action;
-  const key = generateNotificationKey('post', post.id, scope, actionKey);
-  
-  // Skip if notification already exists (prevents duplicates)
-  if (notificationExists(key)) {
-    return;
-  }
+  const baseKey = generateNotificationKey('post', post.id, scope, actionKey);
   
   // Determine target audiences
   const audiences: RoleTarget[] = [];
@@ -96,30 +90,93 @@ export function generatePostNotifications(
   
   const postTypeLabel = typeLabels[post.type] || 'post';
   
-  // Create notifications for each audience
-  audiences.forEach(roleTarget => {
-    const notification = {
-      type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
-      title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-      message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
-      roleTarget,
-      link: generatePostLink(post.id, post.classIds?.[0]),
-      meta: {
-        postId: post.id,
-        postType: post.type,
-        action,
-        scope,
-        important: isImportant,
-        notificationKey: key,
-        authorName: post.authorName,
-        classId: post.classIds?.[0],
-        dueDate: post.dueAt,
-        eventStartAt: post.eventStartAt
+  // Import supabase client
+  const { supabase } = await import('@/integrations/supabase/client');
+  
+  // Get specific users for each roleTarget
+  for (const roleTarget of audiences) {
+    try {
+      // Build query to get users
+      let query = supabase
+        .from('profiles')
+        .select('id')
+        .eq('is_active', true);
+      
+      // Filter by role
+      const roleMapping: Record<RoleTarget, string> = {
+        'ALUNO': 'aluno',
+        'PROFESSOR': 'professor',
+        'SECRETARIA': 'secretaria'
+      };
+      
+      // Get users with this role
+      const { data: userRoles, error: roleError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', roleMapping[roleTarget] as any);
+      
+      if (roleError) {
+        console.error('Error fetching user roles:', roleError);
+        continue;
       }
-    };
-    
-    notificationStore.add(notification);
-  });
+      
+      const userIds = userRoles?.map(r => r.user_id) || [];
+      
+      if (userIds.length === 0) continue;
+      
+      // For CLASS audience, further filter by class membership
+      let targetUserIds = userIds;
+      if (post.audience === 'CLASS' && post.classIds?.length && roleTarget === 'ALUNO') {
+        const { data: classStudents, error: classError } = await supabase
+          .from('class_students')
+          .select('student_id')
+          .in('class_id', post.classIds);
+        
+        if (!classError && classStudents) {
+          const classUserIds = classStudents.map(cs => cs.student_id);
+          targetUserIds = userIds.filter(id => classUserIds.includes(id));
+        }
+      }
+      
+      // Create notification for each user
+      const notificationPromises = targetUserIds.map(async userId => {
+        const notificationKey = `${baseKey}:${userId}`;
+        
+        // Check if notification already exists for this user
+        if (await notificationExistsAsync(baseKey, userId)) {
+          return;
+        }
+        
+        const notification = {
+          type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
+          title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
+          message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
+          roleTarget,
+          userId,
+          link: generatePostLink(post.id, post.classIds?.[0]),
+          meta: {
+            postId: post.id,
+            postType: post.type,
+            action,
+            scope,
+            important: isImportant,
+            notificationKey,
+            authorName: post.authorName,
+            classId: post.classIds?.[0],
+            dueDate: post.dueAt,
+            eventStartAt: post.eventStartAt
+          }
+        };
+        
+        return notificationStore.add(notification);
+      });
+      
+      await Promise.all(notificationPromises);
+      
+    } catch (error) {
+      console.error(`Error creating notifications for ${roleTarget}:`, error);
+    }
+  }
 }
 
 /**

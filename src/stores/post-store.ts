@@ -149,12 +149,10 @@ class PostStore {
     const post = this.dbRowToPost(data);
     this.notifySubscribers();
     
-    // Generate notifications
-    try {
-      generatePostNotifications(post, 'created');
-    } catch (error) {
+    // Generate notifications (async, don't block)
+    generatePostNotifications(post, 'created').catch(error => {
       console.error('Error generating notifications:', error);
-    }
+    });
     
     // Log audit event
     try {
@@ -243,6 +241,19 @@ class PostStore {
 
     const afterPost = this.dbRowToPost(data);
     this.notifySubscribers();
+    
+    // Generate notifications for updates (async, don't block)
+    const hasSignificantChange = 
+      currentPost.status !== afterPost.status ||
+      currentPost.dueAt !== afterPost.dueAt ||
+      currentPost.title !== afterPost.title;
+    
+    if (hasSignificantChange) {
+      const action = currentPost.dueAt !== afterPost.dueAt ? 'deadline_changed' : 'updated';
+      generatePostNotifications(afterPost, action, currentPost).catch(error => {
+        console.error('Error generating notifications:', error);
+      });
+    }
     
     // Log audit event
     try {
@@ -371,6 +382,14 @@ class PostStore {
 
       if (data && data.length > 0) {
         this.notifySubscribers();
+        
+        // Generate notifications for newly published scheduled posts
+        data.forEach(postData => {
+          const post = this.dbRowToPost(postData);
+          generatePostNotifications(post, 'created').catch(error => {
+            console.error('Error generating notifications for scheduled post:', error);
+          });
+        });
       }
     } catch (error) {
       console.error('Error processing scheduled posts:', error);

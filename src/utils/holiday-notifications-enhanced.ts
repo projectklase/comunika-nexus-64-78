@@ -43,6 +43,7 @@ export async function generateWeeklyHolidayNotifications(userId: string, userRol
       title: holidayNotification.title,
       message: holidayNotification.message,
       roleTarget: userRole,
+      userId, // Add userId explicitly
       link: holidayNotification.link,
       meta: {
         ...holidayNotification.meta,
