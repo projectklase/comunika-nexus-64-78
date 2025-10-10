@@ -145,28 +145,69 @@ class NotificationStore {
       return dbRowToNotification(await supabase.from('notifications').select('*').eq('id', existing[0].id).single().then(r => r.data!));
     }
     
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert({
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        role_target: notification.roleTarget,
-        user_id: userId,
-        link: notification.link || null,
-        meta: notification.meta || null,
-        is_read: false
-      })
-      .select()
-      .single();
+    // SECURITY: Use edge function to create notification securely
+    // Only secretaria can create notifications via edge function
+    try {
+      const { error: fnError } = await supabase.functions.invoke('create-notification', {
+        body: {
+          user_id: userId,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          link: notification.link || null,
+          role_target: notification.roleTarget,
+          meta: notification.meta || null,
+        }
+      });
 
-    if (error) {
-      console.error('[NotificationStore] Error adding notification:', error);
+      if (fnError) {
+        console.warn('[NotificationStore] Edge function failed, falling back to direct insert:', fnError);
+        // Fallback: direct insert (will fail if not secretaria due to RLS)
+        const { data, error } = await supabase
+          .from('notifications')
+          .insert({
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            role_target: notification.roleTarget,
+            user_id: userId,
+            link: notification.link || null,
+            meta: notification.meta || null,
+            is_read: false
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[NotificationStore] Error adding notification:', error);
+          throw error;
+        }
+
+        this.notifySubscribers();
+        return dbRowToNotification(data);
+      }
+
+      // Reload to get the created notification
+      const { data: created } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('type', notification.type)
+        .eq('title', notification.title)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (created) {
+        this.notifySubscribers();
+        return dbRowToNotification(created);
+      }
+
+      throw new Error('Failed to retrieve created notification');
+    } catch (error) {
+      console.error('[NotificationStore] Error in notification creation:', error);
       throw error;
     }
-
-    this.notifySubscribers();
-    return dbRowToNotification(data);
   }
 
   async markRead(id: string): Promise<void> {

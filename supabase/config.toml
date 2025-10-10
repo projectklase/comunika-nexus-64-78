@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.delete-user]
 verify_jwt = true
+
+[functions.log-audit-event]
+verify_jwt = true
+
+[functions.create-notification]
+verify_jwt = true
