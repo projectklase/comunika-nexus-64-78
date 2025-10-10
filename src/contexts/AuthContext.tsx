@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
       console.log(`Attempting login for: ${email}`);
@@ -187,21 +187,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Login error:', error.message, error);
         setIsLoading(false);
-        return false;
+        
+        // Mapear erros específicos para mensagens amigáveis
+        if (error.message.includes('Invalid login credentials')) {
+          return { success: false, error: 'Email ou senha incorretos.' };
+        }
+        if (error.message.includes('Email not confirmed')) {
+          return { success: false, error: 'Email não confirmado. Verifique sua caixa de entrada.' };
+        }
+        if (error.message.includes('Too many requests')) {
+          return { success: false, error: 'Muitas tentativas. Aguarde alguns minutos.' };
+        }
+        
+        return { success: false, error: 'Erro ao fazer login. Tente novamente.' };
       }
 
       if (data.user) {
         console.log('Login successful for:', data.user.email);
         // The auth state change listener will handle setting the user
-        return true;
+        return { success: true };
       }
 
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Erro desconhecido ao fazer login.' };
     } catch (error) {
       console.error('Login error:', error);
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Erro de conexão. Verifique sua internet.' };
     }
   };
 

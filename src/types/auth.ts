@@ -33,7 +33,7 @@ export interface User {
 
 export interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   updatePassword: (userId: string, newPasswordHash: string, mustChange?: boolean) => Promise<boolean>;

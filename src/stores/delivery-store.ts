@@ -221,10 +221,18 @@ class DeliveryStore {
     }
   }
 
-  // Listar entregas com filtros
-  async list(filter?: DeliveryFilter): Promise<Delivery[]> {
+  async list(filter?: DeliveryFilter, page?: number, pageSize?: number): Promise<Delivery[]> {
+    if (page === undefined) {
+      const result = await this.listPaginated(filter, 1, 999);
+      return result.deliveries;
+    }
+    const result = await this.listPaginated(filter, page, pageSize || 50);
+    return result.deliveries;
+  }
+
+  async listPaginated(filter?: DeliveryFilter, page = 1, pageSize = 50): Promise<{ deliveries: Delivery[]; total: number }> {
     try {
-      let query = supabase.from('deliveries').select('*');
+      let query = supabase.from('deliveries').select('*', { count: 'exact' });
 
       if (filter?.postId) {
         query = query.eq('post_id', filter.postId);
@@ -249,23 +257,27 @@ class DeliveryStore {
       // Ordenar por data de submissão (mais recente primeiro)
       query = query.order('submitted_at', { ascending: false });
 
-      const { data, error } = await query;
+      // Pagination
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize - 1;
+      query = query.range(start, end);
 
-      if (error) throw error;
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('[DeliveryStore] Error listing deliveries:', error);
+        throw new Error('Não foi possível carregar as entregas. Tente novamente.');
+      }
 
       const deliveries = data ? data.map(row => this.dbRowToDelivery(row)) : [];
 
-      // Filter by hasAttachments if specified (since attachments are in a separate table)
-      if (filter?.hasAttachments !== undefined) {
-        // TODO: Implement attachments filtering when delivery_attachments are integrated
-        console.warn('hasAttachments filter not yet implemented for Supabase');
-      }
-
-      console.log('Listing deliveries with filter:', filter, 'Total deliveries:', deliveries.length);
-      return deliveries;
+      return {
+        deliveries,
+        total: count || 0
+      };
     } catch (error) {
-      console.error('Error listing deliveries:', error);
-      return [];
+      console.error('[DeliveryStore] Error listing deliveries:', error);
+      throw error;
     }
   }
 

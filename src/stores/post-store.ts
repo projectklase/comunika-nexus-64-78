@@ -56,9 +56,19 @@ class PostStore {
     };
   }
 
-  async list(filter?: PostFilter): Promise<Post[]> {
+  async list(filter?: PostFilter, page?: number, pageSize?: number): Promise<Post[]> {
+    // Legacy support: if pagination params not provided, return all
+    if (page === undefined) {
+      const result = await this.listPaginated(filter, 1, 999);
+      return result.posts;
+    }
+    const result = await this.listPaginated(filter, page, pageSize || 20);
+    return result.posts;
+  }
+
+  async listPaginated(filter?: PostFilter, page = 1, pageSize = 20): Promise<{ posts: Post[]; total: number }> {
     try {
-      let query = supabase.from('posts').select('*');
+      let query = supabase.from('posts').select('*', { count: 'exact' });
 
       // Exclude SCHEDULED posts by default unless specifically filtering for them
       if (!filter?.status || filter.status !== 'SCHEDULED') {
@@ -93,17 +103,25 @@ class PostStore {
       // Sort by created_at descending
       query = query.order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+      // Pagination
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize - 1;
+      query = query.range(start, end);
+
+      const { data, error, count } = await query;
 
       if (error) {
-        console.error('Error loading posts:', error);
-        return [];
+        console.error('[PostStore] Error loading posts:', error);
+        throw new Error('Não foi possível carregar os posts. Tente novamente.');
       }
 
-      return data ? data.map(row => this.dbRowToPost(row)) : [];
+      return {
+        posts: data ? data.map(row => this.dbRowToPost(row)) : [],
+        total: count || 0
+      };
     } catch (error) {
-      console.error('Error loading posts:', error);
-      return [];
+      console.error('[PostStore] Error loading posts:', error);
+      throw error;
     }
   }
 
@@ -142,8 +160,14 @@ class PostStore {
       .single();
 
     if (error) {
-      console.error('Error creating post:', error);
-      throw new Error('Erro ao criar post');
+      console.error('[PostStore] Error creating post:', error);
+      if (error.code === '23505') {
+        throw new Error('Já existe um post com essas características.');
+      }
+      if (error.code === '42501') {
+        throw new Error('Você não tem permissão para criar posts.');
+      }
+      throw new Error('Não foi possível criar o post. Verifique os dados e tente novamente.');
     }
 
     const post = this.dbRowToPost(data);

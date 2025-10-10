@@ -295,6 +295,33 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          config: Json | null
+          description: string | null
+          enabled: boolean | null
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          config?: Json | null
+          description?: string | null
+          enabled?: boolean | null
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          config?: Json | null
+          description?: string | null
+          enabled?: boolean | null
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       guardians: {
         Row: {
           created_at: string | null
@@ -861,6 +888,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          level: string
+          message: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          level: string
+          message: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          level?: string
+          message?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -911,6 +971,10 @@ export type Database = {
       approve_redemption: {
         Args: { p_admin_id: string; p_redemption_id: string }
         Returns: undefined
+      }
+      cleanup_old_system_logs: {
+        Args: { days_to_keep?: number }
+        Returns: number
       }
       get_user_role: {
         Args: { _user_id: string }
