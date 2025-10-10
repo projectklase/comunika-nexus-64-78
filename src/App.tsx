@@ -48,7 +48,6 @@ import ProfessorCalendar from "./pages/ProfessorCalendar";
 import SecretariaCalendar from "./pages/SecretariaCalendar";
 import AlterarSenha from "./pages/Auth/AlterarSenha";
 import PasswordResetsPage from "./pages/Secretaria/PasswordResets/index";
-import NotificationsPage from "./pages/Secretaria/Notifications/index";
 import { PostFallback } from "./pages/PostFallback";
 import RewardsStore from "./pages/RewardsStore";
 import RewardsManagement from "./pages/Secretaria/RewardsManagement";
@@ -358,13 +357,6 @@ const App = () => (
               <ProtectedRoute allowedRoles={['secretaria']}>
                 <AppLayout>
                   <PasswordResetsPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/secretaria/notificacoes" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
-                <AppLayout>
-                  <NotificationsPage />
                 </AppLayout>
               </ProtectedRoute>
             } />

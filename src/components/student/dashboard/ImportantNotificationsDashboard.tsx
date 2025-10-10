@@ -35,7 +35,7 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
       title: post.title,
       message: '',
       roleTarget: 'ALUNO' as const,
-      status: 'UNREAD' as const,
+      isRead: false,
       createdAt: post.createdAt,
       userId: user?.id || 'system',
       meta: {

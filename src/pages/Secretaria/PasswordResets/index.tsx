@@ -36,14 +36,15 @@ export default function PasswordResetsPage() {
           
           // Mark related notification as read
           import('@/stores/notification-store').then(({ notificationStore }) => {
-            const notifications = notificationStore.list({
+            notificationStore.listAsync({
               roleTarget: 'SECRETARIA',
-              status: 'UNREAD'
+              isRead: false
+            }).then(notifications => {
+              const relatedNotification = notifications.find(n => n.meta?.requestId === focusParam);
+              if (relatedNotification) {
+                notificationStore.markRead(relatedNotification.id);
+              }
             });
-            const relatedNotification = notifications.find(n => n.meta?.requestId === focusParam);
-            if (relatedNotification) {
-              notificationStore.markRead(relatedNotification.id);
-            }
           });
         } else {
           // Show toast if request not found

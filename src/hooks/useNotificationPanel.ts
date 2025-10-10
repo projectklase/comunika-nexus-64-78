@@ -107,7 +107,7 @@ export function useNotificationPanel() {
         });
         
         const oldReadNotifications = allNotifications.filter(n => {
-          const isRead = n.status === 'READ';
+          const isRead = n.isRead;
           const isOld = new Date(n.createdAt) < sevenDaysAgo;
           return isRead && isOld;
         });
@@ -164,8 +164,8 @@ export function useNotificationPanel() {
   
   // Calculate unread counts
   const unreadCounts = useMemo(() => {
-    const importantesUnread = categorizedNotifications.importantes.filter(n => n.status === 'UNREAD').length;
-    const novidadesUnread = categorizedNotifications.novidades.filter(n => n.status === 'UNREAD').length;
+    const importantesUnread = categorizedNotifications.importantes.filter(n => !n.isRead).length;
+    const novidadesUnread = categorizedNotifications.novidades.filter(n => !n.isRead).length;
     
     return {
       importantes: importantesUnread,
@@ -201,7 +201,7 @@ export function useNotificationPanel() {
         
         await Promise.all(
           tabNotifications
-            .filter(n => n.status === 'UNREAD')
+            .filter(n => !n.isRead)
             .map(n => notificationStore.markRead(n.id))
         );
         

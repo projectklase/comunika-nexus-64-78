@@ -506,7 +506,6 @@ export type Database = {
           message: string
           meta: Json | null
           role_target: string | null
-          status: string
           title: string
           type: string
           updated_at: string
@@ -520,7 +519,6 @@ export type Database = {
           message: string
           meta?: Json | null
           role_target?: string | null
-          status?: string
           title: string
           type: string
           updated_at?: string
@@ -534,7 +532,6 @@ export type Database = {
           message?: string
           meta?: Json | null
           role_target?: string | null
-          status?: string
           title?: string
           type?: string
           updated_at?: string

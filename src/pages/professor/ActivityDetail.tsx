@@ -3,7 +3,6 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { deliveryService } from '@/services/delivery-service';
-import { notificationService } from '@/services/notification-service';
 import { useClassStore } from '@/stores/class-store';
 import { DeliveryTable } from '@/components/activities/DeliveryTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,17 +130,7 @@ export default function ActivityDetail() {
           reviewedBy: user.id
         });
         
-        if (delivery) {
-          // Notify student about the review
-          await notificationService.notifyDeliveryReviewed(delivery.studentId, {
-            activityTitle: activity.title,
-            activityId: activity.id,
-            classId: classId,
-            deliveryId: delivery.id,
-            reviewStatus: reviewStatus as 'APROVADA' | 'DEVOLVIDA',
-            reviewNote
-          });
-        }
+        // Note: Student notifications will be generated automatically by the delivery system
       } else {
         const deliveries = await deliveryService.reviewMultiple(deliveryIds, {
           reviewStatus,
@@ -149,17 +138,7 @@ export default function ActivityDetail() {
           reviewedBy: user.id
         });
         
-        // Notify each student
-        for (const delivery of deliveries) {
-          await notificationService.notifyDeliveryReviewed(delivery.studentId, {
-            activityTitle: activity.title,
-            activityId: activity.id,
-            classId: classId,
-            deliveryId: delivery.id,
-            reviewStatus: reviewStatus as 'APROVADA' | 'DEVOLVIDA',
-            reviewNote
-          });
-        }
+        // Note: Student notifications will be generated automatically by the delivery system
       }
 
       // Handle rewards for approved deliveries

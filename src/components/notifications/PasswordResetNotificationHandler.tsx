@@ -19,7 +19,7 @@ export function PasswordResetNotificationHandler() {
     const unsubscribe = notificationStore.subscribe(async () => {
       const newNotifications = await notificationStore.listAsync({
         roleTarget: 'SECRETARIA',
-        status: 'UNREAD',
+        isRead: false,
         limit: 1
       });
 

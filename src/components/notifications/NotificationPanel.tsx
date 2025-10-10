@@ -205,7 +205,7 @@ export function NotificationPanel() {
         "group relative p-4 rounded-lg border transition-all duration-300",
         "bg-gradient-glass backdrop-blur-sm border-border/30",
         isClickable && "cursor-pointer hover:bg-gradient-card hover:border-primary/30 hover:shadow-glow",
-        notification.status === 'UNREAD' && [
+        !notification.isRead && [
           "bg-gradient-to-r from-primary/5 via-primary/3 to-transparent",
           "border-primary/30 shadow-neon",
           "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-r",
@@ -227,7 +227,7 @@ export function NotificationPanel() {
             <div className="min-w-0 flex-1">
               <p className={cn(
                 "text-sm font-medium leading-tight",
-                notification.status === 'UNREAD' 
+                !notification.isRead
                   ? 'text-foreground font-semibold' 
                   : 'text-muted-foreground'
               )}>
@@ -238,7 +238,7 @@ export function NotificationPanel() {
               </p>
             </div>
             
-            {notification.status === 'UNREAD' && (
+            {!notification.isRead && (
               <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 animate-pulse shadow-neon" />
             )}
           </div>
@@ -312,7 +312,7 @@ export function NotificationPanel() {
                 </Button>
               )}
               
-              {notification.status === 'UNREAD' && (
+              {!notification.isRead && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -553,7 +553,7 @@ export function NotificationPanel() {
   };
   
   // Determine if we have important notifications  
-  const hasImportant = notifications.importantes.some(n => n.status === 'UNREAD');
+  const hasImportant = notifications.importantes.some(n => !n.isRead);
   
   // Aurora Bell Trigger
   const bellTrigger = (

@@ -247,5 +247,5 @@ export function cleanupOldNotifications(): void {
   
   // This is handled by the notification store's cleanup routine
   // Just trigger it manually if needed
-  notificationStore.clear('ARCHIVED');
+  notificationStore.clear(true); // true = only delete read notifications
 }

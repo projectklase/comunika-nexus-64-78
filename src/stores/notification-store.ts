@@ -14,7 +14,6 @@ export type NotificationType =
   | 'REDEMPTION_APPROVED'
   | 'REDEMPTION_REJECTED';
 
-export type NotificationStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
 export type RoleTarget = 'SECRETARIA' | 'PROFESSOR' | 'ALUNO';
 
 export interface Notification {
@@ -23,7 +22,7 @@ export interface Notification {
   title: string;
   message: string;
   roleTarget: RoleTarget;
-  status: NotificationStatus;
+  isRead: boolean;
   createdAt: string;
   link?: string;
   meta?: Record<string, any>;
@@ -31,7 +30,7 @@ export interface Notification {
 }
 
 interface NotificationFilters {
-  status?: NotificationStatus;
+  isRead?: boolean;
   search?: string;
   limit?: number;
   roleTarget?: RoleTarget;
@@ -47,7 +46,7 @@ function dbRowToNotification(row: any): Notification {
     title: row.title,
     message: row.message,
     roleTarget: row.role_target,
-    status: row.status,
+    isRead: row.is_read || false,
     createdAt: row.created_at,
     link: row.link,
     meta: row.meta,
@@ -96,8 +95,8 @@ class NotificationStore {
       if (filters.userId) {
         q = q.eq('user_id', filters.userId);
       }
-      if (filters.status) {
-        q = q.eq('is_read', filters.status === 'READ');
+      if (filters.isRead !== undefined) {
+        q = q.eq('is_read', filters.isRead);
       }
       if (filters.roleTarget) {
         q = q.eq('role_target', filters.roleTarget);
@@ -123,12 +122,28 @@ class NotificationStore {
     return (data || []).map(dbRowToNotification);
   }
 
-  async add(notification: Omit<Notification, 'id' | 'createdAt' | 'status' | 'userId'> & { roleTarget: RoleTarget; userId?: string }): Promise<Notification> {
-    // Try to infer userId from meta if not provided
-    const userId = notification.userId || 
-                   notification.meta?.studentId || 
-                   notification.meta?.userId || 
-                   '00000000-0000-0000-0000-000000000000'; // Fallback for system notifications
+  async add(notification: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId'> & { roleTarget: RoleTarget; userId?: string }): Promise<Notification> {
+    // CRITICAL: Validate userId - NEVER use fallback
+    const userId = notification.userId || notification.meta?.studentId || notification.meta?.userId;
+    
+    if (!userId || userId === '00000000-0000-0000-0000-000000000000') {
+      console.error('[NotificationStore] Cannot create notification without valid userId', notification);
+      throw new Error('userId is required for notifications');
+    }
+    
+    // Check for duplicates (within 5 seconds window)
+    const { data: existing } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('type', notification.type)
+      .eq('title', notification.title)
+      .gte('created_at', new Date(Date.now() - 5000).toISOString());
+    
+    if (existing && existing.length > 0) {
+      console.log('[NotificationStore] Duplicate notification prevented');
+      return dbRowToNotification(await supabase.from('notifications').select('*').eq('id', existing[0].id).single().then(r => r.data!));
+    }
     
     const { data, error } = await supabase
       .from('notifications')
@@ -140,14 +155,13 @@ class NotificationStore {
         user_id: userId,
         link: notification.link || null,
         meta: notification.meta || null,
-        status: 'UNREAD',
         is_read: false
-      } as any) // Type cast to avoid TypeScript issues with status column
+      })
       .select()
       .single();
 
     if (error) {
-      console.error('Error adding notification:', error);
+      console.error('[NotificationStore] Error adding notification:', error);
       throw error;
     }
 
@@ -222,11 +236,11 @@ class NotificationStore {
     this.notifySubscribers();
   }
 
-  async clear(status?: NotificationStatus): Promise<void> {
+  async clear(isRead?: boolean): Promise<void> {
     const deleteQuery = supabase.from('notifications').delete();
     
-    const { error } = await (status 
-      ? deleteQuery.eq('is_read', status === 'READ')
+    const { error } = await (isRead !== undefined
+      ? deleteQuery.eq('is_read', isRead)
       : deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000'));
 
     if (error) {
@@ -256,36 +270,33 @@ class NotificationStore {
     total: number;
     unread: number;
     read: number;
-    archived: number;
   } {
     // For backward compatibility, return zeros
     // Use getStatsAsync() for real data
     console.warn('notificationStore.getStats() is synchronous fallback. Use getStatsAsync() for real data.');
-    return { total: 0, unread: 0, read: 0, archived: 0 };
+    return { total: 0, unread: 0, read: 0 };
   }
 
   async getStatsAsync(roleTarget: RoleTarget): Promise<{
     total: number;
     unread: number;
     read: number;
-    archived: number;
   }> {
     const { data, error } = await supabase
       .from('notifications')
-      .select('status, is_read')
+      .select('is_read')
       .eq('role_target', roleTarget);
 
     if (error) {
       console.error('Error getting stats:', error);
-      return { total: 0, unread: 0, read: 0, archived: 0 };
+      return { total: 0, unread: 0, read: 0 };
     }
 
     const total = data?.length || 0;
-    const unread = data?.filter((n: any) => n.status === 'UNREAD' || !n.is_read).length || 0;
-    const read = data?.filter((n: any) => n.status === 'READ' || n.is_read).length || 0;
-    const archived = data?.filter((n: any) => n.status === 'ARCHIVED').length || 0;
+    const unread = data?.filter((n: any) => !n.is_read).length || 0;
+    const read = data?.filter((n: any) => n.is_read).length || 0;
 
-    return { total, unread, read, archived };
+    return { total, unread, read };
   }
 }
 

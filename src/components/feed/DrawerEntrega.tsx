@@ -17,7 +17,6 @@ import { Upload, FileX, AlertTriangle, Clock } from 'lucide-react';
 import { Post } from '@/types/post';
 import { DeliveryAttachment } from '@/types/delivery';
 import { deliveryService } from '@/services/delivery-service';
-import { notificationService } from '@/services/notification-service';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
@@ -163,20 +162,7 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
 
       console.log('Submission successful - deliveryId:', delivery.id, 'postId:', activity.id);
 
-      // Encontrar o professor responsável pela turma (temporário - usar dados reais)
-      // TODO: Implementar busca real do professor da turma
-      const teacherId = 'prof-temp-id'; // Por enquanto usar um ID temporário
-      
-      // Notificar o professor sobre a nova entrega
-      await notificationService.notifyDeliverySubmitted(teacherId, {
-        studentName: user.name,
-        activityTitle: activity.title,
-        activityId: activity.id,
-        classId: classId,
-        deliveryId: delivery.id
-      });
-
-      console.log('Teacher notification sent for delivery:', delivery.id);
+      // Note: Teacher notification will be generated automatically by the delivery system
 
       toast({
         title: isOverdue ? 'Entrega atrasada realizada' : 'Entrega realizada',
