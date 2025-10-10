@@ -5,6 +5,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW = 60000 // 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 30 // 30 notificações por minuto
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now()
+  const userLimit = rateLimitMap.get(userId)
+
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(userId, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW
+    })
+    return true
+  }
+
+  if (userLimit.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false
+  }
+
+  userLimit.count++
+  return true
+}
+
+// Limpar entradas expiradas periodicamente
+setInterval(() => {
+  const now = Date.now()
+  for (const [userId, limit] of rateLimitMap.entries()) {
+    if (now > limit.resetTime) {
+      rateLimitMap.delete(userId)
+    }
+  }
+}, 60000)
+
 interface NotificationRequest {
   user_id: string
   type: string
@@ -41,6 +76,15 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Token inválido' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Verificar rate limiting
+    if (!checkRateLimit(user.id)) {
+      console.warn(`[RateLimit] User ${user.id} exceeded rate limit for notifications`)
+      return new Response(
+        JSON.stringify({ error: 'Muitas requisições. Tente novamente em instantes.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
       )
     }
 
