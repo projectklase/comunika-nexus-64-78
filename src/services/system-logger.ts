@@ -14,10 +14,13 @@ class SystemLogger {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Convert context to JSON-compatible format
+      const jsonContext = context ? JSON.parse(JSON.stringify(context)) : {};
+      
       await supabase.from('system_logs').insert([{
         level,
         message,
-        context: context || {},
+        context: jsonContext,
         user_id: user?.id || context?.userId,
       }]);
     } catch (error) {
