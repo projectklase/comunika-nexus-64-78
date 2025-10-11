@@ -285,18 +285,9 @@ Deno.serve(async (req) => {
       // Não falhar completamente, mas avisar
     }
 
-    // Criar entrada na tabela user_roles
-    const { error: roleInsertError } = await supabaseAdmin
-      .from('user_roles')
-      .insert({
-        user_id: data.user.id,
-        role: role
-      })
-
-    if (roleInsertError) {
-      console.error('Error creating user role:', roleInsertError)
-      // Não falhar a operação por isso, pois o trigger deve ter criado
-    }
+    // CORREÇÃO 1: Removida inserção duplicada de role
+    // O trigger handle_new_user_role já cria a role automaticamente
+    console.log('User role will be created automatically by trigger handle_new_user_role')
 
     return new Response(
       JSON.stringify({ 

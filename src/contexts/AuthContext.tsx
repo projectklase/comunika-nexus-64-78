@@ -30,9 +30,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Helper function to get user profile from Supabase
-  const getUserProfile = async (userId: string): Promise<User | null> => {
+  // CORREÇÃO 2 e 5: Helper function com retry e validação completa
+  const getUserProfile = async (userId: string, retryCount = 0): Promise<User | null> => {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 500;
+
     try {
+      console.log(`[getUserProfile] Tentativa ${retryCount + 1}/${MAX_RETRIES + 1} para usuário ${userId}`);
+      
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -40,7 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('[getUserProfile] Erro ao buscar perfil:', error);
+        return null;
+      }
+
+      if (!profile) {
+        console.error('[getUserProfile] Perfil não encontrado');
         return null;
       }
 
@@ -51,11 +61,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', userId)
         .single();
 
-      if (roleError) {
-        console.error('Error fetching user role:', roleError);
+      if (roleError || !userRole) {
+        console.warn(`[getUserProfile] Role não encontrada (tentativa ${retryCount + 1}):`, roleError);
+        
+        // CORREÇÃO 2: Retry automático se role não for encontrada
+        if (retryCount < MAX_RETRIES) {
+          console.log(`[getUserProfile] Aguardando ${RETRY_DELAY}ms antes do retry...`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return getUserProfile(userId, retryCount + 1);
+        }
+        
+        console.error('[getUserProfile] Role não encontrada após todas as tentativas');
         return null; // Sem role = sem acesso
       }
 
+      // CORREÇÃO 5: Validar perfil completo
+      if (!profile.name || !profile.email || !userRole.role) {
+        console.error('[getUserProfile] Perfil incompleto:', { 
+          hasName: !!profile.name, 
+          hasEmail: !!profile.email, 
+          hasRole: !!userRole.role 
+        });
+        return null;
+      }
+
+      console.log(`[getUserProfile] ✅ Perfil completo encontrado para ${profile.email} com role ${userRole.role}`);
+      
       return {
         id: profile.id,
         name: profile.name,
@@ -69,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         mustChangePassword: profile.must_change_password,
       };
     } catch (error) {
-      console.error('Error in getUserProfile:', error);
+      console.error('[getUserProfile] Erro crítico:', error);
       return null;
     }
   };

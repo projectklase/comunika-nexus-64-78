@@ -129,6 +129,15 @@ export function useTeachers() {
 
       console.log('✅ [useTeachers] Professor criado com sucesso');
       
+      // CORREÇÃO 4: Melhor feedback para o usuário
+      toast.success(
+        'Professor criado com sucesso! Aguarde 5 segundos antes de fazer login.',
+        { duration: 5000 }
+      );
+      
+      // Aguardar 5 segundos para garantir que triggers foram executados
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
       await fetchTeachers();
       
       // Return data with password for display
