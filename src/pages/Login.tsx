@@ -34,6 +34,18 @@ const Login = () => {
   const isFormValid = email.includes('@') && password.length > 0;
   const isFormSubmitting = isSubmitting || isLoading;
 
+  // CORREÇÃO 2: Logs detalhados do estado do formulário
+  useEffect(() => {
+    console.log('[Login] Estado atual:', {
+      isLoading,
+      isSubmitting,
+      isFormSubmitting,
+      isFormValid,
+      email: email.substring(0, 3) + '***',
+      password: password ? '***' : '(vazio)'
+    });
+  }, [isLoading, isSubmitting, isFormSubmitting, isFormValid, email, password]);
+
   // Caps Lock detector
   // Load saved email on mount
   useEffect(() => {
@@ -462,16 +474,9 @@ const Login = () => {
                     loading={isFormSubmitting}
                     success={showSuccess}
                     error={showError}
-                    disabled={!isFormValid || isFormSubmitting}
+                    disabled={isFormSubmitting}
                     ariaLabel={isFormSubmitting ? "Fazendo login..." : "Fazer login no Comunika"}
                     className="w-full h-12"
-                    onClick={(e) => {
-                      // Ensure form submission only happens once
-                      if (isFormSubmitting) {
-                        e.preventDefault();
-                        return;
-                      }
-                    }}
                   >
                     {isFormSubmitting ? 'Entrando...' : 'Entrar'}
                   </HoloCTA>
@@ -499,10 +504,33 @@ const Login = () => {
                         }
                       }}
                     >
-                      Preciso redefinir minha senha
+                    Preciso redefinir minha senha
+                  </Button>
+                </div>
+
+                {/* CORREÇÃO 4: Botão de Debug Temporário (apenas DEV) */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 p-3 bg-muted/20 rounded-lg text-xs space-y-2 border border-border/30">
+                    <div className="font-medium text-foreground">🔧 Debug Info:</div>
+                    <div className="text-muted-foreground">isLoading: {isLoading ? '🔴 TRUE' : '🟢 FALSE'}</div>
+                    <div className="text-muted-foreground">isSubmitting: {isSubmitting ? '🔴 TRUE' : '🟢 FALSE'}</div>
+                    <div className="text-muted-foreground">isFormSubmitting: {isFormSubmitting ? '🔴 TRUE' : '🟢 FALSE'}</div>
+                    <div className="text-muted-foreground">isFormValid: {isFormValid ? '🟢 TRUE' : '🔴 FALSE'}</div>
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        console.log('[Debug] Forçando reset de estados');
+                        setIsSubmitting(false);
+                      }}
+                      className="mt-2 h-8 text-xs"
+                    >
+                      🔄 Reset Estado
                     </Button>
                   </div>
-                </form>
+                )}
+              </form>
 
                 {/* Registration Link */}
                 <div className="text-center pt-4">

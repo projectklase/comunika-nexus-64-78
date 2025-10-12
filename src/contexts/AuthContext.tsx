@@ -205,15 +205,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  // CORREÇÃO 1: Fallback para resetar isLoading se ficar travado
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('[AuthContext] ⚠️ isLoading travado em true após 3s, forçando reset');
+        setIsLoading(false);
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
+
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
-      console.log(`Attempting login for: ${email}`);
+      console.log(`[login] Attempting login for: ${email}`);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // CORREÇÃO 6: Criar timeout de 15s para prevenir travamento
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('LOGIN_TIMEOUT')), 15000);
       });
+      
+      // Race entre login e timeout
+      const result = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        timeoutPromise
+      ]);
+      
+      const { data, error } = result as any;
 
       if (error) {
         console.error('Login error:', error.message, error);
@@ -234,19 +254,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        console.log('Login successful for:', data.user.email);
-        // CORREÇÃO CRÍTICA: Setar isLoading = false antes de retornar
-        // Caso contrário, isLoading fica true para sempre e bloqueia futuros logins
+        console.log('[login] ✅ Login successful for:', data.user.email);
         setIsLoading(false);
-        // The auth state change listener will handle setting the user
         return { success: true };
       }
 
       setIsLoading(false);
       return { success: false, error: 'Erro desconhecido ao fazer login.' };
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch (error: any) {
+      console.error('[login] ❌ Login error:', error);
       setIsLoading(false);
+      
+      // CORREÇÃO 6: Tratar timeout especificamente
+      if (error.message === 'LOGIN_TIMEOUT') {
+        return { success: false, error: 'Tempo esgotado. Verifique sua conexão.' };
+      }
+      
       return { success: false, error: 'Erro de conexão. Verifique sua internet.' };
     }
   };
