@@ -134,9 +134,11 @@ const Login = () => {
     setIsSubmitting(true);
     
     try {
-      const success = await login(email.trim(), password);
+      const result = await login(email.trim(), password);
       
-      if (success) {
+      console.log('Login result:', result);
+      
+      if (result.success) {
         // Save email preference
         if (rememberEmail) {
           localStorage.setItem('comunika.loginSettings', JSON.stringify({
@@ -154,7 +156,7 @@ const Login = () => {
           description: "Bem-vindo ao Comunika.",
         });
       } else {
-        setFormError("Email ou senha incorretos.");
+        setFormError(result.error || "Email ou senha incorretos.");
         setShowError(true);
         
         // Focus first invalid field
@@ -173,6 +175,7 @@ const Login = () => {
         }, 1200);
       }
     } catch (error) {
+      console.error('Login error:', error);
       setFormError("Erro interno. Tente novamente.");
       setShowError(true);
       setTimeout(() => {
@@ -215,16 +218,18 @@ const Login = () => {
       }
       
       // Now attempt login
-      const success = await login(email, '123456');
+      const result = await login(email, '123456');
       
-      if (success) {
+      console.log(`QuickLogin result for ${role}:`, result);
+      
+      if (result.success) {
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Comunika.",
         });
       } else {
-        console.error(`Login failed for ${role} with email ${email}`);
-        setFormError(`Erro ao fazer login com conta de demonstração (${role}). Verifique se o usuário foi criado corretamente.`);
+        console.error(`Login failed for ${role}: ${result.error}`);
+        setFormError(result.error || `Erro ao fazer login com conta de demonstração (${role}).`);
         setIsSubmitting(false);
       }
     } catch (error) {
