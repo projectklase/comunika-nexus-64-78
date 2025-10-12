@@ -235,6 +235,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         console.log('Login successful for:', data.user.email);
+        // CORREÇÃO CRÍTICA: Setar isLoading = false antes de retornar
+        // Caso contrário, isLoading fica true para sempre e bloqueia futuros logins
+        setIsLoading(false);
         // The auth state change listener will handle setting the user
         return { success: true };
       }

@@ -123,9 +123,28 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('[handleSubmit] Iniciando submit...', {
+      isFormSubmitting,
+      isSubmitting,
+      isLoading,
+      isFormValid,
+      email: email.substring(0, 3) + '***'
+    });
+    
     // Prevent double submission
     if (isFormSubmitting || !isFormValid) {
-      console.warn('Form submission blocked - already submitting or invalid');
+      console.warn('[handleSubmit] ❌ Submit bloqueado!', {
+        isFormSubmitting,
+        isFormValid,
+        reason: !isFormValid ? 'Formulário inválido' : 'Já está enviando'
+      });
+      
+      // Feedback visual quando bloqueado
+      if (!isFormValid) {
+        setFormError('Por favor, preencha email e senha corretamente.');
+        setShowError(true);
+        setTimeout(() => setShowError(false), 1200);
+      }
       return;
     }
     
