@@ -89,10 +89,10 @@ const Login = () => {
         if (target && formRef.current?.contains(target)) {
           e.preventDefault();
           
-          // If it's an input field, try to submit the form
+          // If it's an input field, submit the form
           if (target.tagName === 'INPUT') {
             const form = formRef.current;
-            if (form && isFormValid) {
+            if (form) {
               form.requestSubmit();
             }
           }
@@ -103,7 +103,7 @@ const Login = () => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !isFormSubmitting) {
         e.preventDefault();
         const form = formRef.current;
-        if (form && isFormValid) {
+        if (form) {
           form.requestSubmit();
         }
       }
@@ -111,7 +111,7 @@ const Login = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isFormValid, isFormSubmitting]);
+  }, [isFormSubmitting]);
 
   // Role-based routing helper
   const getRoleBasedRoute = (role: UserRole): string => {
@@ -135,27 +135,32 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('[handleSubmit] Iniciando submit...', {
+    console.log('[handleSubmit] 🚀 Submit iniciado!', {
       isFormSubmitting,
       isSubmitting,
       isLoading,
-      isFormValid,
-      email: email.substring(0, 3) + '***'
+      email: email.substring(0, 3) + '***',
+      passwordLength: password.length
     });
     
     // Prevent double submission
-    if (isFormSubmitting || !isFormValid) {
-      console.warn('[handleSubmit] ❌ Submit bloqueado!', {
-        isFormSubmitting,
-        isFormValid,
-        reason: !isFormValid ? 'Formulário inválido' : 'Já está enviando'
-      });
+    if (isFormSubmitting) {
+      console.warn('[handleSubmit] ❌ Já está enviando, abortando...');
+      return;
+    }
+    
+    // Validação básica com feedback adequado
+    if (email.trim() === '' || password.trim() === '') {
+      console.log('[handleSubmit] ❌ Campos vazios detectados');
+      setFormError('Por favor, preencha email e senha.');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 1200);
       
-      // Feedback visual quando bloqueado
-      if (!isFormValid) {
-        setFormError('Por favor, preencha email e senha corretamente.');
-        setShowError(true);
-        setTimeout(() => setShowError(false), 1200);
+      // Focus no primeiro campo vazio
+      if (email.trim() === '') {
+        document.getElementById('email')?.focus();
+      } else {
+        document.getElementById('password')?.focus();
       }
       return;
     }
