@@ -65,8 +65,11 @@ const Login = () => {
 
   // Caps Lock detector
   useEffect(() => {
-    const detectCapsLock = (e: KeyboardEvent) => {
-      setIsCapsLockOn(e.getModifierState('CapsLock'));
+    const detectCapsLock = (e: Event) => {
+      // Verificar se é um KeyboardEvent e se getModifierState existe
+      if (e instanceof KeyboardEvent && typeof e.getModifierState === 'function') {
+        setIsCapsLockOn(e.getModifierState('CapsLock'));
+      }
     };
 
     document.addEventListener('keydown', detectCapsLock);
