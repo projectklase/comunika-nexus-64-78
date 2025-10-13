@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRewardsStore } from '@/stores/rewards-store';
-import { Coins, Users, Gift } from 'lucide-react';
+import { Coins, Users, Gift, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { notificationStore } from '@/stores/notification-store';
 import { generateRewardsHistoryLink } from '@/utils/deep-links';
+import { useStudents } from '@/hooks/useStudents';
+import { useClasses } from '@/hooks/useClasses';
 
 interface BonusEventModalProps {
   isOpen: boolean;
@@ -25,25 +28,38 @@ interface FormData {
   studentIds: string[];
 }
 
-// Mock students data - in a real app, this would come from a students store
-const mockStudents = [
-  { id: '1', name: 'Ana Silva', class: 'Turma A' },
-  { id: '2', name: 'João Santos', class: 'Turma A' },
-  { id: '3', name: 'Maria Costa', class: 'Turma B' },
-  { id: '4', name: 'Pedro Oliveira', class: 'Turma B' },
-  { id: '5', name: 'Julia Ferreira', class: 'Turma C' },
-  { id: '6', name: 'Carlos Lima', class: 'Turma C' },
-];
-
 export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { createBonusEvent } = useRewardsStore();
+  const { students, loading: loadingStudents } = useStudents();
+  const { classes, loading: loadingClasses } = useClasses();
   
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [filterClassId, setFilterClassId] = useState<string>('all');
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>();
+
+  // Filter students by class
+  const filteredStudents = useMemo(() => {
+    if (filterClassId === 'all') {
+      return students;
+    }
+    return students.filter(student => 
+      student.classes?.some(cls => cls.id === filterClassId)
+    );
+  }, [students, filterClassId]);
+
+  // Update selectAll state when filtered students change
+  useEffect(() => {
+    if (filteredStudents.length > 0) {
+      const allFilteredSelected = filteredStudents.every(s => selectedStudents.includes(s.id));
+      setSelectAll(allFilteredSelected);
+    } else {
+      setSelectAll(false);
+    }
+  }, [filteredStudents, selectedStudents]);
 
   const handleStudentToggle = (studentId: string) => {
     setSelectedStudents(prev => 
@@ -55,14 +71,20 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
 
   const handleSelectAll = () => {
     if (selectAll) {
-      setSelectedStudents([]);
+      // Deselect only filtered students
+      setSelectedStudents(prev => 
+        prev.filter(id => !filteredStudents.some(s => s.id === id))
+      );
     } else {
-      setSelectedStudents(mockStudents.map(s => s.id));
+      // Select all filtered students
+      setSelectedStudents(prev => {
+        const newIds = filteredStudents.map(s => s.id);
+        return [...new Set([...prev, ...newIds])];
+      });
     }
-    setSelectAll(!selectAll);
   };
 
-  const onSubmit = (data: Omit<FormData, 'studentIds'>) => {
+  const onSubmit = async (data: Omit<FormData, 'studentIds'>) => {
     if (!user) return;
     
     if (selectedStudents.length === 0) {
@@ -74,48 +96,59 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
       return;
     }
 
-    createBonusEvent({
-      ...data,
-      koinAmount: Number(data.koinAmount), // Force number conversion
-      studentIds: selectedStudents,
-      createdBy: user.id
-    });
-
-    // Evento 2: Aluno ganha Koins por bonificação da secretaria
-    selectedStudents.forEach(studentId => {
-      notificationStore.add({
-        type: 'KOIN_BONUS',
-        title: 'Bonificação recebida!',
-        message: `Você recebeu uma bonificação de ${data.koinAmount} Koins referente ao evento '${data.name}'!`,
-        roleTarget: 'ALUNO',
-        link: generateRewardsHistoryLink(),
-        meta: {
-          koinAmount: Number(data.koinAmount),
-          eventName: data.name,
-          eventDescription: data.description,
-          studentId,
-          bonusType: 'event'
-        }
+    try {
+      await createBonusEvent({
+        ...data,
+        koinAmount: Number(data.koinAmount),
+        studentIds: selectedStudents,
+        createdBy: user.id
       });
-    });
 
-    toast({
-      title: "Bonificação criada!",
-      description: `${selectedStudents.length} aluno(s) receberam ${data.koinAmount} Koins.`,
-      duration: 4000
-    });
+      // Enviar notificações para os alunos
+      selectedStudents.forEach(studentId => {
+        notificationStore.add({
+          type: 'KOIN_BONUS',
+          title: 'Bonificação recebida!',
+          message: `Você recebeu uma bonificação de ${data.koinAmount} Koins referente ao evento '${data.name}'!`,
+          roleTarget: 'ALUNO',
+          link: generateRewardsHistoryLink(),
+          meta: {
+            koinAmount: Number(data.koinAmount),
+            eventName: data.name,
+            eventDescription: data.description,
+            studentId,
+            bonusType: 'event'
+          }
+        });
+      });
 
-    // Reset form
-    reset();
-    setSelectedStudents([]);
-    setSelectAll(false);
-    onClose();
+      toast({
+        title: "Bonificação criada!",
+        description: `${selectedStudents.length} aluno(s) receberam ${data.koinAmount} Koins.`,
+        duration: 4000
+      });
+
+      // Reset form
+      reset();
+      setSelectedStudents([]);
+      setSelectAll(false);
+      setFilterClassId('all');
+      onClose();
+    } catch (error) {
+      console.error('Error creating bonus event:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar bonificação. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleClose = () => {
     reset();
     setSelectedStudents([]);
     setSelectAll(false);
+    setFilterClassId('all');
     onClose();
   };
 
@@ -189,31 +222,67 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
                   id="selectAll"
                   checked={selectAll}
                   onCheckedChange={handleSelectAll}
+                  disabled={loadingStudents || filteredStudents.length === 0}
                 />
                 <Label htmlFor="selectAll" className="text-sm">
-                  Selecionar todos
+                  Selecionar todos {filterClassId !== 'all' && '(filtrados)'}
                 </Label>
               </div>
             </div>
 
+            {/* Class Filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterClassId} onValueChange={setFilterClassId} disabled={loadingClasses}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filtrar por turma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
+                  {classes
+                    .filter(cls => cls.status === 'ATIVA')
+                    .map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="border border-border/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-              <div className="space-y-3">
-                {mockStudents.map((student) => (
-                  <div key={student.id} className="flex items-center space-x-3">
-                    <Checkbox
-                      id={student.id}
-                      checked={selectedStudents.includes(student.id)}
-                      onCheckedChange={() => handleStudentToggle(student.id)}
-                    />
-                    <Label htmlFor={student.id} className="flex-1 cursor-pointer">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">{student.name}</span>
-                        <span className="text-sm text-muted-foreground">{student.class}</span>
+              {loadingStudents ? (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  Carregando alunos...
+                </div>
+              ) : filteredStudents.length === 0 ? (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  {filterClassId === 'all' 
+                    ? 'Nenhum aluno cadastrado' 
+                    : 'Nenhum aluno encontrado nesta turma'}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredStudents.map((student) => {
+                    const studentClasses = student.classes?.map(c => c.name).join(', ') || 'Sem turma';
+                    return (
+                      <div key={student.id} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={student.id}
+                          checked={selectedStudents.includes(student.id)}
+                          onCheckedChange={() => handleStudentToggle(student.id)}
+                        />
+                        <Label htmlFor={student.id} className="flex-1 cursor-pointer">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{student.name}</span>
+                            <span className="text-sm text-muted-foreground">{studentClasses}</span>
+                          </div>
+                        </Label>
                       </div>
-                    </Label>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {selectedStudents.length > 0 && (
