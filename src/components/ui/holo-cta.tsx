@@ -77,7 +77,20 @@ export const HoloCTA = React.forwardRef<HTMLButtonElement, HoloCTAProps>(
 
     // Debounced click handler
     const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-      if (loading || disabled || isDebouncing) {
+      if (loading || disabled) {
+        e.preventDefault();
+        return;
+      }
+
+      // Se for um botão de submit sem onClick customizado, deixar o comportamento padrão
+      if (props.type === 'submit' && !onClick) {
+        createRipple(e);
+        // Não aplicar debounce nem preventDefault para não interferir com o submit
+        return;
+      }
+
+      // Para outros casos, aplicar debounce normalmente
+      if (isDebouncing) {
         e.preventDefault();
         return;
       }
@@ -94,7 +107,7 @@ export const HoloCTA = React.forwardRef<HTMLButtonElement, HoloCTAProps>(
       }, debounceMs);
 
       onClick?.(e);
-    }, [loading, disabled, isDebouncing, debounceMs, onClick, createRipple]);
+    }, [loading, disabled, isDebouncing, debounceMs, onClick, createRipple, props.type]);
 
     // Keyboard handler
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -161,7 +174,7 @@ export const HoloCTA = React.forwardRef<HTMLButtonElement, HoloCTAProps>(
       <button
         ref={buttonRef}
         className={stateClasses}
-        disabled={disabled || loading || isDebouncing}
+        disabled={disabled || loading || (props.type !== 'submit' && isDebouncing)}
         onClick={handleClick}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
