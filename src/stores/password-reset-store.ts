@@ -96,11 +96,13 @@ class PasswordResetStore {
     AuditService.track('passwordReset.requested', 'login-system', { email });
 
     // Create notification for Secretaria
+    // TODO: Get actual secretaria user IDs from the system
     notificationStore.add({
       type: 'RESET_REQUESTED',
       title: 'Reset de senha solicitado',
       message: `Solicitação de redefinição de senha para ${email}`,
       roleTarget: 'SECRETARIA',
+      userId: 'system', // Temporary - should be secretaria user ID
       link: `/secretaria/seguranca/resets?focus=${request.id}`,
       meta: { email, requestId: request.id }
     });
@@ -144,6 +146,7 @@ class PasswordResetStore {
         title: 'Reset em andamento',
         message: `Reset de senha iniciado para ${request.email}`,
         roleTarget: 'SECRETARIA',
+        userId: 'system', // Temporary - should be secretaria user ID
         link: `/secretaria/seguranca/resets?focus=${id}`,
         meta: { email: request.email, requestId: id }
       });
@@ -189,6 +192,7 @@ class PasswordResetStore {
       title: 'Reset concluído',
       message: `Reset de senha concluído para ${request.email} por ${options.processedBy}`,
       roleTarget: 'SECRETARIA',
+      userId: 'system', // Temporary - should be secretaria user ID
       link: `/secretaria/seguranca/resets?focus=${id}`,
       meta: { 
         email: request.email, 
@@ -213,6 +217,7 @@ class PasswordResetStore {
       title: 'Reset cancelado',
       message: `Reset de senha cancelado para ${request.email}`,
       roleTarget: 'SECRETARIA',
+      userId: 'system', // Temporary - should be secretaria user ID
       link: `/secretaria/seguranca/resets?focus=${id}`,
       meta: { email: request.email, requestId: id, notes }
     });

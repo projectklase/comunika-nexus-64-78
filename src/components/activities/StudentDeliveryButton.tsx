@@ -98,6 +98,7 @@ export function StudentDeliveryButton({ activity, classId, delivery, onUpdate }:
           title: 'Koins ganhos!',
           message: `Parabéns! Você ganhou ${activity.activityMeta.koinReward} Koins por completar a tarefa '${activity.title}'.`,
           roleTarget: 'ALUNO',
+          userId: user.id,
           link: generateRewardsHistoryLink(),
           meta: {
             koinAmount: activity.activityMeta.koinReward,

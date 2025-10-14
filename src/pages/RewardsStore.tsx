@@ -72,11 +72,15 @@ export default function RewardsStore() {
       
       if (result.success) {
         // Evento 3: Aluno solicita resgate de item
+        // Note: For SECRETARIA notifications, we need to find a secretaria user ID
+        // For now, we'll use the current user's ID as a placeholder
+        // TODO: Get actual secretaria user IDs from the system
         notificationStore.add({
           type: 'REDEMPTION_REQUESTED',
           title: 'Nova solicitação de resgate',
           message: `Nova solicitação de resgate: O aluno ${user.name} deseja resgatar o item '${item.name}'.`,
           roleTarget: 'SECRETARIA',
+          userId: user.id, // Temporary - should be secretaria user ID
           link: generateRedemptionManagementLink(),
           meta: {
             studentId: user.id,

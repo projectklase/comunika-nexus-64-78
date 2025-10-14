@@ -39,6 +39,7 @@ export function RedemptionManagement() {
         title: 'Resgate aprovado!',
         message: `Boas notícias! Seu resgate do item '${redemption.itemName}' foi aprovado. Você já pode retirá-lo na secretaria.`,
         roleTarget: 'ALUNO',
+        userId: redemption.studentId,
         link: generateRewardsHistoryLink(),
         meta: {
           studentId: redemption.studentId,
@@ -78,6 +79,7 @@ export function RedemptionManagement() {
         title: 'Resgate recusado',
         message: `Atenção: Seu resgate do item '${redemption.itemName}' foi recusado. Motivo: '${rejectionReason.trim()}'.`,
         roleTarget: 'ALUNO',
+        userId: redemption.studentId,
         link: generateRewardsHistoryLink(),
         meta: {
           studentId: redemption.studentId,

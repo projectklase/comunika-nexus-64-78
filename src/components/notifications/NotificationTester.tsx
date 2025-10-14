@@ -30,6 +30,7 @@ export function NotificationTester() {
           title: `Nova atividade de Matemática #${count}`,
           message: 'Foi publicada uma nova atividade: "Exercícios de álgebra linear" para a turma 3º A.',
           roleTarget,
+          userId: user.id,
           link: '/professor/atividades',
           meta: {
             postType: 'ATIVIDADE',
@@ -45,6 +46,7 @@ export function NotificationTester() {
           title: `🔥 PROVA IMPORTANTE - Física #${count}`,
           message: 'Prova de física marcada para próxima sexta-feira às 14h. Revisar cap. 1-5.',
           roleTarget,
+          userId: user.id,
           link: '/professor/atividades',
           meta: {
             important: true,
@@ -61,6 +63,7 @@ export function NotificationTester() {
           title: `🎉 Feriado Nacional #${count}`,
           message: 'Dia da Independência - Não haverá aulas.',
           roleTarget,
+          userId: user.id,
           link: generateCalendarLink('2024-09-07'), // Adicionar link para o calendário
           meta: {
             holidayDate: '2024-09-07'

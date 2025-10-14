@@ -217,6 +217,7 @@ export function generateWeeklyHolidayNotifications(userId: string, userRole: Rol
       title: holidayNotification.title,
       message: holidayNotification.message,
       roleTarget: userRole,
+      userId,
       link: generateCalendarLink(holiday.date),
       meta: {
         ...holidayNotification.meta,
