@@ -37,6 +37,7 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [filterClassId, setFilterClassId] = useState<string>("all");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -94,23 +95,30 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      // 1. Ligar para o "gerente" seguro (a Edge Function) para dar os Koins
-      const { error: bonusError } = await supabase.functions.invoke("grant-koin-bonus", {
+      // Obter o ID do usuário atual (secretaria)
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Chamar a edge function do Supabase para criar o evento de bônus
+      const { data: responseData, error: bonusError } = await supabase.functions.invoke("grant-koin-bonus", {
         body: {
           eventName: data.name,
-          eventDescription: data.description,
+          eventDescription: data.description || "",
           koinAmount: Number(data.koinAmount),
           studentIds: selectedStudents,
-          grantedBy: user.id, // Passa o ID do admin que está concedendo
+          grantedBy: currentUser.id,
         },
       });
 
       if (bonusError) {
-        throw new Error(bonusError.message || "A função de servidor para bônus falhou.");
+        throw new Error(bonusError.message || "Erro ao conceder bonificação");
       }
 
-      // 2. Enviar um "aviso" (notificação) para os alunos usando a nova função
+      // Enviar notificações para os alunos
       await Promise.all(
         selectedStudents.map((studentId) =>
           notificationStore.add({
@@ -126,22 +134,20 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
       );
 
       toast({
-        title: "Bonificação Criada com Sucesso!",
+        title: "Bonificação criada com sucesso!",
         description: `${selectedStudents.length} aluno(s) receberam ${data.koinAmount} Koins.`,
       });
 
-      // 3. Limpar e fechar o modal
-      reset();
-      setSelectedStudents([]);
-      onClose();
+      handleClose();
     } catch (error: any) {
-      console.error("Erro ao criar bonificação:", error);
+      console.error("[BonusEventModal] Erro ao criar bonificação:", error);
       toast({
-        title: "Erro ao criar bonificação",
-        // Mostra o erro real vindo do Supabase/Edge Function
-        description: error.message || "Ocorreu um erro. Verifique os dados e tente novamente.",
         variant: "destructive",
+        title: "Erro ao criar bonificação",
+        description: error.message || "Não foi possível processar a bonificação. Tente novamente.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -288,10 +294,12 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
           </div>
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit">Criar Bonificação</Button>
+            <Button type="submit" disabled={isSubmitting || selectedStudents.length === 0}>
+              {isSubmitting ? "Processando..." : "Criar Bonificação"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

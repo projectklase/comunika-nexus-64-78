@@ -263,57 +263,11 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     }));
   },
 
+  // DEPRECATED: Este método não é mais usado - a bonificação agora é feita via Edge Function
+  // que chama a RPC function grant_koin_bonus com SECURITY DEFINER
   createBonusEvent: async (event: Omit<BonusEvent, 'id' | 'createdAt'>) => {
-    try {
-      const newEventId = crypto.randomUUID();
-      const newEvent: BonusEvent = {
-        ...event,
-        id: newEventId,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Create transactions in Supabase for each student
-      for (const studentId of event.studentIds) {
-        const { error: txError } = await (supabase as any)
-          .from('koin_transactions')
-          .insert({
-            user_id: studentId,
-            type: 'BONUS',
-            amount: event.koinAmount,
-            description: `Bonificação: ${event.name}`,
-            related_entity_id: newEventId,
-            processed_by: event.createdBy,
-          });
-
-        if (txError) {
-          console.error('Error creating bonus transaction:', txError);
-          throw txError;
-        }
-
-        // Update student's koins balance
-        const { error: balanceError } = await (supabase as any).rpc('add_koins_to_user', {
-          user_id_in: studentId,
-          amount_in: event.koinAmount,
-        });
-
-        if (balanceError) {
-          console.error('Error updating student balance:', balanceError);
-          throw balanceError;
-        }
-      }
-
-      set((state) => ({
-        bonusEvents: [...state.bonusEvents, newEvent],
-      }));
-
-      // Reload transactions for affected students
-      for (const studentId of event.studentIds) {
-        await get().loadTransactions(studentId);
-      }
-    } catch (error) {
-      console.error('Error creating bonus event:', error);
-      throw error;
-    }
+    console.warn('[rewards-store] createBonusEvent is deprecated. Use the grant-koin-bonus edge function instead.');
+    throw new Error('This method is deprecated. Please use the grant-koin-bonus edge function.');
   },
 
   addItem: async (item: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => {

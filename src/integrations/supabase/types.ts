@@ -980,6 +980,16 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      grant_koin_bonus: {
+        Args: {
+          p_event_description: string
+          p_event_name: string
+          p_granted_by: string
+          p_koin_amount: number
+          p_student_ids: string[]
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
