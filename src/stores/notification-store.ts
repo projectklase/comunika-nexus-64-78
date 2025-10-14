@@ -144,11 +144,10 @@ class NotificationStore {
         link: notification.link,
         role_target: notification.roleTarget,
         meta: notification.meta,
-        status: "UNREAD", // Define o status inicial
-        is_read: false, // Mantém compatibilidade com a coluna antiga
+        is_read: false,
       })
-      .select() // Pede ao Supabase para retornar a linha que acabou de ser criada
-      .single(); // Espera apenas um resultado
+      .select()
+      .single();
 
     if (error) {
       console.error("Erro ao adicionar notificação no Supabase:", error);
