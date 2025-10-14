@@ -118,21 +118,7 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
         throw new Error(bonusError.message || "Erro ao conceder bonificação");
       }
 
-      // Enviar notificações para os alunos
-      await Promise.all(
-        selectedStudents.map((studentId) =>
-          notificationStore.add({
-            userId: studentId,
-            type: "KOIN_BONUS",
-            title: "Bonificação Recebida!",
-            message: `Você recebeu ${data.koinAmount} Koins pelo evento '${data.name}'!`,
-            roleTarget: "ALUNO",
-            link: generateRewardsHistoryLink(),
-            meta: { koinAmount: Number(data.koinAmount), eventName: data.name },
-          }),
-        ),
-      );
-
+      // Notificações são criadas pela edge function
       toast({
         title: "Bonificação criada com sucesso!",
         description: `${selectedStudents.length} aluno(s) receberam ${data.koinAmount} Koins.`,

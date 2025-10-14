@@ -79,6 +79,34 @@ serve(async (req) => {
 
     console.log(`[grant-koin-bonus] Bonificação concedida com sucesso para ${studentIds.length} alunos`);
 
+    // Criar notificações para cada aluno usando service_role (sem RLS)
+    const notificationPromises = studentIds.map(studentId => 
+      supabaseAdmin.from('notifications').insert({
+        user_id: studentId,
+        type: 'KOIN_BONUS',
+        title: 'Bonificação Recebida!',
+        message: `Você recebeu ${koinAmount} Koins pelo evento '${eventName}'!`,
+        role_target: 'ALUNO',
+        link: '/aluno/recompensas',
+        is_read: false,
+        meta: { 
+          koinAmount: koinAmount, 
+          eventName: eventName,
+          grantedBy: grantedBy
+        }
+      })
+    );
+
+    const notificationResults = await Promise.allSettled(notificationPromises);
+    const failedNotifications = notificationResults.filter(r => r.status === 'rejected');
+    
+    if (failedNotifications.length > 0) {
+      console.error('[grant-koin-bonus] Algumas notificações falharam:', failedNotifications);
+      // Não lançar erro - bonificação já foi concedida com sucesso
+    } else {
+      console.log(`[grant-koin-bonus] ${studentIds.length} notificações criadas com sucesso`);
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
