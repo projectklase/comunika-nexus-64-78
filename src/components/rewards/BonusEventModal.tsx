@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Coins, Users, Gift, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { addNotification } from "@/stores/notification-store";
+import { notificationStore } from "@/stores/notification-store";
 import { generateRewardsHistoryLink } from "@/utils/deep-links";
 import { useStudents } from "@/hooks/useStudents";
 import { useClasses } from "@/hooks/useClasses";
@@ -113,12 +113,12 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
       // 2. Enviar um "aviso" (notificação) para os alunos usando a nova função
       await Promise.all(
         selectedStudents.map((studentId) =>
-          addNotification({
-            user_id: studentId,
+          notificationStore.add({
+            userId: studentId,
             type: "KOIN_BONUS",
             title: "Bonificação Recebida!",
             message: `Você recebeu ${data.koinAmount} Koins pelo evento '${data.name}'!`,
-            role_target: "ALUNO",
+            roleTarget: "ALUNO",
             link: generateRewardsHistoryLink(),
             meta: { koinAmount: Number(data.koinAmount), eventName: data.name },
           }),
