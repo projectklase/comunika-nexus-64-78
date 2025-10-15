@@ -13,8 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RewardItem } from '@/types/rewards';
 import { History, Store, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { notificationStore } from '@/stores/notification-store';
-import { generateRedemptionManagementLink } from '@/utils/deep-links';
+import { Badge } from '@/components/ui/badge';
 
 export default function RewardsStore() {
   const { user } = useAuth();
@@ -219,30 +218,107 @@ export default function RewardsStore() {
                 <div className="space-y-3">
                   {studentTransactions
                     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                    .map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="flex items-center justify-between p-3 bg-muted/5 rounded-lg border border-border/50"
-                    >
-                      <div>
-                        <p className="font-medium text-sm">{transaction.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(transaction.timestamp).toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Coins className="h-4 w-4 text-yellow-500" />
-                        <span className={`font-medium ${
-                          transaction.type === 'SPEND' 
-                            ? 'text-red-500' 
-                            : 'text-green-500'
-                        }`}>
-                          {transaction.type === 'SPEND' ? '-' : '+'}
-                          {transaction.amount}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    .map((transaction) => {
+                      const getStatusInfo = () => {
+                        if (transaction.type === 'REDEMPTION') {
+                          if (transaction.redemptionStatus === 'PENDING') {
+                            return {
+                              badge: 'Aguardando Aprovação',
+                              badgeClass: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
+                              amountClass: 'text-orange-500',
+                              prefix: '⏳',
+                              description: `Resgate solicitado: ${transaction.itemName || transaction.description}`
+                            };
+                          } else if (transaction.redemptionStatus === 'APPROVED') {
+                            return {
+                              badge: 'Resgate Aprovado',
+                              badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30',
+                              amountClass: 'text-red-500',
+                              prefix: '-',
+                              description: `Resgate aprovado: ${transaction.itemName || transaction.description}`
+                            };
+                          } else if (transaction.redemptionStatus === 'REJECTED') {
+                            return {
+                              badge: 'Resgate Recusado',
+                              badgeClass: 'bg-red-500/10 text-red-600 border-red-500/30',
+                              amountClass: 'text-blue-500',
+                              prefix: '+',
+                              description: `Resgate recusado (reembolsado): ${transaction.itemName || transaction.description}`
+                            };
+                          }
+                        } else if (transaction.type === 'REFUND') {
+                          return {
+                            badge: 'Reembolso',
+                            badgeClass: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+                            amountClass: 'text-green-500',
+                            prefix: '+',
+                            description: transaction.description
+                          };
+                        } else if (transaction.type === 'BONUS') {
+                          return {
+                            badge: 'Bonificação',
+                            badgeClass: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
+                            amountClass: 'text-green-500',
+                            prefix: '+',
+                            description: transaction.description
+                          };
+                        } else if (transaction.type === 'EARN') {
+                          return {
+                            badge: 'Ganho',
+                            badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30',
+                            amountClass: 'text-green-500',
+                            prefix: '+',
+                            description: transaction.description
+                          };
+                        }
+                        
+                        return {
+                          badge: transaction.type,
+                          badgeClass: 'bg-muted text-muted-foreground',
+                          amountClass: transaction.amount < 0 ? 'text-red-500' : 'text-green-500',
+                          prefix: transaction.amount < 0 ? '-' : '+',
+                          description: transaction.description
+                        };
+                      };
+
+                      const statusInfo = getStatusInfo();
+
+                      return (
+                        <div
+                          key={transaction.id}
+                          className="flex items-start justify-between p-4 bg-muted/5 rounded-lg border border-border/50 hover:bg-muted/10 transition-colors"
+                        >
+                          <div className="flex-1 min-w-0 mr-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-sm">{statusInfo.description}</p>
+                              {statusInfo.badge && (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${statusInfo.badgeClass}`}
+                                >
+                                  {statusInfo.badge}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(transaction.timestamp).toLocaleString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Coins className="h-4 w-4 text-yellow-500" />
+                            <span className={`font-bold text-base ${statusInfo.amountClass}`}>
+                              {statusInfo.prefix}{Math.abs(transaction.amount)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </CardContent>

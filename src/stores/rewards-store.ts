@@ -69,9 +69,17 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   loadTransactions: async (studentId: string) => {
     try {
+      // Buscar transações com informações de resgate relacionadas
       const { data, error } = await (supabase as any)
         .from('koin_transactions')
-        .select('*')
+        .select(`
+          *,
+          redemption_requests!koin_transactions_related_entity_id_fkey(
+            status,
+            item_id,
+            reward_items(name)
+          )
+        `)
         .eq('user_id', studentId)
         .order('created_at', { ascending: false });
 
@@ -88,6 +96,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         description: tx.description || '',
         timestamp: tx.created_at,
         responsibleUserId: tx.processed_by,
+        redemptionStatus: tx.redemption_requests?.status,
+        itemName: tx.redemption_requests?.reward_items?.name,
       }));
 
       set({ transactions });
