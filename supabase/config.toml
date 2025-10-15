@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.grant-koin-bonus]
 verify_jwt = true
+
+[functions.request-redemption]
+verify_jwt = true

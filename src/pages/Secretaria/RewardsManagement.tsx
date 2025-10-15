@@ -35,8 +35,16 @@ export default function RewardsManagement() {
     bonusEvents,
     addItem, 
     updateItem, 
-    deleteItem 
+    deleteItem,
+    loadItems,
+    loadRedemptions
   } = useRewardsStore();
+
+  // Load data on mount
+  useEffect(() => {
+    loadItems();
+    loadRedemptions();
+  }, [loadItems, loadRedemptions]);
 
   // Enhanced transactions for admin view
   const enhancedTransactions = enhanceTransactionsForAdmin(

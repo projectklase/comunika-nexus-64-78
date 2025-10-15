@@ -68,35 +68,23 @@ export default function RewardsStore() {
     setIsProcessing(true);
     
     try {
-      const result = requestRedemption(user.id, item.id);
+      const result = await requestRedemption(
+        user.id, 
+        user.name || 'Aluno', 
+        item.id, 
+        item.name, 
+        item.koinPrice
+      );
       
       if (result.success) {
-        // Evento 3: Aluno solicita resgate de item
-        // Note: For SECRETARIA notifications, we need to find a secretaria user ID
-        // For now, we'll use the current user's ID as a placeholder
-        // TODO: Get actual secretaria user IDs from the system
-        notificationStore.add({
-          type: 'REDEMPTION_REQUESTED',
-          title: 'Nova solicitação de resgate',
-          message: `Nova solicitação de resgate: O aluno ${user.name} deseja resgatar o item '${item.name}'.`,
-          roleTarget: 'SECRETARIA',
-          userId: user.id, // Temporary - should be secretaria user ID
-          link: generateRedemptionManagementLink(),
-          meta: {
-            studentId: user.id,
-            studentName: user.name,
-            itemId: item.id,
-            itemName: item.name,
-            koinAmount: item.koinPrice,
-            requestType: 'redemption'
-          }
-        });
-
         toast({
           title: "Resgate solicitado!",
           description: result.message,
           duration: 4000
         });
+        
+        // Reload balance to show blocked amount
+        await loadStudentBalance(user.id);
       } else {
         toast({
           title: "Erro no resgate",
@@ -105,6 +93,13 @@ export default function RewardsStore() {
           duration: 4000
         });
       }
+    } catch (error) {
+      toast({
+        title: "Erro no resgate",
+        description: "Ocorreu um erro ao processar seu resgate",
+        variant: "destructive",
+        duration: 4000
+      });
     } finally {
       setIsProcessing(false);
       setConfirmItem(null);

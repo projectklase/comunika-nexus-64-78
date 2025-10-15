@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,20 +8,23 @@ import { RedemptionRequest } from '@/types/rewards';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle2, XCircle, Clock, AlertTriangle, Coins } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { notificationStore } from '@/stores/notification-store';
-import { generateRewardsHistoryLink } from '@/utils/deep-links';
+import { supabase } from '@/integrations/supabase/client';
 
 export function RedemptionManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { redemptions, approveRedemption, rejectRedemption, items } = useRewardsStore();
+  const { redemptions, approveRedemption, rejectRedemption, items, loadRedemptions } = useRewardsStore();
   
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // Load redemptions on mount
+  useEffect(() => {
+    loadRedemptions();
+  }, [loadRedemptions]);
 
   const pendingRedemptions = redemptions.filter(r => r.status === 'PENDING');
   const processedRedemptions = redemptions.filter(r => r.status !== 'PENDING');
@@ -33,23 +36,30 @@ export function RedemptionManagement() {
     const result = await approveRedemption(redemptionId, user.id);
     
     if (result.success && redemption) {
-      // Evento 4: Resgate do aluno é aprovado
-      notificationStore.add({
-        type: 'REDEMPTION_APPROVED',
-        title: 'Resgate aprovado!',
-        message: `Boas notícias! Seu resgate do item '${redemption.itemName}' foi aprovado. Você já pode retirá-lo na secretaria.`,
-        roleTarget: 'ALUNO',
-        userId: redemption.studentId,
-        link: generateRewardsHistoryLink(),
-        meta: {
-          studentId: redemption.studentId,
-          itemId: redemption.itemId,
-          itemName: redemption.itemName,
-          koinAmount: redemption.koinAmount,
-          redemptionId: redemption.id,
-          approvedBy: user.id
-        }
-      });
+      // Criar notificação para o aluno usando service_role via edge function
+      try {
+        await supabase.functions.invoke('create-notification', {
+          body: {
+            userId: redemption.studentId,
+            type: 'REDEMPTION_APPROVED',
+            title: 'Resgate aprovado!',
+            message: `Boas notícias! Seu resgate do item '${redemption.itemName}' foi aprovado. Você já pode retirá-lo na secretaria.`,
+            roleTarget: 'ALUNO',
+            link: '/aluno/recompensas',
+            meta: {
+              studentId: redemption.studentId,
+              itemId: redemption.itemId,
+              itemName: redemption.itemName,
+              koinAmount: redemption.koinAmount,
+              redemptionId: redemption.id,
+              approvedBy: user.id
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error creating notification:', error);
+        // Don't fail approval if notification fails
+      }
 
       toast({
         title: "Resgate aprovado!",
@@ -73,24 +83,31 @@ export function RedemptionManagement() {
     const result = await rejectRedemption(rejectingId, user.id, rejectionReason.trim());
     
     if (redemption) {
-      // Evento 5: Resgate do aluno é recusado
-      notificationStore.add({
-        type: 'REDEMPTION_REJECTED',
-        title: 'Resgate recusado',
-        message: `Atenção: Seu resgate do item '${redemption.itemName}' foi recusado. Motivo: '${rejectionReason.trim()}'.`,
-        roleTarget: 'ALUNO',
-        userId: redemption.studentId,
-        link: generateRewardsHistoryLink(),
-        meta: {
-          studentId: redemption.studentId,
-          itemId: redemption.itemId,
-          itemName: redemption.itemName,
-          koinAmount: redemption.koinAmount,
-          redemptionId: redemption.id,
-          rejectedBy: user.id,
-          rejectionReason: rejectionReason.trim()
-        }
-      });
+      // Criar notificação para o aluno usando service_role via edge function
+      try {
+        await supabase.functions.invoke('create-notification', {
+          body: {
+            userId: redemption.studentId,
+            type: 'REDEMPTION_REJECTED',
+            title: 'Resgate recusado',
+            message: `Atenção: Seu resgate do item '${redemption.itemName}' foi recusado. Motivo: '${rejectionReason.trim()}'.`,
+            roleTarget: 'ALUNO',
+            link: '/aluno/recompensas',
+            meta: {
+              studentId: redemption.studentId,
+              itemId: redemption.itemId,
+              itemName: redemption.itemName,
+              koinAmount: redemption.koinAmount,
+              redemptionId: redemption.id,
+              rejectedBy: user.id,
+              rejectionReason: rejectionReason.trim()
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error creating notification:', error);
+        // Don't fail rejection if notification fails
+      }
     }
     
     toast({

@@ -13,12 +13,13 @@ interface RewardsStore {
   
   loadItems: () => Promise<void>;
   loadTransactions: (studentId: string) => Promise<void>;
+  loadRedemptions: () => Promise<void>;
   getFilteredItems: () => RewardItem[];
   setSearchTerm: (term: string) => void;
   setSortBy: (sort: 'name' | 'price-asc' | 'price-desc') => void;
   getStudentBalance: (studentId: string) => KoinBalance;
   loadStudentBalance: (studentId: string) => Promise<void>;
-  requestRedemption: (studentId: string, itemId: string) => { success: boolean; message: string };
+  requestRedemption: (studentId: string, studentName: string, itemId: string, itemName: string, koinAmount: number) => Promise<{ success: boolean; message: string }>;
   approveRedemption: (redemptionId: string, approvedBy: string) => Promise<{ success: boolean; message: string }>;
   rejectRedemption: (redemptionId: string, rejectedBy: string, reason: string) => Promise<{ success: boolean; message: string }>;
   addTransaction: (transaction: Omit<KoinTransaction, 'id' | 'timestamp'>) => void;
@@ -92,6 +93,38 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       set({ transactions });
     } catch (error) {
       console.error('Error loading transactions:', error);
+    }
+  },
+
+  loadRedemptions: async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('redemption_requests')
+        .select(`
+          *,
+          reward_items!inner(name),
+          profiles!redemption_requests_student_id_fkey(name)
+        `)
+        .order('requested_at', { ascending: false });
+
+      if (error) throw error;
+
+      const redemptions: RedemptionRequest[] = (data || []).map((req: any) => ({
+        id: req.id,
+        studentId: req.student_id,
+        itemId: req.item_id,
+        itemName: req.reward_items?.name || 'Item desconhecido',
+        koinAmount: 0, // Will be filled from item details if needed
+        status: req.status,
+        requestedAt: req.requested_at,
+        processedAt: req.processed_at,
+        processedBy: req.processed_by,
+        rejectionReason: req.rejection_reason,
+      }));
+
+      set({ redemptions });
+    } catch (error) {
+      console.error('Error loading redemptions:', error);
     }
   },
 
@@ -203,22 +236,32 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     }
   },
 
-  requestRedemption: (studentId: string, itemId: string) => {
-    const { items } = get();
-    const item = items.find(i => i.id === itemId);
-    
-    if (!item) {
-      return { success: false, message: 'Item não encontrado' };
-    }
+  requestRedemption: async (studentId: string, studentName: string, itemId: string, itemName: string, koinAmount: number) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('request-redemption', {
+        body: {
+          studentId,
+          studentName,
+          itemId,
+          itemName,
+          koinAmount
+        }
+      });
 
-    if (item.stock <= 0) {
-      return { success: false, message: 'Item esgotado' };
-    }
+      if (error) throw error;
 
-    return { 
-      success: true, 
-      message: 'Resgate solicitado! Aguarde aprovação da secretaria.' 
-    };
+      // Reload redemptions and balance after successful request
+      await get().loadRedemptions();
+      await get().loadStudentBalance(studentId);
+
+      return data;
+    } catch (error: any) {
+      console.error('Error requesting redemption:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Erro ao solicitar resgate' 
+      };
+    }
   },
 
   approveRedemption: async (redemptionId: string, approvedBy: string) => {
@@ -228,6 +271,10 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         p_admin_id: approvedBy
       });
       if (error) throw error;
+      
+      // Reload redemptions after approval
+      await get().loadRedemptions();
+      
       return { success: true, message: 'Resgate aprovado com sucesso!' };
     } catch (error) {
       console.error('Error approving redemption:', error);
