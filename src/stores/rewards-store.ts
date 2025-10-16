@@ -2,7 +2,17 @@ import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import type { RewardItem, KoinTransaction, RedemptionRequest, KoinBalance, BonusEvent } from '@/types/rewards';
 
+interface TransactionFilters {
+  search?: string;
+  type?: KoinTransaction['type'] | 'all';
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'all';
+  studentId?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
+
 interface RewardsStore {
+  // State
   items: RewardItem[];
   transactions: KoinTransaction[];
   redemptions: RedemptionRequest[];
@@ -11,23 +21,62 @@ interface RewardsStore {
   searchTerm: string;
   sortBy: 'name' | 'price-asc' | 'price-desc';
   
+  // Filters and pagination
+  filters: TransactionFilters;
+  currentPage: number;
+  itemsPerPage: number;
+  
+  // Loading states
+  isLoading: boolean;
+  
+  // Cache (store timestamp of last fetch for each resource)
+  lastFetch: Map<string, number>;
+  
+  // Data loading
   loadItems: () => Promise<void>;
-  loadTransactions: (studentId: string) => Promise<void>;
-  loadRedemptions: () => Promise<void>;
+  loadTransactions: (studentId: string, forceRefresh?: boolean) => Promise<void>;
+  loadAllTransactions: (forceRefresh?: boolean) => Promise<void>;
+  loadRedemptions: (forceRefresh?: boolean) => Promise<void>;
+  
+  // Filters and sorting
   getFilteredItems: () => RewardItem[];
+  getFilteredTransactions: () => KoinTransaction[];
   setSearchTerm: (term: string) => void;
   setSortBy: (sort: 'name' | 'price-asc' | 'price-desc') => void;
+  setFilters: (filters: Partial<TransactionFilters>) => void;
+  clearFilters: () => void;
+  
+  // Pagination
+  setPage: (page: number) => void;
+  getTotalPages: () => number;
+  getPaginatedTransactions: () => KoinTransaction[];
+  
+  // Balance management
   getStudentBalance: (studentId: string) => KoinBalance;
-  loadStudentBalance: (studentId: string) => Promise<void>;
+  loadStudentBalance: (studentId: string, forceRefresh?: boolean) => Promise<void>;
+  
+  // Redemptions
   requestRedemption: (studentId: string, studentName: string, itemId: string, itemName: string, koinAmount: number) => Promise<{ success: boolean; message: string }>;
   approveRedemption: (redemptionId: string, approvedBy: string) => Promise<{ success: boolean; message: string }>;
   rejectRedemption: (redemptionId: string, rejectedBy: string, reason: string) => Promise<{ success: boolean; message: string }>;
+  
+  // State management
   addTransaction: (transaction: Omit<KoinTransaction, 'id' | 'timestamp'>) => void;
-  createBonusEvent: (event: Omit<BonusEvent, 'id' | 'createdAt'>) => Promise<void>;
+  
+  // Items (Admin)
   addItem: (item: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateItem: (id: string, updates: Partial<RewardItem>) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
+  
+  // Bonus Events (Admin) - DEPRECATED
+  createBonusEvent: (event: Omit<BonusEvent, 'id' | 'createdAt'>) => Promise<void>;
+  
+  // Realtime subscriptions
+  subscribeToRedemptions: (callback: () => void) => () => void;
+  subscribeToTransactions: (callback: () => void) => () => void;
 }
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 export const useRewardsStore = create<RewardsStore>((set, get) => ({
   items: [],
@@ -37,10 +86,15 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
   balances: new Map(),
   searchTerm: '',
   sortBy: 'name',
+  filters: {},
+  currentPage: 1,
+  itemsPerPage: 20,
+  isLoading: false,
+  lastFetch: new Map(),
 
   loadItems: async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('reward_items')
         .select('*')
         .eq('is_active', true)
@@ -62,23 +116,35 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       }));
 
       set({ items });
+      get().lastFetch.set('items', Date.now());
     } catch (error) {
       console.error('Error loading reward items:', error);
     }
   },
 
-  loadTransactions: async (studentId: string) => {
+  loadTransactions: async (studentId: string, forceRefresh = false) => {
+    const cacheKey = `transactions-${studentId}`;
+    const lastFetch = get().lastFetch.get(cacheKey) || 0;
+    
+    if (!forceRefresh && Date.now() - lastFetch < CACHE_DURATION) {
+      return; // Use cache
+    }
+
     try {
-      // Buscar transações com informações de resgate relacionadas
-      const { data, error } = await (supabase as any)
+      set({ isLoading: true });
+      
+      const { data, error } = await supabase
         .from('koin_transactions')
         .select(`
           *,
           redemption_requests!koin_transactions_related_entity_id_fkey(
             status,
             item_id,
+            processed_at,
+            processed_by,
             reward_items(name)
-          )
+          ),
+          profiles!koin_transactions_processed_by_fkey(name)
         `)
         .eq('user_id', studentId)
         .order('created_at', { ascending: false });
@@ -90,30 +156,97 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         studentId: tx.user_id,
         type: tx.type,
         amount: tx.amount,
-        balanceBefore: 0,
-        balanceAfter: 0,
+        balanceBefore: tx.balance_before,
+        balanceAfter: tx.balance_after,
         source: tx.related_entity_id || '',
         description: tx.description || '',
         timestamp: tx.created_at,
         responsibleUserId: tx.processed_by,
         redemptionStatus: tx.redemption_requests?.status,
         itemName: tx.redemption_requests?.reward_items?.name,
+        responsibleUserName: tx.profiles?.name,
+        processedAt: tx.redemption_requests?.processed_at,
       }));
 
-      set({ transactions });
+      set({ transactions, isLoading: false });
+      get().lastFetch.set(cacheKey, Date.now());
     } catch (error) {
       console.error('Error loading transactions:', error);
+      set({ isLoading: false });
     }
   },
 
-  loadRedemptions: async () => {
+  loadAllTransactions: async (forceRefresh = false) => {
+    const cacheKey = 'all-transactions';
+    const lastFetch = get().lastFetch.get(cacheKey) || 0;
+    
+    if (!forceRefresh && Date.now() - lastFetch < CACHE_DURATION) {
+      return; // Use cache
+    }
+
     try {
-      const { data, error } = await (supabase as any)
+      set({ isLoading: true });
+      
+      const { data, error } = await supabase
+        .from('koin_transactions')
+        .select(`
+          *,
+          redemption_requests!koin_transactions_related_entity_id_fkey(
+            status,
+            item_id,
+            processed_at,
+            processed_by,
+            reward_items(name)
+          ),
+          profiles!koin_transactions_user_id_fkey(name),
+          admin:profiles!koin_transactions_processed_by_fkey(name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transactions: KoinTransaction[] = (data || []).map((tx: any) => ({
+        id: tx.id,
+        studentId: tx.user_id,
+        studentName: tx.profiles?.name,
+        type: tx.type,
+        amount: tx.amount,
+        balanceBefore: tx.balance_before,
+        balanceAfter: tx.balance_after,
+        source: tx.related_entity_id || '',
+        description: tx.description || '',
+        timestamp: tx.created_at,
+        responsibleUserId: tx.processed_by,
+        redemptionStatus: tx.redemption_requests?.status,
+        itemName: tx.redemption_requests?.reward_items?.name,
+        responsibleUserName: tx.admin?.name,
+        processedAt: tx.redemption_requests?.processed_at,
+      }));
+
+      set({ transactions, isLoading: false });
+      get().lastFetch.set(cacheKey, Date.now());
+    } catch (error) {
+      console.error('Error loading all transactions:', error);
+      set({ isLoading: false });
+    }
+  },
+
+  loadRedemptions: async (forceRefresh = false) => {
+    const cacheKey = 'redemptions';
+    const lastFetch = get().lastFetch.get(cacheKey) || 0;
+    
+    if (!forceRefresh && Date.now() - lastFetch < CACHE_DURATION) {
+      return; // Use cache
+    }
+
+    try {
+      const { data, error } = await supabase
         .from('redemption_requests')
         .select(`
           *,
-          reward_items!inner(name),
-          profiles!redemption_requests_student_id_fkey(name)
+          reward_items!inner(name, price_koins),
+          profiles!redemption_requests_student_id_fkey(name),
+          admin:profiles!redemption_requests_processed_by_fkey(name)
         `)
         .order('requested_at', { ascending: false });
 
@@ -122,17 +255,20 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       const redemptions: RedemptionRequest[] = (data || []).map((req: any) => ({
         id: req.id,
         studentId: req.student_id,
+        studentName: req.profiles?.name,
         itemId: req.item_id,
         itemName: req.reward_items?.name || 'Item desconhecido',
-        koinAmount: 0, // Will be filled from item details if needed
+        koinAmount: req.reward_items?.price_koins || 0,
         status: req.status,
         requestedAt: req.requested_at,
         processedAt: req.processed_at,
         processedBy: req.processed_by,
+        processedByName: req.admin?.name,
         rejectionReason: req.rejection_reason,
       }));
 
       set({ redemptions });
+      get().lastFetch.set(cacheKey, Date.now());
     } catch (error) {
       console.error('Error loading redemptions:', error);
     }
@@ -162,9 +298,74 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     return filtered;
   },
 
+  getFilteredTransactions: () => {
+    const { transactions, filters } = get();
+    let filtered = [...transactions];
+
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      filtered = filtered.filter(tx =>
+        tx.description?.toLowerCase().includes(search) ||
+        tx.studentName?.toLowerCase().includes(search) ||
+        tx.itemName?.toLowerCase().includes(search)
+      );
+    }
+
+    if (filters.type && filters.type !== 'all') {
+      filtered = filtered.filter(tx => tx.type === filters.type);
+    }
+
+    if (filters.status && filters.status !== 'all') {
+      filtered = filtered.filter(tx => tx.redemptionStatus === filters.status);
+    }
+
+    if (filters.studentId) {
+      filtered = filtered.filter(tx => tx.studentId === filters.studentId);
+    }
+
+    if (filters.startDate) {
+      filtered = filtered.filter(tx => new Date(tx.timestamp) >= filters.startDate!);
+    }
+
+    if (filters.endDate) {
+      filtered = filtered.filter(tx => new Date(tx.timestamp) <= filters.endDate!);
+    }
+
+    return filtered;
+  },
+
   setSearchTerm: (term: string) => set({ searchTerm: term }),
   
   setSortBy: (sort: 'name' | 'price-asc' | 'price-desc') => set({ sortBy: sort }),
+
+  setFilters: (newFilters: Partial<TransactionFilters>) => {
+    set(state => ({
+      filters: { ...state.filters, ...newFilters },
+      currentPage: 1 // Reset to first page when filters change
+    }));
+  },
+
+  clearFilters: () => {
+    set({
+      filters: {},
+      currentPage: 1
+    });
+  },
+
+  setPage: (page: number) => set({ currentPage: page }),
+
+  getTotalPages: () => {
+    const filtered = get().getFilteredTransactions();
+    const { itemsPerPage } = get();
+    return Math.ceil(filtered.length / itemsPerPage);
+  },
+
+  getPaginatedTransactions: () => {
+    const filtered = get().getFilteredTransactions();
+    const { currentPage, itemsPerPage } = get();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(startIndex, startIndex + itemsPerPage);
+  },
 
   getStudentBalance: (studentId: string): KoinBalance => {
     const { balances } = get();
@@ -178,9 +379,16 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     };
   },
 
-  loadStudentBalance: async (studentId: string) => {
+  loadStudentBalance: async (studentId: string, forceRefresh = false) => {
+    const cacheKey = `balance-${studentId}`;
+    const lastFetch = get().lastFetch.get(cacheKey) || 0;
+    
+    if (!forceRefresh && Date.now() - lastFetch < CACHE_DURATION) {
+      return; // Use cache
+    }
+
     try {
-      const { data: profile, error: profileError } = await (supabase as any)
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('koins')
         .eq('id', studentId)
@@ -188,7 +396,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
       if (profileError) throw profileError;
 
-      const { data: txData, error: txError } = await (supabase as any)
+      const { data: txData, error: txError } = await supabase
         .from('koin_transactions')
         .select('*')
         .eq('user_id', studentId);
@@ -206,7 +414,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
           .reduce((sum: number, tx: any) => sum + tx.amount, 0)
       );
 
-      const { data: pendingRedemptions, error: redemptionError } = await (supabase as any)
+      const { data: pendingRedemptions, error: redemptionError } = await supabase
         .from('redemption_requests')
         .select('item_id')
         .eq('student_id', studentId)
@@ -217,7 +425,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       let blockedBalance = 0;
       if (pendingRedemptions && pendingRedemptions.length > 0) {
         const itemIds = pendingRedemptions.map((r: any) => r.item_id);
-        const { data: items } = await (supabase as any)
+        const { data: items } = await supabase
           .from('reward_items')
           .select('price_koins')
           .in('id', itemIds);
@@ -241,6 +449,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         newBalances.set(studentId, balance);
         return { balances: newBalances };
       });
+      
+      get().lastFetch.set(cacheKey, Date.now());
     } catch (error) {
       console.error('Error loading student balance:', error);
     }
@@ -261,8 +471,9 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       if (error) throw error;
 
       // Reload redemptions and balance after successful request
-      await get().loadRedemptions();
-      await get().loadStudentBalance(studentId);
+      await get().loadRedemptions(true);
+      await get().loadStudentBalance(studentId, true);
+      await get().loadTransactions(studentId, true);
 
       return data;
     } catch (error: any) {
@@ -276,14 +487,15 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   approveRedemption: async (redemptionId: string, approvedBy: string) => {
     try {
-      const { error } = await (supabase as any).rpc('approve_redemption', {
+      const { error } = await supabase.rpc('approve_redemption', {
         p_redemption_id: redemptionId,
         p_admin_id: approvedBy
       });
       if (error) throw error;
       
-      // Reload redemptions after approval
-      await get().loadRedemptions();
+      // Reload redemptions and transactions after approval
+      await get().loadRedemptions(true);
+      await get().loadAllTransactions(true);
       
       return { success: true, message: 'Resgate aprovado com sucesso!' };
     } catch (error) {
@@ -294,12 +506,17 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   rejectRedemption: async (redemptionId: string, rejectedBy: string, reason: string) => {
     try {
-      const { error } = await (supabase as any).rpc('reject_redemption', {
+      const { error } = await supabase.rpc('reject_redemption', {
         p_redemption_id: redemptionId,
         p_admin_id: rejectedBy,
         p_reason: reason
       });
       if (error) throw error;
+      
+      // Reload redemptions and transactions after rejection
+      await get().loadRedemptions(true);
+      await get().loadAllTransactions(true);
+      
       return { success: true, message: 'Resgate rejeitado com sucesso!' };
     } catch (error) {
       console.error('Error rejecting redemption:', error);
@@ -320,8 +537,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     }));
   },
 
-  // DEPRECATED: Este método não é mais usado - a bonificação agora é feita via Edge Function
-  // que chama a RPC function grant_koin_bonus com SECURITY DEFINER
+  // DEPRECATED
   createBonusEvent: async (event: Omit<BonusEvent, 'id' | 'createdAt'>) => {
     console.warn('[rewards-store] createBonusEvent is deprecated. Use the grant-koin-bonus edge function instead.');
     throw new Error('This method is deprecated. Please use the grant-koin-bonus edge function.');
@@ -329,7 +545,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   addItem: async (item: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('reward_items')
         .insert({
           name: item.name,
@@ -380,7 +596,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         dbUpdates.image_url = updates.images[0];
       }
 
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('reward_items')
         .update(dbUpdates)
         .eq('id', id);
@@ -400,7 +616,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   deleteItem: async (id: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('reward_items')
         .update({ is_active: false })
         .eq('id', id);
@@ -414,5 +630,49 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       console.error('Error deleting item:', error);
       throw error;
     }
+  },
+
+  subscribeToRedemptions: (callback: () => void) => {
+    const channel = supabase
+      .channel('redemptions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'redemption_requests'
+        },
+        () => {
+          get().loadRedemptions(true);
+          callback();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  },
+
+  subscribeToTransactions: (callback: () => void) => {
+    const channel = supabase
+      .channel('transactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'koin_transactions'
+        },
+        () => {
+          get().loadAllTransactions(true);
+          callback();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   },
 }));

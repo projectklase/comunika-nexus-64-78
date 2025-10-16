@@ -16,14 +16,17 @@ export interface KoinTransaction {
   studentId: string;
   type: 'EARN' | 'SPEND' | 'BONUS' | 'REFUND' | 'REDEMPTION';
   amount: number;
-  balanceBefore: number;
-  balanceAfter: number;
-  source: string; // e.g., "TASK:123", "EVENT:45", "REDEMPTION:67"
+  balanceBefore?: number;
+  balanceAfter?: number;
+  source: string;
   description: string;
   timestamp: string;
   responsibleUserId?: string;
   redemptionStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   itemName?: string;
+  studentName?: string;
+  responsibleUserName?: string;
+  processedAt?: string;
 }
 
 export interface KoinBalance {
@@ -38,6 +41,7 @@ export interface KoinBalance {
 export interface RedemptionRequest {
   id: string;
   studentId: string;
+  studentName?: string;
   itemId: string;
   itemName: string;
   koinAmount: number;
@@ -45,6 +49,7 @@ export interface RedemptionRequest {
   requestedAt: string;
   processedAt?: string;
   processedBy?: string;
+  processedByName?: string;
   rejectionReason?: string;
 }
 

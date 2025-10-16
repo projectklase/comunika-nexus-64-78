@@ -40,19 +40,33 @@ export default function RewardsManagement() {
     loadRedemptions
   } = useRewardsStore();
 
+  const { loadAllTransactions } = useRewardsStore();
+
   // Load data on mount
   useEffect(() => {
     loadItems();
     loadRedemptions();
-  }, [loadItems, loadRedemptions]);
+    loadAllTransactions();
+  }, [loadItems, loadRedemptions, loadAllTransactions]);
 
   // Enhanced transactions for admin view
-  const enhancedTransactions = enhanceTransactionsForAdmin(
-    transactions,
-    redemptions,
-    bonusEvents,
-    items
-  );
+  const [enhancedTransactions, setEnhancedTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadEnhancedTransactions = async () => {
+      const enhanced = await enhanceTransactionsForAdmin(
+        transactions,
+        redemptions,
+        bonusEvents,
+        items
+      );
+      setEnhancedTransactions(enhanced);
+    };
+    
+    if (transactions.length > 0) {
+      loadEnhancedTransactions();
+    }
+  }, [transactions, redemptions, bonusEvents, items]);
 
   const [selectedItem, setSelectedItem] = useState<RewardItem | null>(null);
   const [editingItem, setEditingItem] = useState<RewardItem | null>(null);

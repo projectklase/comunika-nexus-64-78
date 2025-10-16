@@ -1,37 +1,53 @@
 import { KoinTransaction, RedemptionRequest, BonusEvent, RewardItem } from '@/types/rewards';
 import { EnhancedKoinTransaction } from '@/types/admin-rewards';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Mock data for students and administrators
- * In a real implementation, this would come from a user store or API
+ * Busca dados reais de usuários do banco de dados
  */
-const mockUsers: Record<string, { name: string; role: string }> = {
-  'student-1': { name: 'Ana Costa Silva', role: 'student' },
-  'student-2': { name: 'Bruno Lima Santos', role: 'student' },
-  'student-3': { name: 'Carolina Ferreira', role: 'student' },
-  'student-4': { name: 'Daniel Oliveira', role: 'student' },
-  'student-5': { name: 'Eduarda Pereira', role: 'student' },
-  'admin-1': { name: 'Maria Silva', role: 'secretaria' },
-  'admin-2': { name: 'João Rodrigues', role: 'secretaria' },
-  'system': { name: 'Sistema', role: 'system' },
-};
+async function fetchUserNames(userIds: string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .in('id', userIds);
+
+  if (error) {
+    console.error('Error fetching user names:', error);
+    return new Map();
+  }
+
+  return new Map(data?.map(u => [u.id, u.name]) || []);
+}
 
 /**
- * Enhances raw KoinTransaction data with human-readable information for admin view
+ * Enriquece transações com informações completas para visualização administrativa
+ * Usa dados REAIS do banco de dados
  */
-export function enhanceTransactionsForAdmin(
+export async function enhanceTransactionsForAdmin(
   transactions: KoinTransaction[],
   redemptions: RedemptionRequest[],
   bonusEvents: BonusEvent[],
   rewardItems: RewardItem[]
-): EnhancedKoinTransaction[] {
-  return transactions.map(transaction => {
-    const student = mockUsers[transaction.studentId] || { name: 'Aluno Desconhecido', role: 'student' };
-    const responsibleAdmin = transaction.responsibleUserId 
-      ? mockUsers[transaction.responsibleUserId] 
-      : null;
+): Promise<EnhancedKoinTransaction[]> {
+  // Coletar todos os IDs únicos de usuários
+  const userIds = new Set<string>();
+  transactions.forEach(tx => {
+    userIds.add(tx.studentId);
+    if (tx.responsibleUserId) userIds.add(tx.responsibleUserId);
+  });
 
-    // Parse and humanize the source
+  // Buscar nomes reais do banco
+  const userNames = await fetchUserNames(Array.from(userIds));
+
+  return transactions.map(transaction => {
+    const studentName = userNames.get(transaction.studentId) || 'Aluno Desconhecido';
+    const responsibleAdminName = transaction.responsibleUserId 
+      ? userNames.get(transaction.responsibleUserId) 
+      : undefined;
+
+    // Parse e humanize a origem
     const humanizedSource = parseTransactionSource(
       transaction.source,
       redemptions,
@@ -39,13 +55,13 @@ export function enhanceTransactionsForAdmin(
       rewardItems
     );
 
-    // Get redemption status if applicable
+    // Obter status de resgate se aplicável
     const redemptionStatus = getRedemptionStatus(transaction, redemptions);
 
     return {
       ...transaction,
-      studentName: student.name,
-      responsibleAdminName: responsibleAdmin?.name,
+      studentName,
+      responsibleAdminName,
       humanizedSource,
       redemptionStatus,
     };
@@ -53,7 +69,7 @@ export function enhanceTransactionsForAdmin(
 }
 
 /**
- * Parse transaction source and convert to human-readable format
+ * Parse da origem da transação e conversão para formato legível
  */
 function parseTransactionSource(
   source: string,
@@ -89,7 +105,6 @@ function parseTransactionSource(
     }
     
     case 'TASK': {
-      // In a real implementation, this would fetch from a tasks/activities store
       return {
         type: 'task',
         name: `Tarefa #${sourceId.substring(0, 8)}`,
@@ -107,13 +122,15 @@ function parseTransactionSource(
 }
 
 /**
- * Get redemption status for transaction
+ * Obter status de resgate para transação
  */
 function getRedemptionStatus(
   transaction: KoinTransaction,
   redemptions: RedemptionRequest[]
 ): EnhancedKoinTransaction['redemptionStatus'] {
-  if (transaction.type !== 'SPEND' && transaction.type !== 'REFUND') {
+  if (transaction.type !== 'SPEND' && 
+      transaction.type !== 'REFUND' && 
+      transaction.type !== 'REDEMPTION') {
     return undefined;
   }
 
@@ -124,7 +141,7 @@ function getRedemptionStatus(
 }
 
 /**
- * Get readable label for redemption status
+ * Obter label legível para status de resgate
  */
 function getRedemptionStatusLabel(status: RedemptionRequest['status']): string {
   switch (status) {
@@ -137,20 +154,4 @@ function getRedemptionStatusLabel(status: RedemptionRequest['status']): string {
     default:
       return 'Desconhecido';
   }
-}
-
-/**
- * Generate mock student ID for demo purposes
- */
-export function generateMockStudentId(): string {
-  const studentIds = Object.keys(mockUsers).filter(id => mockUsers[id].role === 'student');
-  return studentIds[Math.floor(Math.random() * studentIds.length)];
-}
-
-/**
- * Generate mock admin ID for demo purposes
- */
-export function generateMockAdminId(): string {
-  const adminIds = Object.keys(mockUsers).filter(id => mockUsers[id].role === 'secretaria');
-  return adminIds[Math.floor(Math.random() * adminIds.length)];
 }

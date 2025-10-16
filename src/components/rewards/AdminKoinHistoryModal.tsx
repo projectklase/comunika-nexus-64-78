@@ -107,8 +107,8 @@ export function AdminKoinHistoryModal({
   };
 
   const handleExport = () => {
-    // In a real implementation, this would generate a CSV/Excel file
-    console.log('Exportando histórico...', transactions);
+    const { exportAdminTransactionsToCSV } = require('@/utils/rewards-export');
+    exportAdminTransactionsToCSV(transactions);
   };
 
   return (
