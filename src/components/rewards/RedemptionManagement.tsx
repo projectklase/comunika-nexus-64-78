@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { RedemptionFilters } from './RedemptionFilters';
 
 export function RedemptionManagement() {
   const { user } = useAuth();
@@ -20,14 +21,34 @@ export function RedemptionManagement() {
   
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // Load redemptions on mount
   useEffect(() => {
     loadRedemptions();
   }, [loadRedemptions]);
 
-  const pendingRedemptions = redemptions.filter(r => r.status === 'PENDING');
-  const processedRedemptions = redemptions.filter(r => r.status !== 'PENDING');
+  // Filter redemptions
+  const filteredRedemptions = redemptions.filter(r => {
+    const matchesSearch = searchTerm === '' || 
+      r.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.studentName && r.studentName.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const pendingRedemptions = filteredRedemptions.filter(r => r.status === 'PENDING');
+  const processedRedemptions = filteredRedemptions.filter(r => r.status !== 'PENDING');
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+  };
+
+  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all';
 
   const handleApprove = async (redemptionId: string) => {
     if (!user) return;
@@ -157,6 +178,16 @@ export function RedemptionManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Filters */}
+      <RedemptionFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
+
       {/* Pending Redemptions */}
       <Card>
         <CardHeader>

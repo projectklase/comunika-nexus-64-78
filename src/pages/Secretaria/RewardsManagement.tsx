@@ -9,6 +9,7 @@ import { ItemFormModal } from '@/components/rewards/ItemFormModal';
 import { RedemptionManagement } from '@/components/rewards/RedemptionManagement';
 import { BonusEventModal } from '@/components/rewards/BonusEventModal';
 import { AdminKoinHistoryModal } from '@/components/rewards/AdminKoinHistoryModal';
+import { RewardsAnalytics } from '@/components/rewards/RewardsAnalytics';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { RewardItem } from '@/types/rewards';
 import { 
@@ -214,7 +215,7 @@ export default function RewardsManagement() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Store className="h-4 w-4" />
             Itens da Loja
@@ -227,6 +228,10 @@ export default function RewardsManagement() {
                 {pendingRedemptions}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <Coins className="h-4 w-4" />
@@ -297,6 +302,11 @@ export default function RewardsManagement() {
         {/* Redemptions Management */}
         <TabsContent value="redemptions">
           <RedemptionManagement />
+        </TabsContent>
+
+        {/* Analytics */}
+        <TabsContent value="analytics">
+          <RewardsAnalytics transactions={transactions} />
         </TabsContent>
 
         {/* History */}
