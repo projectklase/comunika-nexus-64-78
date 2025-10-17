@@ -743,6 +743,7 @@ export type Database = {
           item_id: string
           processed_at: string | null
           processed_by: string | null
+          rejection_reason: string | null
           requested_at: string | null
           status: string
           student_id: string
@@ -753,6 +754,7 @@ export type Database = {
           item_id: string
           processed_at?: string | null
           processed_by?: string | null
+          rejection_reason?: string | null
           requested_at?: string | null
           status?: string
           student_id: string
@@ -763,6 +765,7 @@ export type Database = {
           item_id?: string
           processed_at?: string | null
           processed_by?: string | null
+          rejection_reason?: string | null
           requested_at?: string | null
           status?: string
           student_id?: string

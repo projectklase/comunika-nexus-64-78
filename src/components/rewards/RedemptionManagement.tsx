@@ -41,7 +41,6 @@ export function RedemptionManagement() {
   });
 
   const pendingRedemptions = filteredRedemptions.filter(r => r.status === 'PENDING');
-  const processedRedemptions = filteredRedemptions.filter(r => r.status !== 'PENDING');
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -61,19 +60,18 @@ export function RedemptionManagement() {
       try {
         await supabase.functions.invoke('create-notification', {
           body: {
-            userId: redemption.studentId,
+            user_id: redemption.studentId,
             type: 'REDEMPTION_APPROVED',
-            title: 'Resgate aprovado!',
-            message: `Boas notícias! Seu resgate do item '${redemption.itemName}' foi aprovado. Você já pode retirá-lo na secretaria.`,
-            roleTarget: 'ALUNO',
-            link: '/aluno/recompensas',
+            title: 'Resgate Aprovado! 🎉',
+            message: `Seu resgate de "${redemption.itemName}" foi aprovado! Você pode retirar seu prêmio.`,
+            link: '/aluno/loja-recompensas?tab=history',
+            role_target: 'aluno',
             meta: {
-              studentId: redemption.studentId,
-              itemId: redemption.itemId,
+              redemptionId,
               itemName: redemption.itemName,
               koinAmount: redemption.koinAmount,
-              redemptionId: redemption.id,
-              approvedBy: user.id
+              approvedBy: user.name,
+              approvedAt: new Date().toISOString()
             }
           }
         });
@@ -108,20 +106,19 @@ export function RedemptionManagement() {
       try {
         await supabase.functions.invoke('create-notification', {
           body: {
-            userId: redemption.studentId,
+            user_id: redemption.studentId,
             type: 'REDEMPTION_REJECTED',
-            title: 'Resgate recusado',
-            message: `Atenção: Seu resgate do item '${redemption.itemName}' foi recusado. Motivo: '${rejectionReason.trim()}'.`,
-            roleTarget: 'ALUNO',
-            link: '/aluno/recompensas',
+            title: 'Resgate Recusado',
+            message: `Seu resgate de "${redemption.itemName}" foi recusado. Motivo: ${rejectionReason}. Seus Koins foram reembolsados.`,
+            link: '/aluno/loja-recompensas?tab=history',
+            role_target: 'aluno',
             meta: {
-              studentId: redemption.studentId,
-              itemId: redemption.itemId,
+              redemptionId: rejectingId,
               itemName: redemption.itemName,
               koinAmount: redemption.koinAmount,
-              redemptionId: redemption.id,
-              rejectedBy: user.id,
-              rejectionReason: rejectionReason.trim()
+              rejectedBy: user.name,
+              rejectedAt: new Date().toISOString(),
+              reason: rejectionReason
             }
           }
         });
@@ -285,47 +282,6 @@ export function RedemptionManagement() {
           )}
         </CardContent>
       </Card>
-
-      {/* Processed Redemptions */}
-      {processedRedemptions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Histórico de Resgates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {processedRedemptions.slice(0, 10).map((redemption) => (
-                <div
-                  key={redemption.id}
-                  className="flex items-center justify-between p-3 bg-muted/5 rounded-lg border border-border/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={getItemById(redemption.itemId)?.images[0] || '/placeholder.svg'}
-                      alt={redemption.itemName}
-                      className="w-10 h-10 object-cover rounded"
-                    />
-                    <div>
-                      <p className="font-medium text-sm">{redemption.itemName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(redemption.processedAt!), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-sm">
-                      <Coins className="h-3 w-3 text-yellow-500" />
-                      {redemption.koinAmount}
-                    </div>
-                    {getStatusBadge(redemption.status)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Rejection Modal */}
       <Dialog open={!!rejectingId} onOpenChange={() => setRejectingId(null)}>

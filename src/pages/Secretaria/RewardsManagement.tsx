@@ -7,6 +7,7 @@ import { RewardCard } from '@/components/rewards/RewardCard';
 import { RewardDetailModal } from '@/components/rewards/RewardDetailModal';
 import { ItemFormModal } from '@/components/rewards/ItemFormModal';
 import { RedemptionManagement } from '@/components/rewards/RedemptionManagement';
+import { RedemptionHistory } from '@/components/rewards/RedemptionHistory';
 import { BonusEventModal } from '@/components/rewards/BonusEventModal';
 import { AdminKoinHistoryModal } from '@/components/rewards/AdminKoinHistoryModal';
 import { RewardsAnalytics } from '@/components/rewards/RewardsAnalytics';
@@ -310,51 +311,8 @@ export default function RewardsManagement() {
         </TabsContent>
 
         {/* History */}
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Últimas Transações</span>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowHistoryModal(true)}
-                >
-                  Ver Histórico Completo
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {transactions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Coins className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma transação registrada ainda</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {transactions.slice(0, 10).map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="flex items-center justify-between p-3 bg-muted/5 rounded-lg border border-border/50"
-                    >
-                      <div>
-                        <p className="font-medium text-sm">{transaction.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(transaction.timestamp).toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Coins className="h-4 w-4 text-yellow-500" />
-                        <span className="font-medium">
-                          {transaction.type === 'SPEND' ? '-' : '+'}
-                          {transaction.amount}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="history" className="space-y-6">
+          <RedemptionHistory redemptions={redemptions} />
         </TabsContent>
       </Tabs>
 

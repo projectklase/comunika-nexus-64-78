@@ -227,23 +227,35 @@ export default function RewardsStore() {
                               badgeClass: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
                               amountClass: 'text-orange-500',
                               prefix: '⏳',
-                              description: `Resgate solicitado: ${transaction.itemName || transaction.description}`
+                              description: `Resgate solicitado: ${transaction.itemName || transaction.description}`,
+                              details: 'Seu resgate está sendo analisado pela secretaria.'
                             };
                           } else if (transaction.redemptionStatus === 'APPROVED') {
+                            const processedInfo = transaction.processedAt 
+                              ? ` em ${new Date(transaction.processedAt).toLocaleDateString('pt-BR')}`
+                              : '';
+                            const approvedBy = transaction.responsibleUserName 
+                              ? ` por ${transaction.responsibleUserName}`
+                              : '';
                             return {
                               badge: 'Resgate Aprovado',
                               badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30',
                               amountClass: 'text-red-500',
                               prefix: '-',
-                              description: `Resgate aprovado: ${transaction.itemName || transaction.description}`
+                              description: `Resgate aprovado: ${transaction.itemName || transaction.description}`,
+                              details: `Aprovado${approvedBy}${processedInfo}. Você pode retirar seu prêmio!`
                             };
                           } else if (transaction.redemptionStatus === 'REJECTED') {
+                            const processedInfo = transaction.processedAt 
+                              ? ` em ${new Date(transaction.processedAt).toLocaleDateString('pt-BR')}`
+                              : '';
                             return {
                               badge: 'Resgate Recusado',
                               badgeClass: 'bg-red-500/10 text-red-600 border-red-500/30',
                               amountClass: 'text-blue-500',
                               prefix: '+',
-                              description: `Resgate recusado (reembolsado): ${transaction.itemName || transaction.description}`
+                              description: `Resgate recusado: ${transaction.itemName || transaction.description}`,
+                              details: `Recusado${processedInfo}. Seus Koins foram reembolsados.`
                             };
                           }
                         } else if (transaction.type === 'REFUND') {
@@ -252,15 +264,20 @@ export default function RewardsStore() {
                             badgeClass: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
                             amountClass: 'text-green-500',
                             prefix: '+',
-                            description: transaction.description
+                            description: transaction.description,
+                            details: 'Valor devolvido à sua conta.'
                           };
                         } else if (transaction.type === 'BONUS') {
+                          const grantedBy = transaction.responsibleUserName 
+                            ? ` por ${transaction.responsibleUserName}`
+                            : '';
                           return {
                             badge: 'Bonificação',
                             badgeClass: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
                             amountClass: 'text-green-500',
                             prefix: '+',
-                            description: transaction.description
+                            description: transaction.description,
+                            details: `Bonificação concedida${grantedBy}. Continue assim!`
                           };
                         } else if (transaction.type === 'EARN') {
                           return {
@@ -268,7 +285,8 @@ export default function RewardsStore() {
                             badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30',
                             amountClass: 'text-green-500',
                             prefix: '+',
-                            description: transaction.description
+                            description: transaction.description,
+                            details: 'Parabéns por ganhar Koins!'
                           };
                         }
                         
@@ -277,7 +295,8 @@ export default function RewardsStore() {
                           badgeClass: 'bg-muted text-muted-foreground',
                           amountClass: transaction.amount < 0 ? 'text-red-500' : 'text-green-500',
                           prefix: transaction.amount < 0 ? '-' : '+',
-                          description: transaction.description
+                          description: transaction.description,
+                          details: undefined
                         };
                       };
 
@@ -286,35 +305,42 @@ export default function RewardsStore() {
                       return (
                         <div
                           key={transaction.id}
-                          className="flex items-start justify-between p-4 bg-muted/5 rounded-lg border border-border/50 hover:bg-muted/10 transition-colors"
+                          className="flex flex-col gap-3 p-4 bg-muted/5 rounded-lg border border-border/50 hover:bg-muted/10 transition-colors"
                         >
-                          <div className="flex-1 min-w-0 mr-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium text-sm">{statusInfo.description}</p>
-                              {statusInfo.badge && (
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs ${statusInfo.badgeClass}`}
-                                >
-                                  {statusInfo.badge}
-                                </Badge>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0 mr-4">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <p className="font-medium text-sm">{statusInfo.description}</p>
+                                {statusInfo.badge && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`text-xs ${statusInfo.badgeClass}`}
+                                  >
+                                    {statusInfo.badge}
+                                  </Badge>
+                                )}
+                              </div>
+                              {statusInfo.details && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {statusInfo.details}
+                                </p>
                               )}
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {new Date(transaction.timestamp).toLocaleString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(transaction.timestamp).toLocaleString('pt-BR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <Coins className="h-4 w-4 text-yellow-500" />
-                            <span className={`font-bold text-base ${statusInfo.amountClass}`}>
-                              {statusInfo.prefix}{Math.abs(transaction.amount)}
-                            </span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Coins className="h-4 w-4 text-yellow-500" />
+                              <span className={`font-bold text-base ${statusInfo.amountClass}`}>
+                                {statusInfo.prefix}{Math.abs(transaction.amount)}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
