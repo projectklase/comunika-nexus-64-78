@@ -416,6 +416,8 @@ export type Database = {
       koin_transactions: {
         Row: {
           amount: number
+          balance_after: number | null
+          balance_before: number | null
           created_at: string | null
           description: string | null
           id: string
@@ -426,6 +428,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          balance_after?: number | null
+          balance_before?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -436,6 +440,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
           created_at?: string | null
           description?: string | null
           id?: string

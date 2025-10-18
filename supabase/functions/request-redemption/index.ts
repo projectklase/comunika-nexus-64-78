@@ -103,14 +103,76 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('[request-redemption] Erro:', error);
+    
+    // Tratamento específico de erros
+    const errorMessage = error.message || '';
+    
+    if (errorMessage.includes('Saldo de Koins insuficiente')) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Você não tem Koins suficientes para este resgate.',
+          errorCode: 'INSUFFICIENT_BALANCE'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+    
+    if (errorMessage.includes('Item esgotado')) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Este item está temporariamente esgotado.',
+          errorCode: 'OUT_OF_STOCK'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+    
+    if (errorMessage.includes('duplicate key') || errorMessage.includes('unique_pending_redemption')) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Você já tem um resgate pendente para este item.',
+          errorCode: 'DUPLICATE_REQUEST'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+    
+    if (errorMessage.includes('Item ou estudante não encontrado')) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Item não encontrado ou indisponível.',
+          errorCode: 'NOT_FOUND'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404 
+        }
+      );
+    }
+    
+    // Erro genérico
     return new Response(
       JSON.stringify({ 
         success: false, 
-        message: error.message || 'Erro ao solicitar resgate' 
+        message: 'Erro ao processar resgate. Por favor, tente novamente.',
+        errorCode: 'GENERIC_ERROR'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
+        status: 500 
       }
     );
   }

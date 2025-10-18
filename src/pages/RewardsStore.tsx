@@ -64,9 +64,42 @@ export default function RewardsStore() {
   const handleRedeem = async (item: RewardItem) => {
     if (!user) return;
     
+    // Validações preventivas
+    const currentBalance = balance?.availableBalance || 0;
+    
+    console.log('[RewardsStore] Validando resgate:', {
+      item: item.name,
+      price: item.koinPrice,
+      userBalance: currentBalance,
+      stock: item.stock
+    });
+    
+    if (currentBalance < item.koinPrice) {
+      console.warn('[RewardsStore] Saldo insuficiente');
+      toast({
+        title: "Saldo insuficiente",
+        description: `Você precisa de ${item.koinPrice} Koins, mas tem apenas ${currentBalance}.`,
+        variant: "destructive",
+      });
+      setConfirmItem(null);
+      return;
+    }
+    
+    if (item.stock <= 0) {
+      console.warn('[RewardsStore] Item sem estoque');
+      toast({
+        title: "Item esgotado",
+        description: "Este item está temporariamente indisponível.",
+        variant: "destructive",
+      });
+      setConfirmItem(null);
+      return;
+    }
+    
     setIsProcessing(true);
     
     try {
+      console.log('[RewardsStore] Solicitando resgate para item:', item.id);
       const result = await requestRedemption(
         user.id, 
         user.name || 'Aluno', 
@@ -76,26 +109,45 @@ export default function RewardsStore() {
       );
       
       if (result.success) {
+        console.log('[RewardsStore] Resgate solicitado com sucesso');
         toast({
-          title: "Resgate solicitado!",
-          description: result.message,
+          title: "Resgate solicitado! 🎉",
+          description: result.message || "Aguarde aprovação da secretaria. Você será notificado em breve.",
           duration: 4000
         });
         
         // Reload balance to show blocked amount
         await loadStudentBalance(user.id);
       } else {
+        console.error('[RewardsStore] Falha no resgate:', result.message);
+        
+        // Mensagens específicas baseadas no erro
+        let errorTitle = "Erro no resgate";
+        let errorMessage = result.message || "Tente novamente mais tarde.";
+        
+        if (result.message?.toLowerCase().includes('insuficiente')) {
+          errorTitle = "Saldo insuficiente";
+          errorMessage = "Você não tem Koins suficientes para este resgate.";
+        } else if (result.message?.toLowerCase().includes('esgotado')) {
+          errorTitle = "Item esgotado";
+          errorMessage = "Este item está temporariamente indisponível.";
+        } else if (result.message?.toLowerCase().includes('pendente') || result.message?.toLowerCase().includes('duplicate')) {
+          errorTitle = "Resgate já solicitado";
+          errorMessage = "Você já tem um resgate pendente para este item.";
+        }
+        
         toast({
-          title: "Erro no resgate",
-          description: result.message,
+          title: errorTitle,
+          description: errorMessage,
           variant: "destructive",
           duration: 4000
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[RewardsStore] Exceção ao solicitar resgate:', error);
       toast({
-        title: "Erro no resgate",
-        description: "Ocorreu um erro ao processar seu resgate",
+        title: "Erro ao processar",
+        description: error.message || "Ocorreu um erro ao processar seu resgate. Tente novamente.",
         variant: "destructive",
         duration: 4000
       });

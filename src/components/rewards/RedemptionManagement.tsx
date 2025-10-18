@@ -56,9 +56,11 @@ export function RedemptionManagement() {
     const result = await approveRedemption(redemptionId, user.id);
     
     if (result.success && redemption) {
+      console.log('[RedemptionManagement] Aprovação bem-sucedida, criando notificação para aluno:', redemption.studentId);
+      
       // Criar notificação para o aluno usando service_role via edge function
       try {
-        await supabase.functions.invoke('create-notification', {
+        const notificationResponse = await supabase.functions.invoke('create-notification', {
           body: {
             user_id: redemption.studentId,
             type: 'REDEMPTION_APPROVED',
@@ -75,8 +77,14 @@ export function RedemptionManagement() {
             }
           }
         });
+        
+        if (notificationResponse.error) {
+          console.error('[RedemptionManagement] Erro ao criar notificação:', notificationResponse.error);
+        } else {
+          console.log('[RedemptionManagement] Notificação de aprovação criada com sucesso');
+        }
       } catch (error) {
-        console.error('Error creating notification:', error);
+        console.error('[RedemptionManagement] Exceção ao criar notificação:', error);
         // Don't fail approval if notification fails
       }
 
@@ -102,9 +110,11 @@ export function RedemptionManagement() {
     const result = await rejectRedemption(rejectingId, user.id, rejectionReason.trim());
     
     if (redemption) {
+      console.log('[RedemptionManagement] Rejeição bem-sucedida, criando notificação para aluno:', redemption.studentId);
+      
       // Criar notificação para o aluno usando service_role via edge function
       try {
-        await supabase.functions.invoke('create-notification', {
+        const notificationResponse = await supabase.functions.invoke('create-notification', {
           body: {
             user_id: redemption.studentId,
             type: 'REDEMPTION_REJECTED',
@@ -122,8 +132,14 @@ export function RedemptionManagement() {
             }
           }
         });
+        
+        if (notificationResponse.error) {
+          console.error('[RedemptionManagement] Erro ao criar notificação:', notificationResponse.error);
+        } else {
+          console.log('[RedemptionManagement] Notificação de rejeição criada com sucesso');
+        }
       } catch (error) {
-        console.error('Error creating notification:', error);
+        console.error('[RedemptionManagement] Exceção ao criar notificação:', error);
         // Don't fail rejection if notification fails
       }
     }
