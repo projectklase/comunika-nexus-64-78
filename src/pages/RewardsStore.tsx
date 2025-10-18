@@ -48,6 +48,15 @@ export default function RewardsStore() {
     }
   }, [user, loadItems, loadStudentBalance, loadTransactions]);
 
+  // Reload data when switching to history tab (to catch approved/rejected redemptions)
+  useEffect(() => {
+    if (activeTab === 'history' && user) {
+      console.log('[RewardsStore] Tab history ativa - recarregando dados do aluno');
+      loadStudentBalance(user.id, true);
+      loadTransactions(user.id, true);
+    }
+  }, [activeTab, user, loadStudentBalance, loadTransactions]);
+
   // Check for URL params to determine active tab
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);

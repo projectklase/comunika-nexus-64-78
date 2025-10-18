@@ -60,6 +60,7 @@ export function RedemptionManagement() {
       
       // Criar notificação para o aluno usando service_role via edge function
       try {
+        console.log('[RedemptionManagement] Criando notificação de aprovação para:', redemption.studentId);
         const notificationResponse = await supabase.functions.invoke('create-notification', {
           body: {
             user_id: redemption.studentId,
@@ -67,7 +68,6 @@ export function RedemptionManagement() {
             title: 'Resgate Aprovado! 🎉',
             message: `Seu resgate de "${redemption.itemName}" foi aprovado! Você pode retirar seu prêmio.`,
             link: '/aluno/loja-recompensas?tab=history',
-            role_target: 'aluno',
             meta: {
               redemptionId,
               itemName: redemption.itemName,

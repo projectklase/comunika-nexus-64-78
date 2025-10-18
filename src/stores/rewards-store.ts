@@ -487,6 +487,10 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   approveRedemption: async (redemptionId: string, approvedBy: string) => {
     try {
+      // Get student_id before approval for reloading their data
+      const redemption = get().redemptions.find(r => r.id === redemptionId);
+      const studentId = redemption?.studentId;
+
       const { error } = await supabase.rpc('approve_redemption', {
         p_redemption_id: redemptionId,
         p_admin_id: approvedBy
@@ -497,6 +501,13 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       await get().loadRedemptions(true);
       await get().loadAllTransactions(true);
       
+      // Reload student-specific data to update their balance and history
+      if (studentId) {
+        console.log('[RewardsStore] Recarregando dados do aluno após aprovação:', studentId);
+        await get().loadStudentBalance(studentId, true);
+        await get().loadTransactions(studentId, true);
+      }
+      
       return { success: true, message: 'Resgate aprovado com sucesso!' };
     } catch (error) {
       console.error('Error approving redemption:', error);
@@ -506,6 +517,10 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   rejectRedemption: async (redemptionId: string, rejectedBy: string, reason: string) => {
     try {
+      // Get student_id before rejection for reloading their data
+      const redemption = get().redemptions.find(r => r.id === redemptionId);
+      const studentId = redemption?.studentId;
+
       const { error } = await supabase.rpc('reject_redemption', {
         p_redemption_id: redemptionId,
         p_admin_id: rejectedBy,
@@ -516,6 +531,13 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       // Reload redemptions and transactions after rejection
       await get().loadRedemptions(true);
       await get().loadAllTransactions(true);
+      
+      // Reload student-specific data to update their balance (refund) and history
+      if (studentId) {
+        console.log('[RewardsStore] Recarregando dados do aluno após rejeição:', studentId);
+        await get().loadStudentBalance(studentId, true);
+        await get().loadTransactions(studentId, true);
+      }
       
       return { success: true, message: 'Resgate rejeitado com sucesso!' };
     } catch (error) {
