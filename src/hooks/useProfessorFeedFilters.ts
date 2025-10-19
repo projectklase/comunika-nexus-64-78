@@ -46,12 +46,12 @@ export function useProfessorFeedFilters() {
 
   const STORAGE_KEY = `profFeedFilters_v1_${user?.id}`;
 
-  // Load posts from Supabase
+  // Load posts from Supabase with real-time updates
   useEffect(() => {
     const loadPosts = async () => {
       setIsLoadingPosts(true);
       try {
-        const allPosts = await postStore.list({});
+        const allPosts = await postStore.list({ status: 'PUBLISHED' });
         setPosts(allPosts);
       } catch (error) {
         console.error('Error loading posts:', error);
@@ -59,7 +59,17 @@ export function useProfessorFeedFilters() {
         setIsLoadingPosts(false);
       }
     };
+    
     loadPosts();
+
+    // Subscribe to real-time changes
+    const subscription = postStore.subscribe(() => {
+      loadPosts();
+    });
+
+    return () => {
+      subscription();
+    };
   }, []);
 
   // Load filters from URL params, then localStorage, then defaults
@@ -102,19 +112,23 @@ export function useProfessorFeedFilters() {
 
     // Filter by type
     if (filters.type === 'agendados') {
+      // Show scheduled posts from this professor
       filteredResults = filteredResults.filter(post => 
         post.status === 'SCHEDULED' && 
-        post.authorName === user.name &&
+        post.authorId === user.id &&
         post.publishAt &&
         new Date(post.publishAt) >= new Date()
       );
     } else if (filters.type === 'eventos') {
+      // Show GLOBAL events + CLASS events targeted to professor's classes
       filteredResults = filteredResults.filter(post => 
         ['EVENTO', 'COMUNICADO', 'AVISO'].includes(post.type) &&
+        post.status === 'PUBLISHED' &&
         (post.audience === 'GLOBAL' || 
          (post.audience === 'CLASS' && post.classIds?.some(id => professorClassIds.includes(id))))
       );
     } else if (filters.type !== 'all') {
+      // Show specific activity type from this professor
       const typeMap: Record<string, PostType> = {
         atividade: 'ATIVIDADE',
         trabalho: 'TRABALHO', 
@@ -123,17 +137,23 @@ export function useProfessorFeedFilters() {
       
       filteredResults = filteredResults.filter(post => 
         post.type === typeMap[filters.type] && 
-        post.authorName === user.name
+        post.status === 'PUBLISHED' &&
+        post.authorId === user.id
       );
     } else {
-      // Show all relevant posts (professor's activities + secretaria events)
+      // Show ALL relevant posts:
+      // 1. Professor's own activities (ATIVIDADE, TRABALHO, PROVA)
+      // 2. GLOBAL posts from secretaria (EVENTO, COMUNICADO, AVISO)
+      // 3. CLASS posts from secretaria targeted to professor's classes
       filteredResults = filteredResults.filter(post => {
+        if (post.status !== 'PUBLISHED') return false;
+        
         // Professor's own activities
-        if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type) && post.authorName === user.name) {
+        if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type) && post.authorId === user.id) {
           return true;
         }
         
-        // Relevant secretaria events
+        // Secretaria posts (GLOBAL or targeted to professor's classes)
         if (['EVENTO', 'COMUNICADO', 'AVISO'].includes(post.type)) {
           return post.audience === 'GLOBAL' || 
                  (post.audience === 'CLASS' && post.classIds?.some(id => professorClassIds.includes(id)));
@@ -143,11 +163,14 @@ export function useProfessorFeedFilters() {
       });
     }
 
-    // Filter by class
+    // Filter by class (only for CLASS audience posts)
     if (filters.classId !== 'ALL') {
-      filteredResults = filteredResults.filter(post => 
-        post.audience === 'CLASS' && post.classIds?.includes(filters.classId)
-      );
+      filteredResults = filteredResults.filter(post => {
+        // Global posts are always visible regardless of class filter
+        if (post.audience === 'GLOBAL') return true;
+        // Class posts must match the selected class
+        return post.audience === 'CLASS' && post.classIds?.includes(filters.classId);
+      });
     }
 
     // Filter by period
@@ -199,15 +222,21 @@ export function useProfessorFeedFilters() {
 
     const professorClassIds = metrics.professorClasses.map(c => c.id);
 
-    // All posts
+    // All relevant posts for professor
     const allPosts = posts.filter(post => {
-      if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type) && post.authorName === user.name) {
+      if (post.status !== 'PUBLISHED') return false;
+      
+      // Professor's own activities
+      if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type) && post.authorId === user.id) {
         return true;
       }
+      
+      // Secretaria posts (GLOBAL + CLASS posts for professor's classes)
       if (['EVENTO', 'COMUNICADO', 'AVISO'].includes(post.type)) {
         return post.audience === 'GLOBAL' || 
                (post.audience === 'CLASS' && post.classIds?.some(id => professorClassIds.includes(id)));
       }
+      
       return false;
     });
 
@@ -249,13 +278,13 @@ export function useProfessorFeedFilters() {
 
     return {
       all: periodFilteredPosts.length,
-      atividade: periodFilteredPosts.filter(p => p.type === 'ATIVIDADE' && p.authorName === user.name).length,
-      trabalho: periodFilteredPosts.filter(p => p.type === 'TRABALHO' && p.authorName === user.name).length,
-      prova: periodFilteredPosts.filter(p => p.type === 'PROVA' && p.authorName === user.name).length,
+      atividade: periodFilteredPosts.filter(p => p.type === 'ATIVIDADE' && p.authorId === user.id).length,
+      trabalho: periodFilteredPosts.filter(p => p.type === 'TRABALHO' && p.authorId === user.id).length,
+      prova: periodFilteredPosts.filter(p => p.type === 'PROVA' && p.authorId === user.id).length,
       eventos: periodFilteredPosts.filter(p => ['EVENTO', 'COMUNICADO', 'AVISO'].includes(p.type)).length,
       agendados: posts.filter(p => 
         p.status === 'SCHEDULED' && 
-        p.authorName === user.name &&
+        p.authorId === user.id &&
         p.publishAt &&
         new Date(p.publishAt) >= new Date()
       ).length
