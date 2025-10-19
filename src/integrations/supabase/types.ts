@@ -459,6 +459,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "koin_transactions_related_entity_id_fkey"
+            columns: ["related_entity_id"]
+            isOneToOne: false
+            referencedRelation: "redemption_requests"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "koin_transactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false

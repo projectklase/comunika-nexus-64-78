@@ -58,17 +58,20 @@ export function useNotificationPanel() {
   
   // Load notifications from store
   const loadNotifications = async () => {
-    if (!roleTarget) {
+    if (!user?.id) {
       setNotifications([]);
       setLoading(false);
       return;
     }
     
+    // FASE 3: Buscar notificações do usuário (independente de role_target)
+    // Isso inclui notificações gerais (role_target null) e específicas do role
     const allNotifications = await notificationStore.listAsync({
-      roleTarget,
+      userId: user.id,
       limit: 100
     });
     
+    console.log('[useNotificationPanel] Notificações carregadas:', allNotifications.length);
     setNotifications(allNotifications);
     setLoading(false);
   };

@@ -82,6 +82,13 @@ export function NotificationPanel() {
       recordPostView(notification.meta.postId, user, 'notification', notification.meta.classId);
     }
     
+    // FASE 5: Lidar com notificações de resgate
+    if (notification.type === 'REDEMPTION_APPROVED' || notification.type === 'REDEMPTION_REJECTED') {
+      close();
+      navigate('/aluno/loja-recompensas?tab=history');
+      return;
+    }
+    
     // Import smart routing utility
     const { resolveNotificationTarget } = await import('@/utils/resolve-notification-target');
     const target = resolveNotificationTarget(notification, user?.role as any);
@@ -137,6 +144,15 @@ export function NotificationPanel() {
   
   // Get notification icon
   const getNotificationIcon = (notification: Notification) => {
+    // FASE 5: Ícones para notificações de resgate
+    if (notification.type === 'REDEMPTION_APPROVED') {
+      return <Sparkles className="w-4 h-4 text-green-500" />;
+    }
+    
+    if (notification.type === 'REDEMPTION_REJECTED') {
+      return <Bell className="w-4 h-4 text-red-500" />;
+    }
+    
     if (notification.type === 'HOLIDAY') {
       return <Calendar className="w-4 h-4 text-amber-500" />;
     }

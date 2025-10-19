@@ -30,7 +30,8 @@ export default function RewardsStore() {
     loadItems,
     loadTransactions,
     transactions,
-    requestRedemption
+    requestRedemption,
+    isLoading
   } = useRewardsStore();
 
   const [selectedItem, setSelectedItem] = useState<RewardItem | null>(null);
@@ -48,10 +49,11 @@ export default function RewardsStore() {
     }
   }, [user, loadItems, loadStudentBalance, loadTransactions]);
 
-  // Reload data when switching to history tab (to catch approved/rejected redemptions)
+  // FASE 4: Reload data when switching to history tab (to catch approved/rejected redemptions)
   useEffect(() => {
     if (activeTab === 'history' && user) {
       console.log('[RewardsStore] Tab history ativa - recarregando dados do aluno');
+      console.log('[RewardsStore] Transações atuais:', studentTransactions.length);
       loadStudentBalance(user.id, true);
       loadTransactions(user.id, true);
     }
@@ -270,10 +272,24 @@ export default function RewardsStore() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {studentTransactions.length === 0 ? (
+              {/* FASE 4: Loading state e mensagens melhoradas */}
+              {isLoading ? (
+                <div className="text-center text-muted-foreground py-12">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-16 bg-muted rounded-lg"></div>
+                    <div className="h-16 bg-muted rounded-lg"></div>
+                    <div className="h-16 bg-muted rounded-lg"></div>
+                  </div>
+                  <p className="mt-4">Carregando histórico...</p>
+                </div>
+              ) : studentTransactions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Coins className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma transação encontrada</p>
+                  <p className="text-lg font-medium mb-2">Nenhuma transação ainda</p>
+                  <p className="text-sm">Suas transações de Koins aparecerão aqui</p>
+                  <p className="text-xs mt-4 text-muted-foreground/70">
+                    Dica: Ganhe Koins completando atividades!
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">

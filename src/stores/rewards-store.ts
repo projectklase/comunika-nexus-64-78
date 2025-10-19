@@ -133,6 +133,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     try {
       set({ isLoading: true });
       
+      // FASE 2: Query robusta com JOINs explícitos
       const { data, error } = await supabase
         .from('koin_transactions')
         .select(`
@@ -142,6 +143,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
             item_id,
             processed_at,
             processed_by,
+            rejection_reason,
             reward_items(name)
           ),
           profiles!koin_transactions_processed_by_fkey(name)
@@ -151,6 +153,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
       if (error) throw error;
 
+      // FASE 2: Mapear dados corretamente com informações da query
       const transactions: KoinTransaction[] = (data || []).map((tx: any) => ({
         id: tx.id,
         studentId: tx.user_id,
@@ -162,12 +165,15 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         description: tx.description || '',
         timestamp: tx.created_at,
         responsibleUserId: tx.processed_by,
+        // Dados do resgate vindos do JOIN
         redemptionStatus: tx.redemption_requests?.status,
-        itemName: tx.redemption_requests?.reward_items?.name,
+        itemName: tx.redemption_requests?.reward_items?.name || tx.description,
         responsibleUserName: tx.profiles?.name,
         processedAt: tx.redemption_requests?.processed_at,
+        rejectionReason: tx.redemption_requests?.rejection_reason
       }));
 
+      console.log('[RewardsStore] Transações carregadas:', transactions.length);
       set({ transactions, isLoading: false });
       get().lastFetch.set(cacheKey, Date.now());
     } catch (error) {
