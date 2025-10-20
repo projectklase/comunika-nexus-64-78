@@ -55,15 +55,16 @@ export function QuickActionsDashboard({ onClearPreferences }: QuickActionsDashbo
       path: ROUTES.ALUNO.FEED,
       badge: noticesCount,
       color: 'info'
-    },
-    {
-      title: 'NEXUS Planner',
-      description: 'Planejamento inteligente',
-      icon: Target,
-      path: ROUTES.ALUNO.NEXUS,
-      badge: null,
-      color: 'accent'
     }
+    // NEXUS REMOVIDO
+    // {
+    //   title: 'NEXUS Planner',
+    //   description: 'Planejamento inteligente',
+    //   icon: Target,
+    //   path: ROUTES.ALUNO.NEXUS,
+    //   badge: null,
+    //   color: 'accent'
+    // }
   ];
 
   const getColorClasses = (color: string) => {
