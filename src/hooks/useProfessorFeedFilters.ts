@@ -167,10 +167,9 @@ export function useProfessorFeedFilters() {
 
     // Filter by class (only for CLASS audience posts)
     if (filters.classId !== "ALL") {
-      filteredResults = filteredResults.filter((post) => {
+      periodFilteredPosts = periodFilteredPosts.filter((post) => {
         // Global posts are always visible regardless of class filter
-        if (post.audience === "GLOBAL") return true;
-        // Class posts must match the selected class
+        if (post.audience === "GLOBAL") return true; // Class posts must match the selected class
         return post.audience === "CLASS" && post.classIds?.includes(filters.classId);
       });
     }
