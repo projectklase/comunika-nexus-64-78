@@ -23,7 +23,15 @@ export function useProfessorMetrics() {
     loadPosts();
   }, []);
 
-  if (!user || isLoading) return null;
+  if (!user || isLoading) {
+    return {
+      professorClasses: [],
+      pendingDeliveries: 0,
+      activitiesDueSoon: [],
+      overdueActivities: [],
+      pendingByClass: []
+    };
+  }
 
   // Get professor's classes (filter by teacher ID since teachers is array of userIds)
   const professorClasses = classes.filter(c => 
