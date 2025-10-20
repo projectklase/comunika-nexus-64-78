@@ -4,12 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
-  Calendar, 
+  Calendar,
   Rss, 
-  BookOpen, 
-  Settings, 
-  Target, 
-  Clock,
+  BookOpen,
   TrendingUp,
   Users,
   Bell
@@ -20,11 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getStudentClasses } from '@/utils/student-helpers';
 import { cn } from '@/lib/utils';
 
-interface QuickActionsDashboardProps {
-  onClearPreferences?: () => void;
-}
-
-export function QuickActionsDashboard({ onClearPreferences }: QuickActionsDashboardProps) {
+export function QuickActionsDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activitiesCount, eventsCount, noticesCount } = useStudentPosts();
@@ -136,37 +129,7 @@ export function QuickActionsDashboard({ onClearPreferences }: QuickActionsDashbo
           ))}
         </div>
 
-        {/* Secondary Actions */}
-        <div className="border-t border-border/50 pt-4 space-y-2">
-          <div className="flex items-center gap-2 mb-3">
-            <Settings className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Preferências</span>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-start h-8 text-xs"
-              onClick={() => navigate('/settings')}
-            >
-              <Settings className="h-3 w-3 mr-2" />
-              Configurações da conta
-            </Button>
-            
-            {onClearPreferences && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start h-8 text-xs text-muted-foreground"
-                onClick={onClearPreferences}
-              >
-                <Clock className="h-3 w-3 mr-2" />
-                Limpar filtros salvos
-              </Button>
-            )}
-          </div>
-        </div>
+        {/* Seção de preferências removida */}
 
         {/* Student Stats */}
         <div className="border-t border-border/50 pt-4">

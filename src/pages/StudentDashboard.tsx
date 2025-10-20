@@ -19,6 +19,7 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { UnifiedCalendarNavigation } from '@/utils/calendar-navigation-unified';
 import { ROUTES } from '@/constants/routes';
+import { Calendar } from 'lucide-react';
 
 const DASHBOARD_PREFS_KEY = 'alunoDashboardPrefs_v1';
 
@@ -41,7 +42,7 @@ const StudentDashboard = memo(function StudentDashboard() {
   const [searchParams] = useSearchParams();
   
   // Load preferences
-  const [preferences, setPreferences] = useState<DashboardPreferences>(defaultPreferences);
+  const [preferences] = useState<DashboardPreferences>(defaultPreferences);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<'entrega' | 'detail' | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -68,34 +69,7 @@ const StudentDashboard = memo(function StudentDashboard() {
     }
   });
 
-  // Load preferences from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(DASHBOARD_PREFS_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setPreferences({ ...defaultPreferences, ...parsed });
-      }
-    } catch (error) {
-      console.warn('Error loading dashboard preferences:', error);
-    }
-  }, []);
-
-  // Save preferences to localStorage
-  const updatePreferences = (newPrefs: Partial<DashboardPreferences>) => {
-    const updated = { ...preferences, ...newPrefs };
-    setPreferences(updated);
-    localStorage.setItem(DASHBOARD_PREFS_KEY, JSON.stringify(updated));
-  };
-
-  const clearPreferences = () => {
-    setPreferences(defaultPreferences);
-    localStorage.removeItem(DASHBOARD_PREFS_KEY);
-    toast({
-      title: "Preferências limpa",
-      description: "Filtros e configurações foram resetadas.",
-    });
-  };
+  // Load preferences from localStorage (removed, keeping for backwards compatibility)
 
   // Auto-focus on post from URL params
   useEffect(() => {
@@ -205,13 +179,12 @@ const StudentDashboard = memo(function StudentDashboard() {
           </p>
         </header>
 
-        {/* Main Layout */}
-        <div className="grid gap-6 lg:grid-cols-12">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Section A - HOJE (always on top) */}
-            <section aria-labelledby="today-section">
-              <h2 id="today-section" className="sr-only">Seção Hoje</h2>
+        {/* Main Layout - Redesigned for better UX */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Left Column - Today & Streak */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Hero Section - HOJE */}
+            <section aria-labelledby="today-section" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <TodaySectionDashboard
                 posts={posts}
                 onOpenPost={handleOpenPost}
@@ -220,14 +193,26 @@ const StudentDashboard = memo(function StudentDashboard() {
               />
             </section>
 
-            {/* Section B - Próximos 7 dias */}
-            <section aria-labelledby="next-days-section">
+            {/* Quick Stats Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <section aria-labelledby="progress-section" className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <ProgressStripDashboard posts={posts} />
+              </section>
+              
+              <section aria-labelledby="streak-section" className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75">
+                <StreakDashboard />
+              </section>
+            </div>
+
+            {/* Próximos 7 dias - Full Width */}
+            <section aria-labelledby="next-days-section" className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
               <div className="flex items-center justify-between mb-4">
-                <h2 id="next-days-section" className="text-xl font-semibold">
+                <h2 id="next-days-section" className="text-xl font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
                   Próximos 7 dias
                 </h2>
-                <span className="text-sm text-muted-foreground">
-                  {posts.length} {posts.length === 1 ? 'item' : 'itens'} esta semana
+                <span className="text-sm text-muted-foreground px-3 py-1 rounded-full bg-muted/50">
+                  {posts.length} {posts.length === 1 ? 'item' : 'itens'}
                 </span>
               </div>
               <NextDaysList
@@ -238,17 +223,15 @@ const StudentDashboard = memo(function StudentDashboard() {
             </section>
           </div>
 
-          {/* Right Column - Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Section C - Ações Rápidas */}
-            <section aria-labelledby="quick-actions-section">
-              <h2 id="quick-actions-section" className="sr-only">Ações Rápidas</h2>
-              <QuickActionsDashboard onClearPreferences={clearPreferences} />
+          {/* Right Column - Sidebar Optimized */}
+          <div className="space-y-6">
+            {/* Ações Rápidas - Top Priority */}
+            <section aria-labelledby="quick-actions-section" className="animate-in fade-in slide-in-from-right-4 duration-500">
+              <QuickActionsDashboard />
             </section>
 
-            {/* Section D - Mini Calendário */}
-            <section aria-labelledby="mini-calendar-section">
-              <h2 id="mini-calendar-section" className="sr-only">Mini Calendário</h2>
+            {/* Mini Calendário */}
+            <section aria-labelledby="mini-calendar-section" className="animate-in fade-in slide-in-from-right-4 duration-700">
               <MiniCalendarDashboard
                 posts={posts}
                 onDayClick={handleDayClick}
@@ -256,22 +239,9 @@ const StudentDashboard = memo(function StudentDashboard() {
               />
             </section>
 
-            {/* Section E - Notificações Importantes */}
-            <section aria-labelledby="important-notifications-section">
-              <h2 id="important-notifications-section" className="sr-only">Notificações Importantes</h2>
+            {/* Notificações Importantes */}
+            <section aria-labelledby="important-notifications-section" className="animate-in fade-in slide-in-from-right-4 duration-700 delay-75">
               <ImportantNotificationsDashboard posts={posts} />
-            </section>
-
-            {/* Section F - Progresso */}
-            <section aria-labelledby="progress-section">
-              <h2 id="progress-section" className="sr-only">Progresso</h2>
-              <ProgressStripDashboard posts={posts} />
-            </section>
-
-            {/* Section G - Streak */}
-            <section aria-labelledby="streak-section">
-              <h2 id="streak-section" className="sr-only">Streak Diário</h2>
-              <StreakDashboard />
             </section>
           </div>
         </div>
