@@ -120,9 +120,9 @@ export function AuroraNotificationBell({
     }
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e?: React.MouseEvent) => {
     // Middle click handling (desktop)
-    if (e.button === 1 && onMiddleClick) {
+    if (e && e.button === 1 && onMiddleClick) {
       e.preventDefault();
       onMiddleClick();
       return;
@@ -164,7 +164,6 @@ export function AuroraNotificationBell({
         ref={bellRef}
         variant="ghost"
         size="icon"
-        overflow="visible"
         className={cn(
           // Base styling
           'aurora-bell-button relative rounded-full transition-all duration-300',
