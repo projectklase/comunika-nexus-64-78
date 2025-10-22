@@ -125,25 +125,34 @@ export async function generatePostNotifications(
       if (userIds.length === 0) continue;
       
       // For CLASS audience, further filter by class membership
-      let targetUserIds = userIds;
-      if (post.audience === 'CLASS' && post.classIds?.length && roleTarget === 'ALUNO') {
-        const { data: classStudents, error: classError } = await supabase
-          .from('class_students')
-          .select('student_id')
-          .in('class_id', post.classIds);
-        
-        if (!classError && classStudents) {
-          const classUserIds = classStudents.map(cs => cs.student_id);
-          targetUserIds = userIds.filter(id => classUserIds.includes(id));
+      let (!classError && classStudents) {
+            const classUserIds = classStudents.map(cs => cs.student_id);
+            targetUserIds = userIds.filter(id => classUserIds.includes(id));
+          } else if (classError) {
+              console.error('Error fetching class students:', classError);
+              continue; // Pular este papel se houver erro no DB
+          }
+
+        } else if (roleTarget === 'PROFESSOR') {
+          // *** ATENÇÃO: Estou assumindo que a tabela é 'class_teachers' e a coluna 'teacher_id' ***
+          // Ajuste se o nome da tabela/coluna que liga professor à turma for outro (ex: 'class_subjects')
+          const { data: classTeachers, error: classError } = await supabase
+            .from('class_teachers') // <- VERIFIQUE ESTE NOME
+            .select('teacher_id')     // <- VERIFIQUE ESTE NOME
+            .in('class_id', post.classIds);
+
+          if (!classError && classTeachers) {
+            const classUserIds = classTeachers.map(ct => ct.teacher_id);
+            targetUserIds = userIds.filter(id => classUserIds.includes(id));
+          } else if (classError) {
+              console.error('Error fetching class teachers:', classError);
+              continue; // Pular este papel se houver erro no DB
+          }
         }
       }
       
       // Create notification for each user
       const notificationPromises = targetUserIds.map(async userId => {
-        const notificationKey = `${baseKey}:${userId}`;
-        
-        // Check if notification already exists for this user
-        if (await notificationExistsAsync(baseKey, userId)) {
           return;
         }
         
