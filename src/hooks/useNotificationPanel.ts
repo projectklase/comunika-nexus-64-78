@@ -64,35 +64,46 @@ export function useNotificationPanel() {
       return;
     }
     
-    // FASE 3: Buscar notificações do usuário (independente de role_target)
-    // Isso inclui notificações gerais (role_target null) e específicas do role
+    console.log('[useNotificationPanel] 🔄 Loading notifications for user:', user.id, 'with role:', roleTarget);
+    
+    // Buscar notificações do usuário (por user_id, independente de role_target)
     const allNotifications = await notificationStore.listAsync({
       userId: user.id,
       limit: 100
     });
     
-    console.log('[useNotificationPanel] Notificações carregadas:', allNotifications.length);
+    console.log('[useNotificationPanel] ✅ Loaded', allNotifications.length, 'notifications for user', user.id);
+    console.log('[useNotificationPanel] 📋 Notification details:', allNotifications.map(n => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      roleTarget: n.roleTarget,
+      isRead: n.isRead,
+      important: n.meta?.important
+    })));
+    
     setNotifications(allNotifications);
     setLoading(false);
   };
   
   // Subscribe to store changes (only once)
   useEffect(() => {
-    if (!roleTarget) return;
+    if (!roleTarget || !user?.id) return;
+    
+    console.log('[useNotificationPanel] 🔔 Setting up subscription for user:', user.id);
     
     loadNotifications();
     
     const unsubscribe = notificationStore.subscribe(() => {
-      // Debounce rapid changes
-      const timeoutId = setTimeout(() => {
-        loadNotifications();
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
+      console.log('[useNotificationPanel] 🔄 Store changed, reloading notifications');
+      loadNotifications();
     });
     
-    return unsubscribe;
-  }, [roleTarget]); // Only depend on roleTarget
+    return () => {
+      console.log('[useNotificationPanel] 🔕 Unsubscribing from notification updates');
+      unsubscribe();
+    };
+  }, [roleTarget, user?.id]); // Depend on both roleTarget and user.id
   
   // Auto-cleanup: Delete read notifications older than 7 days (like Instagram/Facebook)
   useEffect(() => {

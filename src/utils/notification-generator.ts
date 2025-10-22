@@ -99,6 +99,16 @@ export async function generatePostNotifications(
   
   const postTypeLabel = typeLabels[post.type] || 'post';
   
+  console.log(`[NotificationGen] 📋 Post info:`, {
+    id: post.id,
+    type: post.type,
+    title: post.title,
+    audience: post.audience,
+    classIds: post.classIds,
+    important: isImportant,
+    targetAudiences: audiences.join(', ')
+  });
+  
   // Import supabase client
   const { supabase } = await import('@/integrations/supabase/client');
   
@@ -157,55 +167,63 @@ export async function generatePostNotifications(
       console.log(`[NotificationGen] Will create ${targetUserIds.length} notifications for ${roleTarget}`);
       console.log(`[NotificationGen] 🎯 Target user IDs:`, targetUserIds);
       
-      // Create notification for each user
-      const notificationPromises = targetUserIds.map(async (userId, index) => {
+      // Create notification for each user (process sequentially to avoid overwhelming DB)
+      const results: any[] = [];
+      
+      for (let index = 0; index < targetUserIds.length; index++) {
+        const userId = targetUserIds[index];
         console.log(`[NotificationGen] 🔄 Processing user ${index + 1}/${targetUserIds.length}: ${userId}`);
         
-        const notificationKey = `${baseKey}:${userId}`;
-        
-        // Check if notification already exists for this user
-        if (await notificationExistsAsync(baseKey, userId)) {
-          console.log(`[NotificationGen] ⏭️ Notification already exists for user ${userId}, skipping`);
-          return;
-        }
-        
-        console.log(`[NotificationGen] ✨ Creating notification for user ${userId}:`, {
-          type: isImportant ? 'POST_IMPORTANT' : 'POST_NEW',
-          postId: post.id,
-          postTitle: post.title,
-          roleTarget,
-          isImportant,
-          userId: userId // Explicitly log the userId again
-        });
-        
-        const notification = {
-          type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
-          title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-          message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
-          roleTarget,
-          userId, // This should be different for each iteration
-          link: generatePostLink(post.id, post.classIds?.[0]),
-          meta: {
-            postId: post.id,
-            postType: post.type,
-            action,
-            scope,
-            important: isImportant,
-            notificationKey,
-            authorName: post.authorName,
-            classId: post.classIds?.[0],
-            dueDate: post.dueAt,
-            eventStartAt: post.eventStartAt
+        try {
+          const notificationKey = `${baseKey}:${userId}`;
+          
+          // Check if notification already exists for this user
+          if (await notificationExistsAsync(baseKey, userId)) {
+            console.log(`[NotificationGen] ⏭️ Notification already exists for user ${userId}, skipping`);
+            results.push(null);
+            continue;
           }
-        };
-        
-        console.log(`[NotificationGen] 📤 About to call notificationStore.add with userId:`, userId);
-        const result = await notificationStore.add(notification);
-        console.log(`[NotificationGen] ✅ Notification created successfully for user ${userId}:`, result?.id);
-        return result;
-      });
+          
+          console.log(`[NotificationGen] ✨ Creating notification for user ${userId}:`, {
+            type: isImportant ? 'POST_IMPORTANT' : 'POST_NEW',
+            postId: post.id,
+            postTitle: post.title,
+            roleTarget,
+            isImportant,
+            userId: userId
+          });
+          
+          const notification = {
+            type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
+            title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
+            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
+            roleTarget,
+            userId,
+            link: generatePostLink(post.id, post.classIds?.[0]),
+            meta: {
+              postId: post.id,
+              postType: post.type,
+              action,
+              scope,
+              important: isImportant,
+              notificationKey,
+              authorName: post.authorName,
+              classId: post.classIds?.[0],
+              dueDate: post.dueAt,
+              eventStartAt: post.eventStartAt
+            }
+          };
+          
+          console.log(`[NotificationGen] 📤 Calling notificationStore.add with userId:`, userId);
+          const result = await notificationStore.add(notification);
+          console.log(`[NotificationGen] ✅ Notification created for user ${userId}:`, result?.id);
+          results.push(result);
+        } catch (userError) {
+          console.error(`[NotificationGen] ❌ Failed to create notification for user ${userId}:`, userError);
+          results.push(null);
+        }
+      }
       
-      const results = await Promise.all(notificationPromises);
       const successCount = results.filter(r => r).length;
       const failedCount = targetUserIds.length - successCount;
       
