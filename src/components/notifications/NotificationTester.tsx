@@ -42,13 +42,14 @@ export function NotificationTester() {
 
       case 'important':
         notificationStore.add({
-          type: 'POST_NEW',
+          type: 'POST_IMPORTANT',
           title: `🔥 PROVA IMPORTANTE - Física #${count}`,
           message: 'Prova de física marcada para próxima sexta-feira às 14h. Revisar cap. 1-5.',
           roleTarget,
           userId: user.id,
           link: '/professor/atividades',
           meta: {
+            important: true,
             postType: 'PROVA',
             authorName: 'Prof. Santos',
             dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
@@ -73,7 +74,7 @@ export function NotificationTester() {
 
     toast({
       title: 'Notificação de teste criada',
-      description: `Tipo: ${type} | Total: ${panelData.state.unreadCount + 1}`,
+      description: `Tipo: ${type} | Total: ${panelData.state.unreadCounts.total + 1}`,
     });
   };
 
@@ -112,10 +113,18 @@ export function NotificationTester() {
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 text-center">
+        <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-muted/50 rounded-lg p-2">
-            <div className="text-lg font-bold text-primary">{state.unreadCount}</div>
-            <div className="text-xs text-muted-foreground">Não lidas</div>
+            <div className="text-lg font-bold text-primary">{state.unreadCounts.total}</div>
+            <div className="text-xs text-muted-foreground">Total</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-2">
+            <div className="text-lg font-bold text-blue-500">{state.unreadCounts.novidades}</div>
+            <div className="text-xs text-muted-foreground">Novidades</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-2">
+            <div className="text-lg font-bold text-orange-500">{state.unreadCounts.importantes}</div>
+            <div className="text-xs text-muted-foreground">Importantes</div>
           </div>
         </div>
 

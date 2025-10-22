@@ -44,7 +44,7 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
       let isSpecial = false;
       
       if (isToday(day)) {
-        label = `🔥 HOJE`;
+        label = `Hoje, ${format(day, 'dd/MM')}`;
         isSpecial = true;
       } else if (isTomorrow(day)) {
         label = `Amanhã, ${format(day, 'dd/MM')}`;
@@ -100,57 +100,42 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
 
   if (weekDays.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">🎉</div>
-        <h3 className="text-xl font-semibold text-foreground mb-2">
-          Semana tranquila!
+      <div className="text-center py-8">
+        <div className="text-4xl mb-4">📅</div>
+        <h3 className="text-lg font-medium text-foreground mb-2">
+          Semana tranquila
         </h3>
         <p className="text-muted-foreground">
-          Aproveite para revisar conteúdos passados e se organizar.
+          Nenhum evento ou prazo para esta semana.
         </p>
       </div>
     );
   }
 
   return (
-    <Accordion type="multiple" defaultValue={weekDays.filter(d => d.isSpecial).map(d => d.date.toISOString())} className="space-y-2">
-      {weekDays.map((dayGroup) => {
-        const hasUrgent = dayGroup.posts.some(p => ['PROVA', 'TRABALHO'].includes(p.type));
-        
-        return (
-          <AccordionItem
-            key={dayGroup.date.toISOString()}
-            value={dayGroup.date.toISOString()}
-            className={cn(
-              "glass-card rounded-lg transition-all duration-200",
-              dayGroup.isSpecial && isToday(dayGroup.date) 
-                ? "border-2 border-[hsl(var(--golden))]/40 bg-gradient-to-br from-[hsl(var(--golden))]/5 to-transparent shadow-[var(--golden-glow)]"
-                : "border-border/50"
-            )}
-          >
-            <AccordionTrigger className={cn(
-              "px-4 py-3 hover:no-underline",
-              dayGroup.isSpecial && isToday(dayGroup.date) && "text-[hsl(var(--golden))] font-semibold",
-              dayGroup.isSpecial && !isToday(dayGroup.date) && "text-primary font-medium"
-            )}>
-              <div className="flex items-center justify-between w-full mr-4">
-                <span className="text-base">{dayGroup.label}</span>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant="secondary" 
-                    className={cn(
-                      "text-xs",
-                      hasUrgent && "bg-destructive/10 text-destructive border-destructive/30"
-                    )}
-                  >
-                    {dayGroup.posts.length} {dayGroup.posts.length === 1 ? 'item' : 'itens'}
-                  </Badge>
-                  {hasUrgent && (
-                    <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                  )}
-                </div>
+    <Accordion type="multiple" className="space-y-2">
+      {weekDays.map((dayGroup) => (
+        <AccordionItem
+          key={dayGroup.date.toISOString()}
+          value={dayGroup.date.toISOString()}
+          className="glass-card border-border/50 rounded-lg"
+        >
+          <AccordionTrigger className={cn(
+            "px-4 py-3 hover:no-underline",
+            dayGroup.isSpecial && "text-primary font-medium"
+          )}>
+            <div className="flex items-center justify-between w-full mr-4">
+              <span>{dayGroup.label}</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  {dayGroup.posts.length} {dayGroup.posts.length === 1 ? 'item' : 'itens'}
+                </Badge>
+                {dayGroup.posts.some(p => ['PROVA', 'TRABALHO'].includes(p.type)) && (
+                  <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                )}
               </div>
-            </AccordionTrigger>
+            </div>
+          </AccordionTrigger>
           
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-2">
@@ -213,9 +198,8 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
               ))}
             </div>
           </AccordionContent>
-          </AccordionItem>
-        );
-      })}
+        </AccordionItem>
+      ))}
     </Accordion>
   );
 }

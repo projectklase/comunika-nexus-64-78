@@ -41,7 +41,7 @@ import { ClassCalendarPage } from "./pages/ClassCalendarPage";
 import AlunoFeed from "./pages/AlunoFeed";
 import AlunoHome from "./pages/AlunoHome";
 import AlunoActivityResult from "./pages/aluno/AlunoActivityResult";
-// import AlunoNexus from "./pages/AlunoNexus"; // NEXUS REMOVIDO
+import AlunoNexus from "./pages/AlunoNexus";
 import AlunoCalendario from "./pages/AlunoCalendario";
 import StudentDashboard from "./pages/StudentDashboard";
 import ProfessorCalendar from "./pages/ProfessorCalendar";
@@ -119,7 +119,6 @@ const App = () => (
                 </AppLayout>
               </ProtectedRoute>
             } />
-            {/* NEXUS REMOVIDO - Rota desabilitada
             <Route path="/aluno/nexus" element={
               <RoleGuard allowedRoles={['aluno']}>
                 <AppLayout>
@@ -127,7 +126,6 @@ const App = () => (
                 </AppLayout>
               </RoleGuard>
             } />
-            */}
             <Route path="/aluno/calendario" element={
               <RoleGuard allowedRoles={['aluno']}>
                 <AppLayout>
