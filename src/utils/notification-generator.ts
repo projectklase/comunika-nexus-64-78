@@ -202,7 +202,13 @@ export async function generatePostNotifications(
       
       const results = await Promise.all(notificationPromises);
       const successCount = results.filter(r => r).length;
-      console.log(`[NotificationGen] Created ${successCount}/${targetUserIds.length} notifications for ${roleTarget}`);
+      const failedCount = targetUserIds.length - successCount;
+      
+      if (failedCount > 0) {
+        console.error(`[NotificationGen] ⚠️ ${failedCount} notificações falharam para ${roleTarget}. Possível problema de RLS.`);
+      }
+      
+      console.log(`[NotificationGen] ✅ Criadas ${successCount}/${targetUserIds.length} notificações para ${roleTarget}`);
       
     } catch (error) {
       console.error(`[NotificationGen] Error creating notifications for ${roleTarget}:`, error);

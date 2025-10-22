@@ -175,7 +175,19 @@ class PostStore {
     
     // Generate notifications (async, don't block)
     generatePostNotifications(post, 'created').catch(error => {
-      console.error('Error generating notifications:', error);
+      console.error('❌ [PostStore] Error generating notifications for post:', post.id);
+      console.error('Post details:', { 
+        title: post.title, 
+        type: post.type, 
+        important: post.meta?.important,
+        author: post.authorRole 
+      });
+      console.error('Error:', error);
+      
+      // Se for erro de RLS, avisar
+      if (error?.code === '42501' || error?.message?.includes('policy')) {
+        console.error('🔒 RLS POLICY ERROR: Check notifications table policies');
+      }
     });
     
     // Log audit event

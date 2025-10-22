@@ -158,9 +158,19 @@ class NotificationStore {
       .single();
 
     if (error) {
-      console.error("Erro ao adicionar notificação no Supabase:", error);
-      console.error("Notification data:", notification);
-      throw error; // Lança o erro real do Supabase
+      console.error("❌ [NotificationStore] Erro ao adicionar notificação:", error);
+      console.error("📋 Dados da notificação:", {
+        userId: notification.userId,
+        type: notification.type,
+        roleTarget: notification.roleTarget
+      });
+      
+      // Identificar erros comuns
+      if (error.code === '42501' || error.message?.includes('policy')) {
+        console.error("🔒 ERRO DE RLS: Verifique as políticas da tabela notifications");
+      }
+      
+      throw error;
     }
 
     console.log("[NotificationStore] Notification added successfully:", data.id);
