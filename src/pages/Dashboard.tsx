@@ -98,13 +98,17 @@ const Dashboard = () => {
       students?.forEach(s => s.student_id && recipientIds.add(s.student_id));
       classes?.forEach(c => c.main_teacher_id && recipientIds.add(c.main_teacher_id));
 
-      // Buscar roles dos usuários
+      // Buscar roles dos usuários - simplificado
+      const idsArray = Array.from(recipientIds);
       const { data: userRoles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("user_id", Array.from(recipientIds));
+        .in("user_id", idsArray);
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error("Erro ao buscar roles:", rolesError);
+        throw rolesError;
+      }
 
       return userRoles?.map(ur => ({ 
         id: ur.user_id, 
@@ -117,7 +121,10 @@ const Dashboard = () => {
         .select("user_id, role")
         .in("role", ["aluno", "professor"]);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao buscar usuários globais:", error);
+        throw error;
+      }
       return data?.map(ur => ({ 
         id: ur.user_id, 
         role: ur.role.toUpperCase() 
@@ -129,7 +136,10 @@ const Dashboard = () => {
         .select("user_id, role")
         .eq("role", "professor");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao buscar professores:", error);
+        throw error;
+      }
       return data?.map(ur => ({ 
         id: ur.user_id, 
         role: ur.role.toUpperCase() 
