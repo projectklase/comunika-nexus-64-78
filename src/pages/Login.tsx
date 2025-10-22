@@ -34,19 +34,6 @@ const Login = () => {
   const isFormValid = email.includes('@') && password.length > 0;
   const isFormSubmitting = isSubmitting || isLoading;
 
-  // CORREÇÃO 2: Logs detalhados do estado do formulário
-  useEffect(() => {
-    console.log('[Login] Estado atual:', {
-      isLoading,
-      isSubmitting,
-      isFormSubmitting,
-      isFormValid,
-      email: email.substring(0, 3) + '***',
-      password: password ? '***' : '(vazio)'
-    });
-  }, [isLoading, isSubmitting, isFormSubmitting, isFormValid, email, password]);
-
-  // Caps Lock detector
   // Load saved email on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem('comunika.loginSettings');
@@ -138,23 +125,13 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('[handleSubmit] 🚀 Submit iniciado!', {
-      isFormSubmitting,
-      isSubmitting,
-      isLoading,
-      email: email.substring(0, 3) + '***',
-      passwordLength: password.length
-    });
-    
     // Prevent double submission
     if (isFormSubmitting) {
-      console.warn('[handleSubmit] ❌ Já está enviando, abortando...');
       return;
     }
     
     // Validação básica com feedback adequado
     if (email.trim() === '' || password.trim() === '') {
-      console.log('[handleSubmit] ❌ Campos vazios detectados');
       setFormError('Por favor, preencha email e senha.');
       setShowError(true);
       setTimeout(() => setShowError(false), 1200);
@@ -174,8 +151,6 @@ const Login = () => {
     
     try {
       const result = await login(email.trim(), password);
-      
-      console.log('Login result:', result);
       
       if (result.success) {
         // Save email preference
@@ -515,29 +490,6 @@ const Login = () => {
                     Preciso redefinir minha senha
                   </Button>
                 </div>
-
-                {/* CORREÇÃO 4: Botão de Debug Temporário (apenas DEV) */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="mt-4 p-3 bg-muted/20 rounded-lg text-xs space-y-2 border border-border/30">
-                    <div className="font-medium text-foreground">🔧 Debug Info:</div>
-                    <div className="text-muted-foreground">isLoading: {isLoading ? '🔴 TRUE' : '🟢 FALSE'}</div>
-                    <div className="text-muted-foreground">isSubmitting: {isSubmitting ? '🔴 TRUE' : '🟢 FALSE'}</div>
-                    <div className="text-muted-foreground">isFormSubmitting: {isFormSubmitting ? '🔴 TRUE' : '🟢 FALSE'}</div>
-                    <div className="text-muted-foreground">isFormValid: {isFormValid ? '🟢 TRUE' : '🔴 FALSE'}</div>
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        console.log('[Debug] Forçando reset de estados');
-                        setIsSubmitting(false);
-                      }}
-                      className="mt-2 h-8 text-xs"
-                    >
-                      🔄 Reset Estado
-                    </Button>
-                  </div>
-                )}
               </form>
 
                 {/* Registration Link */}

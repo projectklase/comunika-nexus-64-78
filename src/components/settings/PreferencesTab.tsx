@@ -366,8 +366,8 @@ export function PreferencesTab() {
         </CardContent>
       </Card>
 
-      {/* Nexus Preferences */}
-      {isFeatureEnabled('NEXUS_PREFS_ENABLED') && (
+      {/* Nexus Preferences - REMOVIDO */}
+      {false && isFeatureEnabled('NEXUS_PREFS_ENABLED') && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

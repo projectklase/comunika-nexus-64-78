@@ -33,8 +33,6 @@ export async function generatePostNotifications(
   action: 'created' | 'updated' | 'deadline_changed',
   oldPost?: Partial<Post>
 ): Promise<void> {
-  const isImportant = post.meta?.important || false;
-  
   // Determine scope for deduplication
   const scope = post.audience === 'CLASS' && post.classIds?.length 
     ? `CLASS:${post.classIds.join(',')}`
@@ -44,19 +42,19 @@ export async function generatePostNotifications(
   const actionKey = action === 'deadline_changed' ? 'deadline' : action;
   const baseKey = generateNotificationKey('post', post.id, scope, actionKey);
   
-  // Determine target audiences
+  // Determine target audiences based on simplified matrix
   const audiences: RoleTarget[] = [];
   
-  if (post.audience === 'GLOBAL') {
+  if (['EVENTO', 'COMUNICADO', 'AVISO'].includes(post.type)) {
+    // Eventos, Comunicados, Avisos → Todos recebem
+    if (post.audience === 'GLOBAL') {
+      audiences.push('ALUNO', 'PROFESSOR', 'SECRETARIA');
+    } else { // CLASS
+      audiences.push('ALUNO', 'PROFESSOR', 'SECRETARIA');
+    }
+  } else if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) {
+    // Atividades → Apenas alunos e professores da turma
     audiences.push('ALUNO', 'PROFESSOR');
-    if (post.type === 'AVISO' || post.type === 'COMUNICADO') {
-      audiences.push('SECRETARIA');
-    }
-  } else if (post.audience === 'CLASS') {
-    audiences.push('ALUNO');
-    if (post.classIds?.length) {
-      audiences.push('PROFESSOR'); // Teachers of selected classes
-    }
   }
   
   // Generate action-specific content
@@ -96,12 +94,6 @@ export async function generatePostNotifications(
   // Get specific users for each roleTarget
   for (const roleTarget of audiences) {
     try {
-      // Build query to get users
-      let query = supabase
-        .from('profiles')
-        .select('id')
-        .eq('is_active', true);
-      
       // Filter by role
       const roleMapping: Record<RoleTarget, string> = {
         'ALUNO': 'aluno',
@@ -116,13 +108,15 @@ export async function generatePostNotifications(
         .eq('role', roleMapping[roleTarget] as any);
       
       if (roleError) {
-        console.error('Error fetching user roles:', roleError);
+        console.error(`Error fetching user roles for ${roleTarget}:`, roleError);
         continue;
       }
       
       const userIds = userRoles?.map(r => r.user_id) || [];
       
-      if (userIds.length === 0) continue;
+      if (userIds.length === 0) {
+        continue;
+      }
       
       // For CLASS audience, further filter by class membership
       let targetUserIds = userIds;
@@ -139,42 +133,43 @@ export async function generatePostNotifications(
       }
       
       // Create notification for each user
-      const notificationPromises = targetUserIds.map(async userId => {
-        const notificationKey = `${baseKey}:${userId}`;
-        
-        // Check if notification already exists for this user
-        if (await notificationExistsAsync(baseKey, userId)) {
-          return;
-        }
-        
-        const notification = {
-          type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
-          title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-          message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
-          roleTarget,
-          userId,
-          link: generatePostLink(post.id, post.classIds?.[0]),
-          meta: {
-            postId: post.id,
-            postType: post.type,
-            action,
-            scope,
-            important: isImportant,
-            notificationKey,
-            authorName: post.authorName,
-            classId: post.classIds?.[0],
-            dueDate: post.dueAt,
-            eventStartAt: post.eventStartAt
+      for (const recipientUserId of targetUserIds) {
+        try {
+          const notificationKey = `${baseKey}:${recipientUserId}`;
+          
+          // Check if notification already exists for this user
+          if (await notificationExistsAsync(baseKey, recipientUserId)) {
+            continue;
           }
-        };
-        
-        return notificationStore.add(notification);
-      });
+          
+          const notification = {
+            type: 'POST_NEW' as NotificationType,
+            title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
+            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
+            roleTarget,
+            userId: recipientUserId,
+            link: generatePostLink(post.id, post.classIds?.[0]),
+            meta: {
+              postId: post.id,
+              postType: post.type,
+              action,
+              scope,
+              notificationKey,
+              authorName: post.authorName,
+              classId: post.classIds?.[0],
+              dueDate: post.dueAt,
+              eventStartAt: post.eventStartAt
+            }
+          };
+          
+          await notificationStore.add(notification);
+        } catch (userError: any) {
+          console.error(`Failed to create notification for user ${recipientUserId}:`, userError?.message);
+        }
+      }
       
-      await Promise.all(notificationPromises);
-      
-    } catch (error) {
-      console.error(`Error creating notifications for ${roleTarget}:`, error);
+    } catch (error: any) {
+      console.error(`Error processing roleTarget ${roleTarget}:`, error?.message);
     }
   }
 }
