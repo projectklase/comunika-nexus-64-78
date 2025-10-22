@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { KoinBalanceHeader } from '@/components/rewards/KoinBalanceHeader';
 import { PasswordResetNotificationHandler } from '@/components/notifications/PasswordResetNotificationHandler';
-import { UniversalNexusOrb } from '@/components/nexus/UniversalNexusOrb';
+// import { UniversalNexusOrb } from '@/components/nexus/UniversalNexusOrb'; // NEXUS REMOVIDO
 import { ActivityDrawer } from '@/components/calendar/ActivityDrawer';
 import { useActivityDrawerState } from '@/hooks/useActivityDrawerState';
 import { closeActivityDrawer } from '@/utils/activity-drawer-handler';
@@ -25,7 +25,7 @@ import { usePeopleStore } from '@/stores/people-store';
 
 // Import test utilities for development
 if (process.env.NODE_ENV === 'development') {
-  import('@/utils/nexus-orb-test');
+  // import('@/utils/nexus-orb-test'); // NEXUS REMOVIDO
 }
 
 interface AppLayoutProps {
@@ -128,8 +128,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </div>
       
-      {/* Universal NEXUS Orb for Students */}
-      <UniversalNexusOrb />
+      {/* Universal NEXUS Orb for Students - REMOVIDO */}
+      {/* <UniversalNexusOrb /> */}
       
       {/* Password Reset Notification Handler */}
       <PasswordResetNotificationHandler />

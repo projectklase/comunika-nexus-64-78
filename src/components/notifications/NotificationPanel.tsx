@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { PostLinkBuilder } from '@/utils/post-links';
 import { usePostViews } from '@/stores/post-views.store';
 import { 
   Bell, 
@@ -11,16 +10,18 @@ import {
   ExternalLink, 
   Eye, 
   EyeOff, 
-  Archive, 
-  Check, 
+  Check,
   CheckCheck,
   Sparkles,
   Flag,
-  Phone
+  Phone,
+  BookOpen,
+  Megaphone,
+  AlertCircle,
+  Gift
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,9 +32,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useNotificationContext } from '@/contexts/NotificationContext';
-import { parseNotificationLink, navigateWithScroll, generateCalendarLink } from '@/utils/deep-links';
 import { Notification } from '@/stores/notification-store';
-import { NotificationTab } from '@/hooks/useNotificationPanel';
 import { AuroraNotificationBell } from './AuroraNotificationBell';
 
 export function NotificationPanel() {
@@ -57,7 +56,6 @@ export function NotificationPanel() {
   
   const {
     state,
-    setActiveTab,
     markAsRead,
     markAllAsRead, 
     archiveNotification,
@@ -66,9 +64,8 @@ export function NotificationPanel() {
     hasUnread
   } = panelData;
   
-  const { notifications, unreadCounts, activeTab, loading } = state;
+  const { notifications, unreadCount, loading } = state;
   
-  // Client-side only rendering for portal
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -77,32 +74,27 @@ export function NotificationPanel() {
   const handleOpen = async (notification: Notification) => {
     await markAsRead(notification.id);
     
-    // Record post view if this is a post notification
     if (notification.meta?.postId && user) {
       recordPostView(notification.meta.postId, user, 'notification', notification.meta.classId);
     }
     
-    // FASE 5: Lidar com notificações de resgate
+    // Handle Rewards notifications (DO NOT TOUCH)
     if (notification.type === 'REDEMPTION_APPROVED' || notification.type === 'REDEMPTION_REJECTED') {
       close();
       navigate('/aluno/loja-recompensas?tab=history');
       return;
     }
     
-    // Import smart routing utility
     const { resolveNotificationTarget } = await import('@/utils/resolve-notification-target');
     const target = resolveNotificationTarget(notification, user?.role as any);
     
     close();
     
     if (target.destination === 'feed') {
-      // Navigate to feed with smart parameters
       navigate(target.url);
     } else if (target.destination === 'calendar') {
-      // Navigate to calendar
       navigate(target.url);
     } else {
-      // Fallback for unknown destinations
       console.warn('Unknown notification destination:', notification.title);
     }
   };
@@ -110,7 +102,6 @@ export function NotificationPanel() {
   const handleViewInCalendar = async (notification: Notification) => {
     await markAsRead(notification.id);
     
-    // Record post view if this is a post notification
     if (notification.meta?.postId && user) {
       recordPostView(notification.meta.postId, user, 'calendar', notification.meta.classId);
     }
@@ -118,7 +109,6 @@ export function NotificationPanel() {
     close();
     
     if (notification.meta?.holidayDate) {
-      // For holidays, use unified calendar link
       const { UnifiedCalendarLinks } = await import('@/utils/unified-calendar-links');
       const url = UnifiedCalendarLinks.buildHolidayCalendarLink(
         notification.meta.holidayDate, 
@@ -126,7 +116,6 @@ export function NotificationPanel() {
       );
       navigate(url);
     } else if (notification.meta?.postId && notification.meta?.dueDate) {
-      // For posts with due dates, use unified link builder
       const mockPost = {
         id: notification.meta.postId,
         type: notification.meta.postType || 'ATIVIDADE',
@@ -142,33 +131,34 @@ export function NotificationPanel() {
     }
   };
   
-  // Get notification icon
+  // Get notification icon based on type
   const getNotificationIcon = (notification: Notification) => {
-    // FASE 5: Ícones para notificações de resgate
+    // Rewards icons (DO NOT TOUCH)
     if (notification.type === 'REDEMPTION_APPROVED') {
       return <Sparkles className="w-4 h-4 text-green-500" />;
     }
-    
     if (notification.type === 'REDEMPTION_REJECTED') {
-      return <Bell className="w-4 h-4 text-red-500" />;
+      return <Gift className="w-4 h-4 text-red-500" />;
     }
     
+    // Holiday icon
     if (notification.type === 'HOLIDAY') {
-      return <Calendar className="w-4 h-4 text-amber-500" />;
-    }
-    
-    if (notification.type === 'POST_IMPORTANT' || notification.meta?.important) {
-      return <Star className="w-4 h-4 text-orange-500" />;
+      return <Star className="w-4 h-4 text-amber-500" />;
     }
     
     // Post type icons
     switch (notification.meta?.postType) {
-      case 'ATIVIDADE':
-        return <Bell className="w-4 h-4 text-blue-500" />;
-      case 'PROVA':
-        return <Flag className="w-4 h-4 text-red-500" />;
       case 'EVENTO':
         return <Calendar className="w-4 h-4 text-green-500" />;
+      case 'COMUNICADO':
+        return <Megaphone className="w-4 h-4 text-blue-500" />;
+      case 'AVISO':
+        return <AlertCircle className="w-4 h-4 text-orange-500" />;
+      case 'ATIVIDADE':
+      case 'TRABALHO':
+        return <BookOpen className="w-4 h-4 text-blue-500" />;
+      case 'PROVA':
+        return <Flag className="w-4 h-4 text-red-500" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
@@ -178,7 +168,6 @@ export function NotificationPanel() {
   const getNotificationChips = (notification: Notification) => {
     const chips = [];
     
-    // Type chip
     if (notification.meta?.postType) {
       chips.push(
         <Badge key="type" variant="outline" className="text-xs">
@@ -189,17 +178,8 @@ export function NotificationPanel() {
     
     if (notification.type === 'HOLIDAY') {
       chips.push(
-        <Badge key="holiday" variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+        <Badge key="holiday" variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800">
           FERIADO
-        </Badge>
-      );
-    }
-    
-    // Important chip
-    if (notification.type === 'POST_IMPORTANT' || notification.meta?.important) {
-      chips.push(
-        <Badge key="important" variant="destructive" className="text-xs">
-          IMPORTANTE
         </Badge>
       );
     }
@@ -209,31 +189,29 @@ export function NotificationPanel() {
   
   // Render notification item
   const renderNotification = (notification: Notification) => {
-    // Determinar se a notificação é clicável
     const isClickable = notification.link || 
                        notification.meta?.holidayDate || 
-                       notification.meta?.postId; // All posts are clickable now
+                       notification.meta?.postId;
     
     return (
     <div
       key={notification.id}
       className={cn(
         "group relative p-4 rounded-lg border transition-all duration-300",
-        "bg-gradient-glass backdrop-blur-sm border-border/30",
-        isClickable && "cursor-pointer hover:bg-gradient-card hover:border-primary/30 hover:shadow-glow",
+        "bg-card/50 backdrop-blur-sm border-border/30",
+        isClickable && "cursor-pointer hover:bg-card hover:border-primary/30 hover:shadow-md",
         !notification.isRead && [
-          "bg-gradient-to-r from-primary/5 via-primary/3 to-transparent",
-          "border-primary/30 shadow-neon",
-          "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-r",
-          "before:from-primary/10 before:to-transparent before:opacity-0",
-          "hover:before:opacity-100 before:transition-opacity before:duration-300"
+          "bg-primary/5 border-primary/30",
+          "before:absolute before:inset-0 before:rounded-lg",
+          "before:bg-gradient-to-r before:from-primary/10 before:to-transparent",
+          "before:opacity-0 hover:before:opacity-100 before:transition-opacity"
         ]
       )}
       onClick={isClickable ? () => handleOpen(notification) : undefined}
     >
       <div className="flex items-start gap-3 relative z-10">
         <div className="flex-shrink-0 mt-1">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center backdrop-blur-sm">
+          <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
             {getNotificationIcon(notification)}
           </div>
         </div>
@@ -255,7 +233,7 @@ export function NotificationPanel() {
             </div>
             
             {!notification.isRead && (
-              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 animate-pulse shadow-neon" />
+              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 animate-pulse" />
             )}
           </div>
           
@@ -299,7 +277,7 @@ export function NotificationPanel() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 px-2.5 text-xs font-medium bg-glass/50 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all duration-200"
+                  className="h-7 px-2.5 text-xs font-medium"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpen(notification);
@@ -310,14 +288,13 @@ export function NotificationPanel() {
                 </Button>
               )}
               
-              {/* Only show calendar button for events with dates or holidays */}
               {(notification.meta?.holidayDate || 
                 (notification.meta?.postType === 'EVENTO' && notification.meta?.eventStartAt) ||
                 (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(notification.meta?.postType || '') && notification.meta?.dueDate)) && (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 px-2.5 text-xs font-medium bg-glass/50 border-secondary/20 hover:bg-secondary/10 hover:border-secondary/40 transition-all duration-200"
+                  className="h-7 px-2.5 text-xs font-medium"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleViewInCalendar(notification);
@@ -332,7 +309,7 @@ export function NotificationPanel() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 px-2.5 text-xs font-medium bg-glass/30 hover:bg-success/10 hover:text-success transition-all duration-200"
+                  className="h-7 px-2.5 text-xs font-medium"
                   onClick={(e) => {
                     e.stopPropagation();
                     markAsRead(notification.id);
@@ -346,7 +323,7 @@ export function NotificationPanel() {
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 px-2.5 text-xs font-medium bg-glass/30 hover:bg-muted/50 hover:text-muted-foreground transition-all duration-200"
+                className="h-7 px-2.5 text-xs font-medium"
                 onClick={(e) => {
                   e.stopPropagation();
                   hideNotification(notification.id);
@@ -362,83 +339,6 @@ export function NotificationPanel() {
     );
   };
   
-  // Render tab content
-  const renderTabContent = (tab: NotificationTab) => {
-    const tabNotifications = notifications[tab];
-    const tabUnreadCount = unreadCounts[tab];
-    
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Bell className="w-12 h-12 mx-auto mb-4 opacity-50 animate-pulse" />
-            <p className="text-muted-foreground">Carregando notificações...</p>
-          </div>
-        </div>
-      );
-    }
-    
-    if (tabNotifications.length === 0) {
-      return (
-        <div className="text-center text-muted-foreground py-12">
-          {tab === 'importantes' ? (
-            <>
-              <Star className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Nenhuma notificação importante</p>
-              <p className="text-sm">Posts marcados como importantes e feriados aparecerão aqui.</p>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Nenhuma novidade</p>
-              <p className="text-sm">Novos posts e atividades aparecerão aqui.</p>
-            </>
-          )}
-        </div>
-      );
-    }
-    
-      return (
-        <div className="space-y-3 pb-4">
-          {/* Tab actions */}
-          <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm p-3 -m-3 mb-4 border-b border-border/20 rounded-lg">
-            <div className="flex items-center gap-2">
-              {tabUnreadCount > 0 ? (
-                <>
-                  <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                  <span className="text-sm font-medium text-destructive">
-                    {tabUnreadCount} não lida{tabUnreadCount !== 1 ? 's' : ''}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <div className="w-2 h-2 bg-success rounded-full" />
-                  <span className="text-sm font-medium text-success">Todas lidas</span>
-                </>
-              )}
-            </div>
-            
-            {tabUnreadCount > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => markAllAsRead(tab)}
-                className="text-xs h-7 px-3 bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
-              >
-                <CheckCheck className="w-3 h-3 mr-1.5" />
-                Marcar como lidas
-              </Button>
-            )}
-          </div>
-          
-          {/* Notifications list */}
-          <div className="space-y-2">
-            {tabNotifications.map(renderNotification)}
-          </div>
-        </div>
-      );
-  };
-  
   // Main panel content
   const panelContent = (
     <div
@@ -447,14 +347,13 @@ export function NotificationPanel() {
       id="notifications-popover"
       role="dialog"
       aria-labelledby="notifications-title"
-      aria-describedby="notifications-description"
     >
       {/* Header */}
-      <div className="p-6 border-b border-border/20 bg-gradient-glass backdrop-blur-md">
+      <div className="p-6 border-b border-border/20 bg-card/50 backdrop-blur-md">
         <div className="flex items-center gap-3 mb-4">
           <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-neon">
-              <Bell className="w-4 h-4 text-primary-foreground" />
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <Bell className="w-4 h-4 text-primary" />
             </div>
             {hasUnread && (
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full animate-pulse" />
@@ -466,166 +365,103 @@ export function NotificationPanel() {
           </div>
         </div>
         
-        <div id="notifications-description" className="sr-only">
-          Painel de notificações com {unreadCounts.total} não lidas
-        </div>
-        
         {hasUnread && (
           <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-foreground">
-                {unreadCounts.total} não lida{unreadCounts.total !== 1 ? 's' : ''}
+              <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-destructive">
+                {unreadCount} não lida{unreadCount !== 1 ? 's' : ''}
               </span>
             </div>
+            
             <Button
               variant="outline"
               size="sm"
-              onClick={async () => await markAllAsRead()}
-              className="text-xs h-7 px-3 bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
+              onClick={markAllAsRead}
+              className="text-xs h-7 px-3"
             >
               <CheckCheck className="w-3 h-3 mr-1.5" />
-              Marcar todas
+              Marcar todas como lidas
             </Button>
           </div>
         )}
       </div>
       
-      {/* Tabs */}
-      <Tabs 
-        value={activeTab} 
-        onValueChange={(value) => setActiveTab(value as NotificationTab)}
-        className="w-full"
-      >
-        <div className="px-6 pt-4">
-          <TabsList className="grid w-full grid-cols-2 h-12 bg-glass/50 backdrop-blur-sm border border-border/20 p-1">
-            <TabsTrigger 
-              value="novidades" 
-              className="relative flex items-center justify-center gap-2 h-10 rounded-md data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-neon transition-all duration-300 font-medium"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Novidades</span>
-              {unreadCounts.novidades > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold animate-pulse shadow-neon"
-                >
-                  {unreadCounts.novidades}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="importantes" 
-              className="relative flex items-center justify-center gap-2 h-10 rounded-md data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-neon transition-all duration-300 font-medium"
-            >
-              <Star className="w-4 h-4" />
-              <span>Importantes</span>
-              {unreadCounts.importantes > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold animate-pulse shadow-neon"
-                >
-                  {unreadCounts.importantes}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
+      {/* Content */}
+      <ScrollArea className="h-[calc(100vh-16rem)] md:h-[500px]">
+        <div className="p-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Bell className="w-12 h-12 mx-auto mb-4 opacity-50 animate-pulse" />
+                <p className="text-muted-foreground">Carregando notificações...</p>
+              </div>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12">
+              <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">Nenhuma notificação</p>
+              <p className="text-sm">Você está em dia! Nenhuma notificação no momento.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map(renderNotification)}
+            </div>
+          )}
         </div>
-        
-        <TabsContent value="novidades" className="mt-0">
-          <ScrollArea className="h-[500px] px-6">
-            {renderTabContent('novidades')}
-          </ScrollArea>
-        </TabsContent>
-        
-        <TabsContent value="importantes" className="mt-0">
-          <ScrollArea className="h-[500px] px-6">
-            {renderTabContent('importantes')}
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+      </ScrollArea>
     </div>
   );
   
-  // Handle bell interactions
-  const handleBellClick = () => {
-    toggle();
-  };
+  if (!isClient) return null;
   
-  const handleLongPress = () => {
-    // Long press to mark Novidades as read
-    if (unreadCounts.novidades > 0) {
-      markAllAsRead('novidades');
-      toast({
-        title: 'Novidades marcadas como lidas',
-        description: `${unreadCounts.novidades} notificações marcadas como lidas.`,
-      });
-    }
-  };
-  
-  const handleMiddleClick = () => {
-    // Middle click to open notifications page in new tab
-    window.open('/secretaria/notificacoes', '_blank');
-  };
-  
-  // Determine if we have important notifications  
-  const hasImportant = notifications.importantes.some(n => !n.isRead);
-  
-  // Aurora Bell Trigger
+  // Render bell trigger
   const bellTrigger = (
     <AuroraNotificationBell
-      count={unreadCounts.total}
-      hasImportant={hasImportant}
+      count={unreadCount}
       hasUnread={hasUnread}
-      onClick={handleBellClick}
-      onLongPress={handleLongPress}
-      onMiddleClick={handleMiddleClick}
-      size="md"
+      onClick={toggle}
       isOpen={isOpen}
       aria-controls="notifications-popover"
     />
   );
   
-  // Render mobile (Drawer) or desktop (Popover)
   if (isMobile) {
     return (
-      <>
-        <Drawer open={isOpen} onOpenChange={close}>
-          <DrawerTrigger asChild>
-            {bellTrigger}
-          </DrawerTrigger>
-          <DrawerContent className="max-h-[80vh] z-[100]">
-            {panelContent}
-          </DrawerContent>
-        </Drawer>
-      </>
+      <Drawer open={isOpen} onOpenChange={(openState) => openState ? open() : close()}>
+        <DrawerTrigger asChild>
+          {bellTrigger}
+        </DrawerTrigger>
+        <DrawerContent className="max-h-[90vh]">
+          {panelContent}
+        </DrawerContent>
+      </Drawer>
     );
   }
   
-  // Desktop: Use portal to avoid clipping in header
   return (
-    <>
-      {bellTrigger}
-      {isClient && isOpen && createPortal(
-        <div 
-          className="fixed inset-0 z-[60] pointer-events-none"
-          onClick={close}
+    <Popover open={isOpen} onOpenChange={(openState) => openState ? open() : close()}>
+      <PopoverTrigger asChild>
+        {bellTrigger}
+      </PopoverTrigger>
+      {createPortal(
+        <PopoverContent
+          className="w-[95vw] md:w-[600px] p-0 shadow-2xl border-border/50 bg-background/95 backdrop-blur-xl"
+          align="end"
+          sideOffset={8}
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            focusRef.current?.focus();
+          }}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            returnFocusRef.current?.focus();
+          }}
         >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-background/20 backdrop-blur-sm pointer-events-auto" />
-          
-          {/* Panel positioned relative to bell */}
-          <div
-            className="absolute top-[70px] right-6 pointer-events-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-[440px] p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70] overflow-hidden">
-              {panelContent}
-            </div>
-          </div>
-        </div>,
-        document.getElementById('portal-root') || document.body
+          {panelContent}
+        </PopoverContent>,
+        document.body
       )}
-    </>
+    </Popover>
   );
 }

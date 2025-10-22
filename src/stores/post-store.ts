@@ -173,10 +173,36 @@ class PostStore {
     const post = this.dbRowToPost(data);
     this.notifySubscribers();
     
-    // Generate notifications (async, don't block)
-    generatePostNotifications(post, 'created').catch(error => {
-      console.error('Error generating notifications:', error);
+    console.log('[PostStore] 📨 Post created, calling generatePostNotifications:', {
+      postId: post.id,
+      postTitle: post.title,
+      postType: post.type,
+      audience: post.audience,
+      classIds: post.classIds,
+      important: post.meta?.important
     });
+    
+    // Generate notifications IMMEDIATELY (with await to catch errors properly)
+    (async () => {
+      try {
+        await generatePostNotifications(post, 'created');
+        console.log('[PostStore] ✅ Notifications generated successfully for post:', post.id);
+      } catch (error) {
+        console.error('❌ [PostStore] Error generating notifications for post:', post.id);
+        console.error('Post details:', { 
+          title: post.title, 
+          type: post.type, 
+          important: post.meta?.important,
+          author: post.authorRole 
+        });
+        console.error('Error:', error);
+        
+        // Se for erro de RLS, avisar
+        if (error?.code === '42501' || error?.message?.includes('policy')) {
+          console.error('🔒 RLS POLICY ERROR: Check notifications table policies');
+        }
+      }
+    })();
     
     // Log audit event
     try {
