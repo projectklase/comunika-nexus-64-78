@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { deliveryStore } from '@/stores/delivery-store';
 import { postStore } from '@/stores/post-store';
 import { useClassStore } from '@/stores/class-store';
@@ -8,13 +8,9 @@ import { Post } from '@/types/post';
 export function useProfessorMetrics() {
   const { user } = useAuth();
   const { classes } = useClassStore();
-  
-  // All hooks at the top level
   const [posts, setPosts] = useState<Post[]>([]);
-  const [deliveries, setDeliveries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load posts once
   useEffect(() => {
     const loadPosts = async () => {
       try {
@@ -27,70 +23,54 @@ export function useProfessorMetrics() {
     loadPosts();
   }, []);
 
-  // Memoize professor's classes to avoid recalculation
-  const professorClasses = useMemo(() => {
-    if (!user) return [];
-    return classes.filter(c => c.teachers?.includes(user.id));
-  }, [user, classes]);
+  if (!user || isLoading) return null;
 
-  // Memoize class IDs
-  const classIds = useMemo(() => {
-    return professorClasses.map(c => c.id);
-  }, [professorClasses]);
+  // Get professor's classes (filter by teacher ID since teachers is array of userIds)
+  const professorClasses = classes.filter(c => 
+    c.teachers?.includes(user.id)
+  );
+  
+  const classIds = professorClasses.map(c => c.id);
 
-  // Load deliveries when classIds change
+  const [deliveries, setDeliveries] = useState<any[]>([]);
+  
   useEffect(() => {
-    if (!user || classIds.length === 0) {
-      setDeliveries([]);
-      return;
-    }
-
     const loadDeliveries = async () => {
-      try {
-        const allDeliveries = await deliveryStore.list({ classId: classIds[0] });
-        const professorDeliveries = allDeliveries.filter(d => classIds.includes(d.classId));
-        setDeliveries(professorDeliveries);
-      } catch (error) {
-        console.error('Error loading deliveries:', error);
-        setDeliveries([]);
-      }
+      const allDeliveries = await deliveryStore.list({ classId: classIds.length > 0 ? classIds[0] : undefined });
+      const professorDeliveries = allDeliveries.filter(d => classIds.includes(d.classId));
+      setDeliveries(professorDeliveries);
     };
-    
     loadDeliveries();
-  }, [user, classIds]);
+  }, [classIds]);
 
-  // Return early if not ready, but after all hooks
-  if (!user || isLoading) {
-    return {
-      professorClasses: [],
-      pendingDeliveries: 0,
-      activitiesDueSoon: [],
-      overdueActivities: [],
-      pendingByClass: []
-    };
-  }
+  // Get deliveries for professor's classes
+  const professorDeliveries = deliveries;
 
-  // Calculate metrics
-  const pendingDeliveries = deliveries.filter(d => d.reviewStatus === 'AGUARDANDO');
+  // Pending deliveries (waiting for review)
+  const pendingDeliveries = professorDeliveries.filter(d => d.reviewStatus === 'AGUARDANDO');
 
+  // Activities due in next 48h
   const now = new Date();
   const next48h = new Date();
   next48h.setHours(next48h.getHours() + 48);
 
-  const activitiesDueSoon = posts.filter(p => 
-    ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type) &&
-    p.authorId === user.id &&
-    p.dueAt &&
-    new Date(p.dueAt) >= now &&
-    new Date(p.dueAt) <= next48h
-  );
+  const activitiesDueSoon = posts
+    .filter(p => 
+      ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type) &&
+      p.authorName === user.name &&
+      p.dueAt &&
+      new Date(p.dueAt) >= now &&
+      new Date(p.dueAt) <= next48h
+    );
 
-  const overdueActivities = posts.filter(p => 
-    ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type) &&
-    p.authorId === user.id &&
-    p.dueAt &&
-    new Date(p.dueAt) < now
-  );
+  // Overdue activities
+  const overdueActivities = posts
+    .filter(p => 
+      ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type) &&
+      p.authorName === user.name &&
+      p.dueAt &&
+      new Date(p.dueAt) < now
+    );
 
   return {
     professorClasses,
@@ -99,7 +79,7 @@ export function useProfessorMetrics() {
     overdueActivities,
     pendingByClass: professorClasses.map(c => ({
       class: c,
-      pending: deliveries.filter(d => d.classId === c.id && d.reviewStatus === 'AGUARDANDO').length
+      pending: professorDeliveries.filter(d => d.classId === c.id && d.reviewStatus === 'AGUARDANDO').length
     })).filter(item => item.pending > 0)
   };
 }

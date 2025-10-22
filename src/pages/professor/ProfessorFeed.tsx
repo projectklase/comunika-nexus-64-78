@@ -14,6 +14,7 @@ import { usePostActions } from '@/hooks/usePostActions';
 import { useScrollToPost } from '@/hooks/useScrollToPost';
 import { useCalendarNavigation } from '@/hooks/useCalendarNavigation';
 import { FeedNavigation } from '@/utils/feed-navigation';
+import { ScheduledEmptyState } from '@/components/feed/ScheduledEmptyState';
 import { useSaved } from '@/hooks/useSaved';
 import { Post, PostInput, PostType } from '@/types/post';
 import { 
@@ -40,14 +41,11 @@ export default function ProfessorFeed() {
   const { 
     createPost, 
     updatePost, 
-    archivePost,
-    deletePost,
-    duplicatePost,
     getPostForEdit,
     isLoading
   } = usePostActions();
 
-  const { filteredPosts, feedMetrics, isLoading: isLoadingPosts } = useProfessorFeedFilters();
+  const { filteredPosts, feedMetrics } = useProfessorFeedFilters();
   
   const [showComposer, setShowComposer] = useState(false);
   const [editingPost, setEditingPost] = useState<(PostInput & { originalId?: string }) | null>(null);
@@ -106,8 +104,8 @@ export default function ProfessorFeed() {
     getPostForEdit(id).then(editData => {
       if (editData) {
         setEditingPost(editData);
-        setShowComposer(true);
-        setUpdateKey(prev => prev + 1);
+      setShowComposer(true);
+      setUpdateKey(prev => prev + 1);
       } else {
         toast({
           title: "Erro",
@@ -116,29 +114,6 @@ export default function ProfessorFeed() {
         });
       }
     });
-  };
-
-  const handleArchive = async (id: string) => {
-    const success = await archivePost(id);
-    if (success) {
-      handleUpdate();
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    const success = await deletePost(id);
-    if (success) {
-      handleUpdate();
-    }
-  };
-
-  const handleDuplicate = async (id: string) => {
-    if (!user) return;
-    
-    const success = await duplicatePost(id, user.name);
-    if (success) {
-      handleUpdate();
-    }
   };
 
   const handleCopyLink = async (post: Post) => {
@@ -357,12 +332,8 @@ export default function ProfessorFeed() {
 
           {/* Posts */}
           <div className="lg:col-span-3 space-y-6">
-            {isLoadingPosts ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Carregando posts...</p>
-              </div>
-            ) : filteredPosts.length === 0 ? (
+            {/* Show appropriate empty state */}
+            {filteredPosts.length === 0 ? (
               <div className="text-center py-12 bg-muted/20 rounded-lg border border-border/50">
                 <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                 <h3 className="text-lg font-medium mb-2 text-muted-foreground">
@@ -387,9 +358,6 @@ export default function ProfessorFeed() {
                 posts={filteredPosts}
                 canEdit={canEdit}
                 onEdit={handleEdit}
-                onArchive={handleArchive}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
                 onUpdate={handleUpdate}
               />
             )}
