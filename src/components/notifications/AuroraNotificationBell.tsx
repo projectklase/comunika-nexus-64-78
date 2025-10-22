@@ -122,17 +122,21 @@ export const AuroraNotificationBell = forwardRef<HTMLButtonElement, AuroraNotifi
       }
     };
 
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleClick = (e?: React.MouseEvent<HTMLButtonElement>) => {
       // Middle click handling (desktop)
-      if (e.button === 1 && onMiddleClick) {
-        e.preventDefault();
-        e.stopPropagation();
+      if (e?.button === 1 && onMiddleClick) {
+        e?.preventDefault();
+        e?.stopPropagation();
         onMiddleClick();
         return;
       }
       
-      e.preventDefault();
-      e.stopPropagation();
+      // Prevent default behavior if event exists
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
       onClick?.();
     };
 
