@@ -109,12 +109,16 @@ export async function generatePostNotifications(
     targetAudiences: audiences.join(', ')
   });
   
+  console.log(`[NotificationGen] 🎯 Will process ${audiences.length} role targets:`, audiences);
+  
   // Import supabase client
   const { supabase } = await import('@/integrations/supabase/client');
   
   // Get specific users for each roleTarget
-  for (const roleTarget of audiences) {
-    console.log(`[NotificationGen] Processing roleTarget: ${roleTarget}`);
+  for (let i = 0; i < audiences.length; i++) {
+    const roleTarget = audiences[i];
+    console.log(`[NotificationGen] ========================================`);
+    console.log(`[NotificationGen] 🔄 Processing roleTarget ${i + 1}/${audiences.length}: ${roleTarget}`);
     
     try {
       // Build query to get users
@@ -137,15 +141,19 @@ export async function generatePostNotifications(
         .eq('role', roleMapping[roleTarget] as any);
       
       if (roleError) {
-        console.error(`[NotificationGen] Error fetching user roles for ${roleTarget}:`, roleError);
+        console.error(`[NotificationGen] ❌ Error fetching user roles for ${roleTarget}:`, roleError);
+        console.error(`[NotificationGen] ❌ Error details:`, JSON.stringify(roleError, null, 2));
+        // Continue to next role instead of stopping
         continue;
       }
       
       const userIds = userRoles?.map(r => r.user_id) || [];
-      console.log(`[NotificationGen] Found ${userIds.length} users with role ${roleTarget}`);
+      console.log(`[NotificationGen] ✅ Found ${userIds.length} users with role ${roleTarget}`);
+      console.log(`[NotificationGen] 📋 User IDs for ${roleTarget}:`, userIds);
       
       if (userIds.length === 0) {
-        console.log(`[NotificationGen] No users found for ${roleTarget}, skipping`);
+        console.warn(`[NotificationGen] ⚠️ No users found for ${roleTarget}, skipping this role`);
+        // Continue to next role instead of stopping
         continue;
       }
       
@@ -164,11 +172,13 @@ export async function generatePostNotifications(
         }
       }
       
-      console.log(`[NotificationGen] Will create ${targetUserIds.length} notifications for ${roleTarget}`);
-      console.log(`[NotificationGen] 🎯 Target user IDs:`, targetUserIds);
+      console.log(`[NotificationGen] 🎯 Will create ${targetUserIds.length} notifications for ${roleTarget}`);
+      console.log(`[NotificationGen] 📋 Target user IDs for ${roleTarget}:`, targetUserIds);
       
       // Create notification for each user (process sequentially to avoid overwhelming DB)
       const results: any[] = [];
+      let successCount = 0;
+      let failCount = 0;
       
       for (let index = 0; index < targetUserIds.length; index++) {
         const userId = targetUserIds[index];
@@ -218,27 +228,35 @@ export async function generatePostNotifications(
           const result = await notificationStore.add(notification);
           console.log(`[NotificationGen] ✅ Notification created for user ${userId}:`, result?.id);
           results.push(result);
-        } catch (userError) {
+          successCount++;
+        } catch (userError: any) {
           console.error(`[NotificationGen] ❌ Failed to create notification for user ${userId}:`, userError);
+          console.error(`[NotificationGen] ❌ Error message:`, userError?.message);
+          console.error(`[NotificationGen] ❌ Error details:`, JSON.stringify(userError, null, 2));
           results.push(null);
+          failCount++;
         }
       }
       
-      const successCount = results.filter(r => r).length;
-      const failedCount = targetUserIds.length - successCount;
+      console.log(`[NotificationGen] 📊 Summary for ${roleTarget}:`);
+      console.log(`[NotificationGen]    ✅ Success: ${successCount}`);
+      console.log(`[NotificationGen]    ❌ Failed: ${failCount}`);
+      console.log(`[NotificationGen]    📝 Total attempted: ${targetUserIds.length}`);
       
-      if (failedCount > 0) {
-        console.error(`[NotificationGen] ⚠️ ${failedCount} notificações falharam para ${roleTarget}. Possível problema de RLS.`);
+      if (failCount > 0) {
+        console.error(`[NotificationGen] ⚠️ ${failCount} notificações falharam para ${roleTarget}. Possível problema de RLS ou permissões.`);
       }
       
-      console.log(`[NotificationGen] ✅ Criadas ${successCount}/${targetUserIds.length} notificações para ${roleTarget}`);
-      
-    } catch (error) {
-      console.error(`[NotificationGen] Error creating notifications for ${roleTarget}:`, error);
+    } catch (error: any) {
+      console.error(`[NotificationGen] ❌ FATAL ERROR processing roleTarget ${roleTarget}:`, error);
+      console.error(`[NotificationGen] ❌ Error message:`, error?.message);
+      console.error(`[NotificationGen] ❌ Error stack:`, error?.stack);
+      // Continue to next role instead of stopping completely
     }
   }
   
-  console.log(`[NotificationGen] END - Finished processing post ${post.id}`);
+  console.log(`[NotificationGen] ========================================`);
+  console.log(`[NotificationGen] 🏁 END - Finished processing post ${post.id}`);
 }
 
 /**
