@@ -49,13 +49,18 @@ export async function generatePostNotifications(
   
   if (post.audience === 'GLOBAL') {
     audiences.push('ALUNO', 'PROFESSOR');
-    if (post.type === 'AVISO' || post.type === 'COMUNICADO') {
+    // Secretaria vê AVISOS, COMUNICADOS ou qualquer post importante
+    if (post.type === 'AVISO' || post.type === 'COMUNICADO' || isImportant) {
       audiences.push('SECRETARIA');
     }
   } else if (post.audience === 'CLASS') {
     audiences.push('ALUNO');
     if (post.classIds?.length) {
       audiences.push('PROFESSOR'); // Teachers of selected classes
+    }
+    // Se importante, secretaria também recebe
+    if (isImportant) {
+      audiences.push('SECRETARIA');
     }
   }
   
@@ -146,6 +151,14 @@ export async function generatePostNotifications(
         if (await notificationExistsAsync(baseKey, userId)) {
           return;
         }
+        
+        console.log(`[NotificationGen] Creating notification for user ${userId}:`, {
+          type: isImportant ? 'POST_IMPORTANT' : 'POST_NEW',
+          postId: post.id,
+          postTitle: post.title,
+          roleTarget,
+          isImportant
+        });
         
         const notification = {
           type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
