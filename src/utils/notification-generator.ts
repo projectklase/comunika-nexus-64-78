@@ -155,23 +155,27 @@ export async function generatePostNotifications(
       }
       
       console.log(`[NotificationGen] Will create ${targetUserIds.length} notifications for ${roleTarget}`);
+      console.log(`[NotificationGen] 🎯 Target user IDs:`, targetUserIds);
       
       // Create notification for each user
-      const notificationPromises = targetUserIds.map(async userId => {
+      const notificationPromises = targetUserIds.map(async (userId, index) => {
+        console.log(`[NotificationGen] 🔄 Processing user ${index + 1}/${targetUserIds.length}: ${userId}`);
+        
         const notificationKey = `${baseKey}:${userId}`;
         
         // Check if notification already exists for this user
         if (await notificationExistsAsync(baseKey, userId)) {
-          console.log(`[NotificationGen] Notification already exists for user ${userId}, skipping`);
+          console.log(`[NotificationGen] ⏭️ Notification already exists for user ${userId}, skipping`);
           return;
         }
         
-        console.log(`[NotificationGen] Creating notification for user ${userId}:`, {
+        console.log(`[NotificationGen] ✨ Creating notification for user ${userId}:`, {
           type: isImportant ? 'POST_IMPORTANT' : 'POST_NEW',
           postId: post.id,
           postTitle: post.title,
           roleTarget,
-          isImportant
+          isImportant,
+          userId: userId // Explicitly log the userId again
         });
         
         const notification = {
@@ -179,7 +183,7 @@ export async function generatePostNotifications(
           title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
           message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
           roleTarget,
-          userId,
+          userId, // This should be different for each iteration
           link: generatePostLink(post.id, post.classIds?.[0]),
           meta: {
             postId: post.id,
@@ -195,8 +199,9 @@ export async function generatePostNotifications(
           }
         };
         
+        console.log(`[NotificationGen] 📤 About to call notificationStore.add with userId:`, userId);
         const result = await notificationStore.add(notification);
-        console.log(`[NotificationGen] Notification created successfully for user ${userId}:`, result?.id);
+        console.log(`[NotificationGen] ✅ Notification created successfully for user ${userId}:`, result?.id);
         return result;
       });
       

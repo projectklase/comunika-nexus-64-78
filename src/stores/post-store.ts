@@ -173,6 +173,15 @@ class PostStore {
     const post = this.dbRowToPost(data);
     this.notifySubscribers();
     
+    console.log('[PostStore] 📨 Post created, calling generatePostNotifications:', {
+      postId: post.id,
+      postTitle: post.title,
+      postType: post.type,
+      audience: post.audience,
+      classIds: post.classIds,
+      important: post.meta?.important
+    });
+    
     // Generate notifications (async, don't block)
     generatePostNotifications(post, 'created').catch(error => {
       console.error('❌ [PostStore] Error generating notifications for post:', post.id);

@@ -119,7 +119,6 @@ class NotificationStore {
     return (data || []).map(dbRowToNotification);
   }
 
-  async; // COLOQUE ESTE NOVO BLOCO DE CÓDIGO NO LUGAR
   async add(notification: {
     title: string;
     message: string;
@@ -142,18 +141,23 @@ class NotificationStore {
       important: notification.meta?.important
     });
 
+    // Log the exact data being sent to Supabase
+    const insertData = {
+      user_id: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      link: notification.link,
+      role_target: notification.roleTarget,
+      meta: notification.meta,
+      is_read: false,
+    };
+    
+    console.log("[NotificationStore] 🔍 Inserting to Supabase with user_id:", insertData.user_id);
+
     const { data, error } = await supabase
       .from("notifications")
-      .insert({
-        user_id: notification.userId,
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        link: notification.link,
-        role_target: notification.roleTarget,
-        meta: notification.meta,
-        is_read: false,
-      })
+      .insert(insertData)
       .select()
       .single();
 
