@@ -33,9 +33,7 @@ export async function generatePostNotifications(
   action: 'created' | 'updated' | 'deadline_changed',
   oldPost?: Partial<Post>
 ): Promise<void> {
-  const isImportant = post.meta?.important || false;
-  
-  console.log(`[NotificationGen] START - Post: ${post.id}, Type: ${post.type}, Important: ${isImportant}, Action: ${action}`);
+  console.log(`[NotificationGen] START - Post: ${post.id}, Type: ${post.type}, Action: ${action}`);
   
   // Determine scope for deduplication
   const scope = post.audience === 'CLASS' && post.classIds?.length 
@@ -46,43 +44,32 @@ export async function generatePostNotifications(
   const actionKey = action === 'deadline_changed' ? 'deadline' : action;
   const baseKey = generateNotificationKey('post', post.id, scope, actionKey);
   
-  console.log(`[NotificationGen] 🔍 Building audiences array for post:`, {
+  console.log(`[NotificationGen] 🔍 Building audiences for post:`, {
     postId: post.id,
     audience: post.audience,
     type: post.type,
-    isImportant,
     classIds: post.classIds
   });
   
-  // Determine target audiences
+  // Determine target audiences based on simplified matrix
   const audiences: RoleTarget[] = [];
   
-  if (post.audience === 'GLOBAL') {
-    console.log(`[NotificationGen] ✅ Post is GLOBAL, adding ALUNO and PROFESSOR`);
+  if (['EVENTO', 'COMUNICADO', 'AVISO'].includes(post.type)) {
+    // Eventos, Comunicados, Avisos → Todos recebem
+    if (post.audience === 'GLOBAL') {
+      audiences.push('ALUNO', 'PROFESSOR', 'SECRETARIA');
+      console.log(`[NotificationGen] ✅ ${post.type} GLOBAL → ALUNO, PROFESSOR, SECRETARIA`);
+    } else { // CLASS
+      audiences.push('ALUNO', 'PROFESSOR', 'SECRETARIA');
+      console.log(`[NotificationGen] ✅ ${post.type} CLASS → ALUNO, PROFESSOR, SECRETARIA`);
+    }
+  } else if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) {
+    // Atividades → Apenas alunos e professores da turma
     audiences.push('ALUNO', 'PROFESSOR');
-    // Secretaria vê AVISOS, COMUNICADOS ou qualquer post importante
-    if (post.type === 'AVISO' || post.type === 'COMUNICADO' || isImportant) {
-      console.log(`[NotificationGen] ✅ Post is AVISO/COMUNICADO or important, adding SECRETARIA`);
-      audiences.push('SECRETARIA');
-    }
-  } else if (post.audience === 'CLASS') {
-    console.log(`[NotificationGen] ✅ Post is CLASS, adding ALUNO`);
-    audiences.push('ALUNO');
-    if (post.classIds?.length) {
-      console.log(`[NotificationGen] ✅ Post has classIds, adding PROFESSOR`);
-      audiences.push('PROFESSOR'); // Teachers of selected classes
-    }
-    // Se importante, secretaria também recebe
-    if (isImportant) {
-      console.log(`[NotificationGen] ✅ Post is important, adding SECRETARIA`);
-      audiences.push('SECRETARIA');
-    }
+    console.log(`[NotificationGen] ✅ ${post.type} → ALUNO, PROFESSOR (da turma)`);
   }
   
-  console.log(`[NotificationGen] 📋 Final audiences array:`, audiences);
-  console.log(`[NotificationGen] 📋 Audiences length:`, audiences.length);
-  console.log(`[NotificationGen] 📋 Audiences join:`, audiences.join(', '));
-  console.log(`[NotificationGen] Target audiences: ${audiences.join(', ')} for ${post.audience} post`);
+  console.log(`[NotificationGen] 📋 Final audiences:`, audiences.join(', '));
   
   // Generate action-specific content
   let titlePrefix = '';
@@ -121,7 +108,6 @@ export async function generatePostNotifications(
     title: post.title,
     audience: post.audience,
     classIds: post.classIds,
-    important: isImportant,
     targetAudiences: audiences.join(', ')
   });
   
@@ -213,16 +199,15 @@ export async function generatePostNotifications(
           }
           
           console.log(`[NotificationGen] ✨ Creating notification for user ${userId}:`, {
-            type: isImportant ? 'POST_IMPORTANT' : 'POST_NEW',
+            type: 'POST_NEW',
             postId: post.id,
             postTitle: post.title,
             roleTarget,
-            isImportant,
             userId: userId
           });
           
           const notification = {
-            type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
+            type: 'POST_NEW' as NotificationType,
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
             message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
             roleTarget,
@@ -233,7 +218,6 @@ export async function generatePostNotifications(
               postType: post.type,
               action,
               scope,
-              important: isImportant,
               notificationKey,
               authorName: post.authorName,
               classId: post.classIds?.[0],

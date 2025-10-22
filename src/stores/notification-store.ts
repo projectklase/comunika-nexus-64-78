@@ -6,7 +6,6 @@ export type NotificationType =
   | "RESET_COMPLETED"
   | "RESET_CANCELLED"
   | "POST_NEW"
-  | "POST_IMPORTANT"
   | "HOLIDAY"
   | "KOINS_EARNED"
   | "KOIN_BONUS"

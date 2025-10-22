@@ -31,7 +31,7 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
     // Create a compatible notification object for the resolver
     const notificationData = {
       id: post.id,
-      type: 'POST_IMPORTANT' as const,
+      type: 'POST_NEW' as const,
       title: post.title,
       message: '',
       roleTarget: 'ALUNO' as const,

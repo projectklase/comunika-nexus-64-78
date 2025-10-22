@@ -4,30 +4,19 @@ import { notificationStore, Notification, RoleTarget } from '@/stores/notificati
 import { initializeHolidayNotifications } from '@/utils/holiday-notifications-enhanced';
 import { useToast } from '@/hooks/use-toast';
 
-export type NotificationTab = 'novidades' | 'importantes';
-
 export interface NotificationPanelState {
-  notifications: {
-    novidades: Notification[];
-    importantes: Notification[];
-  };
-  unreadCounts: {
-    novidades: number;
-    importantes: number;
-    total: number;
-  };
-  activeTab: NotificationTab;
+  notifications: Notification[];
+  unreadCount: number;
   loading: boolean;
 }
 
 /**
- * Hook for managing the notification panel with Lovable-style tabs
+ * Hook for managing unified notification panel
  */
 export function useNotificationPanel() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [activeTab, setActiveTab] = useState<NotificationTab>('novidades');
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   
@@ -54,7 +43,7 @@ export function useNotificationPanel() {
         sessionStorage.setItem(key, 'true');
       }
     }
-  }, [user?.id, roleTarget]); // Only depend on user.id, not full user object
+  }, [user?.id, roleTarget]);
   
   // Load notifications from store
   const loadNotifications = async () => {
@@ -66,27 +55,23 @@ export function useNotificationPanel() {
     
     console.log('[useNotificationPanel] 🔄 Loading notifications for user:', user.id, 'with role:', roleTarget);
     
-    // Buscar notificações do usuário (por user_id, independente de role_target)
     const allNotifications = await notificationStore.listAsync({
       userId: user.id,
       limit: 100
     });
     
-    console.log('[useNotificationPanel] ✅ Loaded', allNotifications.length, 'notifications for user', user.id);
-    console.log('[useNotificationPanel] 📋 Notification details:', allNotifications.map(n => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      roleTarget: n.roleTarget,
-      isRead: n.isRead,
-      important: n.meta?.important
-    })));
+    // Sort by date (most recent first)
+    const sorted = allNotifications.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
     
-    setNotifications(allNotifications);
+    console.log('[useNotificationPanel] ✅ Loaded', sorted.length, 'notifications');
+    
+    setNotifications(sorted);
     setLoading(false);
   };
   
-  // Subscribe to store changes (only once)
+  // Subscribe to store changes
   useEffect(() => {
     if (!roleTarget || !user?.id) return;
     
@@ -103,9 +88,9 @@ export function useNotificationPanel() {
       console.log('[useNotificationPanel] 🔕 Unsubscribing from notification updates');
       unsubscribe();
     };
-  }, [roleTarget, user?.id]); // Depend on both roleTarget and user.id
+  }, [roleTarget, user?.id]);
   
-  // Auto-cleanup: Delete read notifications older than 7 days (like Instagram/Facebook)
+  // Auto-cleanup: Delete read notifications older than 7 days
   useEffect(() => {
     if (!roleTarget || !user) return;
     
@@ -114,7 +99,6 @@ export function useNotificationPanel() {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        // Get all read notifications older than 7 days
         const allNotifications = await notificationStore.listAsync({
           roleTarget,
           userId: user.id
@@ -126,7 +110,6 @@ export function useNotificationPanel() {
           return isRead && isOld;
         });
         
-        // Delete old read notifications
         if (oldReadNotifications.length > 0) {
           console.log(`[NotificationPanel] Auto-cleaning ${oldReadNotifications.length} old read notifications`);
           await Promise.all(
@@ -138,55 +121,17 @@ export function useNotificationPanel() {
       }
     };
     
-    // Run cleanup on mount
     cleanupOldReadNotifications();
-    
-    // Run cleanup daily
     const cleanupInterval = setInterval(cleanupOldReadNotifications, 24 * 60 * 60 * 1000);
     
     return () => clearInterval(cleanupInterval);
   }, [roleTarget, user?.id]);
   
-  // Categorize notifications into tabs
-  const categorizedNotifications = useMemo(() => {
-    const importantes: Notification[] = [];
-    const novidades: Notification[] = [];
-    
-    notifications.forEach(notification => {
-      // Importantes: posts marked as important + holidays
-      if (
-        notification.type === 'POST_IMPORTANT' || 
-        notification.type === 'HOLIDAY' ||
-        notification.meta?.important === true
-      ) {
-        importantes.push(notification);
-      } else {
-        // Novidades: all other new/relevant content
-        novidades.push(notification);
-      }
-    });
-    
-    return {
-      importantes: importantes.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ),
-      novidades: novidades.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-    };
-  }, [notifications]);
-  
-  // Calculate unread counts
-  const unreadCounts = useMemo(() => {
-    const importantesUnread = categorizedNotifications.importantes.filter(n => !n.isRead).length;
-    const novidadesUnread = categorizedNotifications.novidades.filter(n => !n.isRead).length;
-    
-    return {
-      importantes: importantesUnread,
-      novidades: novidadesUnread,
-      total: importantesUnread + novidadesUnread
-    };
-  }, [categorizedNotifications]);
+  // Calculate unread count
+  const unreadCount = useMemo(() => 
+    notifications.filter(n => !n.isRead).length,
+    [notifications]
+  );
   
   const markAsRead = async (notificationId: string) => {
     console.log('[useNotificationPanel] markAsRead called for:', notificationId);
@@ -199,43 +144,22 @@ export function useNotificationPanel() {
     }
   };
   
-  const markAllAsRead = async (tab?: NotificationTab) => {
+  const markAllAsRead = async () => {
     if (!roleTarget || !user) {
       console.warn('[useNotificationPanel] markAllAsRead called without roleTarget or user');
       return;
     }
     
-    console.log('[useNotificationPanel] markAllAsRead called for tab:', tab, 'roleTarget:', roleTarget);
+    console.log('[useNotificationPanel] markAllAsRead called for roleTarget:', roleTarget);
     
     try {
-      if (tab) {
-        // Mark specific tab as read
-        const tabNotifications = categorizedNotifications[tab];
-        console.log('[useNotificationPanel] Marking', tabNotifications.length, 'notifications in tab:', tab);
-        
-        await Promise.all(
-          tabNotifications
-            .filter(n => !n.isRead)
-            .map(n => notificationStore.markRead(n.id))
-        );
-        
-        toast({
-          title: 'Marcadas como lidas',
-          description: `Todas as notificações de ${tab === 'importantes' ? 'Importantes' : 'Novidades'} foram marcadas como lidas.`
-        });
-      } else {
-        console.log('[useNotificationPanel] Marking ALL notifications as read for roleTarget:', roleTarget);
-        
-        // Mark all as read using the async store method
-        await notificationStore.markAllRead(roleTarget);
-        
-        toast({
-          title: 'Todas marcadas como lidas',
-          description: `${unreadCounts.total} notificações foram marcadas como lidas.`
-        });
-      }
+      await notificationStore.markAllRead(roleTarget);
       
-      // Refresh notifications
+      toast({
+        title: 'Todas marcadas como lidas',
+        description: `${unreadCount} notificações foram marcadas como lidas.`
+      });
+      
       await loadNotifications();
       console.log('[useNotificationPanel] markAllAsRead completed successfully');
     } catch (error) {
@@ -287,21 +211,18 @@ export function useNotificationPanel() {
   };
   
   const hideNotification = async (notificationId: string) => {
-    // Hide permanently removes the notification
     await deleteNotification(notificationId);
   };
   
   return {
     // State
     state: {
-      notifications: categorizedNotifications,
-      unreadCounts,
-      activeTab,
+      notifications,
+      unreadCount,
       loading
     } as NotificationPanelState,
     
     // Actions
-    setActiveTab,
     markAsRead,
     markAllAsRead,
     archiveNotification,
@@ -310,6 +231,6 @@ export function useNotificationPanel() {
     
     // Computed
     hasNotifications: notifications.length > 0,
-    hasUnread: unreadCounts.total > 0
+    hasUnread: unreadCount > 0
   };
 }
