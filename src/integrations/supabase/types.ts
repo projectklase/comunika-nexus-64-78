@@ -983,23 +983,19 @@ export type Database = {
           student_notes: string | null
           updated_at: string | null
         }[]
-        SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       approve_redemption: {
         Args: { p_admin_id: string; p_redemption_id: string }
         Returns: undefined
       }
-      can_create_notifications: { Args: { _user_id: string }; Returns: boolean }
       cleanup_old_system_logs: {
         Args: { days_to_keep?: number }
         Returns: number
       }
-      get_user_role: { Args: { _user_id: string }; Returns: string }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       grant_koin_bonus: {
         Args: {
           p_event_description: string

@@ -107,7 +107,7 @@ export function useProfessorFeedFilters() {
   const filteredPosts = useMemo(() => {
     if (!user || !metrics || isLoadingPosts) return [];
 
-    const professorClassIds = (metrics.professorClasses || []).map((c) => c.id);
+    const professorClassIds = metrics.professorClasses?.map((c) => c.id) || [];
     let filteredResults = [...posts];
 
     // Filter by type
@@ -226,7 +226,7 @@ export function useProfessorFeedFilters() {
         agendados: 0,
       };
 
-    const professorClassIds = (metrics.professorClasses || []).map((c) => c.id);
+    const professorClassIds = metrics.professorClasses?.map((c) => c.id) || [];
 
     // All relevant posts for professor
     const allPosts = posts.filter((post) => {

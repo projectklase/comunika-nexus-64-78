@@ -4,19 +4,30 @@ import { notificationStore, Notification, RoleTarget } from '@/stores/notificati
 import { initializeHolidayNotifications } from '@/utils/holiday-notifications-enhanced';
 import { useToast } from '@/hooks/use-toast';
 
+export type NotificationTab = 'novidades' | 'importantes';
+
 export interface NotificationPanelState {
-  notifications: Notification[];
-  unreadCount: number;
+  notifications: {
+    novidades: Notification[];
+    importantes: Notification[];
+  };
+  unreadCounts: {
+    novidades: number;
+    importantes: number;
+    total: number;
+  };
+  activeTab: NotificationTab;
   loading: boolean;
 }
 
 /**
- * Hook for managing unified notification panel
+ * Hook for managing the notification panel with Lovable-style tabs
  */
 export function useNotificationPanel() {
   const { user } = useAuth();
   const { toast } = useToast();
   
+  const [activeTab, setActiveTab] = useState<NotificationTab>('novidades');
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   
@@ -43,7 +54,7 @@ export function useNotificationPanel() {
         sessionStorage.setItem(key, 'true');
       }
     }
-  }, [user?.id, roleTarget]);
+  }, [user?.id, roleTarget]); // Only depend on user.id, not full user object
   
   // Load notifications from store
   const loadNotifications = async () => {
@@ -53,44 +64,37 @@ export function useNotificationPanel() {
       return;
     }
     
-    console.log('[useNotificationPanel] 🔄 Loading notifications for user:', user.id, 'with role:', roleTarget);
-    
+    // FASE 3: Buscar notificações do usuário (independente de role_target)
+    // Isso inclui notificações gerais (role_target null) e específicas do role
     const allNotifications = await notificationStore.listAsync({
       userId: user.id,
       limit: 100
     });
     
-    // Sort by date (most recent first)
-    const sorted = allNotifications.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    
-    console.log('[useNotificationPanel] ✅ Loaded', sorted.length, 'notifications');
-    
-    setNotifications(sorted);
+    console.log('[useNotificationPanel] Notificações carregadas:', allNotifications.length);
+    setNotifications(allNotifications);
     setLoading(false);
   };
   
-  // Subscribe to store changes
+  // Subscribe to store changes (only once)
   useEffect(() => {
-    if (!roleTarget || !user?.id) return;
-    
-    console.log('[useNotificationPanel] 🔔 Setting up subscription for user:', user.id);
+    if (!roleTarget) return;
     
     loadNotifications();
     
     const unsubscribe = notificationStore.subscribe(() => {
-      console.log('[useNotificationPanel] 🔄 Store changed, reloading notifications');
-      loadNotifications();
+      // Debounce rapid changes
+      const timeoutId = setTimeout(() => {
+        loadNotifications();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     });
     
-    return () => {
-      console.log('[useNotificationPanel] 🔕 Unsubscribing from notification updates');
-      unsubscribe();
-    };
-  }, [roleTarget, user?.id]);
+    return unsubscribe;
+  }, [roleTarget]); // Only depend on roleTarget
   
-  // Auto-cleanup: Delete read notifications older than 7 days
+  // Auto-cleanup: Delete read notifications older than 7 days (like Instagram/Facebook)
   useEffect(() => {
     if (!roleTarget || !user) return;
     
@@ -99,6 +103,7 @@ export function useNotificationPanel() {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
+        // Get all read notifications older than 7 days
         const allNotifications = await notificationStore.listAsync({
           roleTarget,
           userId: user.id
@@ -110,6 +115,7 @@ export function useNotificationPanel() {
           return isRead && isOld;
         });
         
+        // Delete old read notifications
         if (oldReadNotifications.length > 0) {
           console.log(`[NotificationPanel] Auto-cleaning ${oldReadNotifications.length} old read notifications`);
           await Promise.all(
@@ -121,17 +127,55 @@ export function useNotificationPanel() {
       }
     };
     
+    // Run cleanup on mount
     cleanupOldReadNotifications();
+    
+    // Run cleanup daily
     const cleanupInterval = setInterval(cleanupOldReadNotifications, 24 * 60 * 60 * 1000);
     
     return () => clearInterval(cleanupInterval);
   }, [roleTarget, user?.id]);
   
-  // Calculate unread count
-  const unreadCount = useMemo(() => 
-    notifications.filter(n => !n.isRead).length,
-    [notifications]
-  );
+  // Categorize notifications into tabs
+  const categorizedNotifications = useMemo(() => {
+    const importantes: Notification[] = [];
+    const novidades: Notification[] = [];
+    
+    notifications.forEach(notification => {
+      // Importantes: posts marked as important + holidays
+      if (
+        notification.type === 'POST_IMPORTANT' || 
+        notification.type === 'HOLIDAY' ||
+        notification.meta?.important === true
+      ) {
+        importantes.push(notification);
+      } else {
+        // Novidades: all other new/relevant content
+        novidades.push(notification);
+      }
+    });
+    
+    return {
+      importantes: importantes.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ),
+      novidades: novidades.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+    };
+  }, [notifications]);
+  
+  // Calculate unread counts
+  const unreadCounts = useMemo(() => {
+    const importantesUnread = categorizedNotifications.importantes.filter(n => !n.isRead).length;
+    const novidadesUnread = categorizedNotifications.novidades.filter(n => !n.isRead).length;
+    
+    return {
+      importantes: importantesUnread,
+      novidades: novidadesUnread,
+      total: importantesUnread + novidadesUnread
+    };
+  }, [categorizedNotifications]);
   
   const markAsRead = async (notificationId: string) => {
     console.log('[useNotificationPanel] markAsRead called for:', notificationId);
@@ -144,22 +188,43 @@ export function useNotificationPanel() {
     }
   };
   
-  const markAllAsRead = async () => {
+  const markAllAsRead = async (tab?: NotificationTab) => {
     if (!roleTarget || !user) {
       console.warn('[useNotificationPanel] markAllAsRead called without roleTarget or user');
       return;
     }
     
-    console.log('[useNotificationPanel] markAllAsRead called for roleTarget:', roleTarget);
+    console.log('[useNotificationPanel] markAllAsRead called for tab:', tab, 'roleTarget:', roleTarget);
     
     try {
-      await notificationStore.markAllRead(roleTarget);
+      if (tab) {
+        // Mark specific tab as read
+        const tabNotifications = categorizedNotifications[tab];
+        console.log('[useNotificationPanel] Marking', tabNotifications.length, 'notifications in tab:', tab);
+        
+        await Promise.all(
+          tabNotifications
+            .filter(n => !n.isRead)
+            .map(n => notificationStore.markRead(n.id))
+        );
+        
+        toast({
+          title: 'Marcadas como lidas',
+          description: `Todas as notificações de ${tab === 'importantes' ? 'Importantes' : 'Novidades'} foram marcadas como lidas.`
+        });
+      } else {
+        console.log('[useNotificationPanel] Marking ALL notifications as read for roleTarget:', roleTarget);
+        
+        // Mark all as read using the async store method
+        await notificationStore.markAllRead(roleTarget);
+        
+        toast({
+          title: 'Todas marcadas como lidas',
+          description: `${unreadCounts.total} notificações foram marcadas como lidas.`
+        });
+      }
       
-      toast({
-        title: 'Todas marcadas como lidas',
-        description: `${unreadCount} notificações foram marcadas como lidas.`
-      });
-      
+      // Refresh notifications
       await loadNotifications();
       console.log('[useNotificationPanel] markAllAsRead completed successfully');
     } catch (error) {
@@ -211,18 +276,21 @@ export function useNotificationPanel() {
   };
   
   const hideNotification = async (notificationId: string) => {
+    // Hide permanently removes the notification
     await deleteNotification(notificationId);
   };
   
   return {
     // State
     state: {
-      notifications,
-      unreadCount,
+      notifications: categorizedNotifications,
+      unreadCounts,
+      activeTab,
       loading
     } as NotificationPanelState,
     
     // Actions
+    setActiveTab,
     markAsRead,
     markAllAsRead,
     archiveNotification,
@@ -231,6 +299,6 @@ export function useNotificationPanel() {
     
     // Computed
     hasNotifications: notifications.length > 0,
-    hasUnread: unreadCount > 0
+    hasUnread: unreadCounts.total > 0
   };
 }
