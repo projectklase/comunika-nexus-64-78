@@ -162,16 +162,25 @@ class NotificationStore {
       .single();
 
     if (error) {
-      console.error("❌ [NotificationStore] Erro ao adicionar notificação:", error);
-      console.error("📋 Dados da notificação:", {
-        userId: notification.userId,
-        type: notification.type,
-        roleTarget: notification.roleTarget
-      });
+      console.error("❌ [NotificationStore] ERRO ao adicionar notificação");
+      console.error("📋 user_id tentado:", notification.userId);
+      console.error("📋 role_target:", notification.roleTarget);
+      console.error("📋 type:", notification.type);
+      
+      // Get current auth user
+      const { data: { user } } = await supabase.auth.getUser();
+      console.error("📋 auth.uid() atual:", user?.id);
+      
+      console.error("🔴 Error code:", error.code);
+      console.error("🔴 Error message:", error.message);
+      console.error("🔴 Error details:", error.details);
+      console.error("🔴 Error hint:", error.hint);
       
       // Identificar erros comuns
-      if (error.code === '42501' || error.message?.includes('policy')) {
-        console.error("🔒 ERRO DE RLS: Verifique as políticas da tabela notifications");
+      if (error.code === '42501' || error.message?.includes('policy') || error.message?.includes('RLS')) {
+        console.error("🔒 RLS POLICY VIOLATION DETECTED!");
+        console.error("🔒 Current user does not have permission to insert this notification");
+        console.error("🔒 Verifique se o usuário autenticado tem permissão para criar notificações para userId:", notification.userId);
       }
       
       throw error;

@@ -46,26 +46,42 @@ export async function generatePostNotifications(
   const actionKey = action === 'deadline_changed' ? 'deadline' : action;
   const baseKey = generateNotificationKey('post', post.id, scope, actionKey);
   
+  console.log(`[NotificationGen] 🔍 Building audiences array for post:`, {
+    postId: post.id,
+    audience: post.audience,
+    type: post.type,
+    isImportant,
+    classIds: post.classIds
+  });
+  
   // Determine target audiences
   const audiences: RoleTarget[] = [];
   
   if (post.audience === 'GLOBAL') {
+    console.log(`[NotificationGen] ✅ Post is GLOBAL, adding ALUNO and PROFESSOR`);
     audiences.push('ALUNO', 'PROFESSOR');
     // Secretaria vê AVISOS, COMUNICADOS ou qualquer post importante
     if (post.type === 'AVISO' || post.type === 'COMUNICADO' || isImportant) {
+      console.log(`[NotificationGen] ✅ Post is AVISO/COMUNICADO or important, adding SECRETARIA`);
       audiences.push('SECRETARIA');
     }
   } else if (post.audience === 'CLASS') {
+    console.log(`[NotificationGen] ✅ Post is CLASS, adding ALUNO`);
     audiences.push('ALUNO');
     if (post.classIds?.length) {
+      console.log(`[NotificationGen] ✅ Post has classIds, adding PROFESSOR`);
       audiences.push('PROFESSOR'); // Teachers of selected classes
     }
     // Se importante, secretaria também recebe
     if (isImportant) {
+      console.log(`[NotificationGen] ✅ Post is important, adding SECRETARIA`);
       audiences.push('SECRETARIA');
     }
   }
   
+  console.log(`[NotificationGen] 📋 Final audiences array:`, audiences);
+  console.log(`[NotificationGen] 📋 Audiences length:`, audiences.length);
+  console.log(`[NotificationGen] 📋 Audiences join:`, audiences.join(', '));
   console.log(`[NotificationGen] Target audiences: ${audiences.join(', ')} for ${post.audience} post`);
   
   // Generate action-specific content
@@ -118,7 +134,9 @@ export async function generatePostNotifications(
   for (let i = 0; i < audiences.length; i++) {
     const roleTarget = audiences[i];
     console.log(`[NotificationGen] ========================================`);
-    console.log(`[NotificationGen] 🔄 Processing roleTarget ${i + 1}/${audiences.length}: ${roleTarget}`);
+    console.log(`[NotificationGen] 🔄 Loop iteration ${i + 1}/${audiences.length}`);
+    console.log(`[NotificationGen] 🔄 Current roleTarget: ${roleTarget}`);
+    console.log(`[NotificationGen] 🔄 Remaining roleTargets: ${audiences.slice(i + 1).join(', ') || 'none'}`);
     
     try {
       // Build query to get users
@@ -252,9 +270,13 @@ export async function generatePostNotifications(
       console.error(`[NotificationGen] ❌ Error message:`, error?.message);
       console.error(`[NotificationGen] ❌ Error stack:`, error?.stack);
       // Continue to next role instead of stopping completely
+      console.log(`[NotificationGen] ⏭️ Continuing to next roleTarget despite error`);
     }
+    
+    console.log(`[NotificationGen] ✅ Completed processing for ${roleTarget}, moving to next`);
   }
   
+  console.log(`[NotificationGen] 🏁 For loop completed, processed ${audiences.length} roleTargets`);
   console.log(`[NotificationGen] ========================================`);
   console.log(`[NotificationGen] 🏁 END - Finished processing post ${post.id}`);
 }
