@@ -33,6 +33,7 @@ export async function generatePostNotifications(
   action: 'created' | 'updated' | 'deadline_changed',
   oldPost?: Partial<Post>
 ): Promise<void> {
+  console.log('[generatePostNotifications] Starting for post:', post.id, 'action:', action);
   const isImportant = post.meta?.important || false;
   
   // Determine scope for deduplication
@@ -95,6 +96,7 @@ export async function generatePostNotifications(
   
   // Get specific users for each roleTarget
   for (const roleTarget of audiences) {
+    console.log('[generatePostNotifications] Processing roleTarget:', roleTarget);
     try {
       // Build query to get users
       let query = supabase
@@ -121,8 +123,12 @@ export async function generatePostNotifications(
       }
       
       const userIds = userRoles?.map(r => r.user_id) || [];
+      console.log('[generatePostNotifications] Found', userIds.length, 'users with role:', roleTarget);
       
-      if (userIds.length === 0) continue;
+      if (userIds.length === 0) {
+        console.log('[generatePostNotifications] No users found for role:', roleTarget);
+        continue;
+      }
       
       // For CLASS audience, further filter by class membership
       let targetUserIds = userIds;
@@ -149,12 +155,16 @@ export async function generatePostNotifications(
       }
       
       // Create notification for each user
+      console.log('[generatePostNotifications] Creating notifications for', targetUserIds.length, 'users');
       const notificationPromises = targetUserIds.map(async userId => {
         const notificationKey = `${baseKey}:${userId}`;
         
         if (await notificationExistsAsync(notificationKey, userId)) {
+          console.log('[generatePostNotifications] Notification already exists for user:', userId);
           return;
         }
+        
+        console.log('[generatePostNotifications] Creating notification for user:', userId);
         
         const notification = {
           type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
@@ -177,10 +187,18 @@ export async function generatePostNotifications(
           }
         };
         
-        return notificationStore.add(notification);
+        try {
+          const result = await notificationStore.add(notification);
+          console.log('[generatePostNotifications] Notification created successfully:', result.id);
+          return result;
+        } catch (error) {
+          console.error('[generatePostNotifications] Error creating notification for user:', userId, error);
+          throw error;
+        }
       });
       
       await Promise.all(notificationPromises);
+      console.log('[generatePostNotifications] All notifications created for roleTarget:', roleTarget);
       
     } catch (error) {
       console.error(`Error creating notifications for ${roleTarget}:`, error);

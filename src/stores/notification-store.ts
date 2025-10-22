@@ -119,7 +119,6 @@ class NotificationStore {
     return (data || []).map(dbRowToNotification);
   }
 
-  async; // COLOQUE ESTE NOVO BLOCO DE CÓDIGO NO LUGAR
   async add(notification: {
     title: string;
     message: string;
