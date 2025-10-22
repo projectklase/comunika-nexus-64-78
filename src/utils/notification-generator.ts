@@ -35,6 +35,8 @@ export async function generatePostNotifications(
 ): Promise<void> {
   const isImportant = post.meta?.important || false;
   
+  console.log(`[NotificationGen] START - Post: ${post.id}, Type: ${post.type}, Important: ${isImportant}, Action: ${action}`);
+  
   // Determine scope for deduplication
   const scope = post.audience === 'CLASS' && post.classIds?.length 
     ? `CLASS:${post.classIds.join(',')}`
@@ -63,6 +65,8 @@ export async function generatePostNotifications(
       audiences.push('SECRETARIA');
     }
   }
+  
+  console.log(`[NotificationGen] Target audiences: ${audiences.join(', ')} for ${post.audience} post`);
   
   // Generate action-specific content
   let titlePrefix = '';
@@ -100,6 +104,8 @@ export async function generatePostNotifications(
   
   // Get specific users for each roleTarget
   for (const roleTarget of audiences) {
+    console.log(`[NotificationGen] Processing roleTarget: ${roleTarget}`);
+    
     try {
       // Build query to get users
       let query = supabase
@@ -121,13 +127,17 @@ export async function generatePostNotifications(
         .eq('role', roleMapping[roleTarget] as any);
       
       if (roleError) {
-        console.error('Error fetching user roles:', roleError);
+        console.error(`[NotificationGen] Error fetching user roles for ${roleTarget}:`, roleError);
         continue;
       }
       
       const userIds = userRoles?.map(r => r.user_id) || [];
+      console.log(`[NotificationGen] Found ${userIds.length} users with role ${roleTarget}`);
       
-      if (userIds.length === 0) continue;
+      if (userIds.length === 0) {
+        console.log(`[NotificationGen] No users found for ${roleTarget}, skipping`);
+        continue;
+      }
       
       // For CLASS audience, further filter by class membership
       let targetUserIds = userIds;
@@ -140,8 +150,11 @@ export async function generatePostNotifications(
         if (!classError && classStudents) {
           const classUserIds = classStudents.map(cs => cs.student_id);
           targetUserIds = userIds.filter(id => classUserIds.includes(id));
+          console.log(`[NotificationGen] Filtered to ${targetUserIds.length} students in class(es)`);
         }
       }
+      
+      console.log(`[NotificationGen] Will create ${targetUserIds.length} notifications for ${roleTarget}`);
       
       // Create notification for each user
       const notificationPromises = targetUserIds.map(async userId => {
@@ -149,6 +162,7 @@ export async function generatePostNotifications(
         
         // Check if notification already exists for this user
         if (await notificationExistsAsync(baseKey, userId)) {
+          console.log(`[NotificationGen] Notification already exists for user ${userId}, skipping`);
           return;
         }
         
@@ -181,15 +195,21 @@ export async function generatePostNotifications(
           }
         };
         
-        return notificationStore.add(notification);
+        const result = await notificationStore.add(notification);
+        console.log(`[NotificationGen] Notification created successfully for user ${userId}:`, result?.id);
+        return result;
       });
       
-      await Promise.all(notificationPromises);
+      const results = await Promise.all(notificationPromises);
+      const successCount = results.filter(r => r).length;
+      console.log(`[NotificationGen] Created ${successCount}/${targetUserIds.length} notifications for ${roleTarget}`);
       
     } catch (error) {
-      console.error(`Error creating notifications for ${roleTarget}:`, error);
+      console.error(`[NotificationGen] Error creating notifications for ${roleTarget}:`, error);
     }
   }
+  
+  console.log(`[NotificationGen] END - Finished processing post ${post.id}`);
 }
 
 /**

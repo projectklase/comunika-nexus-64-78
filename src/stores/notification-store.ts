@@ -134,6 +134,14 @@ class NotificationStore {
       throw new Error("O ID do usuário (userId) é obrigatório para criar uma notificação.");
     }
 
+    console.log("[NotificationStore] Attempting to add notification:", {
+      userId: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      roleTarget: notification.roleTarget,
+      important: notification.meta?.important
+    });
+
     const { data, error } = await supabase
       .from("notifications")
       .insert({
@@ -151,8 +159,11 @@ class NotificationStore {
 
     if (error) {
       console.error("Erro ao adicionar notificação no Supabase:", error);
+      console.error("Notification data:", notification);
       throw error; // Lança o erro real do Supabase
     }
+
+    console.log("[NotificationStore] Notification added successfully:", data.id);
 
     // Se chegou aqui, 'data' contém a notificação criada e podemos retorná-la.
     this.notifySubscribers(); // Avisa a interface para se atualizar
