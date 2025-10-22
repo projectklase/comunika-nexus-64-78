@@ -988,6 +988,10 @@ export type Database = {
         Args: { p_admin_id: string; p_redemption_id: string }
         Returns: undefined
       }
+      can_create_notifications: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       cleanup_old_system_logs: {
         Args: { days_to_keep?: number }
         Returns: number
