@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { parseISO, isToday, isThisWeek, startOfDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-// import { Target } from 'lucide-react'; // NEXUS REMOVIDO
+import { Target } from 'lucide-react';
 import { TodaySection } from '@/components/aluno/TodaySection';
 import { ImmersivePostCard } from '@/components/aluno/ImmersivePostCard';
 import { StudentStreakWidget } from '@/components/student/StudentStreakWidget';
@@ -10,8 +10,8 @@ import { QuickFilters, QuickFiltersState } from '@/components/aluno/QuickFilters
 import { AgendaSkeleton, TodaySkeleton, MiniCalendarSkeleton } from '@/components/aluno/AgendaSkeleton';
 import { DrawerEntrega } from '@/components/feed/DrawerEntrega';
 import { PostDetailDrawer } from '@/components/feed/PostDetailDrawer';
-// import { NexusOrb } from '@/components/nexus/NexusOrb'; // NEXUS REMOVIDO
-// import { NexusPanel } from '@/components/nexus/NexusPanel'; // NEXUS REMOVIDO
+import { NexusOrb } from '@/components/nexus/NexusOrb';
+import { NexusPanel } from '@/components/nexus/NexusPanel';
 import { usePosts } from '@/hooks/usePosts';
 import { useSaved } from '@/hooks/useSaved';
 import { useReads } from '@/hooks/useReads';
@@ -47,7 +47,7 @@ export default function AlunoHome() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<'entrega' | 'detail' | null>(null);
   const [updateKey, setUpdateKey] = useState(0);
-  // const [isNexusPanelOpen, setIsNexusPanelOpen] = useState(false); // NEXUS REMOVIDO
+  const [isNexusPanelOpen, setIsNexusPanelOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load filters from localStorage
@@ -325,11 +325,10 @@ export default function AlunoHome() {
 
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Today Section */}
+            {/* Today Section with NEXUS Planner Button */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Hoje</h2>
-                {/* NEXUS REMOVIDO
                 <Button
                   onClick={() => navigate(ROUTES.ALUNO.NEXUS)}
                   variant="outline"
@@ -339,7 +338,6 @@ export default function AlunoHome() {
                   <Target className="h-4 w-4 mr-2" />
                   NEXUS Planner
                 </Button>
-                */}
               </div>
               
               <TodaySection
@@ -387,12 +385,12 @@ export default function AlunoHome() {
         </div>
       </div>
 
-      {/* NEXUS Integration - REMOVIDO */}
+      {/* NEXUS Integration - Replaced by UniversalNexusOrb in AppLayout */}
       {/* <NexusOrb onOpenPanel={() => setIsNexusPanelOpen(true)} /> */}
-      {/* <NexusPanel 
+      <NexusPanel 
         isOpen={isNexusPanelOpen} 
         onClose={() => setIsNexusPanelOpen(false)} 
-      /> */}
+      />
 
       {/* Drawers */}
       {selectedPost && (

@@ -33,7 +33,7 @@ export function QuickNotificationTest() {
         <div className="flex items-center justify-between">
           <span className="text-sm">Notificações:</span>
           <span className="text-sm font-mono">
-            {state.unreadCount || 0}
+            {state.unreadCounts.total || 0}
           </span>
         </div>
 
@@ -48,7 +48,7 @@ export function QuickNotificationTest() {
         </Button>
 
         {/* Warning for no notifications */}
-        {state.unreadCount === 0 && (
+        {state.unreadCounts.total === 0 && (
           <div className="flex items-center gap-2 p-2 bg-muted/50 rounded text-xs">
             <AlertTriangle className="w-3 h-3 text-amber-500" />
             <span>Use o testador para criar notificações</span>

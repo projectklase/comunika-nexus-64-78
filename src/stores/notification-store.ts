@@ -6,6 +6,7 @@ export type NotificationType =
   | "RESET_COMPLETED"
   | "RESET_CANCELLED"
   | "POST_NEW"
+  | "POST_IMPORTANT"
   | "HOLIDAY"
   | "KOINS_EARNED"
   | "KOIN_BONUS"
@@ -118,6 +119,7 @@ class NotificationStore {
     return (data || []).map(dbRowToNotification);
   }
 
+  async; // COLOQUE ESTE NOVO BLOCO DE CÓDIGO NO LUGAR
   async add(notification: {
     title: string;
     message: string;
@@ -128,32 +130,32 @@ class NotificationStore {
     meta?: Record<string, any>;
   }): Promise<Notification> {
     if (!notification.userId) {
+      console.error("Não é possível criar uma notificação sem um ID de usuário válido.", notification);
       throw new Error("O ID do usuário (userId) é obrigatório para criar uma notificação.");
     }
 
-    const insertData = {
-      user_id: notification.userId,
-      type: notification.type,
-      title: notification.title,
-      message: notification.message,
-      link: notification.link,
-      role_target: notification.roleTarget,
-      meta: notification.meta,
-      is_read: false,
-    };
-
     const { data, error } = await supabase
       .from("notifications")
-      .insert(insertData)
+      .insert({
+        user_id: notification.userId,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        link: notification.link,
+        role_target: notification.roleTarget,
+        meta: notification.meta,
+        is_read: false,
+      })
       .select()
       .single();
 
     if (error) {
-      console.error("Error adding notification:", error.message);
-      throw error;
+      console.error("Erro ao adicionar notificação no Supabase:", error);
+      throw error; // Lança o erro real do Supabase
     }
 
-    this.notifySubscribers();
+    // Se chegou aqui, 'data' contém a notificação criada e podemos retorná-la.
+    this.notifySubscribers(); // Avisa a interface para se atualizar
     return dbRowToNotification(data);
   }
 

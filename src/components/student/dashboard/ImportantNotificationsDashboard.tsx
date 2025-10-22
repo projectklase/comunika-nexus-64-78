@@ -20,7 +20,7 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
 
   const importantPosts = useMemo(() => {
     return posts
-      .filter(post => post.meta?.important === true)
+      .filter(post => post.meta?.importante === true)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 3); // Show only the 3 most recent important posts
   }, [posts]);
@@ -31,7 +31,7 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
     // Create a compatible notification object for the resolver
     const notificationData = {
       id: post.id,
-      type: 'POST_NEW' as const,
+      type: 'POST_IMPORTANT' as const,
       title: post.title,
       message: '',
       roleTarget: 'ALUNO' as const,
