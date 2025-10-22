@@ -128,19 +128,9 @@ class NotificationStore {
     meta?: Record<string, any>;
   }): Promise<Notification> {
     if (!notification.userId) {
-      console.error("Não é possível criar uma notificação sem um ID de usuário válido.", notification);
       throw new Error("O ID do usuário (userId) é obrigatório para criar uma notificação.");
     }
 
-    console.log("[NotificationStore] Attempting to add notification:", {
-      userId: notification.userId,
-      type: notification.type,
-      title: notification.title,
-      roleTarget: notification.roleTarget,
-      important: notification.meta?.important
-    });
-
-    // Log the exact data being sent to Supabase
     const insertData = {
       user_id: notification.userId,
       type: notification.type,
@@ -151,8 +141,6 @@ class NotificationStore {
       meta: notification.meta,
       is_read: false,
     };
-    
-    console.log("[NotificationStore] 🔍 Inserting to Supabase with user_id:", insertData.user_id);
 
     const { data, error } = await supabase
       .from("notifications")
@@ -161,34 +149,11 @@ class NotificationStore {
       .single();
 
     if (error) {
-      console.error("❌ [NotificationStore] ERRO ao adicionar notificação");
-      console.error("📋 user_id tentado:", notification.userId);
-      console.error("📋 role_target:", notification.roleTarget);
-      console.error("📋 type:", notification.type);
-      
-      // Get current auth user
-      const { data: { user } } = await supabase.auth.getUser();
-      console.error("📋 auth.uid() atual:", user?.id);
-      
-      console.error("🔴 Error code:", error.code);
-      console.error("🔴 Error message:", error.message);
-      console.error("🔴 Error details:", error.details);
-      console.error("🔴 Error hint:", error.hint);
-      
-      // Identificar erros comuns
-      if (error.code === '42501' || error.message?.includes('policy') || error.message?.includes('RLS')) {
-        console.error("🔒 RLS POLICY VIOLATION DETECTED!");
-        console.error("🔒 Current user does not have permission to insert this notification");
-        console.error("🔒 Verifique se o usuário autenticado tem permissão para criar notificações para userId:", notification.userId);
-      }
-      
+      console.error("Error adding notification:", error.message);
       throw error;
     }
 
-    console.log("[NotificationStore] Notification added successfully:", data.id);
-
-    // Se chegou aqui, 'data' contém a notificação criada e podemos retorná-la.
-    this.notifySubscribers(); // Avisa a interface para se atualizar
+    this.notifySubscribers();
     return dbRowToNotification(data);
   }
 
