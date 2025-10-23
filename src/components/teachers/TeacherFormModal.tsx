@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
+import { CredentialsDialog } from '@/components/students/CredentialsDialog';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -114,6 +115,8 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [newQualification, setNewQualification] = useState('');
   const [newSpecialty, setNewSpecialty] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showCredentials, setShowCredentials] = useState(false);
+  const [credentials, setCredentials] = useState({ name: '', email: '', password: '' });
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
@@ -253,15 +256,20 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         });
       } else {
         // Create new teacher - usando apenas os dados básicos
-        await createTeacher({
+        const result = await createTeacher({
           name: data.name,
           email: data.email,
         });
 
-        toast({
-          title: "Professor criado",
-          description: "O professor foi criado com sucesso.",
-        });
+        // Mostrar credenciais após criação
+        if (result?.password) {
+          setCredentials({
+            name: data.name,
+            email: data.email,
+            password: result.password
+          });
+          setShowCredentials(true);
+        }
       }
 
       setIsLoading(false);
@@ -886,6 +894,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(newOpen) => !isLoading && onOpenChange(newOpen)}>
       <DialogContent 
         className="max-w-2xl max-h-[90vh] overflow-y-auto"
@@ -966,5 +975,15 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         </div>
       </DialogContent>
     </Dialog>
+
+    <CredentialsDialog
+      open={showCredentials}
+      onOpenChange={setShowCredentials}
+      name={credentials.name}
+      email={credentials.email}
+      password={credentials.password}
+      role="professor"
+    />
+    </>
   );
 }
