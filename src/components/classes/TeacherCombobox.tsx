@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { usePeopleStore } from '@/stores/people-store';
+import { useTeachers } from '@/hooks/useTeachers';
 import { QuickTeacherModal } from '@/components/teachers/QuickTeacherModal';
 
 interface TeacherComboboxProps {
@@ -33,19 +33,17 @@ export function TeacherCombobox({
 }: TeacherComboboxProps) {
   const [open, setOpen] = useState(false);
   const [showQuickTeacher, setShowQuickTeacher] = useState(false);
-  const { people } = usePeopleStore();
+  const { teachers, fetchTeachers } = useTeachers();
 
-  // Filtrar apenas professores ativos
-  const teachers = people.filter(person => 
-    person.role === 'PROFESSOR' && person.isActive
-  );
+  // Teachers já vêm ativos do hook useTeachers
 
-  const selectedTeacher = teachers.find(teacher => teacher.id === value);
+  const selectedTeacher = teachers.find(t => t.id === value);
 
-  const handleTeacherCreated = (teacherId: string) => {
-    // Pré-selecionar o professor recém-criado
+  const handleTeacherCreated = async (teacherId: string) => {
     onValueChange(teacherId);
-    setOpen(false);
+    setShowQuickTeacher(false);
+    // Recarregar lista de professores
+    await fetchTeachers();
   };
 
   return (
@@ -85,12 +83,8 @@ export function TeacherCombobox({
                       )}
                     />
                     <div className="flex flex-col">
-                      <span className="font-medium">{teacher.name}</span>
-                      {teacher.teacher?.email && (
-                        <span className="text-xs text-muted-foreground">
-                          {teacher.teacher.email}
-                        </span>
-                      )}
+                      <span>{teacher.name}</span>
+                      <span className="text-xs text-muted-foreground">{teacher.email || 'Sem e-mail'}</span>
                     </div>
                   </CommandItem>
                 ))}
