@@ -77,6 +77,17 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
   if (type === 'ATIVIDADE') {
     return (
       <div className="space-y-4">
+        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
+          <Switch
+            id="requires-delivery"
+            checked={meta.requiresDelivery !== false}
+            onCheckedChange={(checked) => updateMeta({ requiresDelivery: checked })}
+          />
+          <Label htmlFor="requires-delivery" className="cursor-pointer">
+            Esta atividade requer entrega pelo aluno
+          </Label>
+        </div>
+
         <WeightToggleField
           value={meta.peso}
           usePeso={meta.usePeso}
@@ -121,6 +132,17 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
   if (type === 'TRABALHO') {
     return (
       <div className="space-y-4">
+        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
+          <Switch
+            id="requires-delivery"
+            checked={meta.requiresDelivery !== false}
+            onCheckedChange={(checked) => updateMeta({ requiresDelivery: checked })}
+          />
+          <Label htmlFor="requires-delivery" className="cursor-pointer">
+            Este trabalho requer entrega pelo aluno
+          </Label>
+        </div>
+
         <WeightToggleField
           value={meta.peso}
           usePeso={meta.usePeso}
@@ -210,6 +232,17 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
   if (type === 'PROVA') {
     return (
       <div className="space-y-4">
+        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
+          <Switch
+            id="requires-delivery"
+            checked={meta.requiresDelivery !== false}
+            onCheckedChange={(checked) => updateMeta({ requiresDelivery: checked })}
+          />
+          <Label htmlFor="requires-delivery" className="cursor-pointer">
+            Esta prova requer entrega pelo aluno
+          </Label>
+        </div>
+
         <WeightToggleField
           value={meta.peso}
           usePeso={meta.usePeso}

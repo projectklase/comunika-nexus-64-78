@@ -11,6 +11,7 @@ export interface ActivityMeta {
   peso?: number;
   usePeso?: boolean;  // Flag para controlar se deve usar peso nesta atividade
   koinReward?: number; // Koins que o aluno receberá ao concluir esta atividade
+  requiresDelivery?: boolean; // Se a atividade requer entrega pelo aluno (padrão: true)
   
   // ATIVIDADE
   rubrica?: string;

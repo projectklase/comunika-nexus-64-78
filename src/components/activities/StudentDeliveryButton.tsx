@@ -41,6 +41,11 @@ export function StudentDeliveryButton({ activity, classId, delivery, onUpdate }:
 
   if (!user) return null;
 
+  // Se a atividade não requer entrega, não mostrar botão
+  // Por padrão, se requiresDelivery não está definido, consideramos true (compatibilidade com atividades antigas)
+  const requiresDelivery = activity.activityMeta?.requiresDelivery !== false;
+  if (!requiresDelivery) return null;
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
