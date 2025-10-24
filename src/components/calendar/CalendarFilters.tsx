@@ -12,11 +12,11 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfessorClasses } from '@/utils/professor-helpers';
-import { getStudentClasses } from '@/utils/student-helpers';
+import { useStudentClasses } from '@/hooks/useStudentClasses';
 import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
 import { useSelectState, DEFAULT_SELECT_TOKENS } from '@/hooks/useSelectState';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface CalendarFiltersProps {
   activeFilters: {
@@ -45,6 +45,7 @@ export function CalendarFilters({
   const { user } = useAuth();
   const { loadClasses } = useClassStore();
   const { loadPeople } = usePeopleStore();
+  const { classes: studentClasses } = useStudentClasses();
   
   // Load data
   useEffect(() => {
@@ -53,11 +54,15 @@ export function CalendarFilters({
   }, [loadClasses, loadPeople]);
   
   // Get classes based on user role
-  const userClasses = user?.role === 'professor' 
-    ? getProfessorClasses(user.id) 
-    : user?.role === 'aluno' 
-    ? getStudentClasses(user.id)
-    : [];
+  const userClasses = useMemo(() => {
+    if (user?.role === 'professor') {
+      return getProfessorClasses(user.id);
+    } else if (user?.role === 'aluno') {
+      return studentClasses;
+    }
+    return [];
+  }, [user, studentClasses]);
+  
   const hasClasses = userClasses.length > 0;
   
   const toggleFilter = (type: 'events' | 'deadlines') => {

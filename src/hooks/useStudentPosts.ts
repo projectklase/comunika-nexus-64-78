@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { format, startOfDay, endOfDay, isToday, isWithinInterval, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { usePosts } from './usePosts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,13 +19,19 @@ export interface StudentPostsFilter {
 export function useStudentPosts(filter: StudentPostsFilter = {}) {
   const { user } = useAuth();
   const { posts: allPosts } = usePosts({ status: 'PUBLISHED' });
+  const [studentClassIds, setStudentClassIds] = useState<string[]>([]);
+
+  // Load student classes asynchronously
+  useEffect(() => {
+    if (!user || user.role !== 'aluno') return;
+
+    getStudentClasses(user.id).then(classes => {
+      setStudentClassIds(classes.map(c => c.id));
+    });
+  }, [user]);
 
   const filteredPosts = useMemo(() => {
-    if (!user || user.role !== 'aluno') return [];
-
-    // Get student classes
-    const studentClasses = getStudentClasses(user.id);
-    const studentClassIds = studentClasses.map(c => c.id);
+    if (!user || user.role !== 'aluno' || studentClassIds.length === 0) return [];
 
     let posts = allPosts.filter(post => {
       // RBAC: Only published posts for students
@@ -111,7 +117,7 @@ export function useStudentPosts(filter: StudentPostsFilter = {}) {
     });
 
     return posts;
-  }, [allPosts, user, filter]);
+  }, [allPosts, user, filter, studentClassIds]);
 
   // Additional computed data
   const todayPosts = useMemo(() => {

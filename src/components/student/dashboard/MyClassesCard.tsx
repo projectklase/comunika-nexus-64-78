@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, ArrowRight, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getStudentClasses } from '@/utils/student-helpers';
+import { useStudentClasses } from '@/hooks/useStudentClasses';
 import { Post } from '@/types/post';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
@@ -17,11 +17,10 @@ interface MyClassesCardProps {
 export function MyClassesCard({ posts }: MyClassesCardProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { classes: studentClasses } = useStudentClasses();
 
   const classesData = useMemo(() => {
     if (!user) return [];
-
-    const studentClasses = getStudentClasses(user.id);
     
     return studentClasses.slice(0, 3).map(classItem => {
       // Count pending activities for this class
@@ -39,12 +38,9 @@ export function MyClassesCard({ posts }: MyClassesCardProps) {
         color: getClassColor(classItem.name)
       };
     });
-  }, [user, posts]);
+  }, [user, posts, studentClasses]);
 
-  const totalClasses = useMemo(() => {
-    if (!user) return 0;
-    return getStudentClasses(user.id).length;
-  }, [user]);
+  const totalClasses = studentClasses.length;
 
   const handleClassClick = (classId: string) => {
     navigate(`${ROUTES.ALUNO.FEED}?classId=${classId}`);
