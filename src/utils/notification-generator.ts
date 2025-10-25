@@ -188,9 +188,26 @@ export async function generatePostNotifications(
         };
         
         try {
-          const result = await notificationStore.add(notification);
-          console.log('[generatePostNotifications] Notification created successfully:', result.id);
-          return result;
+          // Usar edge function para criar notificação (bypassa RLS com SERVICE_ROLE)
+          const { data, error } = await supabase.functions.invoke('create-notification', {
+            body: {
+              user_id: notification.userId,
+              type: notification.type,
+              title: notification.title,
+              message: notification.message,
+              link: notification.link,
+              role_target: notification.roleTarget,
+              meta: notification.meta
+            }
+          });
+          
+          if (error) {
+            console.error('[generatePostNotifications] Edge function error:', error);
+            throw error;
+          }
+          
+          console.log('[generatePostNotifications] Notification created successfully via edge function');
+          return data;
         } catch (error) {
           console.error('[generatePostNotifications] Error creating notification for user:', userId, error);
           throw error;
