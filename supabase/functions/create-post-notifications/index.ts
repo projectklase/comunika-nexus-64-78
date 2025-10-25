@@ -1,180 +1,180 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 interface PostNotificationRequest {
-  post: any
-  action: 'created' | 'updated' | 'deadline_changed'
-  oldPost?: any
+  post: any;
+  action: "created" | "updated" | "deadline_changed";
+  oldPost?: any;
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
 
-    const requestData: PostNotificationRequest = await req.json()
-    const { post, action, oldPost } = requestData
+    const requestData: PostNotificationRequest = await req.json();
+    const { post, action, oldPost } = requestData;
 
-    console.log('[create-post-notifications] Processing:', { postId: post.id, action, audience: post.audience })
+    console.log("[create-post-notifications] Processing:", { postId: post.id, action, audience: post.audience });
 
     // Validar campos obrigatórios
     if (!post || !post.id || !post.type || !post.title || !action) {
-      return new Response(
-        JSON.stringify({ error: 'Campos obrigatórios: post (com id, type, title), action' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+      return new Response(JSON.stringify({ error: "Campos obrigatórios: post (com id, type, title), action" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
-    const isImportant = post.meta?.important || false
-    const scope = post.audience === 'CLASS' && post.classIds?.length 
-      ? `CLASS:${post.classIds.join(',')}`
-      : 'GLOBAL'
+    const isImportant = post.meta?.important || false;
+    const scope = post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds.join(",")}` : "GLOBAL";
 
     // Determinar audiências
-    const audiences: Array<'ALUNO' | 'PROFESSOR' | 'SECRETARIA'> = []
-    
-    if (post.audience === 'GLOBAL') {
-      audiences.push('ALUNO', 'PROFESSOR')
-      if (post.type === 'AVISO' || post.type === 'COMUNICADO') {
-        audiences.push('SECRETARIA')
+    const audiences: Array<"ALUNO" | "PROFESSOR" | "SECRETARIA"> = [];
+
+    if (post.audience === "GLOBAL") {
+      audiences.push("ALUNO", "PROFESSOR");
+      if (post.type === "AVISO" || post.type === "COMUNICADO") {
+        audiences.push("SECRETARIA");
       }
-    } else if (post.audience === 'CLASS') {
-      audiences.push('ALUNO')
+    } else if (post.audience === "CLASS") {
+      audiences.push("ALUNO");
       if (post.classIds?.length) {
-        audiences.push('PROFESSOR')
+        audiences.push("PROFESSOR");
       }
     }
 
-    console.log('[create-post-notifications] Target audiences:', audiences)
+    console.log("[create-post-notifications] Target audiences:", audiences);
 
     // Gerar conteúdo da notificação
-    let titlePrefix = ''
-    let messageAction = ''
-    
+    let titlePrefix = "";
+    let messageAction = "";
+
     switch (action) {
-      case 'created':
-        titlePrefix = 'Novo'
-        messageAction = 'foi publicado'
-        break
-      case 'updated':
-        titlePrefix = 'Atualizado'
-        messageAction = 'foi atualizado'
-        break
-      case 'deadline_changed':
-        titlePrefix = 'Prazo alterado'
-        messageAction = 'teve o prazo alterado'
-        break
+      case "created":
+        titlePrefix = "Novo";
+        messageAction = "foi publicado";
+        break;
+      case "updated":
+        titlePrefix = "Atualizado";
+        messageAction = "foi atualizado";
+        break;
+      case "deadline_changed":
+        titlePrefix = "Prazo alterado";
+        messageAction = "teve o prazo alterado";
+        break;
     }
 
     const typeLabels: Record<string, string> = {
-      ATIVIDADE: 'atividade',
-      TRABALHO: 'trabalho', 
-      PROVA: 'prova',
-      EVENTO: 'evento',
-      AVISO: 'aviso',
-      COMUNICADO: 'comunicado'
-    }
-    
-    const postTypeLabel = typeLabels[post.type] || 'post'
+      ATIVIDADE: "atividade",
+      TRABALHO: "trabalho",
+      PROVA: "prova",
+      EVENTO: "evento",
+      AVISO: "aviso",
+      COMUNICADO: "comunicado",
+    };
+
+    const postTypeLabel = typeLabels[post.type] || "post";
 
     // Mapeamento de roles
     const roleMapping: Record<string, string> = {
-      'ALUNO': 'aluno',
-      'PROFESSOR': 'professor',
-      'SECRETARIA': 'secretaria'
-    }
+      ALUNO: "aluno",
+      PROFESSOR: "professor",
+      SECRETARIA: "secretaria",
+    };
 
-    let totalCreated = 0
+    let totalCreated = 0;
 
     // Processar cada audiência
     for (const roleTarget of audiences) {
-      console.log('[create-post-notifications] Processing roleTarget:', roleTarget)
+      console.log("[create-post-notifications] Processing roleTarget:", roleTarget);
 
       try {
         // Buscar user_ids com SERVICE_ROLE (bypassa RLS)
         const { data: userRoles, error: roleError } = await supabaseAdmin
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', roleMapping[roleTarget])
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", roleMapping[roleTarget]);
 
         if (roleError) {
-          console.error('[create-post-notifications] Error fetching user roles:', roleError)
-          continue
+          console.error("[create-post-notifications] Error fetching user roles:", roleError);
+          continue;
         }
 
-        let targetUserIds = userRoles?.map(r => r.user_id) || []
-        console.log('[create-post-notifications] Found', targetUserIds.length, 'users with role:', roleTarget)
+        let targetUserIds = userRoles?.map((r) => r.user_id) || [];
+        console.log("[create-post-notifications] Found", targetUserIds.length, "users with role:", roleTarget);
 
         if (targetUserIds.length === 0) {
-          console.log('[create-post-notifications] No users found for role:', roleTarget)
-          continue
+          console.log("[create-post-notifications] No users found for role:", roleTarget);
+          continue;
         }
 
         // Filtrar por turmas se necessário
-        if (post.audience === 'CLASS' && post.classIds?.length) {
-          if (roleTarget === 'ALUNO') {
+        if (post.audience === "CLASS" && post.classIds?.length) {
+          if (roleTarget === "ALUNO") {
             const { data: classStudents, error: classError } = await supabaseAdmin
-              .from('class_students')
-              .select('student_id')
-              .in('class_id', post.classIds)
+              .from("class_students")
+              .select("student_id")
+              .in("class_id", post.classIds);
 
             if (!classError && classStudents) {
-              const classUserIds = classStudents.map(cs => cs.student_id)
-              targetUserIds = targetUserIds.filter(id => classUserIds.includes(id))
-              console.log('[create-post-notifications] Filtered to', targetUserIds.length, 'students in classes')
+              const classUserIds = classStudents.map((cs) => cs.student_id);
+              targetUserIds = targetUserIds.filter((id) => classUserIds.includes(id));
+              console.log("[create-post-notifications] Filtered to", targetUserIds.length, "students in classes");
             } else if (classError) {
-              console.error('[create-post-notifications] Error fetching class students:', classError)
-              continue
+              console.error("[create-post-notifications] Error fetching class students:", classError);
+              continue;
             }
           }
         }
 
         // Criar notificações para cada usuário
-        const actionKey = action === 'deadline_changed' ? 'deadline' : action
-        const baseKey = `post:${post.id}:${scope}:${actionKey}`
+        const actionKey = action === "deadline_changed" ? "deadline" : action;
+        const baseKey = `post:${post.id}:${scope}:${actionKey}`;
 
         for (const userId of targetUserIds) {
-          const notificationKey = `${baseKey}:${userId}`
+          const notificationKey = `${baseKey}:${userId}`;
+
+          // 🔍 DEBUG: Log do userId atual
+          console.log("[DEBUG] Tentando criar notificação para userId:", userId);
+          console.log("[DEBUG] notificationKey:", notificationKey);
 
           // Verificar duplicatas
           const { data: existing, error: existError } = await supabaseAdmin
-            .from('notifications')
-            .select('id')
-            .eq('user_id', userId)
-            .contains('meta', { notificationKey })
-            .limit(1)
+            .from("notifications")
+            .select("id")
+            .eq("user_id", userId)
+            .contains("meta", { notificationKey })
+            .limit(1);
 
           if (existError) {
-            console.error('[create-post-notifications] Error checking duplicates:', existError)
-            continue
+            console.error("[create-post-notifications] Error checking duplicates:", existError);
+            continue;
           }
 
           if (existing && existing.length > 0) {
-            console.log('[create-post-notifications] Notification already exists for user:', userId)
-            continue
+            console.log("[create-post-notifications] Notification already exists for user:", userId);
+            continue;
           }
 
           // Gerar link
-          const link = post.classIds?.[0] 
-            ? `/feed/${post.classIds[0]}/${post.id}`
-            : `/feed/${post.id}`
+          const link = post.classIds?.[0] ? `/feed/${post.classIds[0]}/${post.id}` : `/feed/${post.id}`;
 
           // Criar notificação
           const notificationData = {
             user_id: userId,
-            type: isImportant ? 'POST_IMPORTANT' : 'POST_NEW',
+            type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
+            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}`,
             link,
             role_target: roleTarget,
             meta: {
@@ -187,41 +187,42 @@ Deno.serve(async (req) => {
               authorName: post.authorName,
               classId: post.classIds?.[0],
               dueDate: post.dueAt,
-              eventStartAt: post.eventStartAt
-            }
-          }
+              eventStartAt: post.eventStartAt,
+            },
+          };
 
-          const { error: insertError } = await supabaseAdmin
-            .from('notifications')
-            .insert(notificationData)
+          // 🔍 DEBUG: Log dos dados antes de inserir
+          console.log("[DEBUG] Dados da notificação:", JSON.stringify(notificationData, null, 2));
+
+          const { error: insertError } = await supabaseAdmin.from("notifications").insert(notificationData);
 
           if (insertError) {
-            console.error('[create-post-notifications] Error inserting notification:', insertError)
-            continue
+            console.error("[DEBUG] ❌ ERRO ao inserir notificação:", insertError);
+            console.error("[DEBUG] Dados que tentei inserir:", notificationData);
+            continue;
           }
 
-          totalCreated++
+          console.log("[DEBUG] ✅ Notificação criada com sucesso para userId:", userId);
+          totalCreated++;
         }
 
-        console.log('[create-post-notifications] Created', totalCreated, 'notifications for roleTarget:', roleTarget)
-
+        console.log("[create-post-notifications] Created", totalCreated, "notifications for roleTarget:", roleTarget);
       } catch (error) {
-        console.error(`[create-post-notifications] Error processing ${roleTarget}:`, error)
+        console.error(`[create-post-notifications] Error processing ${roleTarget}:`, error);
       }
     }
 
-    console.log('[create-post-notifications] Total notifications created:', totalCreated)
+    console.log("[create-post-notifications] Total notifications created:", totalCreated);
 
-    return new Response(
-      JSON.stringify({ success: true, created: totalCreated }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    )
-
+    return new Response(JSON.stringify({ success: true, created: totalCreated }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
   } catch (error) {
-    console.error('[create-post-notifications] Function error:', error)
-    return new Response(
-      JSON.stringify({ error: 'Erro interno ao criar notificações' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+    console.error("[create-post-notifications] Function error:", error);
+    return new Response(JSON.stringify({ error: "Erro interno ao criar notificações" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
-})
+});
