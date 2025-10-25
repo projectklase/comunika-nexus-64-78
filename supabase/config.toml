@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.create-notification]
 verify_jwt = false
 
+[functions.create-post-notifications]
+verify_jwt = false
+
 [functions.grant-koin-bonus]
 verify_jwt = true
 

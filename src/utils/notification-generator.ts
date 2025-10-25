@@ -33,193 +33,28 @@ export async function generatePostNotifications(
   action: 'created' | 'updated' | 'deadline_changed',
   oldPost?: Partial<Post>
 ): Promise<void> {
-  console.log('[generatePostNotifications] Starting for post:', post.id, 'action:', action);
-  const isImportant = post.meta?.important || false;
+  console.log('[generatePostNotifications] Delegating to edge function for post:', post.id, 'action:', action);
   
-  // Determine scope for deduplication
-  const scope = post.audience === 'CLASS' && post.classIds?.length 
-    ? `CLASS:${post.classIds.join(',')}`
-    : 'GLOBAL';
-    
-  // Generate unique key
-  const actionKey = action === 'deadline_changed' ? 'deadline' : action;
-  const baseKey = generateNotificationKey('post', post.id, scope, actionKey);
-  
-  // Determine target audiences
-  const audiences: RoleTarget[] = [];
-  
-  if (post.audience === 'GLOBAL') {
-    audiences.push('ALUNO', 'PROFESSOR');
-    if (post.type === 'AVISO' || post.type === 'COMUNICADO') {
-      audiences.push('SECRETARIA');
-    }
-  } else if (post.audience === 'CLASS') {
-    audiences.push('ALUNO');
-    if (post.classIds?.length) {
-      audiences.push('PROFESSOR'); // Teachers of selected classes
-    }
-  }
-  
-  // Generate action-specific content
-  let titlePrefix = '';
-  let messageAction = '';
-  
-  switch (action) {
-    case 'created':
-      titlePrefix = 'Novo';
-      messageAction = 'foi publicado';
-      break;
-    case 'updated':
-      titlePrefix = 'Atualizado';
-      messageAction = 'foi atualizado';
-      break;
-    case 'deadline_changed':
-      titlePrefix = 'Prazo alterado';
-      messageAction = 'teve o prazo alterado';
-      break;
-  }
-  
-  // Post type labels
-  const typeLabels: Record<string, string> = {
-    ATIVIDADE: 'atividade',
-    TRABALHO: 'trabalho', 
-    PROVA: 'prova',
-    EVENTO: 'evento',
-    AVISO: 'aviso',
-    COMUNICADO: 'comunicado'
-  };
-  
-  const postTypeLabel = typeLabels[post.type] || 'post';
-  
-  // Import supabase client
   const { supabase } = await import('@/integrations/supabase/client');
   
-  // Get specific users for each roleTarget
-  for (const roleTarget of audiences) {
-    console.log('[generatePostNotifications] Processing roleTarget:', roleTarget);
-    try {
-      // Build query to get users
-      let query = supabase
-        .from('profiles')
-        .select('id')
-        .eq('is_active', true);
-      
-      // Filter by role
-      const roleMapping: Record<RoleTarget, string> = {
-        'ALUNO': 'aluno',
-        'PROFESSOR': 'professor',
-        'SECRETARIA': 'secretaria'
-      };
-      
-      // Get users with this role
-      const { data: userRoles, error: roleError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', roleMapping[roleTarget] as any);
-      
-      if (roleError) {
-        console.error('Error fetching user roles:', roleError);
-        continue;
+  try {
+    const { data, error } = await supabase.functions.invoke('create-post-notifications', {
+      body: {
+        post,
+        action,
+        oldPost
       }
-      
-      const userIds = userRoles?.map(r => r.user_id) || [];
-      console.log('[generatePostNotifications] Found', userIds.length, 'users with role:', roleTarget);
-      
-      if (userIds.length === 0) {
-        console.log('[generatePostNotifications] No users found for role:', roleTarget);
-        continue;
-      }
-      
-      // For CLASS audience, further filter by class membership
-      let targetUserIds = userIds;
-      
-      if (post.audience === 'CLASS' && post.classIds?.length) {
-        if (roleTarget === 'ALUNO') {
-          const { data: classStudents, error: classError } = await supabase
-            .from('class_students')
-            .select('student_id')
-            .in('class_id', post.classIds);
-
-          if (!classError && classStudents) {
-            const classUserIds = classStudents.map(cs => cs.student_id);
-            targetUserIds = userIds.filter(id => classUserIds.includes(id));
-          } else if (classError) {
-            console.error('Error fetching class students:', classError);
-            continue;
-          }
-        } else if (roleTarget === 'PROFESSOR') {
-          // For professors, notify all of them for class posts
-          // (no specific class-teacher relationship table exists)
-          targetUserIds = userIds;
-        }
-      }
-      
-      // Create notification for each user
-      console.log('[generatePostNotifications] Creating notifications for', targetUserIds.length, 'users');
-      const notificationPromises = targetUserIds.map(async userId => {
-        const notificationKey = `${baseKey}:${userId}`;
-        
-        if (await notificationExistsAsync(notificationKey, userId)) {
-          console.log('[generatePostNotifications] Notification already exists for user:', userId);
-          return;
-        }
-        
-        console.log('[generatePostNotifications] Creating notification for user:', userId);
-        
-        const notification = {
-          type: (isImportant ? 'POST_IMPORTANT' : 'POST_NEW') as NotificationType,
-          title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-          message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString('pt-BR')}` : ''}`,
-          roleTarget,
-          userId,
-          link: generatePostLink(post.id, post.classIds?.[0]),
-          meta: {
-            postId: post.id,
-            postType: post.type,
-            action,
-            scope,
-            important: isImportant,
-            notificationKey,
-            authorName: post.authorName,
-            classId: post.classIds?.[0],
-            dueDate: post.dueAt,
-            eventStartAt: post.eventStartAt
-          }
-        };
-        
-        try {
-          // Usar edge function para criar notificação (bypassa RLS com SERVICE_ROLE)
-          const { data, error } = await supabase.functions.invoke('create-notification', {
-            body: {
-              user_id: notification.userId,
-              type: notification.type,
-              title: notification.title,
-              message: notification.message,
-              link: notification.link,
-              role_target: notification.roleTarget,
-              meta: notification.meta
-            }
-          });
-          
-          if (error) {
-            console.error('[generatePostNotifications] Edge function error:', error);
-            throw error;
-          }
-          
-          console.log('[generatePostNotifications] Notification created successfully via edge function');
-          return data;
-        } catch (error) {
-          console.error('[generatePostNotifications] Error creating notification for user:', userId, error);
-          throw error;
-        }
-      });
-      
-      await Promise.all(notificationPromises);
-      console.log('[generatePostNotifications] All notifications created for roleTarget:', roleTarget);
-      
-    } catch (error) {
-      console.error(`Error creating notifications for ${roleTarget}:`, error);
+    });
+    
+    if (error) {
+      console.error('[generatePostNotifications] Edge function error:', error);
+      throw error;
     }
+    
+    console.log('[generatePostNotifications] Success:', data?.created, 'notifications created');
+  } catch (error) {
+    console.error('[generatePostNotifications] Failed to create post notifications:', error);
+    throw error;
   }
 }
 
