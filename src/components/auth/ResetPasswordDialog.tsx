@@ -1,18 +1,11 @@
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { passwordResetStore } from "@/stores/password-reset-store";
-import { Mail, Send, Loader2 } from "lucide-react";
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { passwordResetStore } from '@/stores/password-reset-store';
+import { Mail, Send, Loader2 } from 'lucide-react';
 
 interface ResetPasswordDialogProps {
   prefilledEmail: string;
@@ -27,8 +20,8 @@ export const ResetPasswordDialog = ({ prefilledEmail, trigger }: ResetPasswordDi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!email || !email.includes("@")) {
+    
+    if (!email || !email.includes('@')) {
       toast({
         title: "Email inválido",
         description: "Por favor, insira um email válido.",
@@ -38,31 +31,30 @@ export const ResetPasswordDialog = ({ prefilledEmail, trigger }: ResetPasswordDi
     }
 
     // Check if email exists in the system
-    const peopleData = localStorage.getItem("comunika_people_v2");
+    const peopleData = localStorage.getItem('comunika_people_v2');
     const authUsers = [
-      { email: "secretaria@comunika.com" },
-      { email: "professor@klase.app" },
-      { email: "aluno@klase.app" },
+      { email: 'secretaria@comunika.com' },
+      { email: 'professor@comunika.com' },
+      { email: 'aluno@comunika.com' }
     ];
-
+    
     let emailExists = false;
-
+    
     // Check in people store
     if (peopleData) {
       const people = JSON.parse(peopleData);
-      emailExists = people.some(
-        (p) =>
-          p.email?.toLowerCase() === email.toLowerCase() ||
-          p.student?.email?.toLowerCase() === email.toLowerCase() ||
-          p.teacher?.email?.toLowerCase() === email.toLowerCase(),
+      emailExists = people.some(p => 
+        p.email?.toLowerCase() === email.toLowerCase() ||
+        p.student?.email?.toLowerCase() === email.toLowerCase() ||
+        p.teacher?.email?.toLowerCase() === email.toLowerCase()
       );
     }
-
+    
     // Check in auth users
     if (!emailExists) {
-      emailExists = authUsers.some((u) => u.email.toLowerCase() === email.toLowerCase());
+      emailExists = authUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
     }
-
+    
     if (!emailExists) {
       toast({
         title: "Email não encontrado",
@@ -97,7 +89,9 @@ export const ResetPasswordDialog = ({ prefilledEmail, trigger }: ResetPasswordDi
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>
+        {trigger}
+      </DialogTrigger>
       <DialogContent className="reset-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -140,7 +134,11 @@ export const ResetPasswordDialog = ({ prefilledEmail, trigger }: ResetPasswordDi
             >
               Cancelar
             </Button>
-            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={isSubmitting || !email}>
+            <Button
+              type="submit"
+              className="flex-1 bg-primary hover:bg-primary/90"
+              disabled={isSubmitting || !email}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />

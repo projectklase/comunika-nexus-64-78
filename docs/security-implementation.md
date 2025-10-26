@@ -7,7 +7,6 @@
 **Problema**: Anteriormente, roles eram armazenados na tabela `profiles`, permitindo potencial escalação de privilégios.
 
 **Solução**: Criada tabela `user_roles` separada com:
-
 - Enum `app_role` com valores: `secretaria`, `professor`, `aluno`
 - Foreign key para `auth.users` com `ON DELETE CASCADE`
 - Políticas RLS rigorosas
@@ -16,7 +15,6 @@
 ### 2. Verificação de Permissões na Edge Function
 
 **Mudanças em `create-demo-user`**:
-
 - ✅ Verifica token de autenticação
 - ✅ Valida se usuário tem role `secretaria`
 - ✅ Rejeita requisições não autorizadas (401)
@@ -24,7 +22,6 @@
 - ✅ Validações de entrada rigorosas
 
 **Validações Implementadas**:
-
 - Email: formato válido, sem caracteres perigosos, máximo 254 caracteres
 - Nome: mínimo 3 caracteres, máximo 100 caracteres, sem XSS
 - Senha: mínimo 6 caracteres
@@ -35,44 +32,37 @@
 **Novo arquivo**: `src/lib/validation.ts` expandido com:
 
 #### Validação de Nome (`validateName`)
-
 - Mínimo 3 caracteres, máximo 100
 - Requer nome e sobrenome
 - Remove caracteres perigosos (XSS prevention)
 - Normaliza espaços
 
 #### Validação de Email (`validateEmail`)
-
 - Formato RFC compliant
 - Máximo 254 caracteres
 - Remove caracteres perigosos
 - Validação em tempo real
 
 #### Validação de CPF (`validateCPF`)
-
 - Valida dígitos verificadores
 - Rejeita CPFs conhecidos inválidos (111.111.111-11, etc)
 - Formata automaticamente
 
 #### Validação de Telefone (`validatePhone`)
-
 - Aceita fixo (10 dígitos) e celular (11 dígitos)
 - Remove caracteres não numéricos
 - Formata automaticamente
 
 #### Validação de CEP (`validateZipCode`)
-
 - Exatamente 8 dígitos
 - Formata automaticamente (00000-000)
 
 #### Validação de Matrícula (`validateEnrollmentNumber`)
-
 - Mínimo 3, máximo 20 caracteres
 - Apenas letras, números e hífens
 - Sanitização automática
 
 #### Sanitização (`sanitizeString`)
-
 - Remove caracteres perigosos: `< > " ' \``
 - Limita comprimento
 - Trim automático
@@ -80,7 +70,6 @@
 ### 4. Formulário de Estudantes Melhorado
 
 **Validações em Tempo Real**:
-
 - Feedback visual instantâneo (border vermelho em erros)
 - Mensagens de erro específicas
 - Contadores de caracteres
@@ -88,7 +77,6 @@
 - Validação por etapa antes de avançar
 
 **Campos com Limites**:
-
 - Nome: 100 caracteres
 - Email: 254 caracteres
 - CPF: 14 caracteres (formatado)
@@ -109,7 +97,6 @@ USING (public.has_role(auth.uid(), 'secretaria'));
 ```
 
 **Tabelas Protegidas**:
-
 - ✅ `profiles`
 - ✅ `classes`
 - ✅ `class_students`
@@ -118,7 +105,6 @@ USING (public.has_role(auth.uid(), 'secretaria'));
 ### 6. Migração de Dados
 
 Dados existentes de roles foram migrados automaticamente:
-
 ```sql
 INSERT INTO public.user_roles (user_id, role)
 SELECT id, role::app_role
@@ -144,11 +130,9 @@ WHERE role IN ('secretaria', 'professor', 'aluno')
 ## ⚠️ Avisos de Segurança Pendentes
 
 ### Proteção de Senhas Vazadas (WARN)
-
 **Status**: Desabilitado  
 **Recomendação**: Habilitar proteção contra senhas vazadas no Supabase
-**Como corrigir**:
-
+**Como corrigir**: 
 1. Acessar Dashboard do Supabase
 2. Authentication > Settings
 3. Habilitar "Password Strength and Leaked Password Protection"
@@ -173,7 +157,6 @@ Link: https://supabase.com/docs/guides/auth/password-security#password-strength-
 ## 🧪 Como Testar
 
 ### Teste 1: Apenas Secretaria Cria Logins
-
 1. Login como `secretaria@comunika.com`
 2. Ir para Cadastros > Alunos
 3. Criar novo aluno - ✅ Deve funcionar
@@ -182,14 +165,12 @@ Link: https://supabase.com/docs/guides/auth/password-security#password-strength-
 5. Tentar criar aluno via API - ❌ Deve retornar 403 Forbidden
 
 ### Teste 2: Validações de Formulário
-
 1. Tentar nome com < 3 caracteres - ❌ Deve mostrar erro
 2. Tentar email inválido - ❌ Deve mostrar erro
 3. Tentar CPF inválido (111.111.111-11) - ❌ Deve mostrar erro
 4. Preencher corretamente - ✅ Deve permitir salvar
 
 ### Teste 3: Sanitização
-
 1. Tentar inserir `<script>alert('xss')</script>` no nome
 2. Caracteres perigosos devem ser removidos automaticamente
 3. Salvar sem erros

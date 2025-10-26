@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogIn, Loader2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Loader2, Mail, Lock, User, Shield, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ROUTES } from '@/constants/routes';
 import type { UserRole } from '@/types/auth';
@@ -98,15 +98,14 @@ const Register = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-sm shadow-lg">
         <CardHeader className="text-center space-y-3">
-          <div className="flex items-center justify-center mb-1">
-            <img 
-              src="/logo-klase-full.png" 
-              alt="KLASE" 
-              className="h-16 w-auto object-contain"
-            />
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+              <Shield className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <CardTitle className="text-xl font-bold">Criar Conta</CardTitle>
           </div>
           <CardDescription className="text-sm text-muted-foreground">
-            Cadastre-se no KLASE
+            Cadastre-se no Comunika
           </CardDescription>
         </CardHeader>
 

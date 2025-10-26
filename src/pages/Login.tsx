@@ -1,41 +1,28 @@
-import { useState, useEffect, useRef } from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ResetPasswordDialog } from "@/components/auth/ResetPasswordDialog";
-import { DynamicHeadline } from "@/components/auth/DynamicHeadline";
-import { PasswordResetTester } from "@/components/debug/PasswordResetTester";
-import {
-  LogIn,
-  Loader2,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  AlertTriangle,
-  Calendar,
-  MessageSquare,
-  BookOpen,
-  ChevronDown,
-} from "lucide-react";
-import { HoloCTA } from "@/components/ui/holo-cta";
-import { useToast } from "@/hooks/use-toast";
-import { ROUTES } from "@/constants/routes";
-import { passwordResetStore } from "@/stores/password-reset-store";
-import type { UserRole } from "@/types/auth";
+import { useState, useEffect, useRef } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
+import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
+import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
+import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
+import { HoloCTA } from '@/components/ui/holo-cta';
+import { useToast } from '@/hooks/use-toast';
+import { ROUTES } from '@/constants/routes';
+import { passwordResetStore } from '@/stores/password-reset-store';
+import type { UserRole } from '@/types/auth';
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(false);
-  const [formError, setFormError] = useState("");
+  const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -44,12 +31,12 @@ const Login = () => {
   const formRef = useRef<HTMLFormElement>(null);
 
   // Form validation - computed values
-  const isFormValid = email.includes("@") && password.length > 0;
+  const isFormValid = email.includes('@') && password.length > 0;
   const isFormSubmitting = isSubmitting || isLoading;
 
   // Load saved email on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem("comunika.loginSettings");
+    const savedSettings = localStorage.getItem('comunika.loginSettings');
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
@@ -67,17 +54,17 @@ const Login = () => {
   useEffect(() => {
     const detectCapsLock = (e: Event) => {
       // Verificar se é um KeyboardEvent e se getModifierState existe
-      if (e instanceof KeyboardEvent && typeof e.getModifierState === "function") {
-        setIsCapsLockOn(e.getModifierState("CapsLock"));
+      if (e instanceof KeyboardEvent && typeof e.getModifierState === 'function') {
+        setIsCapsLockOn(e.getModifierState('CapsLock'));
       }
     };
 
-    document.addEventListener("keydown", detectCapsLock);
-    document.addEventListener("keyup", detectCapsLock);
+    document.addEventListener('keydown', detectCapsLock);
+    document.addEventListener('keyup', detectCapsLock);
 
     return () => {
-      document.removeEventListener("keydown", detectCapsLock);
-      document.removeEventListener("keyup", detectCapsLock);
+      document.removeEventListener('keydown', detectCapsLock);
+      document.removeEventListener('keyup', detectCapsLock);
     };
   }, []);
 
@@ -85,15 +72,15 @@ const Login = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle Enter if we're not already submitting
-      if (e.key === "Enter" && !isFormSubmitting) {
+      if (e.key === 'Enter' && !isFormSubmitting) {
         const target = e.target as HTMLElement;
-
+        
         // Check if the Enter is within our form
         if (target && formRef.current?.contains(target)) {
           e.preventDefault();
-
+          
           // If it's an input field, submit the form
-          if (target.tagName === "INPUT") {
+          if (target.tagName === 'INPUT') {
             const form = formRef.current;
             if (form) {
               form.requestSubmit();
@@ -101,9 +88,9 @@ const Login = () => {
           }
         }
       }
-
+      
       // Ctrl/Cmd+Enter anywhere on the page (if form is present)
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !isFormSubmitting) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !isFormSubmitting) {
         e.preventDefault();
         const form = formRef.current;
         if (form) {
@@ -112,21 +99,21 @@ const Login = () => {
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFormSubmitting]);
 
   // Role-based routing helper
   const getRoleBasedRoute = (role: UserRole): string => {
     switch (role) {
-      case "secretaria":
+      case 'secretaria':
         return ROUTES.SECRETARIA.DASHBOARD;
-      case "professor":
+      case 'professor':
         return ROUTES.PROFESSOR.DASHBOARD;
-      case "aluno":
+      case 'aluno':
         return ROUTES.ALUNO.DASHBOARD;
       default:
-        return "/dashboard"; // Safe fallback
+        return '/dashboard'; // Safe fallback
     }
   };
 
@@ -137,63 +124,60 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Prevent double submission
     if (isFormSubmitting) {
       return;
     }
-
+    
     // Validação básica com feedback adequado
-    if (email.trim() === "" || password.trim() === "") {
-      setFormError("Por favor, preencha email e senha.");
+    if (email.trim() === '' || password.trim() === '') {
+      setFormError('Por favor, preencha email e senha.');
       setShowError(true);
       setTimeout(() => setShowError(false), 1200);
-
+      
       // Focus no primeiro campo vazio
-      if (email.trim() === "") {
-        document.getElementById("email")?.focus();
+      if (email.trim() === '') {
+        document.getElementById('email')?.focus();
       } else {
-        document.getElementById("password")?.focus();
+        document.getElementById('password')?.focus();
       }
       return;
     }
-
-    setFormError("");
+    
+    setFormError('');
     setShowError(false);
     setIsSubmitting(true);
-
+    
     try {
       const result = await login(email.trim(), password);
-
+      
       if (result.success) {
         // Save email preference
         if (rememberEmail) {
-          localStorage.setItem(
-            "comunika.loginSettings",
-            JSON.stringify({
-              rememberEmail: true,
-              email: btoa(email.trim()),
-            }),
-          );
+          localStorage.setItem('comunika.loginSettings', JSON.stringify({
+            rememberEmail: true,
+            email: btoa(email.trim())
+          }));
         } else {
-          localStorage.removeItem("comunika.loginSettings");
+          localStorage.removeItem('comunika.loginSettings');
         }
 
         setShowSuccess(true);
-
+        
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao KLASE.",
+          description: "Bem-vindo ao Comunika.",
         });
       } else {
         setFormError(result.error || "Email ou senha incorretos.");
         setShowError(true);
-
+        
         // Focus first invalid field
-        const emailInput = document.getElementById("email") as HTMLInputElement;
-        const passwordInput = document.getElementById("password") as HTMLInputElement;
-
-        if (!email.includes("@")) {
+        const emailInput = document.getElementById('email') as HTMLInputElement;
+        const passwordInput = document.getElementById('password') as HTMLInputElement;
+        
+        if (!email.includes('@')) {
           emailInput?.focus();
         } else {
           passwordInput?.focus();
@@ -205,7 +189,7 @@ const Login = () => {
         }, 1200);
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
       setFormError("Erro interno. Tente novamente.");
       setShowError(true);
       setTimeout(() => {
@@ -216,46 +200,46 @@ const Login = () => {
     }
   };
 
-  const quickLogin = async (role: string = "secretaria") => {
+  const quickLogin = async (role: string = 'secretaria') => {
     if (isFormSubmitting) return;
-
-    setFormError("");
+    
+    setFormError('');
     setIsSubmitting(true);
-
+    
     try {
       const credentials = {
-        secretaria: { email: "secretaria@comunika.com", name: "Maria Silva" },
-        professor: { email: "professor@exemplo.com", name: "Professor Exemplo" },
-        aluno: { email: "aluno@exemplo.com", name: "Aluno Exemplo" },
+        secretaria: { email: 'secretaria@comunika.com', name: 'Maria Silva' },
+        professor: { email: 'professor@exemplo.com', name: 'Professor Exemplo' },
+        aluno: { email: 'aluno@exemplo.com', name: 'Aluno Exemplo' }
       };
-
+      
       const { email, name } = credentials[role as keyof typeof credentials];
-
+      
       console.log(`QuickLogin attempt for ${role}: ${email}`);
-
+      
       // Force create demo user for professor and aluno (they might not exist)
-      if (role !== "secretaria" && createDemoUser) {
+      if (role !== 'secretaria' && createDemoUser) {
         console.log(`Force creating demo user for ${role}`);
-        const createResult = await createDemoUser(email, "123456", name, role);
+        const createResult = await createDemoUser(email, '123456', name, role);
         if (!createResult) {
           setFormError(`Erro ao criar usuário de demonstração (${role}).`);
           setIsSubmitting(false);
           return;
         }
         // Add longer delay for user creation and profile trigger to complete
-        console.log("Waiting for profile creation to complete...");
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        console.log('Waiting for profile creation to complete...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
-
+      
       // Now attempt login
-      const result = await login(email, "123456");
-
+      const result = await login(email, '123456');
+      
       console.log(`QuickLogin result for ${role}:`, result);
-
+      
       if (result.success) {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao KLASE.",
+          description: "Bem-vindo ao Comunika.",
         });
       } else {
         console.error(`Login failed for ${role}: ${result.error}`);
@@ -263,7 +247,7 @@ const Login = () => {
         setIsSubmitting(false);
       }
     } catch (error) {
-      console.error("QuickLogin error:", error);
+      console.error('QuickLogin error:', error);
       setFormError("Erro interno. Tente novamente.");
       setIsSubmitting(false);
     }
@@ -274,28 +258,31 @@ const Login = () => {
       {/* Background patterns - more subtle */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/10" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_0)] bg-[length:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
-
+      
       {/* Container with max width and centered */}
       <div className="relative z-10 min-h-screen w-full max-w-[1360px] mx-auto">
+        
         {/* Main grid layout - 12 columns system */}
         <div className="min-h-screen grid lg:grid-cols-12 lg:gap-x-8 xl:gap-x-10 2xl:gap-x-12 items-center py-6 lg:py-10">
+          
           {/* Hero Panel - col-span-7 on lg+ */}
           <div className="hidden lg:flex lg:col-span-7 flex-col justify-center px-6 xl:px-8 py-8">
-            <div className="w-full" style={{ maxWidth: "clamp(560px, 48vw, 620px)" }}>
-              <h1
+            <div className="w-full" style={{ maxWidth: 'clamp(560px, 48vw, 620px)' }}>
+              <h1 
                 className="font-bold tracking-tight text-foreground mb-4 leading-tight"
-                style={{ fontSize: "clamp(28px, 3.2vw, 44px)" }}
+                style={{ fontSize: 'clamp(28px, 3.2vw, 44px)' }}
               >
-                Comunicação escolar, <span className="text-primary/90">sem atrito</span>
+                Comunicação escolar,{' '}
+                <span className="text-primary/90">sem atrito</span>
               </h1>
-
-              <p
+              
+              <p 
                 className="text-muted-foreground mb-8 leading-relaxed max-w-[65ch]"
-                style={{ fontSize: "clamp(16px, 1.1vw, 18px)" }}
+                style={{ fontSize: 'clamp(16px, 1.1vw, 18px)' }}
               >
                 Conecte professores, alunos e secretaria em uma plataforma intuitiva e poderosa.
               </p>
-
+              
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
@@ -303,39 +290,33 @@ const Login = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground leading-tight">Calendário inteligente</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">
-                      Visualize atividades, eventos e prazos em uma única tela organizada
-                    </p>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Visualize atividades, eventos e prazos em uma única tela organizada</p>
                   </div>
                 </div>
-
+                
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
                     <MessageSquare className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground leading-tight">Feed unificado</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">
-                      Comunicação centralizada entre toda a comunidade escolar
-                    </p>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Comunicação centralizada entre toda a comunidade escolar</p>
                   </div>
                 </div>
-
+                
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
                     <BookOpen className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground leading-tight">Gestão de atividades</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">
-                      Crie, distribua e acompanhe atividades com facilidade
-                    </p>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Crie, distribua e acompanhe atividades com facilidade</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
+          
           {/* Hero mobile version - md only */}
           <div className="block md:block lg:hidden px-6 py-8 text-center">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
@@ -345,27 +326,32 @@ const Login = () => {
               Conecte professores, alunos e secretaria em uma plataforma intuitiva.
             </p>
           </div>
-
+          
           {/* Login Card - col-span-5 on lg+ */}
           <div className="flex items-center justify-center px-4 lg:col-span-5 lg:px-6 py-4 lg:py-8">
-            <Card
+            <Card 
               className="w-full border-border/30 bg-card/95 backdrop-blur-sm shadow-lg"
-              style={{
-                maxWidth: "clamp(360px, 28vw, 440px)",
-                minWidth: "360px",
+              style={{ 
+                maxWidth: 'clamp(360px, 28vw, 440px)',
+                minWidth: '360px'
               }}
             >
               <CardHeader className="text-center space-y-3 px-6 py-6">
-                <div className="flex items-center justify-center mb-1">
-                  <img src="/logo-klase-full.png" alt="KLASE" className="h-16 w-auto object-contain" />
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                    <Shield className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl font-bold">Comunika</CardTitle>
                 </div>
-                <CardDescription className="text-sm text-muted-foreground">Acesse sua conta</CardDescription>
+                <CardDescription className="text-sm text-muted-foreground">
+                  Acesse sua conta
+                </CardDescription>
                 <DynamicHeadline />
               </CardHeader>
 
               <CardContent className="space-y-5 px-6 pb-6">
                 {formError && (
-                  <div
+                  <div 
                     className="text-center py-3 px-4 bg-destructive/10 border border-destructive/20 rounded-lg text-xs text-destructive"
                     role="alert"
                     aria-live="polite"
@@ -374,7 +360,7 @@ const Login = () => {
                     {formError}
                   </div>
                 )}
-
+                
                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                   {/* Email Field */}
                   <div className="space-y-2">
@@ -390,7 +376,7 @@ const Login = () => {
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value.trim());
-                          setFormError("");
+                          setFormError('');
                         }}
                         className="pl-10 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                         required
@@ -416,7 +402,7 @@ const Login = () => {
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value);
-                          setFormError("");
+                          setFormError('');
                         }}
                         className="pl-10 pr-11 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                         required
@@ -435,7 +421,11 @@ const Login = () => {
                         aria-pressed={showPassword}
                         disabled={isFormSubmitting}
                       >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
 
@@ -471,13 +461,13 @@ const Login = () => {
                     ariaLabel={isFormSubmitting ? "Fazendo login..." : "Fazer login no Comunika"}
                     className="w-full h-12"
                   >
-                    {isFormSubmitting ? "Entrando..." : "Entrar"}
+                    {isFormSubmitting ? 'Entrando...' : 'Entrar'}
                   </HoloCTA>
 
                   <div className="text-center pt-1">
-                    <Button
-                      type="button"
-                      variant="link"
+                    <Button 
+                      type="button" 
+                      variant="link" 
                       className="text-xs text-muted-foreground hover:text-primary p-0 h-auto font-normal"
                       disabled={isFormSubmitting}
                       onClick={() => {
@@ -491,27 +481,27 @@ const Login = () => {
                         } catch (error: any) {
                           toast({
                             title: "Erro na solicitação",
-                            description: error.message || "Não foi possível criar a solicitação.",
+                            description: error.message || 'Não foi possível criar a solicitação.',
                             variant: "destructive",
                           });
                         }
                       }}
                     >
-                      Preciso redefinir minha senha
-                    </Button>
-                  </div>
-                </form>
+                    Preciso redefinir minha senha
+                  </Button>
+                </div>
+              </form>
 
                 {/* Registration Link */}
                 <div className="text-center pt-4">
                   <p className="text-xs text-muted-foreground">
-                    Não tem uma conta?{" "}
-                    <Button
-                      type="button"
-                      variant="link"
+                    Não tem uma conta?{' '}
+                    <Button 
+                      type="button" 
+                      variant="link" 
                       className="text-xs text-primary hover:underline p-0 h-auto font-medium"
                       disabled={isFormSubmitting}
-                      onClick={() => (window.location.href = "/register")}
+                      onClick={() => window.location.href = '/register'}
                     >
                       Criar conta
                     </Button>
@@ -523,11 +513,11 @@ const Login = () => {
                   <div className="text-center mb-3">
                     <span className="text-xs text-muted-foreground">Contas de demonstração</span>
                   </div>
-
+                  
                   <div className="space-y-2">
                     <button
                       type="button"
-                      onClick={() => quickLogin("secretaria")}
+                      onClick={() => quickLogin('secretaria')}
                       disabled={isFormSubmitting}
                       className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
                     >
@@ -537,29 +527,29 @@ const Login = () => {
                       </div>
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
-
+                    
                     <button
                       type="button"
-                      onClick={() => quickLogin("professor")}
+                      onClick={() => quickLogin('professor')}
                       disabled={isFormSubmitting}
                       className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">Professor</div>
-                        <div className="text-xs text-muted-foreground truncate">professor@exemplo.com</div>
+                        <div className="text-xs text-muted-foreground truncate">professor@comunika.com</div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
-
+                    
                     <button
                       type="button"
-                      onClick={() => quickLogin("aluno")}
+                      onClick={() => quickLogin('aluno')}
                       disabled={isFormSubmitting}
                       className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">Aluno</div>
-                        <div className="text-xs text-muted-foreground truncate">aluno@exemplo.com</div>
+                        <div className="text-xs text-muted-foreground truncate">aluno@comunika.com</div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
@@ -569,9 +559,9 @@ const Login = () => {
             </Card>
           </div>
         </div>
-
+        
         {/* Dev Tools - Password Reset Tester */}
-        {process.env.NODE_ENV === "development" && (
+        {process.env.NODE_ENV === 'development' && (
           <div className="max-w-md mx-auto mt-6 px-4">
             <PasswordResetTester />
           </div>

@@ -98,7 +98,7 @@ export function AppSidebar() {
           <SidebarTrigger className="mb-4" />
           {!isCollapsed && (
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold gradient-text">KLASE</h2>
+              <h2 className="text-xl font-bold gradient-text">Comunika</h2>
               <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
             </div>
           )}
