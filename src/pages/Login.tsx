@@ -357,7 +357,12 @@ const Login = () => {
             >
               <CardHeader className="text-center space-y-3 px-6 py-6">
                 <div className="flex items-center justify-center mb-1">
-                  <img src="/logo-klase-full.png" alt="KLASE" className="h-20 w-auto object-contain" />
+                  <img
+                    src="/logo-klase-full.png"
+                    alt="KLASE"
+                    className="w-auto object-contain"
+                    style={{ height: "6rem" }} // <-- Mude o valor aqui
+                  />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground">Acesse sua conta</CardDescription>
                 <DynamicHeadline />
