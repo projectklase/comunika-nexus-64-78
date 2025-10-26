@@ -174,12 +174,13 @@ class PostStore {
     console.log("[PostStore] 🔔 Post meta:", post.meta);
     console.log("[PostStore] 🔔 Important:", post.meta?.important);
 
-    try {
-      await generatePostNotifications(post, "created");
-      console.log("[PostStore] ✅ generatePostNotifications executado com sucesso");
-    } catch (error) {
-      console.error("[PostStore] ❌ ERRO ao chamar generatePostNotifications:", error);
-    }
+    generatePostNotifications(post, "created")
+      .then(() => {
+        console.log("[PostStore] ✅ generatePostNotifications executado com sucesso");
+      })
+      .catch((error) => {
+        console.error("[PostStore] ❌ ERRO ao chamar generatePostNotifications:", error);
+      });
 
     // Log audit event
     try {
