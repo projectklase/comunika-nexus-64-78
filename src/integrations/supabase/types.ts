@@ -295,44 +295,6 @@ export type Database = {
           },
         ]
       }
-      event_invitations: {
-        Row: {
-          created_at: string
-          event_id: string
-          friend_name: string
-          id: string
-          inviting_student_id: string
-          parent_contact: string
-          parent_name: string
-        }
-        Insert: {
-          created_at?: string
-          event_id: string
-          friend_name: string
-          id?: string
-          inviting_student_id: string
-          parent_contact: string
-          parent_name: string
-        }
-        Update: {
-          created_at?: string
-          event_id?: string
-          friend_name?: string
-          id?: string
-          inviting_student_id?: string
-          parent_contact?: string
-          parent_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "event_invitations_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       feature_flags: {
         Row: {
           config: Json | null
@@ -620,7 +582,6 @@ export type Database = {
       posts: {
         Row: {
           activity_meta: Json | null
-          allow_invitations: boolean | null
           attachments: Json | null
           audience: string
           author_id: string | null
@@ -644,7 +605,6 @@ export type Database = {
         }
         Insert: {
           activity_meta?: Json | null
-          allow_invitations?: boolean | null
           attachments?: Json | null
           audience: string
           author_id?: string | null
@@ -668,7 +628,6 @@ export type Database = {
         }
         Update: {
           activity_meta?: Json | null
-          allow_invitations?: boolean | null
           attachments?: Json | null
           audience?: string
           author_id?: string | null

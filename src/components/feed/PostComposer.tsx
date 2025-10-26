@@ -246,7 +246,6 @@ export function PostComposer({
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showDraftManager, setShowDraftManager] = useState(false);
   const [isImportant, setIsImportant] = useState(initialData?.meta?.important || false);
-  const [allowInvitations, setAllowInvitations] = useState(initialData?.allowInvitations || false);
 
   // Holiday warning hook
   const { warningState, checkDateForHoliday, confirmHoliday, cancelHoliday } = useHolidayWarning();
@@ -749,7 +748,6 @@ export function PostComposer({
       postData.eventStartAt = eventStart?.toISOString();
       postData.eventEndAt = eventEnd?.toISOString();
       postData.eventLocation = eventLocation.trim();
-      postData.allowInvitations = allowInvitations;
     }
 
     if (activeTab === 'ATIVIDADE') {
@@ -795,7 +793,6 @@ export function PostComposer({
     setDueTime('');
     setAllowPastDeadline(false);
     setContactPhone('');
-    setAllowInvitations(false);
     setTitleError(null);
     setBodyError(null);
     setDateTimeErrors({});
@@ -1022,26 +1019,6 @@ return (
                       maxLength={200}
                     />
                   </div>
-
-                  {/* Convites de Amigos (apenas para EVENTO e secretaria) */}
-                  {user?.role === 'secretaria' && (
-                    <div className="flex items-start gap-3 p-4 rounded-lg border border-border/50 bg-muted/30">
-                      <Checkbox
-                        id="allow-invitations"
-                        checked={allowInvitations}
-                        onCheckedChange={(checked) => setAllowInvitations(checked as boolean)}
-                      />
-                      <div className="flex-1 space-y-1">
-                        <Label htmlFor="allow-invitations" className="font-medium cursor-pointer">
-                          Permitir convites de amigos
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Alunos poderão convidar amigos externos para este evento. 
-                          Os dados dos convidados serão capturados como leads para a equipe comercial.
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
