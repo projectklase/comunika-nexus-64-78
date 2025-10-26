@@ -18,7 +18,7 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const iimportantPosts = useMemo(() => {
+  const importantPosts = useMemo(() => {
     return posts
       .filter((post) => post.meta?.important === true)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
