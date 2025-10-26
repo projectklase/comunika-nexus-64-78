@@ -1,9 +1,9 @@
-import { Post, PostInput, PostFilter, PostStatus, PostType, PostAudience } from '@/types/post';
-import { validatePostData } from '@/lib/data-hygiene';
-import { logAudit } from '@/stores/audit-store';
-import { generateDiff } from '@/utils/audit-helpers';
-import { generatePostNotifications } from '@/utils/notification-generator';
-import { supabase } from '@/integrations/supabase/client';
+import { Post, PostInput, PostFilter, PostStatus, PostType, PostAudience } from "@/types/post";
+import { validatePostData } from "@/lib/data-hygiene";
+import { logAudit } from "@/stores/audit-store";
+import { generateDiff } from "@/utils/audit-helpers";
+import { generatePostNotifications } from "@/utils/notification-generator";
+import { supabase } from "@/integrations/supabase/client";
 
 class PostStore {
   private autoPublishInterval: NodeJS.Timeout | null = null;
@@ -13,13 +13,13 @@ class PostStore {
     this.processScheduledPosts();
     this.startAutoPublishTimer();
   }
-  
+
   private notifySubscribers() {
-    this.subscribers.forEach(callback => {
+    this.subscribers.forEach((callback) => {
       try {
         callback();
       } catch (error) {
-        console.error('Error in post store subscriber:', error);
+        console.error("Error in post store subscriber:", error);
       }
     });
   }
@@ -47,12 +47,12 @@ class PostStore {
       audience: row.audience as PostAudience,
       authorName: row.author_name,
       authorId: row.author_id,
-      authorRole: row.author_role as 'secretaria' | 'professor' | 'aluno',
+      authorRole: row.author_role as "secretaria" | "professor" | "aluno",
       createdAt: row.created_at,
       status: row.status as PostStatus,
       publishAt: row.publish_at,
       activityMeta: row.activity_meta,
-      meta: row.meta
+      meta: row.meta,
     };
   }
 
@@ -68,31 +68,31 @@ class PostStore {
 
   async listPaginated(filter?: PostFilter, page = 1, pageSize = 20): Promise<{ posts: Post[]; total: number }> {
     try {
-      let query = supabase.from('posts').select('*', { count: 'exact' });
+      let query = supabase.from("posts").select("*", { count: "exact" });
 
       // Exclude SCHEDULED posts by default unless specifically filtering for them
-      if (!filter?.status || filter.status !== 'SCHEDULED') {
-        query = query.neq('status', 'SCHEDULED');
+      if (!filter?.status || filter.status !== "SCHEDULED") {
+        query = query.neq("status", "SCHEDULED");
       }
 
       // Filter by type
       if (filter?.type) {
-        query = query.eq('type', filter.type);
+        query = query.eq("type", filter.type);
       }
 
       // Filter by status
       if (filter?.status) {
-        query = query.eq('status', filter.status);
+        query = query.eq("status", filter.status);
       }
 
       // Filter by classId
       if (filter?.classId) {
-        query = query.eq('audience', 'CLASS').contains('class_ids', [filter.classId]);
+        query = query.eq("audience", "CLASS").contains("class_ids", [filter.classId]);
       }
 
       // Filter by authorRole
       if (filter?.authorRole) {
-        query = query.eq('author_role', filter.authorRole);
+        query = query.eq("author_role", filter.authorRole);
       }
 
       // Filter by query
@@ -101,7 +101,7 @@ class PostStore {
       }
 
       // Sort by created_at descending
-      query = query.order('created_at', { ascending: false });
+      query = query.order("created_at", { ascending: false });
 
       // Pagination
       const start = (page - 1) * pageSize;
@@ -111,16 +111,16 @@ class PostStore {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('[PostStore] Error loading posts:', error);
-        throw new Error('Não foi possível carregar os posts. Tente novamente.');
+        console.error("[PostStore] Error loading posts:", error);
+        throw new Error("Não foi possível carregar os posts. Tente novamente.");
       }
 
       return {
-        posts: data ? data.map(row => this.dbRowToPost(row)) : [],
-        total: count || 0
+        posts: data ? data.map((row) => this.dbRowToPost(row)) : [],
+        total: count || 0,
       };
     } catch (error) {
-      console.error('[PostStore] Error loading posts:', error);
+      console.error("[PostStore] Error loading posts:", error);
       throw error;
     }
   }
@@ -129,7 +129,7 @@ class PostStore {
     // Validate and sanitize data
     const validation = validatePostData(input, allowPastOverride);
     if (!validation.isValid) {
-      throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(`Dados inválidos: ${validation.errors.map((e) => e.message).join(", ")}`);
     }
 
     const insertData = {
@@ -147,90 +147,92 @@ class PostStore {
       author_name: authorName,
       author_id: authorId,
       author_role: this.inferAuthorRole(authorName),
-      status: validation.data.status || 'PUBLISHED',
+      status: validation.data.status || "PUBLISHED",
       publish_at: validation.data.publishAt,
       activity_meta: validation.data.activityMeta,
-      meta: validation.data.meta
+      meta: validation.data.meta,
     };
 
-    const { data, error } = await supabase
-      .from('posts')
-      .insert([insertData])
-      .select()
-      .single();
+    const { data, error } = await supabase.from("posts").insert([insertData]).select().single();
 
     if (error) {
-      console.error('[PostStore] Error creating post:', error);
-      if (error.code === '23505') {
-        throw new Error('Já existe um post com essas características.');
+      console.error("[PostStore] Error creating post:", error);
+      if (error.code === "23505") {
+        throw new Error("Já existe um post com essas características.");
       }
-      if (error.code === '42501') {
-        throw new Error('Você não tem permissão para criar posts.');
+      if (error.code === "42501") {
+        throw new Error("Você não tem permissão para criar posts.");
       }
-      throw new Error('Não foi possível criar o post. Verifique os dados e tente novamente.');
+      throw new Error("Não foi possível criar o post. Verifique os dados e tente novamente.");
     }
 
     const post = this.dbRowToPost(data);
     this.notifySubscribers();
-    
+
     // Generate notifications (async, don't block)
-    generatePostNotifications(post, 'created').catch(error => {
-      console.error('Error generating notifications:', error);
-    });
-    
+    console.log("[PostStore] 🔔 Chamando generatePostNotifications para post:", post.id);
+    console.log("[PostStore] 🔔 Post meta:", post.meta);
+    console.log("[PostStore] 🔔 Important:", post.meta?.important);
+
+    try {
+      await generatePostNotifications(post, "created");
+      console.log("[PostStore] ✅ generatePostNotifications executado com sucesso");
+    } catch (error) {
+      console.error("[PostStore] ❌ ERRO ao chamar generatePostNotifications:", error);
+    }
+
     // Log audit event
     try {
       logAudit({
-        action: 'CREATE',
-        entity: 'POST',
+        action: "CREATE",
+        entity: "POST",
         entity_id: post.id,
         entity_label: post.title,
-        scope: post.audience === 'CLASS' && post.classIds?.length ? `CLASS:${post.classIds[0]}` : 'GLOBAL',
-        class_name: post.audience === 'CLASS' && post.classIds?.length ? await this.getClassNameFromId(post.classIds[0]) : undefined,
+        scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
+        class_name:
+          post.audience === "CLASS" && post.classIds?.length
+            ? await this.getClassNameFromId(post.classIds[0])
+            : undefined,
         meta: {
-          fields: ['title', 'type', 'status', 'audience'],
+          fields: ["title", "type", "status", "audience"],
           post_type: post.type,
           subtype: post.type,
-          status_after: post.status
+          status_after: post.status,
         },
         diff_json: {
           title: { before: null, after: post.title },
           type: { before: null, after: post.type },
           status: { before: null, after: post.status },
-          audience: { before: null, after: post.audience }
+          audience: { before: null, after: post.audience },
         },
         actor_id: authorId,
         actor_name: authorName,
-        actor_email: 'user@escola.com',
-        actor_role: 'SECRETARIA'
+        actor_email: "user@escola.com",
+        actor_role: "SECRETARIA",
       });
     } catch (error) {
-      console.error('Erro ao registrar evento de auditoria:', error);
+      console.error("Erro ao registrar evento de auditoria:", error);
     }
-    
+
     return post;
   }
 
   async update(id: string, patch: Partial<PostInput>, allowPastOverride = false): Promise<Post | null> {
     // Get current post
-    const { data: currentData, error: fetchError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data: currentData, error: fetchError } = await supabase.from("posts").select("*").eq("id", id).single();
 
     if (fetchError || !currentData) {
-      console.error('Error fetching post for update:', fetchError);
+      console.error("Error fetching post for update:", fetchError);
       return null;
     }
 
     const currentPost = this.dbRowToPost(currentData);
     const mergedData = { ...currentPost, ...patch };
-    
+
     // Validate and sanitize data
     const validation = validatePostData(mergedData, allowPastOverride);
     if (!validation.isValid) {
-      throw new Error(`Dados inválidos: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(`Dados inválidos: ${validation.errors.map((e) => e.message).join(", ")}`);
     }
 
     const updateData = {
@@ -248,134 +250,125 @@ class PostStore {
       status: validation.data.status,
       publish_at: validation.data.publishAt,
       activity_meta: validation.data.activityMeta,
-      meta: validation.data.meta
+      meta: validation.data.meta,
     };
 
-    const { data, error } = await supabase
-      .from('posts')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.from("posts").update(updateData).eq("id", id).select().single();
 
     if (error) {
-      console.error('Error updating post:', error);
-      throw new Error('Erro ao atualizar post');
+      console.error("Error updating post:", error);
+      throw new Error("Erro ao atualizar post");
     }
 
     const afterPost = this.dbRowToPost(data);
     this.notifySubscribers();
-    
+
     // Generate notifications for updates (async, don't block)
-    const hasSignificantChange = 
+    const hasSignificantChange =
       currentPost.status !== afterPost.status ||
       currentPost.dueAt !== afterPost.dueAt ||
       currentPost.title !== afterPost.title;
-    
+
     if (hasSignificantChange) {
-      const action = currentPost.dueAt !== afterPost.dueAt ? 'deadline_changed' : 'updated';
-      generatePostNotifications(afterPost, action, currentPost).catch(error => {
-        console.error('Error generating notifications:', error);
+      const action = currentPost.dueAt !== afterPost.dueAt ? "deadline_changed" : "updated";
+      generatePostNotifications(afterPost, action, currentPost).catch((error) => {
+        console.error("Error generating notifications:", error);
       });
     }
-    
+
     // Log audit event
     try {
       const changedFields = Object.keys(patch);
       const diff = generateDiff(currentPost, afterPost);
-      
+
       logAudit({
-        action: 'UPDATE',
-        entity: 'POST',
+        action: "UPDATE",
+        entity: "POST",
         entity_id: id,
         entity_label: afterPost.title,
-        scope: afterPost.audience === 'CLASS' && afterPost.classIds?.length ? `CLASS:${afterPost.classIds[0]}` : 'GLOBAL',
-        class_name: afterPost.audience === 'CLASS' && afterPost.classIds?.length ? await this.getClassNameFromId(afterPost.classIds[0]) : undefined,
+        scope:
+          afterPost.audience === "CLASS" && afterPost.classIds?.length ? `CLASS:${afterPost.classIds[0]}` : "GLOBAL",
+        class_name:
+          afterPost.audience === "CLASS" && afterPost.classIds?.length
+            ? await this.getClassNameFromId(afterPost.classIds[0])
+            : undefined,
         meta: {
           fields: changedFields,
           post_type: afterPost.type,
           subtype: afterPost.type,
           status_before: currentPost.status,
-          status_after: afterPost.status
+          status_after: afterPost.status,
         },
         diff_json: diff,
-        actor_id: afterPost.authorId || 'user-secretaria',
+        actor_id: afterPost.authorId || "user-secretaria",
         actor_name: afterPost.authorName,
-        actor_email: 'user@escola.com',
-        actor_role: 'SECRETARIA'
+        actor_email: "user@escola.com",
+        actor_role: "SECRETARIA",
       });
     } catch (error) {
-      console.error('Erro ao registrar evento de auditoria:', error);
+      console.error("Erro ao registrar evento de auditoria:", error);
     }
-    
+
     return afterPost;
   }
 
   async archive(id: string): Promise<boolean> {
-    const { data: postData, error: fetchError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data: postData, error: fetchError } = await supabase.from("posts").select("*").eq("id", id).single();
 
     if (fetchError || !postData) {
-      console.error('Error fetching post for archive:', fetchError);
+      console.error("Error fetching post for archive:", fetchError);
       return false;
     }
 
     const post = this.dbRowToPost(postData);
     const beforeStatus = post.status;
 
-    const { error } = await supabase
-      .from('posts')
-      .update({ status: 'ARCHIVED' })
-      .eq('id', id);
+    const { error } = await supabase.from("posts").update({ status: "ARCHIVED" }).eq("id", id);
 
     if (error) {
-      console.error('Error archiving post:', error);
+      console.error("Error archiving post:", error);
       return false;
     }
 
     this.notifySubscribers();
-    
+
     // Log audit event
     try {
       logAudit({
-        action: 'ARCHIVE',
-        entity: 'POST',
+        action: "ARCHIVE",
+        entity: "POST",
         entity_id: id,
         entity_label: post.title,
-        scope: post.audience === 'CLASS' && post.classIds?.length ? `CLASS:${post.classIds[0]}` : 'GLOBAL',
-        class_name: post.audience === 'CLASS' && post.classIds?.length ? await this.getClassNameFromId(post.classIds[0]) : undefined,
+        scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
+        class_name:
+          post.audience === "CLASS" && post.classIds?.length
+            ? await this.getClassNameFromId(post.classIds[0])
+            : undefined,
         meta: {
-          fields: ['status'],
+          fields: ["status"],
           post_type: post.type,
           subtype: post.type,
           status_before: beforeStatus,
-          status_after: 'ARCHIVED'
+          status_after: "ARCHIVED",
         },
         diff_json: {
-          status: { before: beforeStatus, after: 'ARCHIVED' }
+          status: { before: beforeStatus, after: "ARCHIVED" },
         },
-        actor_id: post.authorId || 'user-secretaria',
+        actor_id: post.authorId || "user-secretaria",
         actor_name: post.authorName,
-        actor_email: 'user@escola.com',
-        actor_role: 'SECRETARIA'
+        actor_email: "user@escola.com",
+        actor_role: "SECRETARIA",
       });
     } catch (error) {
-      console.error('Erro ao registrar evento de auditoria:', error);
+      console.error("Erro ao registrar evento de auditoria:", error);
     }
-    
+
     return true;
   }
 
   async getById(id: string): Promise<Post | null> {
     try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.from("posts").select("*").eq("id", id).single();
 
       if (error || !data) {
         return null;
@@ -383,40 +376,40 @@ class PostStore {
 
       return this.dbRowToPost(data);
     } catch (error) {
-      console.error('Error getting post by id:', error);
+      console.error("Error getting post by id:", error);
       return null;
     }
   }
 
   private async processScheduledPosts() {
     const now = new Date().toISOString();
-    
+
     try {
       const { data, error } = await supabase
-        .from('posts')
-        .update({ status: 'PUBLISHED' })
-        .eq('status', 'SCHEDULED')
-        .lte('publish_at', now)
+        .from("posts")
+        .update({ status: "PUBLISHED" })
+        .eq("status", "SCHEDULED")
+        .lte("publish_at", now)
         .select();
 
       if (error) {
-        console.error('Error processing scheduled posts:', error);
+        console.error("Error processing scheduled posts:", error);
         return;
       }
 
       if (data && data.length > 0) {
         this.notifySubscribers();
-        
+
         // Generate notifications for newly published scheduled posts
-        data.forEach(postData => {
+        data.forEach((postData) => {
           const post = this.dbRowToPost(postData);
-          generatePostNotifications(post, 'created').catch(error => {
-            console.error('Error generating notifications for scheduled post:', error);
+          generatePostNotifications(post, "created").catch((error) => {
+            console.error("Error generating notifications for scheduled post:", error);
           });
         });
       }
     } catch (error) {
-      console.error('Error processing scheduled posts:', error);
+      console.error("Error processing scheduled posts:", error);
     }
   }
 
@@ -424,7 +417,7 @@ class PostStore {
     if (this.autoPublishInterval) {
       clearInterval(this.autoPublishInterval);
     }
-    
+
     // Check every minute for posts to auto-publish
     this.autoPublishInterval = setInterval(() => {
       this.processScheduledPosts();
@@ -454,86 +447,77 @@ class PostStore {
       eventEndAt: post.eventEndAt,
       eventLocation: post.eventLocation,
       audience: post.audience,
-      activityMeta: post.activityMeta ? { ...post.activityMeta } : undefined
+      activityMeta: post.activityMeta ? { ...post.activityMeta } : undefined,
     };
   }
 
   async delete(id: string): Promise<boolean> {
-    const { data: postData, error: fetchError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data: postData, error: fetchError } = await supabase.from("posts").select("*").eq("id", id).single();
 
     if (fetchError || !postData) {
-      console.error('Error fetching post for delete:', fetchError);
+      console.error("Error fetching post for delete:", fetchError);
       return false;
     }
 
     const post = this.dbRowToPost(postData);
 
-    const { error } = await supabase
-      .from('posts')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from("posts").delete().eq("id", id);
 
     if (error) {
-      console.error('Error deleting post:', error);
+      console.error("Error deleting post:", error);
       return false;
     }
 
     this.notifySubscribers();
-    
+
     // Log audit event
     try {
       logAudit({
-        action: 'DELETE',
-        entity: 'POST',
+        action: "DELETE",
+        entity: "POST",
         entity_id: id,
         entity_label: post.title,
-        scope: post.audience === 'CLASS' && post.classIds?.length ? `CLASS:${post.classIds[0]}` : 'GLOBAL',
-        class_name: post.audience === 'CLASS' && post.classIds?.length ? await this.getClassNameFromId(post.classIds[0]) : undefined,
+        scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
+        class_name:
+          post.audience === "CLASS" && post.classIds?.length
+            ? await this.getClassNameFromId(post.classIds[0])
+            : undefined,
         meta: {
-          fields: ['deleted'],
+          fields: ["deleted"],
           post_type: post.type,
           subtype: post.type,
-          status_before: post.status
+          status_before: post.status,
         },
         diff_json: {
-          deleted: { before: false, after: true }
+          deleted: { before: false, after: true },
         },
-        actor_id: post.authorId || 'user-secretaria',
+        actor_id: post.authorId || "user-secretaria",
         actor_name: post.authorName,
-        actor_email: 'user@escola.com',
-        actor_role: 'SECRETARIA'
+        actor_email: "user@escola.com",
+        actor_role: "SECRETARIA",
       });
     } catch (error) {
-      console.error('Erro ao registrar evento de auditoria:', error);
+      console.error("Erro ao registrar evento de auditoria:", error);
     }
-    
+
     return true;
   }
 
-  
   // Helper method to infer author role from author name
-  private inferAuthorRole(authorName: string): 'secretaria' | 'professor' | 'aluno' {
-    if (authorName.toLowerCase().includes('secretaria')) {
-      return 'secretaria';
+  private inferAuthorRole(authorName: string): "secretaria" | "professor" | "aluno" {
+    if (authorName.toLowerCase().includes("secretaria")) {
+      return "secretaria";
     }
-    if (authorName.toLowerCase().includes('prof') || authorName.toLowerCase().includes('coordenação')) {
-      return 'professor';
+    if (authorName.toLowerCase().includes("prof") || authorName.toLowerCase().includes("coordenação")) {
+      return "professor";
     }
-    return 'aluno';
+    return "aluno";
   }
 
   // Helper method to get class name from ID
   private async getClassNameFromId(classId: string): Promise<string | undefined> {
     try {
-      const { data, error } = await supabase
-        .from('classes')
-        .select('name')
-        .eq('id', classId)
-        .single();
+      const { data, error } = await supabase.from("classes").select("name").eq("id", classId).single();
 
       if (error || !data) {
         return undefined;
@@ -541,7 +525,7 @@ class PostStore {
 
       return data.name;
     } catch (error) {
-      console.error('Error getting class name:', error);
+      console.error("Error getting class name:", error);
       return undefined;
     }
   }
