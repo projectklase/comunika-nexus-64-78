@@ -224,7 +224,7 @@ const Login = () => {
 
     try {
       const credentials = {
-        secretaria: { email: "secretaria@klase.app", name: "Maria Silva" },
+        secretaria: { email: "secretaria@comunika.com", name: "Maria Silva" },
         professor: { email: "professor@exemplo.com", name: "Professor Exemplo" },
         aluno: { email: "aluno@exemplo.com", name: "Aluno Exemplo" },
       };
@@ -357,12 +357,7 @@ const Login = () => {
             >
               <CardHeader className="text-center space-y-3 px-6 py-6">
                 <div className="flex items-center justify-center mb-1">
-                  <img
-                    src="/logo-klase-full.png"
-                    alt="KLASE"
-                    className="w-auto object-contain"
-                    style={{ height: "6rem" }} // <-- Mude o valor aqui
-                  />
+                  <img src="/logo-klase-full.png" alt="KLASE" className="h-16 w-auto object-contain" />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground">Acesse sua conta</CardDescription>
                 <DynamicHeadline />
