@@ -10,8 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { AttachmentGrid } from '@/components/attachments/AttachmentGrid';
 import { PostInsights } from './PostInsights';
 import { PostReadInsights } from './PostReadInsights';
+import { InviteFriendsModal } from './InviteFriendsModal';
+import { EventInvitationsManager } from './EventInvitationsManager';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useState } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -20,7 +23,8 @@ import {
   Globe,
   FileText,
   Weight,
-  Phone
+  Phone,
+  UserPlus
 } from 'lucide-react';
 import { useWeightsEnabled } from '@/hooks/useWeightsEnabled';
 import { Post, PostType } from '@/types/post';
@@ -50,6 +54,7 @@ export function PostDetailDrawer({ isOpen, onClose, post }: PostDetailDrawerProp
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const { subjects } = useSubjects();
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Record post view when drawer opens
   useEffect(() => {
@@ -400,7 +405,46 @@ export function PostDetailDrawer({ isOpen, onClose, post }: PostDetailDrawerProp
               />
             </div>
           )}
+
+          {/* Invite Friends Button - Only for EVENTO with allow_invitations */}
+          {post.type === 'EVENTO' && 
+           post.allowInvitations && 
+           user?.role === 'aluno' && (
+            <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
+              <Button
+                onClick={() => setShowInviteModal(true)}
+                className="w-full"
+                variant="default"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Convidar Amigo para Este Evento
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Convide amigos externos para participar deste evento!
+              </p>
+            </div>
+          )}
+
+          {/* Event Invitations Manager - Only for secretaria viewing events with invitations */}
+          {post.type === 'EVENTO' && 
+           post.allowInvitations && 
+           user?.role === 'secretaria' && (
+            <EventInvitationsManager
+              eventId={post.id}
+              eventTitle={post.title}
+            />
+          )}
         </div>
+
+        {/* Invite Friends Modal */}
+        {post.type === 'EVENTO' && post.allowInvitations && (
+          <InviteFriendsModal
+            isOpen={showInviteModal}
+            onClose={() => setShowInviteModal(false)}
+            eventId={post.id}
+            eventTitle={post.title}
+          />
+        )}
       </DrawerContent>
     </Drawer>
   );
