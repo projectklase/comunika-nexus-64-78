@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
 import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
-import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
+import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, AlertTriangle, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
 import { ROUTES } from '@/constants/routes';
@@ -337,11 +337,12 @@ const Login = () => {
               }}
             >
               <CardHeader className="text-center space-y-3 px-6 py-6">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <Shield className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl font-bold">KLASE</CardTitle>
+                <div className="flex items-center justify-center mb-1">
+                  <img 
+                    src="/logo-klase-full.png" 
+                    alt="KLASE" 
+                    className="h-16 w-auto object-contain"
+                  />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground">
                   Acesse sua conta

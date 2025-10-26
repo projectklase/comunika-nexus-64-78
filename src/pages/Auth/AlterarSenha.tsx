@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Eye, EyeOff, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react';
 import { usePeopleStore } from '@/stores/people-store';
 import { logAudit } from '@/stores/audit-store';
 import { AuditService } from '@/services/audit-service';
@@ -151,11 +151,12 @@ export default function AlterarSenha() {
       
       <Card className="w-full max-w-md relative z-10 border-border/30 bg-card/95 backdrop-blur-sm shadow-lg">
         <CardHeader className="text-center space-y-3">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-              <Shield className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <CardTitle className="text-xl font-bold">KLASE</CardTitle>
+          <div className="flex items-center justify-center mb-1">
+            <img 
+              src="/logo-klase-full.png" 
+              alt="KLASE" 
+              className="h-16 w-auto object-contain"
+            />
           </div>
           <CardDescription className="text-sm text-muted-foreground">
             Alterar senha obrigatória
