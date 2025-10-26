@@ -155,7 +155,7 @@ export default function AlterarSenha() {
             <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-primary" />
             </div>
-            <CardTitle className="text-xl font-bold">Comunika</CardTitle>
+            <CardTitle className="text-xl font-bold">KLASE</CardTitle>
           </div>
           <CardDescription className="text-sm text-muted-foreground">
             Alterar senha obrigatória

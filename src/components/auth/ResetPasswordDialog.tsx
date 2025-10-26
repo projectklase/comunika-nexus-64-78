@@ -33,9 +33,9 @@ export const ResetPasswordDialog = ({ prefilledEmail, trigger }: ResetPasswordDi
     // Check if email exists in the system
     const peopleData = localStorage.getItem('comunika_people_v2');
     const authUsers = [
-      { email: 'secretaria@comunika.com' },
-      { email: 'professor@comunika.com' },
-      { email: 'aluno@comunika.com' }
+      { email: 'secretaria@klase.app' },
+      { email: 'professor@klase.app' },
+      { email: 'aluno@klase.app' }
     ];
     
     let emailExists = false;

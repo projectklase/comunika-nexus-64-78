@@ -105,7 +105,7 @@ const Register = () => {
             <CardTitle className="text-xl font-bold">Criar Conta</CardTitle>
           </div>
           <CardDescription className="text-sm text-muted-foreground">
-            Cadastre-se no Comunika
+            Cadastre-se no KLASE
           </CardDescription>
         </CardHeader>
 

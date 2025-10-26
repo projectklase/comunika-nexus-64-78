@@ -70,9 +70,9 @@ export const ResetRequestModal = ({ request, isOpen, onClose, onComplete }: Rese
     // If not found in people store, check auth users
     if (!foundPerson) {
       const authUsers = [
-        { id: '550e8400-e29b-41d4-a716-446655440000', name: 'Maria Silva', email: 'secretaria@comunika.com', role: 'SECRETARIA' },
-        { id: '550e8400-e29b-41d4-a716-446655440001', name: 'João Santos', email: 'professor@comunika.com', role: 'PROFESSOR' },
-        { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Ana Costa', email: 'aluno@comunika.com', role: 'ALUNO' }
+        { id: '550e8400-e29b-41d4-a716-446655440000', name: 'Maria Silva', email: 'secretaria@klase.app', role: 'SECRETARIA' },
+        { id: '550e8400-e29b-41d4-a716-446655440001', name: 'João Santos', email: 'professor@klase.app', role: 'PROFESSOR' },
+        { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Ana Costa', email: 'aluno@klase.app', role: 'ALUNO' }
       ];
       
       const authUser = authUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -211,7 +211,7 @@ export const ResetRequestModal = ({ request, isOpen, onClose, onComplete }: Rese
         },
         actor_id: user?.id || 'system',
         actor_name: user?.name || 'Sistema',
-        actor_email: user?.email || 'system@comunika.com',
+        actor_email: user?.email || 'system@klase.app',
         actor_role: 'SECRETARIA'
       });
       

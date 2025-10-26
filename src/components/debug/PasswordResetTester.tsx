@@ -10,13 +10,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { TestTube, Bell, Zap } from 'lucide-react';
 
 export const PasswordResetTester = () => {
-  const [testEmail, setTestEmail] = useState('teste@comunika.com');
+  const [testEmail, setTestEmail] = useState('teste@klase.app');
   const { user } = useAuth();
   const { toast } = useToast();
 
   const createTestRequest = () => {
     try {
-      const email = testEmail || `teste-${Date.now()}@comunika.com`;
+      const email = testEmail || `teste-${Date.now()}@klase.app`;
       const request = passwordResetStore.createRequest(email);
       
       console.log('🧪 Test password reset created:', {

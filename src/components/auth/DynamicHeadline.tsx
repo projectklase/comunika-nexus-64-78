@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 const headlines = [
   "Acesse sua conta • 100% seguro",
-  "Conecte-se ao Comunika • Sempre online",
+  "Conecte-se ao KLASE • Sempre online",
   "Entre em sua conta • Experiência premium"
 ];
 

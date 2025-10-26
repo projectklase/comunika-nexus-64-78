@@ -157,7 +157,7 @@ Link: https://supabase.com/docs/guides/auth/password-security#password-strength-
 ## 🧪 Como Testar
 
 ### Teste 1: Apenas Secretaria Cria Logins
-1. Login como `secretaria@comunika.com`
+1. Login como `secretaria@klase.app`
 2. Ir para Cadastros > Alunos
 3. Criar novo aluno - ✅ Deve funcionar
 
