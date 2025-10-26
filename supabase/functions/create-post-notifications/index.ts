@@ -36,6 +36,9 @@ Deno.serve(async (req) => {
     }
 
     const isImportant = post.meta?.important || false;
+    console.log("[DEBUG] ⭐ Post importante?", isImportant);
+    console.log("[DEBUG] ⭐ post.meta:", JSON.stringify(post.meta));
+    console.log("[DEBUG] ⭐ Tipo de notificação:", isImportant ? "POST_IMPORTANT" : "POST_NEW");
     const scope = post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds.join(",")}` : "GLOBAL";
 
     // Determinar audiências
