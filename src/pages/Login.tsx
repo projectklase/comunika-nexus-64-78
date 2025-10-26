@@ -224,7 +224,7 @@ const Login = () => {
 
     try {
       const credentials = {
-        secretaria: { email: "secretaria@klase.app", name: "Maria Silva" },
+        secretaria: { email: "secretaria@comunika.com", name: "Maria Silva" },
         professor: { email: "professor@exemplo.com", name: "Professor Exemplo" },
         aluno: { email: "aluno@exemplo.com", name: "Aluno Exemplo" },
       };
