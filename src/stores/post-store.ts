@@ -3,6 +3,7 @@ import { validatePostData } from "@/lib/data-hygiene";
 import { logAudit } from "@/stores/audit-store";
 import { generateDiff } from "@/utils/audit-helpers";
 import { generatePostNotifications } from "@/utils/notification-generator";
+import { notificationStore } from "./notification-store";
 import { supabase } from "@/integrations/supabase/client";
 
 class PostStore {
@@ -180,6 +181,9 @@ class PostStore {
     generatePostNotifications(post, "created")
       .then(() => {
         console.log("[PostStore] ✅ generatePostNotifications executado com sucesso");
+        // Forçar a atualização do notification-store após a criação da notificação
+        // Isso deve resolver o problema de notificação não aparecer imediatamente
+        notificationStore.notifySubscribers();
       })
       .catch((error) => {
         console.error("[PostStore] ❌ ERRO ao chamar generatePostNotifications:", error);
