@@ -614,7 +614,7 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
             )}
             
             {/* Invite Friends - for EVENTO with invitations enabled (Student only) */}
-            {post.type === 'EVENTO' && post.allowInvitations && user.role === 'aluno' && onInviteFriend && (
+            {post.type === 'EVENTO' && post.allowInvitations && user?.role === 'aluno' && onInviteFriend && (
               <Button 
                 size="sm" 
                 variant="default"
