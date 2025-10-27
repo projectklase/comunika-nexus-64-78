@@ -50,6 +50,7 @@ export interface Post {
   eventStartAt?: string;    // usado em EVENTO
   eventEndAt?: string;      // usado em EVENTO
   eventLocation?: string;   // usado em EVENTO
+  allowInvitations?: boolean; // Permite alunos convidarem amigos (apenas EVENTO)
   audience: PostAudience;
   authorName: string;       // ex.: "Secretaria Central"
   authorId?: string;        // ID do autor para RBAC de insights
@@ -75,6 +76,7 @@ export interface PostInput {
   eventStartAt?: string;
   eventEndAt?: string;
   eventLocation?: string;
+  allowInvitations?: boolean; // Permite alunos convidarem amigos (apenas EVENTO)
   audience: PostAudience;
   status?: PostStatus;
   publishAt?: string;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { FilterBar } from '@/components/feed/FilterBar';
-
+import { EventInvitationsTab } from '@/components/secretaria/EventInvitationsTab';
 import { PostComposer } from '@/components/feed/PostComposer';
 import { PostList } from '@/components/feed/PostList';
 import { postStore } from '@/stores/post-store';
@@ -16,6 +16,14 @@ import { Button } from '@/components/ui/button';
 import { useScrollToFeedPost } from '@/hooks/useScrollToFeedPost';
 import { FeedNavigation } from '@/utils/feed-navigation';
 import { ScheduledEmptyState } from '@/components/feed/ScheduledEmptyState';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function SecretariaFeed() {
   const { user } = useAuth();
@@ -37,6 +45,7 @@ export default function SecretariaFeed() {
   const [editingPost, setEditingPost] = useState<(PostInput & { originalId?: string }) | null>(null);
   const [updateKey, setUpdateKey] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [viewingEventInvitations, setViewingEventInvitations] = useState<Post | null>(null);
   
   // Deep link navigation and focus functionality with auto-filter adjustment
   const { targetPostId, shouldFocus } = useScrollToFeedPost({
@@ -178,6 +187,10 @@ export default function SecretariaFeed() {
     setEditingPost(null);
   };
 
+  const handleViewInvitations = (post: Post) => {
+    setViewingEventInvitations(post);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -310,6 +323,24 @@ export default function SecretariaFeed() {
           onUpdate={handleUpdate}
         />
       )}
+
+      {/* Event Invitations Dialog */}
+      <Dialog open={!!viewingEventInvitations} onOpenChange={(open) => !open && setViewingEventInvitations(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Convites para {viewingEventInvitations?.title}</DialogTitle>
+            <DialogDescription>
+              Visualize e exporte os leads capturados através dos convites
+            </DialogDescription>
+          </DialogHeader>
+          {viewingEventInvitations && (
+            <EventInvitationsTab 
+              eventId={viewingEventInvitations.id} 
+              eventTitle={viewingEventInvitations.title} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

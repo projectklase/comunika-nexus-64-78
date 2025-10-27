@@ -74,9 +74,10 @@ interface PostCardProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onUpdate?: () => void;
+  onInviteFriend?: (post: Post) => void;
 }
 
-export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit, onDelete, onUpdate }: PostCardProps) {
+export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit, onDelete, onUpdate, onInviteFriend }: PostCardProps) {
   const { user } = useAuth();
   const { getClass } = useClassStore();
   const { markAsRead, isRead } = useReads();
@@ -636,6 +637,7 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
       isOpen={isDetailDrawerOpen}
       onClose={() => setIsDetailDrawerOpen(false)}
       post={post}
+      onInviteFriend={onInviteFriend}
     />
 
     {/* Confirmation Dialog */}

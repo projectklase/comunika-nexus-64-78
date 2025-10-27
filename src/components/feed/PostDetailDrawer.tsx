@@ -39,9 +39,10 @@ interface PostDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   post: Post | null;
+  onInviteFriend?: (post: Post) => void;
 }
 
-export function PostDetailDrawer({ isOpen, onClose, post }: PostDetailDrawerProps) {
+export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: PostDetailDrawerProps) {
   const { getClass } = useClassStore();
   const { openInCalendar } = usePostActionsUnified();
   const { toast } = useToast();
@@ -367,6 +368,21 @@ export function PostDetailDrawer({ isOpen, onClose, post }: PostDetailDrawerProp
                   {post.meta.contactPhone}
                 </a>
               </div>
+            </div>
+          )}
+
+          {/* Invite Friends CTA for events */}
+          {post.type === 'EVENTO' && post.allowInvitations && onInviteFriend && user?.role === 'aluno' && (
+            <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+              <Button
+                onClick={() => {
+                  onInviteFriend(post);
+                }}
+                className="w-full bg-purple-500 hover:bg-purple-600"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Convidar Amigos para este Evento
+              </Button>
             </div>
           )}
 

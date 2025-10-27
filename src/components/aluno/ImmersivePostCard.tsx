@@ -17,7 +17,8 @@ import {
   FileIcon,
   BookOpen,
   X,
-  Calendar as CalendarPlus
+  Calendar as CalendarPlus,
+  Users
 } from 'lucide-react';
 import { Post, PostType } from '@/types/post';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +39,7 @@ interface ImmersivePostCardProps {
   onMarkAsRead: (post: Post) => void;
   onScheduleStudyBlock?: (post: Post) => void;
   onRemoveStudyBlock?: (post: Post) => void;
+  onInviteFriend?: (post: Post) => void;
 }
 
 export function ImmersivePostCard({ 
@@ -47,7 +49,8 @@ export function ImmersivePostCard({
   onMarkDelivered,
   onMarkAsRead,
   onScheduleStudyBlock,
-  onRemoveStudyBlock
+  onRemoveStudyBlock,
+  onInviteFriend
 }: ImmersivePostCardProps) {
   const { user } = useAuth();
   const { isRead } = useReads();
@@ -470,6 +473,25 @@ export function ImmersivePostCard({
           {getStudyCTA() && (
             <div className="flex justify-center">
               {getStudyCTA()}
+            </div>
+          )}
+          
+          {/* Invite Friends CTA for events */}
+          {post.type === 'EVENTO' && post.allowInvitations && onInviteFriend && (
+            <div className="flex justify-center">
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="opacity-70 hover:opacity-100 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 min-h-[32px] max-w-[160px] w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInviteFriend(post);
+                }}
+                aria-label={`Convidar amigos para ${post.title}`}
+              >
+                <Users className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate text-xs">Convidar Amigos</span>
+              </Button>
             </div>
           )}
         </div>

@@ -246,6 +246,7 @@ export function PostComposer({
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showDraftManager, setShowDraftManager] = useState(false);
   const [isImportant, setIsImportant] = useState(initialData?.meta?.important || false);
+  const [allowInvitations, setAllowInvitations] = useState(initialData?.allowInvitations || false);
 
   // Holiday warning hook
   const { warningState, checkDateForHoliday, confirmHoliday, cancelHoliday } = useHolidayWarning();
@@ -748,6 +749,7 @@ export function PostComposer({
       postData.eventStartAt = eventStart?.toISOString();
       postData.eventEndAt = eventEnd?.toISOString();
       postData.eventLocation = eventLocation.trim();
+      postData.allowInvitations = allowInvitations;
     }
 
     if (activeTab === 'ATIVIDADE') {
@@ -797,6 +799,7 @@ export function PostComposer({
     setBodyError(null);
     setDateTimeErrors({});
     setIsImportant(false);
+    setAllowInvitations(false);
 
     if (scheduled && !showTooltip) {
       toast({
@@ -1018,6 +1021,26 @@ return (
                       className="bg-background/50 border-border/50"
                       maxLength={200}
                     />
+                  </div>
+                  
+                  {/* Allow Invitations Checkbox */}
+                  <div className="space-y-2 p-4 bg-purple-500/5 rounded-lg border border-purple-500/20">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="allow-invitations"
+                        checked={allowInvitations}
+                        onCheckedChange={(checked) => setAllowInvitations(checked as boolean)}
+                      />
+                      <Label
+                        htmlFor="allow-invitations"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Permitir convidar amigos?
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-6">
+                      Quando ativado, os alunos poderão convidar amigos para este evento através de um formulário.
+                    </p>
                   </div>
                 </div>
               )}

@@ -5,12 +5,13 @@ import { NexusOrb } from '@/components/nexus/NexusOrb';
 import { NexusPanel } from '@/components/nexus/NexusPanel';
 import { SmartFeedInsights } from '@/components/feed/SmartFeedInsights';
 import { SmartFilterStatus } from '@/components/feed/SmartFilterStatus';
+import { InviteFriendsModal } from '@/components/aluno/InviteFriendsModal';
 import { usePosts } from '@/hooks/usePosts';
 import { useSaved } from '@/hooks/useSaved';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAlunoFeedPreferences } from '@/hooks/useAlunoFeedPreferences';
 import { useSelectValidation } from '@/hooks/useSelectValidation';
-import { PostFilter } from '@/types/post';
+import { PostFilter, Post } from '@/types/post';
 import { useScrollToFeedPost } from '@/hooks/useScrollToFeedPost';
 import { FeedNavigation } from '@/utils/feed-navigation';
 import { SmartPostFilters } from '@/utils/post-filters';
@@ -22,6 +23,8 @@ export default function AlunoFeed() {
   const [filter, setFilter] = useState<PostFilter & { saved?: boolean; authorRole?: 'secretaria' | 'professor' | 'aluno' }>({});
   const [updateKey, setUpdateKey] = useState(0);
   const [showNexusPanel, setShowNexusPanel] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedEventForInvite, setSelectedEventForInvite] = useState<Post | null>(null);
 
   // Validate Select components in development
   useSelectValidation('AlunoFeed');
@@ -107,6 +110,11 @@ export default function AlunoFeed() {
     updatePreferences({ hideExpired: !preferences.hideExpired });
   };
 
+  const handleInviteFriend = (post: Post) => {
+    setSelectedEventForInvite(post);
+    setInviteModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="container mx-auto px-4 py-6 space-y-6" role="main">
@@ -135,6 +143,7 @@ export default function AlunoFeed() {
               posts={processedPosts}
               onUpdate={handleUpdate}
               pageSize={preferences.pageSize}
+              onInviteFriend={handleInviteFriend}
             />
           </div>
           
@@ -150,6 +159,19 @@ export default function AlunoFeed() {
         isOpen={showNexusPanel} 
         onClose={() => setShowNexusPanel(false)} 
       />
+      
+      {/* Invite Friends Modal */}
+      {selectedEventForInvite && user && (
+        <InviteFriendsModal
+          isOpen={inviteModalOpen}
+          onClose={() => {
+            setInviteModalOpen(false);
+            setSelectedEventForInvite(null);
+          }}
+          event={selectedEventForInvite}
+          studentId={user.id}
+        />
+      )}
     </div>
   );
 }
