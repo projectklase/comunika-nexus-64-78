@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
         // Buscar user_ids com SERVICE_ROLE (bypassa RLS)
         const { data: userProfiles, error: roleError } = await supabaseAdmin
           .from("profiles") // CORRIGIDO: Usar a tabela profiles
-          .select("id")     // CORRIGIDO: Selecionar o ID do usuário
+          .select("id, user_id")     // CORRIGIDO: Selecionar ID e user_id
           .eq("role", roleMapping[roleTarget]);
 
         if (roleError) {
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        let targetUserIds = userProfiles?.map((r) => r.id) || []; // CORRIGIDO: Mapear r.id
+        let targetUserIds = userProfiles?.map((r) => r.id || r.user_id) || []; // CORRIGIDO: Mapear r.id ou r.user_id
 
 
         console.log("[create-post-notifications] Found", targetUserIds.length, "users with role:", roleTarget);
