@@ -17,7 +17,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Download, Users, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Download, Users, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
@@ -42,6 +43,16 @@ interface InvitationsByStudent {
   invitations: EventInvitation[];
 }
 
+interface EventConfirmation {
+  id: string;
+  student_id: string;
+  confirmed_at: string;
+  student?: {
+    id: string;
+    name: string;
+  };
+}
+
 interface EventInvitationsTabProps {
   eventId: string;
   eventTitle: string;
@@ -49,14 +60,23 @@ interface EventInvitationsTabProps {
 
 export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTabProps) {
   const [invitations, setInvitations] = useState<EventInvitation[]>([]);
+  const [confirmations, setConfirmations] = useState<EventConfirmation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadInvitations();
+    loadData();
   }, [eventId]);
 
-  const loadInvitations = async () => {
+  const loadData = async () => {
     setIsLoading(true);
+    try {
+      await Promise.all([loadInvitations(), loadConfirmations()]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadInvitations = async () => {
     try {
       const { data, error } = await supabase
         .from('event_invitations')
@@ -91,8 +111,44 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
         description: error.message,
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const loadConfirmations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('event_confirmations')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('confirmed_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Buscar dados dos alunos confirmados
+      if (data && data.length > 0) {
+        const studentIds = [...new Set(data.map(conf => conf.student_id))];
+        const { data: students } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', studentIds);
+
+        // Mapear dados dos alunos para as confirmações
+        const confirmationsWithStudents = data.map(conf => ({
+          ...conf,
+          student: students?.find(s => s.id === conf.student_id)
+        }));
+
+        setConfirmations(confirmationsWithStudents as EventConfirmation[]);
+      } else {
+        setConfirmations([]);
+      }
+    } catch (error: any) {
+      console.error('Erro ao carregar confirmações:', error);
+      toast({
+        title: 'Erro ao carregar confirmações',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -133,7 +189,7 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `leads_${eventTitle.replace(/\s+/g, '_')}_${Date.now()}.csv`);
+    link.setAttribute('download', `convites_${eventTitle.replace(/\s+/g, '_')}_${Date.now()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -142,6 +198,30 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
     toast({
       title: 'CSV exportado com sucesso!',
       description: `${invitations.length} ${invitations.length === 1 ? 'convite exportado' : 'convites exportados'}.`,
+    });
+  };
+
+  const exportConfirmationsToCSV = () => {
+    const csvData = confirmations.map((conf) => ({
+      'Aluno': conf.student?.name || 'Desconhecido',
+      'Data de Confirmação': format(new Date(conf.confirmed_at), 'dd/MM/yyyy HH:mm'),
+    }));
+
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `confirmacoes_${eventTitle.replace(/\s+/g, '_')}_${Date.now()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: 'CSV exportado com sucesso!',
+      description: `${confirmations.length} ${confirmations.length === 1 ? 'confirmação exportada' : 'confirmações exportadas'}.`,
     });
   };
 
@@ -158,95 +238,155 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Convites de Amigos - {eventTitle}
-          </CardTitle>
-          {invitations.length > 0 && (
-            <Button onClick={exportToCSV} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
-          )}
-        </div>
-        {invitations.length > 0 && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Total de {invitations.length} {invitations.length === 1 ? 'convite' : 'convites'} de{' '}
-            {groupedInvitations.length} {groupedInvitations.length === 1 ? 'aluno' : 'alunos'}
-          </p>
-        )}
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Gestão do Evento: {eventTitle}
+        </CardTitle>
+        <p className="text-sm text-muted-foreground mt-2">
+          {invitations.length} {invitations.length === 1 ? 'convite' : 'convites'} e{' '}
+          {confirmations.length} {confirmations.length === 1 ? 'confirmação' : 'confirmações'}
+        </p>
       </CardHeader>
       <CardContent>
-        {invitations.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="font-medium">Nenhum convite recebido ainda.</p>
-            <p className="text-sm mt-2">
-              Os alunos poderão convidar amigos quando a opção estiver habilitada no evento.
-            </p>
-          </div>
-        ) : (
-          <Accordion type="multiple" className="space-y-2">
-            {groupedInvitations.map((group) => (
-              <AccordionItem 
-                key={group.studentId} 
-                value={group.studentId}
-                className="border rounded-lg"
-              >
-                <AccordionTrigger className="hover:bg-muted/50 px-4 hover:no-underline">
-                  <div className="flex items-center justify-between w-full pr-2">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-purple-500/20">
-                        <Users className="h-4 w-4 text-purple-400" />
+        <Tabs defaultValue="invitations" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="invitations" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Convites ({invitations.length})
+            </TabsTrigger>
+            <TabsTrigger value="confirmations" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Confirmações ({confirmations.length})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB: CONVITES */}
+          <TabsContent value="invitations" className="space-y-4 mt-4">
+            <div className="flex justify-end">
+              {invitations.length > 0 && (
+                <Button onClick={exportToCSV} variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Convites (CSV)
+                </Button>
+              )}
+            </div>
+
+            {invitations.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">Nenhum convite recebido ainda.</p>
+                <p className="text-sm mt-2">
+                  Os alunos poderão convidar amigos quando a opção estiver habilitada no evento.
+                </p>
+              </div>
+            ) : (
+              <Accordion type="multiple" className="space-y-2">
+                {groupedInvitations.map((group) => (
+                  <AccordionItem 
+                    key={group.studentId} 
+                    value={group.studentId}
+                    className="border rounded-lg"
+                  >
+                    <AccordionTrigger className="hover:bg-muted/50 px-4 hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-full bg-purple-500/20">
+                            <Users className="h-4 w-4 text-purple-400" />
+                          </div>
+                          <span className="font-semibold text-left">{group.studentName}</span>
+                        </div>
+                        <Badge variant="secondary" className="ml-auto">
+                          {group.invitations.length} {group.invitations.length === 1 ? 'convite' : 'convites'}
+                        </Badge>
                       </div>
-                      <span className="font-semibold text-left">{group.studentName}</span>
-                    </div>
-                    <Badge variant="secondary" className="ml-auto">
-                      {group.invitations.length} {group.invitations.length === 1 ? 'convite' : 'convites'}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pt-2 pb-4">
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Nome do Amigo</TableHead>
-                          <TableHead>Telefone</TableHead>
-                          <TableHead>Responsável</TableHead>
-                          <TableHead>Contato Resp.</TableHead>
-                          <TableHead>Data</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {group.invitations.map((inv) => (
-                          <TableRow key={inv.id}>
-                            <TableCell className="font-medium">
-                              {inv.friend_name}
-                            </TableCell>
-                            <TableCell>
-                              {inv.friend_contact}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {inv.parent_name || '-'}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {inv.parent_contact || '-'}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {format(new Date(inv.created_at), "dd/MM/yyyy 'às' HH:mm")}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        )}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pt-2 pb-4">
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Nome do Amigo</TableHead>
+                              <TableHead>Telefone</TableHead>
+                              <TableHead>Responsável</TableHead>
+                              <TableHead>Contato Resp.</TableHead>
+                              <TableHead>Data</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {group.invitations.map((inv) => (
+                              <TableRow key={inv.id}>
+                                <TableCell className="font-medium">
+                                  {inv.friend_name}
+                                </TableCell>
+                                <TableCell>
+                                  {inv.friend_contact}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {inv.parent_name || '-'}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {inv.parent_contact || '-'}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-sm">
+                                  {format(new Date(inv.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+          </TabsContent>
+
+          {/* TAB: CONFIRMAÇÕES */}
+          <TabsContent value="confirmations" className="space-y-4 mt-4">
+            <div className="flex justify-end">
+              {confirmations.length > 0 && (
+                <Button onClick={exportConfirmationsToCSV} variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Confirmações (CSV)
+                </Button>
+              )}
+            </div>
+
+            {confirmations.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">Nenhuma confirmação de presença ainda.</p>
+                <p className="text-sm mt-2">
+                  Os alunos poderão confirmar presença acessando o evento.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Data de Confirmação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {confirmations.map((conf) => (
+                      <TableRow key={conf.id}>
+                        <TableCell className="font-medium">
+                          {conf.student?.name || 'Desconhecido'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(conf.confirmed_at), "dd/MM/yyyy 'às' HH:mm")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
