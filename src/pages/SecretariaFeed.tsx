@@ -321,6 +321,7 @@ export default function SecretariaFeed() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onUpdate={handleUpdate}
+          onViewInvitations={handleViewInvitations}
         />
       )}
 

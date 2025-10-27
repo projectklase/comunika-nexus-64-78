@@ -15,9 +15,10 @@ interface PostListProps {
   onUpdate?: () => void;
   pageSize?: number;
   onInviteFriend?: (post: Post) => void;
+  onViewInvitations?: (post: Post) => void;
 }
 
-export function PostList({ posts, canEdit, onArchive, onDuplicate, onEdit, onDelete, onUpdate, pageSize = 10, onInviteFriend }: PostListProps) {
+export function PostList({ posts, canEdit, onArchive, onDuplicate, onEdit, onDelete, onUpdate, pageSize = 10, onInviteFriend, onViewInvitations }: PostListProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const reduceMotion = useReducedMotion();
   
@@ -83,6 +84,7 @@ export function PostList({ posts, canEdit, onArchive, onDuplicate, onEdit, onDel
               onDelete={onDelete}
               onUpdate={onUpdate}
               onInviteFriend={onInviteFriend}
+              onViewInvitations={onViewInvitations}
             />
           </div>
         ))}
