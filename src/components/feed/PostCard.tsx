@@ -491,28 +491,6 @@ export function PostCard({
             </div>
           )}
 
-          {/* 🔍 DEBUG TEMPORÁRIO - REMOVER DEPOIS */}
-          {post.type === "EVENTO" && (
-            <div className="p-2 bg-gray-800 rounded text-xs font-mono space-y-1">
-              <div>🔍 DEBUG - Botão Convidar:</div>
-              <div>• type: {post.type}</div>
-              <div>• allowInvitations: {String(post.allowInvitations)}</div>
-              <div>• user.role: {user?.role}</div>
-              <div>• hasOnInviteFriend: {String(!!onInviteFriend)}</div>
-              <div
-                className={`font-bold ${
-                  post.type === "EVENTO" && post.allowInvitations && user?.role === "aluno" && onInviteFriend
-                    ? "text-green-400"
-                    : "text-red-400"
-                }`}
-              >
-                → Botão deveria aparecer?{" "}
-                {post.type === "EVENTO" && post.allowInvitations && user?.role === "aluno" && onInviteFriend
-                  ? "✅ SIM"
-                  : "❌ NÃO"}
-              </div>
-            </div>
-          )}
 
           {/* Invite Friends CTA - Student View for Events */}
           {post.type === "EVENTO" && post.allowInvitations && user?.role === "aluno" && onInviteFriend && (
@@ -654,19 +632,6 @@ export function PostCard({
                 </Button>
               )}
 
-              {/* Invite Friends - for EVENTO with invitations enabled (Student only) */}
-              {post.type === "EVENTO" && post.allowInvitations && user?.role === "aluno" && onInviteFriend && (
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={() => onInviteFriend(post)}
-                  className="text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all font-semibold"
-                  aria-label="Convidar amigos para o evento"
-                >
-                  <Users className="h-3 w-3 mr-1" />
-                  🎉 Convidar Amigos
-                </Button>
-              )}
 
               {/* Save/Unsave Toggle */}
               <Button
