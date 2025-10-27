@@ -196,24 +196,6 @@ Deno.serve(async (req) => {
               eventStartAt: post.eventStartAt,
             },
           };
-            type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
-            title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}`,
-            link,
-            role_target: roleTarget,
-            meta: {
-              postId: post.id,
-              postType: post.type,
-              action,
-              scope,
-              important: isImportant,
-              notificationKey,
-              authorName: post.authorName,
-              classId: post.classIds?.[0],
-              dueDate: post.dueAt,
-              eventStartAt: post.eventStartAt,
-            },
-          };
 
           notificationsToInsert.push(notificationData);
         }
