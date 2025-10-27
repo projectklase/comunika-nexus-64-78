@@ -79,7 +79,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit, onDelete, onUpdate, onInviteFriend, onViewInvitations }: PostCardProps) {
-  console.log('DEBUG POST CARD - INCONDICIONAL:', { postId: post.id, postType: post.type, allowInvitations: post.allowInvitations, hasOnInviteFriend: !!onInviteFriend });
+
   const { user } = useAuth();
   const { getClass } = useClassStore();
   const { markAsRead, isRead } = useReads();
