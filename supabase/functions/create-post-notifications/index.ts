@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
     };
 
     let totalCreated = 0;
+    const notificationsToInsert = [];
 
     // Processar cada audiência
     for (const roleTarget of audiences) {
@@ -149,11 +150,7 @@ Deno.serve(async (req) => {
         for (const userId of targetUserIds) {
           const notificationKey = `${baseKey}:${userId}`;
 
-          // 🔍 DEBUG: Log do userId atual
-          console.log("[DEBUG] Tentando criar notificação para userId:", userId);
-          console.log("[DEBUG] notificationKey:", notificationKey);
-
-          // Verificar duplicatas
+          // Verificar duplicatas (mantido sequencialmente para evitar race condition)
           const { data: existing, error: existError } = await supabaseAdmin
             .from("notifications")
             .select("id")
@@ -179,7 +176,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}`,
+            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}`,
             link,
             role_target: roleTarget,
             meta: {
@@ -196,25 +193,28 @@ Deno.serve(async (req) => {
             },
           };
 
-          // 🔍 DEBUG: Log dos dados antes de inserir
-          console.log("[DEBUG] Dados da notificação:", JSON.stringify(notificationData, null, 2));
-
-          const { error: insertError } = await supabaseAdmin.from("notifications").insert(notificationData);
-
-          if (insertError) {
-            console.error("[DEBUG] ❌ ERRO ao inserir notificação:", insertError);
-            console.error("[DEBUG] Dados que tentei inserir:", notificationData);
-            continue;
-          }
-
-          console.log("[DEBUG] ✅ Notificação criada com sucesso para userId:", userId);
-          totalCreated++;
+          notificationsToInsert.push(notificationData);
         }
-
-        console.log("[create-post-notifications] Created", totalCreated, "notifications for roleTarget:", roleTarget);
       } catch (error) {
         console.error(`[create-post-notifications] Error processing ${roleTarget}:`, error);
       }
+    }
+
+    console.log("[create-post-notifications] Total notifications to insert:", notificationsToInsert.length);
+
+    if (notificationsToInsert.length > 0) {
+      const { error: insertError } = await supabaseAdmin
+        .from("notifications")
+        .insert(notificationsToInsert);
+
+      if (insertError) {
+        console.error("[create-post-notifications] ❌ ERRO ao inserir notificações em lote:", insertError);
+        return new Response(JSON.stringify({ error: "Erro ao inserir notificações" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+      totalCreated = notificationsToInsert.length;
     }
 
     console.log("[create-post-notifications] Total notifications created:", totalCreated);
