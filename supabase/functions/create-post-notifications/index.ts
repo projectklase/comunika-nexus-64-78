@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
             const { data: existing, error: existError } = await supabaseAdmin
               .from("notifications")
               .select("id")
-              .eq("user_id", userIdUUID) // Usar userIdUUID
+              .eq("user_id", userId) // Usar userId original
               .contains("meta", { notificationKey })
               .limit(1);
 
@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
 
           // Criar notificação
           const notificationData = {
-            user_id: userIdUUID, // Usar userIdUUID
+            user_id: userId, // Usar userId original
             type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
             message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}`,
