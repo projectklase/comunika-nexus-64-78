@@ -576,6 +576,20 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
                 Ir para calendário
               </Button>
             )}
+            
+            {/* Invite Friends - for EVENTO with invitations enabled (Student only) */}
+            {post.type === 'EVENTO' && post.allowInvitations && user.role === 'aluno' && onInviteFriend && (
+              <Button 
+                size="sm" 
+                variant="default"
+                onClick={() => onInviteFriend(post)}
+                className="text-xs bg-purple-600 hover:bg-purple-700 text-white focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all"
+                aria-label="Convidar amigos para o evento"
+              >
+                <Users className="h-3 w-3 mr-1" />
+                🎉 Convidar Amigos
+              </Button>
+            )}
 
             {/* Save/Unsave Toggle */}
             <Button 

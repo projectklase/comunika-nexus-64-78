@@ -371,18 +371,51 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
             </div>
           )}
 
-          {/* Invite Friends CTA for events */}
+          {/* Invite Friends CTA - Student View */}
           {post.type === 'EVENTO' && post.allowInvitations && onInviteFriend && user?.role === 'aluno' && (
-            <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-              <Button
-                onClick={() => {
-                  onInviteFriend(post);
-                }}
-                className="w-full bg-purple-500 hover:bg-purple-600"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Convidar Amigos para este Evento
-              </Button>
+            <div className="p-5 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/10 border-2 border-purple-500/40 shadow-lg shadow-purple-500/20">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-full bg-purple-500/30 ring-2 ring-purple-400/50">
+                  <Users className="h-6 w-6 text-purple-200" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h4 className="font-bold text-lg text-purple-100 mb-1 flex items-center gap-2">
+                      🎉 Traga seus amigos!
+                    </h4>
+                    <p className="text-sm text-purple-100/90 leading-relaxed">
+                      Este evento permite que você convide amigos que ainda não estudam aqui. Compartilhe essa experiência incrível e ajude a escola a crescer!
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => onInviteFriend(post)}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md hover:shadow-xl hover:shadow-purple-500/50 transition-all font-semibold"
+                    size="lg"
+                  >
+                    <Users className="h-5 w-5 mr-2" />
+                    Convidar Amigo Agora
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* View Invitations CTA - Secretary View */}
+          {post.type === 'EVENTO' && post.allowInvitations && user?.role === 'secretaria' && (
+            <div className="p-5 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border-2 border-blue-500/40 shadow-lg shadow-blue-500/20">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-full bg-blue-500/30 ring-2 ring-blue-400/50">
+                  <Users className="h-6 w-6 text-blue-200" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h4 className="font-bold text-lg text-blue-100 mb-1">📊 Convites recebidos</h4>
+                    <p className="text-sm text-blue-100/90 leading-relaxed">
+                      Visualize todos os leads de amigos convidados pelos alunos para este evento. Use o botão "Ver Convites" no card do feed para acessar a lista completa.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
