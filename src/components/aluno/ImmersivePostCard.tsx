@@ -28,6 +28,7 @@ import { deliveryStore } from '@/stores/delivery-store';
 import { useSmartAgenda } from '@/hooks/useSmartAgenda';
 import { usePostViews } from '@/stores/post-views.store';
 import { PostReadInsights } from '@/components/feed/PostReadInsights';
+import { EventConfirmationManager } from '@/components/student/EventConfirmationManager';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -473,6 +474,18 @@ export function ImmersivePostCard({
           {getStudyCTA() && (
             <div className="flex justify-center">
               {getStudyCTA()}
+            </div>
+          )}
+          
+          {/* Event Confirmation - Student View */}
+          {post.type === 'EVENTO' && user?.id && (
+            <div className="flex justify-center px-2">
+              <div className="w-full max-w-[280px]">
+                <EventConfirmationManager 
+                  event={post} 
+                  studentId={user.id}
+                />
+              </div>
             </div>
           )}
           

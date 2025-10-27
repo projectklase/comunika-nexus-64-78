@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { AttachmentGrid } from '@/components/attachments/AttachmentGrid';
 import { PostInsights } from './PostInsights';
 import { PostReadInsights } from './PostReadInsights';
+import { EventConfirmationManager } from '@/components/student/EventConfirmationManager';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -368,6 +369,16 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
                   {post.meta.contactPhone}
                 </a>
               </div>
+            </div>
+          )}
+
+          {/* Event Confirmation - Student View */}
+          {post.type === 'EVENTO' && user?.role === 'aluno' && user?.id && (
+            <div className="mb-4">
+              <EventConfirmationManager 
+                event={post} 
+                studentId={user.id}
+              />
             </div>
           )}
 

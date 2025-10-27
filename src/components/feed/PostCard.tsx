@@ -25,6 +25,7 @@ import { PostDetailDrawer } from "./PostDetailDrawer";
 import { PostActionHandler } from "./PostActionHandler";
 import { PostActionsUnified } from "./PostActionsUnified";
 import { PostReadInsights } from "./PostReadInsights";
+import { EventConfirmationManager } from "@/components/student/EventConfirmationManager";
 import { toast } from "@/hooks/use-toast";
 import { useCalendarNavigation } from "@/hooks/useCalendarNavigation";
 import { usePostActionsUnified } from "@/hooks/usePostActionsUnified";
@@ -398,6 +399,17 @@ export function PostCard({
               </div>
             </div>}
 
+
+          {/* Event Confirmation - Student View */}
+          {post.type === "EVENTO" && user?.role === "aluno" && user?.id && (
+            <div className="px-4 pb-3">
+              <EventConfirmationManager 
+                event={post} 
+                studentId={user.id}
+                onConfirmationChange={onUpdate}
+              />
+            </div>
+          )}
 
           {/* Invite Friends CTA - Student View for Events */}
           {post.type === "EVENTO" && post.allowInvitations && user?.role === "aluno" && onInviteFriend && <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/10 border-2 border-purple-500/40 shadow-md shadow-purple-500/10">
