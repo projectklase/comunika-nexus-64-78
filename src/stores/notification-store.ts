@@ -83,39 +83,24 @@ class NotificationStore {
   }
 
   async listAsync(filters: NotificationFilters = {}): Promise<Notification[]> {
-    const queryBuilder = supabase.from("notifications").select("*").order("created_at", { ascending: false });
+    console.log("[NotificationStore] 🔎 Iniciando busca simplificada de notificações...");
+    
+    // A busca mais simples possível, confiando no RLS para filtrar as que pertencem ao usuário.
+    let query = supabase.from("notifications").select("*").order("created_at", { ascending: false });
 
-    // Build query step by step to avoid type instantiation issues
-    const { data, error } = await (async () => {
-      let q = queryBuilder;
+    // Aplica o limite se houver
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
 
-      if (filters.userId) {
-        q = q.eq("user_id", filters.userId);
-      }
-      if (filters.isRead !== undefined) {
-        q = q.eq("is_read", filters.isRead);
-      }
-      if (filters.roleTarget) {
-        q = q.eq("role_target", filters.roleTarget);
-      }
-      if (filters.type) {
-        q = q.eq("type", filters.type);
-      }
-      if (filters.limit) {
-        q = q.limit(filters.limit);
-      }
-      if (filters.search) {
-        q = q.or(`title.ilike.%${filters.search}%,message.ilike.%${filters.search}%`);
-      }
-
-      return await q;
-    })();
+    const { data, error } = await query;
 
     if (error) {
-      console.error("Error listing notifications:", error);
+      console.error("[NotificationStore] ❌ ERRO na busca simplificada:", error);
       throw error;
     }
 
+    console.log(`[NotificationStore] ✅ Busca simplificada concluída. Linhas recebidas: ${data?.length || 0}`);
     return (data || []).map(dbRowToNotification);
   }
 
