@@ -167,9 +167,12 @@ class PostStore {
     }
 
     const post = this.dbRowToPost(data);
+    console.log("[DEBUG-MANUS] ✅ Post convertido com dbRowToPost - ID:", post.id, "Tipo:", post.type);
     this.notifySubscribers();
+    console.log("[DEBUG-MANUS] ✅ Subscribers notificados");
 
     // Generate notifications (async, don't block)
+    console.log("[DEBUG-MANUS] 🔔 Chamando generatePostNotifications para post:", post.id);
     console.log("[PostStore] 🔔 Chamando generatePostNotifications para post:", post.id);
     console.log("[PostStore] 🔔 Post meta:", post.meta);
     console.log("[PostStore] 🔔 Important:", post.meta?.important);
@@ -263,6 +266,7 @@ class PostStore {
 
     const afterPost = this.dbRowToPost(data);
     this.notifySubscribers();
+    console.log("[DEBUG-MANUS] ✅ Subscribers notificados");
 
     // Generate notifications for updates (async, don't block)
     const hasSignificantChange =
@@ -332,6 +336,7 @@ class PostStore {
     }
 
     this.notifySubscribers();
+    console.log("[DEBUG-MANUS] ✅ Subscribers notificados");
 
     // Log audit event
     try {
@@ -400,6 +405,7 @@ class PostStore {
 
       if (data && data.length > 0) {
         this.notifySubscribers();
+    console.log("[DEBUG-MANUS] ✅ Subscribers notificados");
 
         // Generate notifications for newly published scheduled posts
         data.forEach((postData) => {
@@ -470,6 +476,7 @@ class PostStore {
     }
 
     this.notifySubscribers();
+    console.log("[DEBUG-MANUS] ✅ Subscribers notificados");
 
     // Log audit event
     try {
