@@ -143,41 +143,16 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Criar notificações para cada usuário
+        // ✅ Coletar todas as notificações para inserção em lote
         const actionKey = action === "deadline_changed" ? "deadline" : action;
         const baseKey = `post:${post.id}:${scope}:${actionKey}`;
+        const link = post.classIds?.[0] ? `/feed/${post.classIds[0]}/${post.id}` : `/feed/${post.id}`;
 
         for (const userId of targetUserIds) {
           const notificationKey = `${baseKey}:${userId}`;
 
-            // Verificar duplicatas (mantido sequencialmente para evitar race condition)
-            // O problema é que o userId pode estar sendo inserido como TEXT/STRING.
-            // Vamos garantir que ele seja um UUID válido.
-            const userIdUUID = String(userId); // Mantemos como string, mas a coluna deve ser UUID
-            
-            const { data: existing, error: existError } = await supabaseAdmin
-              .from("notifications")
-              .select("id")
-              .eq("user_id", userId) // Usar userId original
-              .contains("meta", { notificationKey })
-              .limit(1);
-
-          if (existError) {
-            console.error("[create-post-notifications] Error checking duplicates:", existError);
-            continue;
-          }
-
-          if (existing && existing.length > 0) {
-            console.log("[create-post-notifications] Notification already exists for user:", userId);
-            continue;
-          }
-
-          // Gerar link
-          const link = post.classIds?.[0] ? `/feed/${post.classIds[0]}/${post.id}` : `/feed/${post.id}`;
-
-          // Criar notificação
-          const notificationData = {
-            user_id: userId, // Usar userId original
+          notificationsToInsert.push({
+            user_id: userId,
             type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
             message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}`,
@@ -189,15 +164,13 @@ Deno.serve(async (req) => {
               action,
               scope,
               important: isImportant,
-              notificationKey,
+              notificationKey, // ✅ Chave única para constraint
               authorName: post.authorName,
               classId: post.classIds?.[0],
               dueDate: post.dueAt,
               eventStartAt: post.eventStartAt,
             },
-          };
-
-          notificationsToInsert.push(notificationData);
+          });
         }
       } catch (error) {
         console.error(`[create-post-notifications] Error processing ${roleTarget}:`, error);
@@ -206,19 +179,24 @@ Deno.serve(async (req) => {
 
     console.log("[create-post-notifications] Total notifications to insert:", notificationsToInsert.length);
 
+    // ✅ Inserção em lote - duplicatas são ignoradas automaticamente pela constraint única
     if (notificationsToInsert.length > 0) {
-      const { error: insertError } = await supabaseAdmin
+      const { data, error: insertError } = await supabaseAdmin
         .from("notifications")
-        .insert(notificationsToInsert);
+        .insert(notificationsToInsert)
+        .select("id");
 
-      if (insertError) {
-        console.error("[create-post-notifications] ❌ ERRO ao inserir notificações em lote:", insertError);
+      // PostgreSQL ignora duplicatas automaticamente devido ao índice único
+      if (insertError && !insertError.message?.includes("duplicate key")) {
+        console.error("[create-post-notifications] ❌ ERRO ao inserir notificações:", insertError);
         return new Response(JSON.stringify({ error: "Erro ao inserir notificações" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
         });
       }
-      totalCreated = notificationsToInsert.length;
+      
+      totalCreated = data?.length || 0;
+      console.log(`[create-post-notifications] ✅ ${totalCreated} notificações criadas (duplicatas ignoradas)`);
     }
 
     console.log("[create-post-notifications] Total notifications created:", totalCreated);
