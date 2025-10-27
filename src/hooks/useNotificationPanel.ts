@@ -69,7 +69,6 @@ export function useNotificationPanel() {
     try {
       const allNotifications = await notificationStore.listAsync({
         userId: user.id,
-        roleTarget: roleTarget, // Adiciona filtro de roleTarget para buscar notificações de role
         limit: 100
       });
       
