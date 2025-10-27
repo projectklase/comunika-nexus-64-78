@@ -151,16 +151,14 @@ Deno.serve(async (req) => {
           const notificationKey = `${baseKey}:${userId}`;
 
             // Verificar duplicatas (mantido sequencialmente para evitar race condition)
-            // O userId é um UUID. O RLS na tabela notifications usa auth.uid().
-            // Se o RLS estiver configurado para usar user_id, o userId deve ser uma string.
-            // Vamos garantir que a coluna user_id na tabela notifications seja do tipo uuid.
-            // Para garantir a compatibilidade com o RLS, vamos garantir que o userId seja uma string.
-            const userIdString = String(userId);
+            // O problema é que o userId pode estar sendo inserido como TEXT/STRING.
+            // Vamos garantir que ele seja um UUID válido.
+            const userIdUUID = String(userId); // Mantemos como string, mas a coluna deve ser UUID
             
             const { data: existing, error: existError } = await supabaseAdmin
               .from("notifications")
               .select("id")
-              .eq("user_id", userIdString) // Usar userIdString
+              .eq("user_id", userIdUUID) // Usar userIdUUID
               .contains("meta", { notificationKey })
               .limit(1);
 
@@ -179,7 +177,7 @@ Deno.serve(async (req) => {
 
           // Criar notificação
           const notificationData = {
-            user_id: userIdString, // Usar userIdString
+            user_id: userIdUUID, // Usar userIdUUID
             type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
             message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}`,
