@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        let targetUserIds = userProfiles?.map((r) => r.id || r.user_id) || []; // CORRIGIDO: Mapear r.id ou r.user_id
+        let targetUserIds = userProfiles?.map((r) => r.id) || []; // Simplificar a busca para usar apenas 'id' da tabela 'profiles' (que é o UUID do usuário)
 
 
         console.log("[create-post-notifications] Found", targetUserIds.length, "users with role:", roleTarget);
