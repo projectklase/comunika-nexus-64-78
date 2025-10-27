@@ -171,7 +171,6 @@ class PostStore {
 
     // Generate notifications (async, don't block)
     console.log("[PostStore] 🔔 Chamando generatePostNotifications para post:", post.id);
-    console.log("[PostStore] 🔔 Post type:", post.type);
     console.log("[PostStore] 🔔 Post meta:", post.meta);
     console.log("[PostStore] 🔔 Important:", post.meta?.important);
 
@@ -181,7 +180,6 @@ class PostStore {
       })
       .catch((error) => {
         console.error("[PostStore] ❌ ERRO ao chamar generatePostNotifications:", error);
-        console.error("[PostStore] ❌ Stack:", error.stack);
       });
 
     // Log audit event

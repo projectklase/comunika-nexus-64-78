@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
-            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}${post.eventLocation ? ` - Local: ${post.eventLocation}` : ""}`,
+            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}`,
             link,
             role_target: roleTarget,
             meta: {
@@ -191,7 +191,6 @@ Deno.serve(async (req) => {
               classId: post.classIds?.[0],
               dueDate: post.dueAt,
               eventStartAt: post.eventStartAt,
-              eventLocation: post.eventLocation || undefined,
             },
           };
 
