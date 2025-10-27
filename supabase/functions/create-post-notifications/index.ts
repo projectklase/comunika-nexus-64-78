@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
 
     // Mapeamento de roles
     const roleMapping: Record<string, string> = {
-      ALUNO: "ALUNO",
+      ALUNO: "aluno",
       PROFESSOR: "professor",
       SECRETARIA: "secretaria",
     };
