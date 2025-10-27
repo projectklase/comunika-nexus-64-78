@@ -46,7 +46,9 @@ Deno.serve(async (req) => {
 
     if (post.audience === "GLOBAL") {
       audiences.push("ALUNO", "PROFESSOR");
-      if (post.type === "AVISO" || post.type === "COMUNICADO") {
+      // Se for um post GLOBAL, todos os tipos devem notificar ALUNO e PROFESSOR.
+      // O tipo EVENTO, COMUNICADO, AVISO também deve notificar SECRETARIA, se for GLOBAL.
+      if (post.type === "AVISO" || post.type === "COMUNICADO" || post.type === "EVENTO") {
         audiences.push("SECRETARIA");
       }
     } else if (post.audience === "CLASS") {
