@@ -468,6 +468,33 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
           </div>
         )}
 
+        {/* Invite Friends CTA - Student View for Events */}
+        {post.type === 'EVENTO' && post.allowInvitations && user?.role === 'aluno' && onInviteFriend && (
+          <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/10 border-2 border-purple-500/40 shadow-md shadow-purple-500/10">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-purple-500/30 ring-2 ring-purple-400/50 flex-shrink-0">
+                <Users className="h-4 w-4 text-purple-200" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <h4 className="font-bold text-sm text-purple-100 flex items-center gap-1.5">
+                  🎉 Convide seus amigos!
+                </h4>
+                <p className="text-xs text-purple-100/90 leading-snug">
+                  Traga amigos para este evento e ajude a escola a crescer.
+                </p>
+                <Button
+                  onClick={() => onInviteFriend(post)}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all text-xs font-semibold h-9"
+                  size="sm"
+                >
+                  <Users className="h-3.5 w-3.5 mr-1.5" />
+                  Convidar Amigo
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Attachments */}
         {post.attachments && post.attachments.length > 0 && (
           <AttachmentGrid 
@@ -574,20 +601,6 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
               >
                 <Calendar className="h-3 w-3 mr-1" />
                 Ir para calendário
-              </Button>
-            )}
-            
-            {/* Invite Friends - for EVENTO with invitations enabled (Student only) */}
-            {post.type === 'EVENTO' && post.allowInvitations && user.role === 'aluno' && onInviteFriend && (
-              <Button 
-                size="sm" 
-                variant="default"
-                onClick={() => onInviteFriend(post)}
-                className="text-xs bg-purple-600 hover:bg-purple-700 text-white focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all"
-                aria-label="Convidar amigos para o evento"
-              >
-                <Users className="h-3 w-3 mr-1" />
-                🎉 Convidar Amigos
               </Button>
             )}
 
