@@ -150,13 +150,19 @@ Deno.serve(async (req) => {
         for (const userId of targetUserIds) {
           const notificationKey = `${baseKey}:${userId}`;
 
-          // Verificar duplicatas (mantido sequencialmente para evitar race condition)
-          const { data: existing, error: existError } = await supabaseAdmin
-            .from("notifications")
-            .select("id")
-            .eq("user_id", userId)
-            .contains("meta", { notificationKey })
-            .limit(1);
+            // Verificar duplicatas (mantido sequencialmente para evitar race condition)
+            // O userId é um UUID. O RLS na tabela notifications usa auth.uid().
+            // Se o RLS estiver configurado para usar user_id, o userId deve ser uma string.
+            // Vamos garantir que a coluna user_id na tabela notifications seja do tipo uuid.
+            // Para garantir a compatibilidade com o RLS, vamos garantir que o userId seja uma string.
+            const userIdString = String(userId);
+            
+            const { data: existing, error: existError } = await supabaseAdmin
+              .from("notifications")
+              .select("id")
+              .eq("user_id", userIdString) // Usar userIdString
+              .contains("meta", { notificationKey })
+              .limit(1);
 
           if (existError) {
             console.error("[create-post-notifications] Error checking duplicates:", existError);
@@ -173,7 +179,25 @@ Deno.serve(async (req) => {
 
           // Criar notificação
           const notificationData = {
-            user_id: userId,
+            user_id: userIdString, // Usar userIdString
+            type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
+            title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
+            message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}`,
+            link,
+            role_target: roleTarget,
+            meta: {
+              postId: post.id,
+              postType: post.type,
+              action,
+              scope,
+              important: isImportant,
+              notificationKey,
+              authorName: post.authorName,
+              classId: post.classIds?.[0],
+              dueDate: post.dueAt,
+              eventStartAt: post.eventStartAt,
+            },
+          };
             type: isImportant ? "POST_IMPORTANT" : "POST_NEW",
             title: `${titlePrefix} ${postTypeLabel}: ${post.title}`,
             message: `${post.title} ${messageAction}${post.dueAt ? ` - Prazo: ${new Date(post.dueAt).toLocaleDateString("pt-BR")}` : ""}${post.eventStartAt ? ` - Data: ${new Date(post.eventStartAt).toLocaleDateString("pt-BR")}` : ""}`,
