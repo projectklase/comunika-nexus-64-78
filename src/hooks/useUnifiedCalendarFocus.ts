@@ -169,16 +169,6 @@ export function useUnifiedCalendarFocus({
           // Max retries reached - try to open DayFocus modal as fallback
           if (targetDate) {
             openModal(targetDate, false);
-            toast({
-              title: 'Navegando para o dia',
-              description: 'Abrindo o calendário na data do evento. Se não encontrar o item, verifique os filtros ativos.'
-            });
-          } else {
-            toast({
-              title: 'Erro na navegação',
-              description: 'Não foi possível localizar o item no calendário.',
-              variant: 'destructive'
-            });
           }
           
           clearFocusParams();
@@ -234,16 +224,6 @@ export function useUnifiedCalendarFocus({
           // Final fallback - just open the day
           if (targetDate) {
             openModal(targetDate, false);
-            toast({
-              title: 'Navegando para o dia',
-              description: 'Abrindo o calendário na data solicitada. Verifique se o item não está oculto pelos filtros.'
-            });
-          } else {
-            toast({
-              title: 'Item não localizado',
-              description: 'Não foi possível encontrar o item no calendário.',
-              variant: 'destructive'
-            });
           }
           clearFocusParams();
           setHasFocused(true);
