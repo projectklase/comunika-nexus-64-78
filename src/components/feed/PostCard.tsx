@@ -503,13 +503,7 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
             </div>
           </div>
         )}
-        {/* DEBUG: Show invitation status for events */}
-        {post.type === 'EVENTO' && user?.role === 'aluno' && (
-          <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded">
-            🔍 Debug: allowInvitations = {String(post.allowInvitations)} | onInviteFriend = {String(!!onInviteFriend)}
-          </div>
-        )}
-
+        
         {/* Attachments */}
         {post.attachments && post.attachments.length > 0 && (
           <AttachmentGrid 
@@ -616,6 +610,20 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
               >
                 <Calendar className="h-3 w-3 mr-1" />
                 Ir para calendário
+              </Button>
+            )}
+            
+            {/* Invite Friends - for EVENTO with invitations enabled (Student only) */}
+            {post.type === 'EVENTO' && post.allowInvitations && user.role === 'aluno' && onInviteFriend && (
+              <Button 
+                size="sm" 
+                variant="default"
+                onClick={() => onInviteFriend(post)}
+                className="text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all font-semibold"
+                aria-label="Convidar amigos para o evento"
+              >
+                <Users className="h-3 w-3 mr-1" />
+                🎉 Convidar Amigos
               </Button>
             )}
 
