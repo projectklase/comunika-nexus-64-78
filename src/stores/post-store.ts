@@ -54,6 +54,7 @@ class PostStore {
       publishAt: row.publish_at,
       activityMeta: row.activity_meta,
       meta: row.meta,
+      allowInvitations: row.allow_invitations,
     };
   }
 
@@ -152,6 +153,7 @@ class PostStore {
       publish_at: validation.data.publishAt,
       activity_meta: validation.data.activityMeta,
       meta: validation.data.meta,
+      allow_invitations: validation.data.allowInvitations,
     };
 
     const { data, error } = await supabase.from("posts").insert([insertData]).select().single();
@@ -262,6 +264,7 @@ class PostStore {
       publish_at: validation.data.publishAt,
       activity_meta: validation.data.activityMeta,
       meta: validation.data.meta,
+      allow_invitations: validation.data.allowInvitations,
     };
 
     const { data, error } = await supabase.from("posts").update(updateData).eq("id", id).select().single();
@@ -462,6 +465,7 @@ class PostStore {
       eventLocation: post.eventLocation,
       audience: post.audience,
       activityMeta: post.activityMeta ? { ...post.activityMeta } : undefined,
+      allowInvitations: post.allowInvitations,
     };
   }
 
