@@ -469,8 +469,35 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
           </div>
         )}
 
+        {/* 🔍 DEBUG TEMPORÁRIO - REMOVER DEPOIS */}
+        {post.type === 'EVENTO' && (
+          <div className="p-2 bg-gray-800 rounded text-xs font-mono space-y-1">
+            <div>🔍 DEBUG - Botão Convidar:</div>
+            <div>• type: {post.type}</div>
+            <div>• allowInvitations: {String(post.allowInvitations)}</div>
+            <div>• user.role: {user?.role}</div>
+            <div>• hasOnInviteFriend: {String(!!onInviteFriend)}</div>
+            <div className={`font-bold ${
+              post.type === 'EVENTO' && 
+              post.allowInvitations && 
+              user?.role === 'aluno' && 
+              onInviteFriend 
+                ? 'text-green-400' 
+                : 'text-red-400'
+            }`}>
+              → Botão deveria aparecer? {
+                post.type === 'EVENTO' && 
+                post.allowInvitations && 
+                user?.role === 'aluno' && 
+                onInviteFriend 
+                  ? '✅ SIM' 
+                  : '❌ NÃO'
+              }
+            </div>
+          </div>
+        )}
 
-        {/* Invite Friends CTA - Student View for Events */}
+        {/* Invite Friends CTA - Student View for Events */}}
         {post.type === 'EVENTO' && post.allowInvitations && user?.role === 'aluno' && onInviteFriend && (
           <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/10 border-2 border-purple-500/40 shadow-md shadow-purple-500/10">
             <div className="flex items-start gap-3">
