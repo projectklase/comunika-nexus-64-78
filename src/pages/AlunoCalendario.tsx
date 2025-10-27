@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, Navigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,6 +34,8 @@ import { ptBR } from 'date-fns/locale';
 export default function AlunoCalendario() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const isMountedRef = useRef(true);
   
   // Redirect if not aluno
   if (!user || user.role !== 'aluno') {
@@ -92,14 +94,23 @@ export default function AlunoCalendario() {
     }
   });
 
-  // Update state when URL changes
+  // Update state when URL changes (only if still on calendar route)
   useEffect(() => {
+    // Only process URL params if we're on the aluno calendar route
+    if (!location.pathname.includes('/aluno/calendario')) {
+      return;
+    }
+
+    // Don't update state if component is unmounting
+    if (!isMountedRef.current) {
+      return;
+    }
+    
     const newDate = getDateFromParams();
     const newView = getViewFromParams();
     const newClassId = getClassIdFromParams();
     const newPostId = getPostIdFromParams();
     
-    // Always update date to ensure URL parameter is respected
     setCurrentDate(newDate);
     setView(newView);
     setHighlightedPostId(newPostId);
@@ -108,7 +119,14 @@ export default function AlunoCalendario() {
     if (classFilter.value !== newClassId) {
       classFilter.setValue(newClassId);
     }
-  }, [searchParams.toString()]); // Use full search params string to catch all changes
+  }, [searchParams.toString(), location.pathname]);
+
+  // Cleanup: mark component as unmounting
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Get data for calendar
   const startDate = view === 'month' 

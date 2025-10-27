@@ -166,7 +166,7 @@ export class UnifiedCalendarNavigation {
       classId,
       view: 'month',
       highlightPost: true,
-      openDayModal: true
+      openDayModal: false
     });
   }
 
@@ -186,7 +186,7 @@ export class UnifiedCalendarNavigation {
       classId,
       view: 'month',
       highlightPost: true,
-      openDayModal: true
+      openDayModal: false
     });
   }
 }
