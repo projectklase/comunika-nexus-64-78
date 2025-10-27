@@ -483,7 +483,16 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
                   Traga amigos para este evento e ajude a escola a crescer.
                 </p>
                 <Button
-                  onClick={() => onInviteFriend(post)}
+                  onClick={() => {
+                    console.log('🔍 DEBUG Invite Button:', {
+                      postId: post.id,
+                      type: post.type,
+                      allowInvitations: post.allowInvitations,
+                      userRole: user?.role,
+                      hasOnInviteFriend: !!onInviteFriend
+                    });
+                    onInviteFriend(post);
+                  }}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all text-xs font-semibold h-9"
                   size="sm"
                 >
@@ -492,6 +501,12 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
                 </Button>
               </div>
             </div>
+          </div>
+        )}
+        {/* DEBUG: Show invitation status for events */}
+        {post.type === 'EVENTO' && user?.role === 'aluno' && (
+          <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded">
+            🔍 Debug: allowInvitations = {String(post.allowInvitations)} | onInviteFriend = {String(!!onInviteFriend)}
           </div>
         )}
 
