@@ -53,6 +53,7 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
         event_id: event.id,
         inviting_student_id: studentId,
         friend_name: data.friendName,
+        friend_contact: data.parentContact, // Temporário: usando contato do responsável como contato do amigo
         parent_name: data.parentName,
         parent_contact: data.parentContact,
       });

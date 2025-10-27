@@ -295,33 +295,65 @@ export type Database = {
           },
         ]
       }
+      event_confirmations: {
+        Row: {
+          confirmed_at: string
+          event_id: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          confirmed_at?: string
+          event_id: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          confirmed_at?: string
+          event_id?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_confirmations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_invitations: {
         Row: {
           created_at: string
           event_id: string
+          friend_contact: string
           friend_name: string
           id: string
           inviting_student_id: string
-          parent_contact: string
-          parent_name: string
+          parent_contact: string | null
+          parent_name: string | null
         }
         Insert: {
           created_at?: string
           event_id: string
+          friend_contact: string
           friend_name: string
           id?: string
           inviting_student_id: string
-          parent_contact: string
-          parent_name: string
+          parent_contact?: string | null
+          parent_name?: string | null
         }
         Update: {
           created_at?: string
           event_id?: string
+          friend_contact?: string
           friend_name?: string
           id?: string
           inviting_student_id?: string
-          parent_contact?: string
-          parent_name?: string
+          parent_contact?: string | null
+          parent_name?: string | null
         }
         Relationships: [
           {
