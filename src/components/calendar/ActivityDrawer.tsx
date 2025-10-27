@@ -88,6 +88,8 @@ import { format, formatDistanceToNow, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
+import { InviteFriendsModal } from '@/components/aluno/InviteFriendsModal';
+import { Post } from '@/types/post';
 
 interface ActivityDrawerProps {
   postId: string | null;
@@ -140,6 +142,7 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   
   const [showEntregaDrawer, setShowEntregaDrawer] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(() => {
     const saved = localStorage.getItem('activity-drawer-expanded');
     return saved ? JSON.parse(saved) : false;
@@ -666,6 +669,40 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
           </div>
         )}
 
+        {/* Student Event Invitation - Only for events with invitations enabled */}
+        {user?.role === 'aluno' && post.type === 'EVENTO' && post.allowInvitations && (
+          <div className="space-y-4">
+            <div className="p-5 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/10 border-2 border-purple-500/40 shadow-lg shadow-purple-500/20">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-full bg-purple-500/30 ring-2 ring-purple-400/50 flex-shrink-0">
+                  <Users className="h-6 w-6 text-purple-200" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h4 className="font-bold text-lg text-purple-100 mb-1 flex items-center gap-2">
+                      🎉 Traga seus amigos!
+                    </h4>
+                    <p className="text-sm text-purple-100/90 leading-relaxed">
+                      Este evento permite que você convide amigos que ainda não estudam aqui. Compartilhe essa experiência incrível!
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowInviteModal(true)}
+                    className={cn(
+                      "w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md hover:shadow-xl hover:shadow-purple-500/50 transition-all font-semibold rounded-xl",
+                      isMobile && "min-h-[48px] text-base"
+                    )}
+                    size="lg"
+                  >
+                    <Users className="h-5 w-5 mr-2" />
+                    Convidar Amigo Agora
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Professor/Secretaria Actions */}
         {(user?.role === 'professor' || user?.role === 'secretaria') && (
           <div className="space-y-4">
@@ -888,6 +925,15 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
           window.location.reload();
         }}
       />
+
+      {user && (
+        <InviteFriendsModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          event={post as Post}
+          studentId={user.id}
+        />
+      )}
     </>
   );
 }
