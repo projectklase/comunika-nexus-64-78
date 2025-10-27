@@ -183,7 +183,10 @@ class PostStore {
         console.log("[PostStore] ✅ generatePostNotifications executado com sucesso");
         // Forçar a atualização do notification-store após a criação da notificação
         // Isso deve resolver o problema de notificação não aparecer imediatamente
-        notificationStore.notifySubscribers();
+        // NOTA: notifySubscribers é privado. A chamada deve ser feita via um método público se necessário,
+        // mas a correção da Edge Function e do listAsync deve resolver a exibição.
+        // Removendo a chamada que causa erro de build.
+        // notificationStore.notifySubscribers();
       })
       .catch((error) => {
         console.error("[PostStore] ❌ ERRO ao chamar generatePostNotifications:", error);
