@@ -126,8 +126,6 @@ class PostStore {
   }
 
   async create(input: PostInput, authorName: string, authorId: string, allowPastOverride = false): Promise<Post> {
-    console.log("[PostStore] 🚀 INÍCIO do método create - tipo:", input.type);
-    
     // Validate and sanitize data
     const validation = validatePostData(input, allowPastOverride);
     if (!validation.isValid) {
@@ -157,8 +155,6 @@ class PostStore {
 
     const { data, error } = await supabase.from("posts").insert([insertData]).select().single();
 
-    console.log("[PostStore] 📊 Insert no banco concluído - error:", error, "data:", data?.id);
-
     if (error) {
       console.error("[PostStore] Error creating post:", error);
       if (error.code === "23505") {
@@ -171,10 +167,7 @@ class PostStore {
     }
 
     const post = this.dbRowToPost(data);
-    console.log("[PostStore] ✅ Post convertido com dbRowToPost - ID:", post.id, "Tipo:", post.type);
-    
     this.notifySubscribers();
-    console.log("[PostStore] ✅ Subscribers notificados");
 
     // Generate notifications (async, don't block)
     console.log("[PostStore] 🔔 Chamando generatePostNotifications para post:", post.id);
