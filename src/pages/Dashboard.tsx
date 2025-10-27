@@ -9,18 +9,14 @@ import { useNavigate } from "react-router-dom";
 import { PostPreviewCard } from "@/components/dashboard/PostPreviewCard";
 import { PostComposer } from "@/components/feed/PostComposer";
 import { PostInput, PostType } from "@/types/post";
-import { useToast } from "@/hooks/use-toast";
 import { PostLinkBuilder, UserRole } from "@/utils/post-links";
 import { Bell, Calendar, Users, FileText, Plus } from "lucide-react";
-
-// CORREÇÃO: Importar o cliente Supabase e a FUNÇÃO addNotification
 import { supabase } from "@/integrations/supabase/client";
-import { notificationStore } from "@/stores/notification-store";
+import { usePostActions } from "@/hooks/usePostActions";
 
 const Dashboard = () => {
-  const { user, isLoading: isAuthLoading } = useAuth(); // Renomeado para evitar conflito
+  const { user, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [showComposer, setShowComposer] = useState(false);
   const [activeClassesCount, setActiveClassesCount] = useState(0);
 
@@ -76,55 +72,16 @@ const Dashboard = () => {
   };
 
   const buttonConfig = getButtonConfig();
+  const { createPost, isLoading: isCreatingPost } = usePostActions();
 
-  // CORREÇÃO: handleCreatePost ajustado para usar as novas funções
   const handleCreatePost = async (postInput: PostInput) => {
     if (!user) return;
-
-    try {
-      // 1. Inserir o post no Supabase (ajustado para o formato snake_case)
-      const { data: newPostData, error: postError } = await supabase
-        .from("posts")
-        .insert([
-          {
-            author_id: user.id,
-            author_name: user.name || "Admin",
-            author_role: user.role || "SECRETARIA",
-            audience: postInput.audience,
-            body: postInput.body,
-            title: postInput.title,
-            type: postInput.type,
-            status: postInput.status,
-            class_id: postInput.classId || null,
-            class_ids: postInput.classIds || [],
-            due_at: postInput.dueAt || null,
-            event_start_at: postInput.eventStartAt || null,
-            event_end_at: postInput.eventEndAt || null,
-            activity_meta: postInput.activityMeta as any,
-            attachments: postInput.attachments as any,
-            meta: postInput.meta as any,
-          },
-        ])
-        .select()
-        .single();
-
-      if (postError) throw postError;
-
+    
+    const success = await createPost(postInput, user.name);
+    
+    if (success) {
       setShowComposer(false);
-      toast({
-        title: "Post criado com sucesso",
-        description: "Seu post foi publicado e a notificação enviada.",
-      });
-
-      // 3. Chamar a função invalidate para atualizar a lista de posts na tela
       invalidatePosts();
-    } catch (error) {
-      console.error("Erro ao criar post:", error);
-      toast({
-        title: "Erro ao criar post",
-        description: "Ocorreu um erro ao salvar seu post. Tente novamente.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -244,6 +201,7 @@ const Dashboard = () => {
             allowedTypes={buttonConfig.allowedTypes}
             onSubmit={handleCreatePost}
             onCancel={() => setShowComposer(false)}
+            isLoading={isCreatingPost}
           />
         </DialogContent>
       </Dialog>
