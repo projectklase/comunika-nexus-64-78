@@ -79,6 +79,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit, onDelete, onUpdate, onInviteFriend, onViewInvitations }: PostCardProps) {
+  console.log('DEBUG POST CARD - INCONDICIONAL:', { postId: post.id, postType: post.type, allowInvitations: post.allowInvitations, hasOnInviteFriend: !!onInviteFriend });
   const { user } = useAuth();
   const { getClass } = useClassStore();
   const { markAsRead, isRead } = useReads();
@@ -614,8 +615,7 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
               </Button>
             )}
             
-            {/* DEBUG LOG - Invite Button Conditions */}
-            {post.type === 'EVENTO' && console.log('DEBUG POST CARD - Invite Button Conditions:', { postId: post.id, type: post.type, allowInvitations: post.allowInvitations, userRole: user?.role, hasOnInviteFriend: !!onInviteFriend })}
+
             {/* Invite Friends - for EVENTO with invitations enabled (Student only) */}
             {post.type === 'EVENTO' && post.allowInvitations && user?.role === 'aluno' && onInviteFriend && (
               <Button 
