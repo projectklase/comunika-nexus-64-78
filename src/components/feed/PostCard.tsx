@@ -468,7 +468,7 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
           </div>
         )}
 
-        {post.type === 'EVENTO' && console.log('DEBUG POST CARD - Invite Button Conditions:', { postId: post.id, type: post.type, allowInvitations: post.allowInvitations, userRole: user?.role, hasOnInviteFriend: !!onInviteFriend })}
+
         {/* Invite Friends CTA - Student View for Events */}
         {post.type === 'EVENTO' && post.allowInvitations && user?.role === 'aluno' && onInviteFriend && (
           <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/10 border-2 border-purple-500/40 shadow-md shadow-purple-500/10">
@@ -614,6 +614,8 @@ export function PostCard({ post, canEdit = false, onArchive, onDuplicate, onEdit
               </Button>
             )}
             
+            {/* DEBUG LOG - Invite Button Conditions */}
+            {post.type === 'EVENTO' && console.log('DEBUG POST CARD - Invite Button Conditions:', { postId: post.id, type: post.type, allowInvitations: post.allowInvitations, userRole: user?.role, hasOnInviteFriend: !!onInviteFriend })}
             {/* Invite Friends - for EVENTO with invitations enabled (Student only) */}
             {post.type === 'EVENTO' && post.allowInvitations && user?.role === 'aluno' && onInviteFriend && (
               <Button 
