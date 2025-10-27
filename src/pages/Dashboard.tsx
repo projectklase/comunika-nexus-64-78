@@ -20,11 +20,9 @@ const Dashboard = () => {
   const [showComposer, setShowComposer] = useState(false);
   const [activeClassesCount, setActiveClassesCount] = useState(0);
 
-  // CORREÇÃO: Uso correto do hook usePosts
-  // Ele agora gerencia o estado dos posts, o carregamento e a função para invalidar
+  // CORREÇÃO: TODOS os hooks devem ser declarados no topo, antes de qualquer early return
   const { posts, isLoading: isLoadingPosts, invalidate: invalidatePosts } = usePosts();
-
-  // O useEffect que carregava os posts manualmente foi removido, pois o hook já faz isso.
+  const { createPost, isLoading: isCreatingPost } = usePostActions();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -72,7 +70,6 @@ const Dashboard = () => {
   };
 
   const buttonConfig = getButtonConfig();
-  const { createPost, isLoading: isCreatingPost } = usePostActions();
 
   const handleCreatePost = async (postInput: PostInput) => {
     if (!user) return;
