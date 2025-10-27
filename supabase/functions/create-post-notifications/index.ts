@@ -103,17 +103,19 @@ Deno.serve(async (req) => {
 
       try {
         // Buscar user_ids com SERVICE_ROLE (bypassa RLS)
-        const { data: userRoles, error: roleError } = await supabaseAdmin
-          .from("user_roles")
-          .select("user_id")
+        const { data: userProfiles, error: roleError } = await supabaseAdmin
+          .from("profiles") // CORRIGIDO: Usar a tabela profiles
+          .select("id")     // CORRIGIDO: Selecionar o ID do usuário
           .eq("role", roleMapping[roleTarget]);
 
         if (roleError) {
-          console.error("[create-post-notifications] Error fetching user roles:", roleError);
+          console.error("[create-post-notifications] Error fetching user profiles:", roleError);
           continue;
         }
 
-        let targetUserIds = userRoles?.map((r) => r.user_id) || [];
+        let targetUserIds = userProfiles?.map((r) => r.id) || []; // CORRIGIDO: Mapear r.id
+
+
         console.log("[create-post-notifications] Found", targetUserIds.length, "users with role:", roleTarget);
 
         if (targetUserIds.length === 0) {
