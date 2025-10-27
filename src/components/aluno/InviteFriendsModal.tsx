@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -12,10 +12,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { InputPhone } from '@/components/ui/input-phone';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types/post';
 import { Users, Loader2 } from 'lucide-react';
+import { onlyDigits } from '@/lib/validation';
 
 interface InviteFriendsModalProps {
   isOpen: boolean;
@@ -25,9 +27,23 @@ interface InviteFriendsModalProps {
 }
 
 const inviteSchema = z.object({
-  friendName: z.string().trim().min(3, 'Nome do amigo deve ter no mínimo 3 caracteres').max(100),
-  parentName: z.string().trim().min(3, 'Nome do responsável deve ter no mínimo 3 caracteres').max(100),
-  parentContact: z.string().trim().min(8, 'Contato deve ter no mínimo 8 caracteres').max(50),
+  friendName: z.string().trim()
+    .min(3, 'Nome do amigo deve ter no mínimo 3 caracteres')
+    .max(100, 'Nome do amigo deve ter no máximo 100 caracteres'),
+  
+  friendContact: z.string()
+    .refine((val) => {
+      const digits = onlyDigits(val);
+      return digits.length >= 10 && digits.length <= 11;
+    }, 'Telefone deve ter 10 ou 11 dígitos (DDD + número)'),
+  
+  parentName: z.string().trim()
+    .min(3, 'Nome do responsável deve ter no mínimo 3 caracteres')
+    .max(100, 'Nome do responsável deve ter no máximo 100 caracteres'),
+  
+  parentContact: z.string().trim()
+    .min(8, 'Contato deve ter no mínimo 8 caracteres')
+    .max(50, 'Contato deve ter no máximo 50 caracteres'),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -38,6 +54,7 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -53,7 +70,7 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
         event_id: event.id,
         inviting_student_id: studentId,
         friend_name: data.friendName,
-        friend_contact: data.parentContact, // Temporário: usando contato do responsável como contato do amigo
+        friend_contact: data.friendContact,
         parent_name: data.parentName,
         parent_contact: data.parentContact,
       });
@@ -105,6 +122,34 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
             {errors.friendName && (
               <p className="text-sm text-red-500">{errors.friendName.message}</p>
             )}
+          </div>
+
+          {/* Telefone do Amigo */}
+          <div className="space-y-2">
+            <Label htmlFor="friendContact">Telefone do Amigo *</Label>
+            <Controller
+              name="friendContact"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <InputPhone
+                  id="friendContact"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={isSubmitting}
+                  error={errors.friendContact?.message}
+                  showError={false}
+                  placeholder="(11) 99999-9999"
+                />
+              )}
+            />
+            {errors.friendContact && (
+              <p className="text-sm text-red-500">{errors.friendContact.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Informe o telefone com DDD. Ex: (51) 99999-9999
+            </p>
           </div>
 
           {/* Nome do Responsável */}
