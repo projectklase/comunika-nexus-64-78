@@ -59,6 +59,7 @@ export interface Post {
   publishAt?: string;       // quando agendar post
   activityMeta?: ActivityMeta; // metadados específicos de atividades
   meta?: Record<string, any>; // metadados adicionais (importante, etc.)
+  important?: boolean; // Flag para marcar como importante (para notificações)
   // Campos para compatibilidade com calendário
   postId?: string;
   subtype?: string;
@@ -80,6 +81,7 @@ export interface PostInput {
   publishAt?: string;
   activityMeta?: ActivityMeta; // metadados específicos de atividades
   meta?: Record<string, any>; // metadados adicionais (importante, etc.)
+  important?: boolean; // Flag para marcar como importante (para notificações)
 }
 
 export interface PostFilter {

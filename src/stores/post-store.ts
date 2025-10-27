@@ -53,6 +53,7 @@ class PostStore {
       publishAt: row.publish_at,
       activityMeta: row.activity_meta,
       meta: row.meta,
+      important: row.important,
     };
   }
 
@@ -153,6 +154,7 @@ class PostStore {
       publish_at: validation.data.publishAt,
       activity_meta: validation.data.activityMeta,
       meta: validation.data.meta,
+      important: validation.data.meta?.important,
     };
 
     const { data, error } = await supabase.from("posts").insert([insertData]).select().single();
@@ -261,6 +263,7 @@ class PostStore {
       publish_at: validation.data.publishAt,
       activity_meta: validation.data.activityMeta,
       meta: validation.data.meta,
+      important: validation.data.meta?.important,
     };
 
     const { data, error } = await supabase.from("posts").update(updateData).eq("id", id).select().single();
