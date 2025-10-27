@@ -329,6 +329,7 @@ export type Database = {
           created_at: string
           event_id: string
           friend_contact: string
+          friend_dob: string
           friend_name: string
           id: string
           inviting_student_id: string
@@ -339,6 +340,7 @@ export type Database = {
           created_at?: string
           event_id: string
           friend_contact: string
+          friend_dob: string
           friend_name: string
           id?: string
           inviting_student_id: string
@@ -349,6 +351,7 @@ export type Database = {
           created_at?: string
           event_id?: string
           friend_contact?: string
+          friend_dob?: string
           friend_name?: string
           id?: string
           inviting_student_id?: string

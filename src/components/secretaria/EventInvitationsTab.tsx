@@ -21,11 +21,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Users, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
-import { format } from 'date-fns';
+import { format, differenceInYears } from 'date-fns';
 
 interface EventInvitation {
   id: string;
   friend_name: string;
+  friend_dob: string;
   friend_contact: string;
   parent_name: string | null;
   parent_contact: string | null;
@@ -57,6 +58,12 @@ interface EventInvitationsTabProps {
   eventId: string;
   eventTitle: string;
 }
+
+const calculateAge = (dobISO: string): number => {
+  const dob = new Date(dobISO);
+  const today = new Date();
+  return differenceInYears(today, dob);
+};
 
 export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTabProps) {
   const [invitations, setInvitations] = useState<EventInvitation[]>([]);
@@ -174,14 +181,22 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
   };
 
   const exportToCSV = () => {
-    const csvData = invitations.map((inv) => ({
-      'Aluno Convidante': inv.inviting_student?.name || 'Desconhecido',
-      'Nome do Amigo': inv.friend_name,
-      'Telefone do Amigo': inv.friend_contact,
-      'Nome do Responsável': inv.parent_name || 'N/A',
-      'Contato do Responsável': inv.parent_contact || 'N/A',
-      'Data do Convite': format(new Date(inv.created_at), 'dd/MM/yyyy HH:mm'),
-    }));
+    const csvData = invitations.map((inv) => {
+      const age = calculateAge(inv.friend_dob);
+      const isMinor = age < 18;
+      
+      return {
+        'Aluno Convidante': inv.inviting_student?.name || 'Desconhecido',
+        'Nome do Amigo': inv.friend_name,
+        'Idade': `${age} anos`,
+        'Situação': isMinor ? 'Menor de idade' : 'Maior de idade',
+        'Data de Nascimento': format(new Date(inv.friend_dob), 'dd/MM/yyyy'),
+        'Telefone do Amigo': inv.friend_contact,
+        'Nome do Responsável': inv.parent_name || 'N/A',
+        'Contato do Responsável': inv.parent_contact || 'N/A',
+        'Data do Convite': format(new Date(inv.created_at), 'dd/MM/yyyy HH:mm'),
+      };
+    });
 
     const csv = Papa.unparse(csvData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -266,7 +281,7 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
               {invitations.length > 0 && (
                 <Button onClick={exportToCSV} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
-                  Exportar Convites (CSV)
+                  Exportar CSV
                 </Button>
               )}
             </div>
@@ -306,6 +321,7 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                           <TableHeader>
                             <TableRow>
                               <TableHead>Nome do Amigo</TableHead>
+                              <TableHead>Idade</TableHead>
                               <TableHead>Telefone</TableHead>
                               <TableHead>Responsável</TableHead>
                               <TableHead>Contato Resp.</TableHead>
@@ -313,25 +329,41 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {group.invitations.map((inv) => (
-                              <TableRow key={inv.id}>
-                                <TableCell className="font-medium">
-                                  {inv.friend_name}
-                                </TableCell>
-                                <TableCell>
-                                  {inv.friend_contact}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                  {inv.parent_name || '-'}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                  {inv.parent_contact || '-'}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground text-sm">
-                                  {format(new Date(inv.created_at), "dd/MM/yyyy 'às' HH:mm")}
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                            {group.invitations.map((inv) => {
+                              const age = calculateAge(inv.friend_dob);
+                              const isMinor = age < 18;
+                              
+                              return (
+                                <TableRow key={inv.id}>
+                                  <TableCell className="font-medium">
+                                    {inv.friend_name}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <span>{age} anos</span>
+                                      <Badge 
+                                        variant={isMinor ? "destructive" : "secondary"}
+                                        className="text-xs"
+                                      >
+                                        {isMinor ? 'Menor' : 'Maior'}
+                                      </Badge>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {inv.friend_contact}
+                                  </TableCell>
+                                  <TableCell className="text-muted-foreground">
+                                    {inv.parent_name || '-'}
+                                  </TableCell>
+                                  <TableCell className="text-muted-foreground">
+                                    {inv.parent_contact || '-'}
+                                  </TableCell>
+                                  <TableCell className="text-muted-foreground text-sm">
+                                    {format(new Date(inv.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       </div>
@@ -348,7 +380,7 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
               {confirmations.length > 0 && (
                 <Button onClick={exportConfirmationsToCSV} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
-                  Exportar Confirmações (CSV)
+                  Exportar CSV
                 </Button>
               )}
             </div>
