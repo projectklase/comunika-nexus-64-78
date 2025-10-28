@@ -327,13 +327,7 @@ export default function SecretariaFeed() {
 
       {/* Event Invitations Dialog */}
       <Dialog open={!!viewingEventInvitations} onOpenChange={(open) => !open && setViewingEventInvitations(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Convites para {viewingEventInvitations?.title}</DialogTitle>
-            <DialogDescription>
-              Visualize e exporte os leads capturados através dos convites
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-[95vw] lg:max-w-7xl max-h-[92vh] flex flex-col">
           {viewingEventInvitations && (
             <EventInvitationsTab 
               eventId={viewingEventInvitations.id} 

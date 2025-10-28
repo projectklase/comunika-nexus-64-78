@@ -65,6 +65,20 @@ const calculateAge = (dobISO: string): number => {
   return differenceInYears(today, dob);
 };
 
+const formatPhone = (phone: string | null): string => {
+  if (!phone) return '-';
+  
+  const digits = phone.replace(/\D/g, '');
+  
+  if (digits.length === 11) {
+    return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+  } else if (digits.length === 10) {
+    return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+  }
+  
+  return phone;
+};
+
 export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTabProps) {
   const [invitations, setInvitations] = useState<EventInvitation[]>([]);
   const [confirmations, setConfirmations] = useState<EventConfirmation[]>([]);
@@ -191,9 +205,9 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
         'Idade': `${age} anos`,
         'Situação': isMinor ? 'Menor de idade' : 'Maior de idade',
         'Data de Nascimento': format(new Date(inv.friend_dob), 'dd/MM/yyyy'),
-        'Telefone do Amigo': inv.friend_contact,
+        'Telefone do Amigo': formatPhone(inv.friend_contact),
         'Nome do Responsável': inv.parent_name || 'N/A',
-        'Contato do Responsável': inv.parent_contact || 'N/A',
+        'Contato do Responsável': formatPhone(inv.parent_contact) !== '-' ? formatPhone(inv.parent_contact) : 'N/A',
         'Data do Convite': format(new Date(inv.created_at), 'dd/MM/yyyy HH:mm'),
       };
     });
@@ -251,19 +265,22 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Gestão do Evento: {eventTitle}
-        </CardTitle>
-        <p className="text-sm text-muted-foreground mt-2">
-          {invitations.length} {invitations.length === 1 ? 'convite' : 'convites'} e{' '}
-          {confirmations.length} {confirmations.length === 1 ? 'confirmação' : 'confirmações'}
-        </p>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="invitations" className="w-full">
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Gestão do Evento: {eventTitle}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {invitations.length} {invitations.length === 1 ? 'convite' : 'convites'} e{' '}
+              {confirmations.length} {confirmations.length === 1 ? 'confirmação' : 'confirmações'}
+            </p>
+          </div>
+        </div>
+      </div>
+      <Tabs defaultValue="invitations" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="invitations" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -277,7 +294,8 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
 
           {/* TAB: CONVITES */}
           <TabsContent value="invitations" className="space-y-4 mt-4">
-            <div className="flex justify-end">
+            <div className="max-h-[calc(92vh-200px)] overflow-y-auto pr-2 space-y-4">
+              <div className="flex justify-end">
               {invitations.length > 0 && (
                 <Button onClick={exportToCSV} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
@@ -320,12 +338,12 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Nome do Amigo</TableHead>
-                              <TableHead>Idade</TableHead>
-                              <TableHead>Telefone</TableHead>
-                              <TableHead>Responsável</TableHead>
-                              <TableHead>Contato Resp.</TableHead>
-                              <TableHead>Data</TableHead>
+                              <TableHead className="w-[20%]">Nome do Amigo</TableHead>
+                              <TableHead className="w-[12%]">Idade</TableHead>
+                              <TableHead className="w-[15%]">Telefone</TableHead>
+                              <TableHead className="w-[18%]">Responsável</TableHead>
+                              <TableHead className="w-[15%]">Contato Resp.</TableHead>
+                              <TableHead className="w-[20%]">Data</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -349,14 +367,14 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                                       </Badge>
                                     </div>
                                   </TableCell>
-                                  <TableCell>
-                                    {inv.friend_contact}
+                                  <TableCell className="text-sm font-mono">
+                                    {formatPhone(inv.friend_contact)}
                                   </TableCell>
                                   <TableCell className="text-muted-foreground">
                                     {inv.parent_name || '-'}
                                   </TableCell>
-                                  <TableCell className="text-muted-foreground">
-                                    {inv.parent_contact || '-'}
+                                  <TableCell className="text-sm font-mono">
+                                    {formatPhone(inv.parent_contact)}
                                   </TableCell>
                                   <TableCell className="text-muted-foreground text-sm">
                                     {format(new Date(inv.created_at), "dd/MM/yyyy 'às' HH:mm")}
@@ -372,11 +390,13 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                 ))}
               </Accordion>
             )}
+            </div>
           </TabsContent>
 
           {/* TAB: CONFIRMAÇÕES */}
           <TabsContent value="confirmations" className="space-y-4 mt-4">
-            <div className="flex justify-end">
+            <div className="max-h-[calc(92vh-200px)] overflow-y-auto pr-2 space-y-4">
+              <div className="flex justify-end">
               {confirmations.length > 0 && (
                 <Button onClick={exportConfirmationsToCSV} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
@@ -417,9 +437,9 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                 </Table>
               </div>
             )}
+            </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+    </div>
   );
 }
