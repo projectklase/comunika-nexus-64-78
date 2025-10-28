@@ -22,6 +22,7 @@ import { Download, Users, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { format, differenceInYears } from 'date-fns';
+import { ExportSelectionModal } from './ExportSelectionModal';
 
 interface EventInvitation {
   id: string;
@@ -83,6 +84,7 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
   const [invitations, setInvitations] = useState<EventInvitation[]>([]);
   const [confirmations, setConfirmations] = useState<EventConfirmation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -278,6 +280,15 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
               {confirmations.length} {confirmations.length === 1 ? 'confirmação' : 'confirmações'}
             </p>
           </div>
+          <Button 
+            onClick={() => setShowExportModal(true)} 
+            variant="default"
+            size="sm"
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Exportar Dados
+          </Button>
         </div>
       </div>
       <Tabs defaultValue="invitations" className="w-full">
@@ -295,14 +306,6 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
           {/* TAB: CONVITES */}
           <TabsContent value="invitations" className="space-y-4 mt-4">
             <div className="max-h-[calc(92vh-200px)] overflow-y-auto pr-2 space-y-4">
-              <div className="flex justify-end">
-              {invitations.length > 0 && (
-                <Button onClick={exportToCSV} variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar CSV
-                </Button>
-              )}
-            </div>
 
             {invitations.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
@@ -398,14 +401,6 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
           {/* TAB: CONFIRMAÇÕES */}
           <TabsContent value="confirmations" className="space-y-4 mt-4">
             <div className="max-h-[calc(92vh-200px)] overflow-y-auto pr-2 space-y-4">
-              <div className="flex justify-end">
-              {confirmations.length > 0 && (
-                <Button onClick={exportConfirmationsToCSV} variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar CSV
-                </Button>
-              )}
-            </div>
 
             {confirmations.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
@@ -442,6 +437,23 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
             </div>
           </TabsContent>
         </Tabs>
+
+      {/* Modal de Seleção de Exportação */}
+      <ExportSelectionModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        eventTitle={eventTitle}
+        invitationsCount={invitations.length}
+        confirmationsCount={confirmations.length}
+        onExportInvitations={exportToCSV}
+        onExportConfirmations={exportConfirmationsToCSV}
+        onOpenAttendanceChecklist={() => {
+          toast({
+            title: 'Em breve',
+            description: 'A lista de chamada será implementada na próxima fase.',
+          });
+        }}
+      />
     </div>
   );
 }
