@@ -328,7 +328,7 @@ export type Database = {
         Row: {
           created_at: string
           event_id: string
-          friend_contact: string
+          friend_contact: string | null
           friend_dob: string
           friend_name: string
           id: string
@@ -339,7 +339,7 @@ export type Database = {
         Insert: {
           created_at?: string
           event_id: string
-          friend_contact: string
+          friend_contact?: string | null
           friend_dob: string
           friend_name: string
           id?: string
@@ -350,7 +350,7 @@ export type Database = {
         Update: {
           created_at?: string
           event_id?: string
-          friend_contact?: string
+          friend_contact?: string | null
           friend_dob?: string
           friend_name?: string
           id?: string
