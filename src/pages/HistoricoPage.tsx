@@ -344,9 +344,9 @@ function TimelineView({ events }: { events: AuditEvent[] }) {
             <div className="flex items-start space-x-4">
               {/* Avatar */}
               <Avatar className="h-10 w-10">
-                <AvatarImage src="" alt={event.actor_name} />
+                <AvatarImage src="" alt={event.actor_name || 'Usuário'} />
                 <AvatarFallback className="glass">
-                  {event.actor_name.split(' ').map(n => n[0]).join('')}
+                  {event.actor_name ? event.actor_name.split(' ').map(n => n[0]).join('') : '?'}
                 </AvatarFallback>
               </Avatar>
               
@@ -434,12 +434,12 @@ function TableView({ events }: { events: AuditEvent[] }) {
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-6 w-6">
                       <AvatarFallback className="text-xs">
-                        {event.actor_name.split(' ').map(n => n[0]).join('')}
+                        {event.actor_name ? event.actor_name.split(' ').map(n => n[0]).join('') : '?'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="text-sm font-medium">{event.actor_name}</div>
-                      <div className="text-xs text-muted-foreground">{event.actor_role}</div>
+                      <div className="text-sm font-medium">{event.actor_name || 'Usuário desconhecido'}</div>
+                      <div className="text-xs text-muted-foreground">{event.actor_role || 'N/A'}</div>
                     </div>
                   </div>
                 </td>
