@@ -364,124 +364,98 @@ export function AttendanceChecklistModal({
       return;
     }
 
-    const csvData: any[] = [];
+    // Array para armazenar linhas de texto puro (melhor compatibilidade)
+    const csvLines: string[] = [];
     
-    // Header section
-    csvData.push({
-      col1: '═══════════════════════════════════════════════════════',
-    });
-    csvData.push({
-      col1: `LISTA DE CHAMADA - EVENTO: ${eventTitle}`,
-    });
-    csvData.push({
-      col1: `Data de Exportação: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
-    });
-    csvData.push({
-      col1: '═══════════════════════════════════════════════════════',
-    });
-    csvData.push({}); // Empty row
+    // Header decorativo
+    const separator = '═'.repeat(80);
+    csvLines.push(separator);
+    csvLines.push(`LISTA DE CHAMADA - EVENTO: ${eventTitle} | Data: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`);
+    csvLines.push(separator);
+    csvLines.push(''); // Linha vazia
     
-    // List header
-    csvData.push({
-      'Nº': 'Nº',
-      'Tipo': 'Tipo',
-      'Nome': 'Nome',
-      'Idade': 'Idade',
-      'Observações': 'Observações',
-      'Presente': 'Presente',
-    });
+    // Cabeçalho da tabela
+    csvLines.push('Nº,Tipo,Nome,Idade,Observações,Presente');
     
     let rowNumber = 1;
     
+    // Lista de alunos e convidados
     for (const student of students) {
-      // Student row
-      csvData.push({
-        'Nº': String(rowNumber).padStart(2, '0'),
-        'Tipo': 'ALUNO',
-        'Nome': student.studentName,
-        'Idade': '-',
-        'Observações': student.guests.length > 0 ? `${student.guests.length} convidado(s)` : '-',
-        'Presente': '[ ]',
-      });
+      // Linha do aluno
+      const studentRow = [
+        String(rowNumber).padStart(2, '0'),
+        'ALUNO',
+        `"${student.studentName}"`, // Aspas para nomes com vírgula
+        '-',
+        student.guests.length > 0 ? `${student.guests.length} convidado(s)` : '-',
+        '[ ]'
+      ].join(',');
+      
+      csvLines.push(studentRow);
       rowNumber++;
       
-      // Guest rows
+      // Linhas dos convidados (com indentação visual)
       for (const guest of student.guests) {
         const observations = guest.isMinor 
           ? `⚠️ MENOR - Resp: ${guest.parentName || 'Não informado'}`
           : '-';
         
-        csvData.push({
-          'Nº': String(rowNumber).padStart(2, '0'),
-          'Tipo': 'CONVIDADO',
-          'Nome': `└─ ${guest.guestName}`,
-          'Idade': `${guest.guestAge} anos`,
-          'Observações': observations,
-          'Presente': '[ ]',
-        });
+        const guestRow = [
+          String(rowNumber).padStart(2, '0'),
+          'CONVIDADO',
+          `"  └─ ${guest.guestName}"`, // Indentação + aspas para segurança
+          `${guest.guestAge} anos`,
+          `"${observations}"`, // Aspas para evitar problemas com caracteres especiais
+          '[ ]'
+        ].join(',');
+        
+        csvLines.push(guestRow);
         rowNumber++;
       }
     }
     
-    // Summary section
-    csvData.push({});
-    csvData.push({
-      col1: '═══════════════════════════════════════════════════════',
-    });
-    csvData.push({
-      col1: 'RESUMO DO EVENTO',
-    });
-    csvData.push({
-      col1: '═══════════════════════════════════════════════════════',
-    });
-    csvData.push({
-      'Nº': 'TOTAL DE ALUNOS CONFIRMADOS',
-      'Tipo': stats.totalStudents,
-    });
-    csvData.push({
-      'Nº': 'TOTAL DE CONVIDADOS',
-      'Tipo': stats.totalGuests,
-    });
-    csvData.push({
-      'Nº': 'TOTAL DE PESSOAS',
-      'Tipo': stats.totalStudents + stats.totalGuests,
-    });
-    csvData.push({});
-    csvData.push({
-      'Nº': 'ALUNOS PRESENTES',
-      'Tipo': stats.studentsPresent,
-    });
-    csvData.push({
-      'Nº': 'CONVIDADOS PRESENTES',
-      'Tipo': stats.guestsPresent,
-    });
-    csvData.push({
-      'Nº': 'TOTAL PRESENTES',
-      'Tipo': stats.totalPresent,
-    });
-    csvData.push({
-      'Nº': 'TOTAL AUSENTES',
-      'Tipo': stats.totalAbsent,
-    });
-    csvData.push({});
+    // Separador para resumo
+    csvLines.push('');
+    csvLines.push(separator);
+    csvLines.push('RESUMO DO EVENTO');
+    csvLines.push(separator);
+    csvLines.push('Métrica,Valor');
+    
+    // Dados do resumo
+    csvLines.push(`TOTAL DE ALUNOS CONFIRMADOS,${stats.totalStudents}`);
+    csvLines.push(`TOTAL DE CONVIDADOS,${stats.totalGuests}`);
+    csvLines.push(`TOTAL DE PESSOAS,${stats.totalStudents + stats.totalGuests}`);
+    csvLines.push(','); // Linha vazia (separador visual)
+    csvLines.push(`ALUNOS PRESENTES,${stats.studentsPresent}`);
+    csvLines.push(`CONVIDADOS PRESENTES,${stats.guestsPresent}`);
+    csvLines.push(`TOTAL PRESENTES,${stats.totalPresent}`);
+    csvLines.push(`TOTAL AUSENTES,${stats.totalAbsent}`);
+    csvLines.push(','); // Linha vazia (separador visual)
+    
     const totalPeople = stats.totalStudents + stats.totalGuests;
     const attendanceRate = totalPeople > 0 ? ((stats.totalPresent / totalPeople) * 100).toFixed(1) : '0.0';
-    csvData.push({
-      'Nº': 'TAXA DE COMPARECIMENTO',
-      'Tipo': `${attendanceRate}%`,
+    csvLines.push(`TAXA DE COMPARECIMENTO,${attendanceRate}%`);
+    
+    // Juntar todas as linhas
+    const csvContent = csvLines.join('\n');
+    
+    // Criar blob com BOM para UTF-8 (garante acentos no Excel)
+    const blob = new Blob(['\uFEFF' + csvContent], { 
+      type: 'text/csv;charset=utf-8;' 
     });
     
-    const csv = Papa.unparse(csvData);
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    // Download
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
+    const filename = `lista_chamada_${eventTitle.replace(/\s+/g, '_')}_${Date.now()}.csv`;
     
     link.setAttribute('href', url);
-    link.setAttribute('download', `lista_chamada_${eventTitle.replace(/\s+/g, '_')}_${Date.now()}.csv`);
+    link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     toast({
       title: '📥 Lista exportada!',
