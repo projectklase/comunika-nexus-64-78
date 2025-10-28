@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, Users, Download, Save, CheckSquare, Square, AlertCircle, Clock, Printer, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import Papa from 'papaparse';
+import ExcelJS from 'exceljs';
 
 interface AttendanceGuest {
   invitationId: string;
@@ -353,8 +353,8 @@ export function AttendanceChecklistModal({
     }
   };
 
-  // Exportar lista de chamada
-  const exportAttendanceList = () => {
+  // ==================== EXPORTAR LISTA DE CHAMADA (XLSX) ====================
+  const exportAttendanceListXLSX = async () => {
     if (students.length === 0) {
       toast({
         title: '⚠️ Lista vazia',
@@ -364,103 +364,234 @@ export function AttendanceChecklistModal({
       return;
     }
 
-    // Array para armazenar linhas de texto puro (melhor compatibilidade)
-    const csvLines: string[] = [];
-    
-    // Header decorativo - todas as colunas devem ser definidas
-    const separator = '═'.repeat(80);
-    csvLines.push(`"${separator}","","","","",""`);
-    csvLines.push(`"LISTA DE CHAMADA - EVENTO: ${eventTitle} | Data: ${format(new Date(), 'dd/MM/yyyy HH:mm')}","","","","",""`);
-    csvLines.push(`"${separator}","","","","",""`);
-    csvLines.push('","","","","","'); // Linha vazia
-    
-    // Cabeçalho da tabela
-    csvLines.push('"Nº","Tipo","Nome","Idade","Observações","Presente"');
-    
-    let rowNumber = 1;
-    
-    // Lista de alunos e convidados
-    for (const student of students) {
-      // Linha do aluno
-      const studentRow = [
-        `"${String(rowNumber).padStart(2, '0')}"`,
-        '"ALUNO"',
-        `"${student.studentName.replace(/"/g, '""')}"`, // Escape de aspas duplas
-        '"-"',
-        `"${student.guests.length > 0 ? student.guests.length + ' convidado(s)' : '-'}"`,
-        '"[ ]"'
-      ].join(',');
-      
-      csvLines.push(studentRow);
-      rowNumber++;
-      
-      // Linhas dos convidados (com indentação visual)
-      for (const guest of student.guests) {
-        const observations = guest.isMinor 
-          ? `⚠️ MENOR - Resp: ${guest.parentName || 'Não informado'}`
-          : '-';
+    try {
+      // 1. Criar workbook e worksheet
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Lista de Chamada', {
+        properties: { tabColor: { argb: 'FF4A90E2' } },
+        pageSetup: { 
+          paperSize: 9, // A4
+          orientation: 'portrait',
+          fitToPage: true 
+        }
+      });
+
+      // 2. Configurar larguras das colunas
+      worksheet.columns = [
+        { key: 'numero', width: 5 },
+        { key: 'tipo', width: 12 },
+        { key: 'nome', width: 35 },
+        { key: 'idade', width: 10 },
+        { key: 'observacoes', width: 30 },
+        { key: 'presente', width: 10 }
+      ];
+
+      // 3. Adicionar título principal (linha 1, mesclada)
+      worksheet.mergeCells('A1:F1');
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = `LISTA DE CHAMADA - EVENTO: ${eventTitle} | Data: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      titleCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE8E8E8' }
+      };
+      titleCell.border = {
+        top: { style: 'thick' },
+        bottom: { style: 'thick' },
+        left: { style: 'thick' },
+        right: { style: 'thick' }
+      };
+
+      // 4. Linha vazia para espaçamento
+      worksheet.addRow([]);
+
+      // 5. Adicionar cabeçalhos da tabela (linha 3)
+      const headerRow = worksheet.addRow(['Nº', 'Tipo', 'Nome', 'Idade', 'Observações', 'Presente']);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4A90E2' }
+      };
+      headerRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'medium' },
+          bottom: { style: 'medium' },
+          left: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+      headerRow.height = 25;
+
+      // 6. Adicionar dados de alunos e convidados
+      let rowNumber = 1;
+      for (const student of students) {
+        // Linha do aluno
+        const studentRow = worksheet.addRow([
+          String(rowNumber).padStart(2, '0'),
+          'ALUNO',
+          student.studentName,
+          '-',
+          student.guests.length > 0 ? `${student.guests.length} convidado(s)` : '-',
+          '[ ]'
+        ]);
         
-        const guestRow = [
-          `"${String(rowNumber).padStart(2, '0')}"`,
-          '"CONVIDADO"',
-          `"  └─ ${guest.guestName.replace(/"/g, '""')}"`, // Escape de aspas duplas
-          `"${guest.guestAge} anos"`,
-          `"${observations.replace(/"/g, '""')}"`, // Escape de aspas duplas
-          '"[ ]"'
-        ].join(',');
+        // Estilo para linha do aluno
+        studentRow.font = { bold: true };
+        studentRow.alignment = { vertical: 'middle' };
+        studentRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
         
-        csvLines.push(guestRow);
         rowNumber++;
+
+        // Linhas dos convidados
+        for (const guest of student.guests) {
+          const observations = guest.isMinor 
+            ? `⚠️ MENOR - Resp: ${guest.parentName || 'Não informado'}`
+            : '-';
+          
+          const guestRow = worksheet.addRow([
+            String(rowNumber).padStart(2, '0'),
+            'CONVIDADO',
+            `  └─ ${guest.guestName}`,
+            `${guest.guestAge} anos`,
+            observations,
+            '[ ]'
+          ]);
+
+          // Estilo para linha do convidado
+          guestRow.alignment = { vertical: 'middle' };
+          guestRow.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' },
+              left: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+          });
+
+          // Cor vermelha para menores
+          if (guest.isMinor) {
+            guestRow.getCell(5).font = { color: { argb: 'FFFF0000' }, bold: true };
+          }
+
+          rowNumber++;
+        }
       }
+
+      // 7. Adicionar seção de resumo
+      const summaryStartRow = worksheet.rowCount + 2;
+      
+      // Título do resumo (mesclado)
+      worksheet.mergeCells(`A${summaryStartRow}:F${summaryStartRow}`);
+      const summaryTitle = worksheet.getCell(`A${summaryStartRow}`);
+      summaryTitle.value = 'RESUMO DO EVENTO';
+      summaryTitle.font = { bold: true, size: 13 };
+      summaryTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+      summaryTitle.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE8E8E8' }
+      };
+      summaryTitle.border = {
+        top: { style: 'thick' },
+        bottom: { style: 'medium' },
+        left: { style: 'thick' },
+        right: { style: 'thick' }
+      };
+
+      // Cabeçalhos do resumo
+      const summaryHeaderRow = worksheet.addRow(['Métrica', 'Valor']);
+      summaryHeaderRow.font = { bold: true };
+      summaryHeaderRow.alignment = { horizontal: 'center' };
+      summaryHeaderRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD3D3D3' }
+      };
+      summaryHeaderRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+
+      // Dados do resumo
+      const totalPeople = stats.totalStudents + stats.totalGuests;
+      const summaryData = [
+        ['TOTAL DE ALUNOS CONFIRMADOS', stats.totalStudents],
+        ['TOTAL DE CONVIDADOS', stats.totalGuests],
+        ['TOTAL DE PESSOAS', totalPeople],
+        ['', ''],
+        ['ALUNOS PRESENTES', stats.studentsPresent],
+        ['CONVIDADOS PRESENTES', stats.guestsPresent],
+        ['TOTAL PRESENTES', stats.totalPresent],
+        ['TOTAL AUSENTES', stats.totalAbsent],
+        ['', ''],
+        ['TAXA DE COMPARECIMENTO', 
+         `${totalPeople > 0 ? ((stats.totalPresent / totalPeople) * 100).toFixed(1) : '0.0'}%`]
+      ];
+
+      summaryData.forEach(([metric, value]) => {
+        const row = worksheet.addRow([metric, value]);
+        row.eachCell((cell, colNumber) => {
+          if (metric !== '') {
+            cell.border = {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' },
+              left: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+            if (colNumber === 1) {
+              cell.font = { bold: true };
+            }
+            cell.alignment = { vertical: 'middle' };
+          }
+        });
+      });
+
+      // 8. Gerar e baixar arquivo
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      const filename = `lista_chamada_${eventTitle.replace(/\s+/g, '_')}_${Date.now()}.xlsx`;
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: '📥 Lista exportada!',
+        description: `Arquivo Excel profissional gerado com ${rowNumber - 1} registros`,
+      });
+
+    } catch (error) {
+      console.error('Erro ao exportar XLSX:', error);
+      toast({
+        title: '❌ Erro na exportação',
+        description: 'Não foi possível gerar o arquivo Excel',
+        variant: 'destructive',
+      });
     }
-    
-    // Separador para resumo - manter estrutura de 6 colunas
-    csvLines.push('"","","","","",""');
-    csvLines.push(`"${separator}","","","","",""`);
-    csvLines.push('"RESUMO DO EVENTO","","","","",""');
-    csvLines.push(`"${separator}","","","","",""`);
-    csvLines.push('"Métrica","Valor","","","",""');
-    
-    // Dados do resumo - manter estrutura de 6 colunas
-    csvLines.push(`"TOTAL DE ALUNOS CONFIRMADOS","${stats.totalStudents}","","","",""`);
-    csvLines.push(`"TOTAL DE CONVIDADOS","${stats.totalGuests}","","","",""`);
-    csvLines.push(`"TOTAL DE PESSOAS","${stats.totalStudents + stats.totalGuests}","","","",""`);
-    csvLines.push('"","","","","",""'); // Linha vazia (separador visual)
-    csvLines.push(`"ALUNOS PRESENTES","${stats.studentsPresent}","","","",""`);
-    csvLines.push(`"CONVIDADOS PRESENTES","${stats.guestsPresent}","","","",""`);
-    csvLines.push(`"TOTAL PRESENTES","${stats.totalPresent}","","","",""`);
-    csvLines.push(`"TOTAL AUSENTES","${stats.totalAbsent}","","","",""`);
-    csvLines.push('"","","","","",""'); // Linha vazia (separador visual)
-    
-    const totalPeople = stats.totalStudents + stats.totalGuests;
-    const attendanceRate = totalPeople > 0 ? ((stats.totalPresent / totalPeople) * 100).toFixed(1) : '0.0';
-    csvLines.push(`"TAXA DE COMPARECIMENTO","${attendanceRate}%","","","",""`);
-    
-    // Juntar todas as linhas
-    const csvContent = csvLines.join('\n');
-    
-    // Criar blob com BOM para UTF-8 (garante acentos no Excel)
-    const blob = new Blob(['\uFEFF' + csvContent], { 
-      type: 'text/csv;charset=utf-8;' 
-    });
-    
-    // Download
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    const filename = `lista_chamada_${eventTitle.replace(/\s+/g, '_')}_${Date.now()}.csv`;
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: '📥 Lista exportada!',
-      description: `${rowNumber - 1} registros exportados com sucesso`,
-    });
   };
 
   // Imprimir lista de chamada
@@ -913,13 +1044,13 @@ export function AttendanceChecklistModal({
             Imprimir
           </Button>
           <Button
-            onClick={exportAttendanceList}
+            onClick={exportAttendanceListXLSX}
             variant="outline"
             disabled={isLoading || students.length === 0}
             className="gap-2"
           >
             <Download className="h-4 w-4" />
-            Exportar CSV
+            Exportar Excel
           </Button>
           <Button
             onClick={() => onOpenChange(false)}
