@@ -207,43 +207,29 @@ const Login = () => {
     setIsSubmitting(true);
     
     try {
+      // ✅ Credenciais reais
       const credentials = {
-        secretaria: { email: 'secretaria@comunika.com', name: 'Maria Silva' },
-        professor: { email: 'professor@exemplo.com', name: 'Professor Exemplo' },
-        aluno: { email: 'aluno@exemplo.com', name: 'Aluno Exemplo' }
+        secretaria: { email: 'secretaria@comunika.com', password: '123456', name: 'Maria Silva' },
+        professor: { email: 'julianegrini@gmail.com', password: 'Prof9105!', name: 'Juliane Grini' },
+        aluno: { email: 'alinemenezes@gmail.com', password: 'Praia-Chuva-Lua-814$', name: 'Aline Menezes' }
       };
       
-      const { email, name } = credentials[role as keyof typeof credentials];
-      
+      const { email, password, name } = credentials[role as keyof typeof credentials];
       console.log(`QuickLogin attempt for ${role}: ${email}`);
       
-      // Force create demo user for professor and aluno (they might not exist)
-      if (role !== 'secretaria' && createDemoUser) {
-        console.log(`Force creating demo user for ${role}`);
-        const createResult = await createDemoUser(email, '123456', name, role);
-        if (!createResult) {
-          setFormError(`Erro ao criar usuário de demonstração (${role}).`);
-          setIsSubmitting(false);
-          return;
-        }
-        // Add longer delay for user creation and profile trigger to complete
-        console.log('Waiting for profile creation to complete...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
-      
-      // Now attempt login
-      const result = await login(email, '123456');
+      // ✅ Tenta login direto com credenciais reais (contas já existem no banco)
+      const result = await login(email, password);
       
       console.log(`QuickLogin result for ${role}:`, result);
       
       if (result.success) {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao Comunika.",
+          description: `Bem-vindo(a), ${name}!`,
         });
       } else {
         console.error(`Login failed for ${role}: ${result.error}`);
-        setFormError(result.error || `Erro ao fazer login com conta de demonstração (${role}).`);
+        setFormError(result.error || `Erro ao fazer login rápido (${role}).`);
         setIsSubmitting(false);
       }
     } catch (error) {
