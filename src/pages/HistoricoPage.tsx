@@ -473,7 +473,9 @@ function TableView({ events }: { events: AuditEvent[] }) {
 
 // Event Details Drawer
 function EventDetailsDrawer({ event }: { event: AuditEvent }) {
-  const diffEntries = Object.entries(event.diff_json);
+  const diffEntries = event.diff_json && typeof event.diff_json === 'object' 
+    ? Object.entries(event.diff_json) 
+    : [];
   
   return (
     <Drawer>
@@ -505,11 +507,11 @@ function EventDetailsDrawer({ event }: { event: AuditEvent }) {
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Usuário</label>
-              <p>{event.actor_name} ({event.actor_email})</p>
+              <p>{event.actor_name || 'Usuário desconhecido'} ({event.actor_email || 'Email não disponível'})</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Role</label>
-              <p>{event.actor_role}</p>
+              <p>{event.actor_role || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Escopo</label>

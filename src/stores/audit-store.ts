@@ -43,6 +43,10 @@ export const useAuditStore = create<AuditStore>((set, get) => ({
         events: ((data || []) as any[]).map((event: any) => ({
           ...event,
           school_id: event.school_id || 'default',
+          diff_json: event.diff_json && typeof event.diff_json === 'object' ? event.diff_json : {},
+          actor_name: event.actor_name || 'Usuário desconhecido',
+          actor_email: event.actor_email || '',
+          actor_role: event.actor_role || 'N/A',
         })) as AuditEvent[],
         loading: false 
       });
@@ -106,10 +110,10 @@ export const useAuditStore = create<AuditStore>((set, get) => ({
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(e =>
-        e.entity_label.toLowerCase().includes(searchLower) ||
-        e.actor_name.toLowerCase().includes(searchLower) ||
-        e.actor_email.toLowerCase().includes(searchLower) ||
-        e.entity_id.toLowerCase().includes(searchLower)
+        e.entity_label?.toLowerCase().includes(searchLower) ||
+        e.actor_name?.toLowerCase().includes(searchLower) ||
+        e.actor_email?.toLowerCase().includes(searchLower) ||
+        e.entity_id?.toLowerCase().includes(searchLower)
       );
     }
 

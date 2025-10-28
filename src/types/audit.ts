@@ -40,10 +40,10 @@ export interface AuditEvent {
   };
   
   // Diff (antes/depois)
-  diff_json: Record<string, {
+  diff_json?: Record<string, {
     before: any;
     after: any;
-  }>;
+  }> | null;
 }
 
 export interface AuditFilters {
