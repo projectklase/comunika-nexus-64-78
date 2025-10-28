@@ -334,18 +334,19 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pt-2 pb-4">
-                      <div className="rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[20%]">Nome do Amigo</TableHead>
-                              <TableHead className="w-[12%]">Idade</TableHead>
-                              <TableHead className="w-[15%]">Telefone</TableHead>
-                              <TableHead className="w-[18%]">Responsável</TableHead>
-                              <TableHead className="w-[15%]">Contato Resp.</TableHead>
-                              <TableHead className="w-[20%]">Data</TableHead>
-                            </TableRow>
-                          </TableHeader>
+                      <div className="overflow-x-auto">
+                        <div className="rounded-md border min-w-[800px]">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="min-w-[140px]">Nome do Amigo</TableHead>
+                                <TableHead className="min-w-[100px]">Idade</TableHead>
+                                <TableHead className="min-w-[130px]">Telefone</TableHead>
+                                <TableHead className="min-w-[140px]">Responsável</TableHead>
+                                <TableHead className="min-w-[130px]">Contato Resp.</TableHead>
+                                <TableHead className="min-w-[140px]">Data</TableHead>
+                              </TableRow>
+                            </TableHeader>
                           <TableBody>
                             {group.invitations.map((inv) => {
                               const age = calculateAge(inv.friend_dob);
@@ -353,37 +354,38 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
                               
                               return (
                                 <TableRow key={inv.id}>
-                                  <TableCell className="font-medium">
+                                  <TableCell className="font-medium text-sm">
                                     {inv.friend_name}
                                   </TableCell>
                                   <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <span>{age} anos</span>
+                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                      <span className="text-sm">{age} anos</span>
                                       <Badge 
                                         variant={isMinor ? "destructive" : "secondary"}
-                                        className="text-xs"
+                                        className="text-[10px] px-1.5 py-0"
                                       >
                                         {isMinor ? 'Menor' : 'Maior'}
                                       </Badge>
                                     </div>
                                   </TableCell>
-                                  <TableCell className="text-sm font-mono">
+                                  <TableCell className="text-sm font-mono whitespace-nowrap">
                                     {formatPhone(inv.friend_contact)}
                                   </TableCell>
-                                  <TableCell className="text-muted-foreground">
+                                  <TableCell className="text-muted-foreground text-sm truncate max-w-[140px]" title={inv.parent_name || '-'}>
                                     {inv.parent_name || '-'}
                                   </TableCell>
-                                  <TableCell className="text-sm font-mono">
+                                  <TableCell className="text-sm font-mono whitespace-nowrap">
                                     {formatPhone(inv.parent_contact)}
                                   </TableCell>
-                                  <TableCell className="text-muted-foreground text-sm">
-                                    {format(new Date(inv.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                                  <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                                    {format(new Date(inv.created_at), "dd/MM/yy HH:mm")}
                                   </TableCell>
                                 </TableRow>
                               );
                             })}
                           </TableBody>
                         </Table>
+                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
