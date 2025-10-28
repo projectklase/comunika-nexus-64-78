@@ -70,32 +70,42 @@ export default function NovaAtividade() {
   // Load existing post for editing
   useEffect(() => {
     if (isEditMode && editId) {
-      postStore.getById(editId).then(existingPost => {
-        if (existingPost) {
-          setActivityType(existingPost.type as ActivityType);
-          setFormData({
-            title: existingPost.title,
-            body: existingPost.body || '',
-            classId: existingPost.classIds?.[0] || existingPost.classId || '',
-            dueDate: existingPost.dueAt ? new Date(existingPost.dueAt) : null,
-            dueTime: existingPost.dueAt ? format(new Date(existingPost.dueAt), 'HH:mm') : '23:59'
-          });
-          if (existingPost.activityMeta) {
-            setActivityMeta(existingPost.activityMeta);
+      postStore.getById(editId)
+        .then(existingPost => {
+          if (existingPost) {
+            setActivityType(existingPost.type as ActivityType);
+            setFormData({
+              title: existingPost.title,
+              body: existingPost.body || '',
+              classId: existingPost.classIds?.[0] || existingPost.classId || '',
+              dueDate: existingPost.dueAt ? new Date(existingPost.dueAt) : null,
+              dueTime: existingPost.dueAt ? format(new Date(existingPost.dueAt), 'HH:mm') : '23:59'
+            });
+            if (existingPost.activityMeta) {
+              setActivityMeta(existingPost.activityMeta);
+            }
+            // Remove edit param after loading
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('edit');
+            setSearchParams(newParams, { replace: true });
+          } else {
+            toast({
+              title: "Erro",
+              description: "Atividade não encontrada para edição.",
+              variant: "destructive",
+            });
+            navigate('/professor/atividades');
           }
-          // Remove edit param after loading
-          const newParams = new URLSearchParams(searchParams);
-          newParams.delete('edit');
-          setSearchParams(newParams, { replace: true });
-        } else {
+        })
+        .catch(error => {
+          console.error('Erro ao carregar atividade:', error);
           toast({
-            title: "Erro",
-            description: "Atividade não encontrada para edição.",
+            title: "Erro ao carregar",
+            description: "Não foi possível carregar a atividade. Tente novamente.",
             variant: "destructive",
           });
           navigate('/professor/atividades');
-        }
-      });
+        });
     }
   }, [isEditMode, editId, searchParams, setSearchParams, navigate, toast]);
 
@@ -213,7 +223,7 @@ export default function NovaAtividade() {
 
       if (isEditMode && editId) {
         // Update existing post
-        postStore.update(editId, {
+        await postStore.update(editId, {
           type: activityType as PostType,
           title: formData.title,
           body: formData.body || undefined,
