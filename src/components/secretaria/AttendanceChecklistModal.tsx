@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } fromresumo ao "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -537,7 +537,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row7 = worksheet.getRow(7);
       row7.getCell("H").value = "TOTAL DE ALUNOS";
       row7.getCell("H").font = { bold: true };
-      row7.getCell("I").value = { formula: `COUNTIF(B${dataRange}, "ALUNO")` };
+      row7.getCell("I").value = { formula: 'COUNTIF(B:B, "ALUNO")' };
       row7.getCell("I").numFmt = "0";
       addBorders(row7.getCell("H"));
       addBorders(row7.getCell("I"));
@@ -546,7 +546,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row8 = worksheet.getRow(8);
       row8.getCell("H").value = "TOTAL DE CONVIDADOS";
       row8.getCell("H").font = { bold: true };
-      row8.getCell("I").value = { formula: `COUNTIF(B${dataRange}, "CONVIDADO")` };
+      row8.getCell("I").value = { formula: 'COUNTIF(B:B, "CONVIDADO")' };
       row8.getCell("I").numFmt = "0";
       addBorders(row8.getCell("H"));
       addBorders(row8.getCell("I"));
@@ -565,7 +565,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row11 = worksheet.getRow(11);
       row11.getCell("H").value = "ALUNOS PRESENTES";
       row11.getCell("H").font = { bold: true };
-      row11.getCell("I").value = { formula: `COUNTIFS(B${dataRange}, "ALUNO", F${dataRange}, "Presente")` };
+      row11.getCell("I").value = { formula: 'COUNTIFS(B:B, "ALUNO", F:F, "Presente")' };
       row11.getCell("I").numFmt = "0";
       addBorders(row11.getCell("H"));
       addBorders(row11.getCell("I"));
@@ -574,7 +574,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row12 = worksheet.getRow(12);
       row12.getCell("H").value = "CONVIDADOS PRESENTES";
       row12.getCell("H").font = { bold: true };
-      row12.getCell("I").value = { formula: `COUNTIFS(B${dataRange}, "CONVIDADO", F${dataRange}, "Presente")` };
+      row12.getCell("I").value = { formula: 'COUNTIFS(B:B, "CONVIDADO", F:F, "Presente")' };
       row12.getCell("I").numFmt = "0";
       addBorders(row12.getCell("H"));
       addBorders(row12.getCell("I"));
@@ -583,7 +583,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row13 = worksheet.getRow(13);
       row13.getCell("H").value = "TOTAL PRESENTES";
       row13.getCell("H").font = { bold: true };
-      row13.getCell("I").value = { formula: `COUNTIF(F${dataRange}, "Presente")` };
+      row13.getCell("I").value = { formula: 'COUNTIF(F:F, "Presente")' };
       row13.getCell("I").numFmt = "0";
       row13.getCell("I").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF90EE90" } };
       addBorders(row13.getCell("H"));
@@ -593,7 +593,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row14 = worksheet.getRow(14);
       row14.getCell("H").value = "TOTAL AUSENTES";
       row14.getCell("H").font = { bold: true };
-      row14.getCell("I").value = { formula: `COUNTIF(F${dataRange}, "Ausente")` };
+      row14.getCell("I").value = { formula: 'COUNTIF(F:F, "Ausente")' };
       row14.getCell("I").numFmt = "0";
       row14.getCell("I").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFCCCC" } };
       addBorders(row14.getCell("H"));
