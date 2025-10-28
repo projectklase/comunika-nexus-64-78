@@ -499,6 +499,9 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
         cell.value = ""; // Vazio ao invés de [ ]
         cell.alignment = { horizontal: "center", vertical: "middle" };
       }
+      
+      const dataRange = `4:${lastDataRow}`;
+      
       // 7. Resumo ao lado (colunas H-I)
       worksheet.mergeCells("H4:I4");
       const summaryTitle = worksheet.getCell("H4");
@@ -537,7 +540,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row7 = worksheet.getRow(7);
       row7.getCell("H").value = "TOTAL DE ALUNOS";
       row7.getCell("H").font = { bold: true };
-      row7.getCell("I").value = { formula: 'COUNTIF(B:B, "ALUNO")' };
+      row7.getCell("I").value = { COUNTIF(B4:B11, "ALUNO")' };
       row7.getCell("I").numFmt = "0";
       addBorders(row7.getCell("H"));
       addBorders(row7.getCell("I"));
@@ -593,7 +596,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row14 = worksheet.getRow(14);
       row14.getCell("H").value = "TOTAL AUSENTES";
       row14.getCell("H").font = { bold: true };
-      row14.getCell("I").value = { formula: 'COUNTIF(F:F, "Ausente")' };
+      row14.getCell("I").value = { formula: "I9-I13" };
       row14.getCell("I").numFmt = "0";
       row14.getCell("I").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFCCCC" } };
       addBorders(row14.getCell("H"));
