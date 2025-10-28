@@ -194,15 +194,16 @@ export default function ProfessorFeed() {
             </div>
           </div>
 
-          {canEdit && (
-            <Button
-              onClick={() => navigate('/professor/atividades/nova')}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Atividade
-            </Button>
-          )}
+      {canEdit && (
+        <Button
+          onClick={() => navigate('/professor/atividades/nova')}
+          className="bg-primary hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Atividade
+        </Button>
+      )}
+        </div>
 
         {/* Feed Metrics Overview */}
         <Card className="glass-card border-border/50">
