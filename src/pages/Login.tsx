@@ -209,8 +209,8 @@ const Login = () => {
     try {
       const credentials = {
         secretaria: { email: 'secretaria@comunika.com', name: 'Maria Silva' },
-        professor: { email: 'julianegrini@gmail.com', name: 'Juliane Grini' },
-        aluno: { email: 'alinemenezes@gmail.com', name: 'Aline Menezes' }
+        professor: { email: 'professor@exemplo.com', name: 'Professor Exemplo' },
+        aluno: { email: 'aluno@exemplo.com', name: 'Aluno Exemplo' }
       };
       
       const { email, name } = credentials[role as keyof typeof credentials];
@@ -231,11 +231,8 @@ const Login = () => {
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
       
-      // Senha para secretaria é '123456'
-      const passwordToUse = role === 'secretaria' ? '123456' : (role === 'professor' ? 'Prof9105!' : 'Praia-Chuva-Lua-814$');
-      
       // Now attempt login
-      const result = await login(email, passwordToUse);
+      const result = await login(email, '123456');
       
       console.log(`QuickLogin result for ${role}:`, result);
       
