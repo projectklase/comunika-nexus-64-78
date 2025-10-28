@@ -9,6 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,11 +64,7 @@ const inviteSchema = z.object({
     { message: "Data de nascimento inválida ou no futuro" }
   ),
   
-  friendContact: z.string()
-    .refine((val) => {
-      const digits = onlyDigits(val);
-      return digits.length >= 10 && digits.length <= 11;
-    }, 'Telefone deve ter 10 ou 11 dígitos (DDD + número)'),
+  friendContact: z.string().optional(), // Opcional: só obrigatório para maiores de 18
   
   parentName: z.string().trim().optional(),
   
@@ -78,6 +84,26 @@ const inviteSchema = z.object({
   }
   
   const isMinor = age < 18;
+  
+  // Se MAIOR de 18, telefone do amigo é obrigatório
+  if (!isMinor && age !== null) {
+    if (!data.friendContact || data.friendContact.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Telefone do amigo é obrigatório para maiores de 18 anos',
+        path: ['friendContact'],
+      });
+    } else {
+      const digits = onlyDigits(data.friendContact);
+      if (digits.length < 10 || digits.length > 11) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Telefone deve ter 10 ou 11 dígitos',
+          path: ['friendContact'],
+        });
+      }
+    }
+  }
   
   // Se menor de 18, nome e telefone do responsável são obrigatórios
   if (isMinor) {
@@ -128,6 +154,7 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
   const [showParentData, setShowParentData] = useState(false);
   const [isMinor, setIsMinor] = useState(false);
+  const [showInviteMoreDialog, setShowInviteMoreDialog] = useState(false);
 
   const {
     register,
@@ -195,7 +222,7 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
         inviting_student_id: studentId,
         friend_name: data.friendName,
         friend_dob: dobISO,
-        friend_contact: data.friendContact,
+        friend_contact: data.friendContact || null, // Pode ser null para menores
         parent_name: data.parentName || null,
         parent_contact: data.parentContact || null,
       });
@@ -204,14 +231,11 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
 
       toast({
         title: 'Amigo convidado com sucesso!',
-        description: `Convite enviado para ${data.friendName}.`,
+        description: `${data.friendName} foi convidado(a) para o evento.`,
       });
 
-      reset();
-      setCalculatedAge(null);
-      setShowParentData(false);
-      setIsMinor(false);
-      onClose();
+      // Mostrar dialog para convidar mais amigos
+      setShowInviteMoreDialog(true);
     } catch (error: any) {
       console.error('Erro ao criar convite:', error);
       toast({
@@ -224,7 +248,26 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
     }
   };
 
+  const handleInviteMore = () => {
+    reset();
+    setCalculatedAge(null);
+    setShowParentData(false);
+    setIsMinor(false);
+    setShowInviteMoreDialog(false);
+    // Modal permanece aberto para novo convite
+  };
+
+  const handleFinishInviting = () => {
+    reset();
+    setCalculatedAge(null);
+    setShowParentData(false);
+    setIsMinor(false);
+    setShowInviteMoreDialog(false);
+    onClose(); // Fecha o modal principal
+  };
+
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -288,33 +331,35 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
             )}
           </div>
 
-          {/* Telefone do Amigo */}
-          <div className="space-y-2">
-            <Label htmlFor="friendContact">Telefone do Amigo *</Label>
-            <Controller
-              name="friendContact"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <InputPhone
-                  id="friendContact"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  disabled={isSubmitting}
-                  error={errors.friendContact?.message}
-                  showError={false}
-                  placeholder="(11) 99999-9999"
-                />
+          {/* Telefone do Amigo - APENAS para maiores de 18 */}
+          {calculatedAge !== null && !isMinor && (
+            <div className="space-y-2">
+              <Label htmlFor="friendContact">Telefone do Amigo *</Label>
+              <Controller
+                name="friendContact"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <InputPhone
+                    id="friendContact"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    disabled={isSubmitting}
+                    error={errors.friendContact?.message}
+                    showError={false}
+                    placeholder="(11) 99999-9999"
+                  />
+                )}
+              />
+              {errors.friendContact && (
+                <p className="text-sm text-destructive">{errors.friendContact.message}</p>
               )}
-            />
-            {errors.friendContact && (
-              <p className="text-sm text-destructive">{errors.friendContact.message}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Informe o telefone com DDD. Ex: (51) 99999-9999
-            </p>
-          </div>
+              <p className="text-xs text-muted-foreground">
+                Informe o telefone com DDD. Ex: (51) 99999-9999
+              </p>
+            </div>
+          )}
 
           {/* Seção de Dados do Responsável - Dinâmica */}
           <div className="space-y-3 pt-2">
@@ -401,19 +446,43 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="min-w-[160px]">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando...
+                  Confirmando...
                 </>
               ) : (
-                'Enviar Convite'
+                'Confirmar Convidado'
               )}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* AlertDialog para convidar mais amigos */}
+    <AlertDialog open={showInviteMoreDialog} onOpenChange={setShowInviteMoreDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-purple-400" />
+            Convidar mais amigos?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Você acabou de confirmar um convite! Deseja convidar mais amigos para este evento?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleFinishInviting}>
+            Não, concluir convites
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleInviteMore}>
+            Sim, convidar mais
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }
