@@ -295,6 +295,71 @@ export type Database = {
           },
         ]
       }
+      event_attendance: {
+        Row: {
+          attended: boolean
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string | null
+          event_id: string
+          guest_invitation_id: string | null
+          id: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          attended?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string | null
+          event_id: string
+          guest_invitation_id?: string | null
+          id?: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          attended?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string | null
+          event_id?: string
+          guest_invitation_id?: string | null
+          id?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendance_checked_by_fkey"
+            columns: ["checked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_guest_invitation_id_fkey"
+            columns: ["guest_invitation_id"]
+            isOneToOne: false
+            referencedRelation: "event_invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_confirmations: {
         Row: {
           confirmed_at: string
