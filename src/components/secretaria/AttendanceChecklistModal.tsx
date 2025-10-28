@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Users, Download, Save, CheckSquare, Square, AlertCircle, Clock } from 'lucide-react';
+import { Search, Users, Download, Save, CheckSquare, Square, AlertCircle, Clock, Printer, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Papa from 'papaparse';
 
@@ -355,40 +355,121 @@ export function AttendanceChecklistModal({
 
   // Exportar lista de chamada
   const exportAttendanceList = () => {
+    if (students.length === 0) {
+      toast({
+        title: '⚠️ Lista vazia',
+        description: 'Não há alunos confirmados para exportar',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const csvData: any[] = [];
     
-    // Cabeçalho com info do evento
+    // Header section
     csvData.push({
-      'Evento': eventTitle,
-      'Data de Exportação': format(new Date(), 'dd/MM/yyyy HH:mm'),
-      'Total de Pessoas': stats.totalStudents + stats.totalGuests,
-      'Total Presentes': stats.totalPresent,
+      col1: '═══════════════════════════════════════════════════════',
+    });
+    csvData.push({
+      col1: `LISTA DE CHAMADA - EVENTO: ${eventTitle}`,
+    });
+    csvData.push({
+      col1: `Data de Exportação: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
+    });
+    csvData.push({
+      col1: '═══════════════════════════════════════════════════════',
+    });
+    csvData.push({}); // Empty row
+    
+    // List header
+    csvData.push({
+      'Nº': 'Nº',
+      'Tipo': 'Tipo',
+      'Nome': 'Nome',
+      'Idade': 'Idade',
+      'Observações': 'Observações',
+      'Presente': 'Presente',
     });
     
-    csvData.push({}); // Linha em branco
+    let rowNumber = 1;
     
-    // Dados dos alunos e convidados
     for (const student of students) {
+      // Student row
       csvData.push({
+        'Nº': String(rowNumber).padStart(2, '0'),
         'Tipo': 'ALUNO',
         'Nome': student.studentName,
         'Idade': '-',
-        'Responsável': student.guests.length > 0 ? `${student.guests.length} convidado(s)` : '-',
-        'Presente': student.studentAttended ? 'SIM' : 'NÃO',
-        'Horário': student.checkedAt ? format(new Date(student.checkedAt), 'HH:mm') : '-',
+        'Observações': student.guests.length > 0 ? `${student.guests.length} convidado(s)` : '-',
+        'Presente': '[ ]',
       });
+      rowNumber++;
       
+      // Guest rows
       for (const guest of student.guests) {
+        const observations = guest.isMinor 
+          ? `⚠️ MENOR - Resp: ${guest.parentName || 'Não informado'}`
+          : '-';
+        
         csvData.push({
+          'Nº': String(rowNumber).padStart(2, '0'),
           'Tipo': 'CONVIDADO',
-          'Nome': `  └─ ${guest.guestName}`,
-          'Idade': `${guest.guestAge} anos${guest.isMinor ? ' ⚠️ MENOR' : ''}`,
-          'Responsável': guest.parentName || '-',
-          'Presente': guest.attended ? 'SIM' : 'NÃO',
-          'Horário': guest.checkedAt ? format(new Date(guest.checkedAt), 'HH:mm') : '-',
+          'Nome': `└─ ${guest.guestName}`,
+          'Idade': `${guest.guestAge} anos`,
+          'Observações': observations,
+          'Presente': '[ ]',
         });
+        rowNumber++;
       }
     }
+    
+    // Summary section
+    csvData.push({});
+    csvData.push({
+      col1: '═══════════════════════════════════════════════════════',
+    });
+    csvData.push({
+      col1: 'RESUMO DO EVENTO',
+    });
+    csvData.push({
+      col1: '═══════════════════════════════════════════════════════',
+    });
+    csvData.push({
+      'Nº': 'TOTAL DE ALUNOS CONFIRMADOS',
+      'Tipo': stats.totalStudents,
+    });
+    csvData.push({
+      'Nº': 'TOTAL DE CONVIDADOS',
+      'Tipo': stats.totalGuests,
+    });
+    csvData.push({
+      'Nº': 'TOTAL DE PESSOAS',
+      'Tipo': stats.totalStudents + stats.totalGuests,
+    });
+    csvData.push({});
+    csvData.push({
+      'Nº': 'ALUNOS PRESENTES',
+      'Tipo': stats.studentsPresent,
+    });
+    csvData.push({
+      'Nº': 'CONVIDADOS PRESENTES',
+      'Tipo': stats.guestsPresent,
+    });
+    csvData.push({
+      'Nº': 'TOTAL PRESENTES',
+      'Tipo': stats.totalPresent,
+    });
+    csvData.push({
+      'Nº': 'TOTAL AUSENTES',
+      'Tipo': stats.totalAbsent,
+    });
+    csvData.push({});
+    const totalPeople = stats.totalStudents + stats.totalGuests;
+    const attendanceRate = totalPeople > 0 ? ((stats.totalPresent / totalPeople) * 100).toFixed(1) : '0.0';
+    csvData.push({
+      'Nº': 'TAXA DE COMPARECIMENTO',
+      'Tipo': `${attendanceRate}%`,
+    });
     
     const csv = Papa.unparse(csvData);
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -404,8 +485,212 @@ export function AttendanceChecklistModal({
     
     toast({
       title: '📥 Lista exportada!',
-      description: `${csvData.length - 2} registros exportados`,
+      description: `${rowNumber - 1} registros exportados com sucesso`,
     });
+  };
+
+  // Imprimir lista de chamada
+  const handlePrint = () => {
+    if (students.length === 0) {
+      toast({
+        title: '⚠️ Lista vazia',
+        description: 'Não há alunos confirmados para imprimir',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: '⚠️ Popup bloqueado',
+        description: 'Permita popups para imprimir a lista',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    let rowNumber = 1;
+    const tableRows = students.map(student => {
+      let rows = `
+        <tr>
+          <td>${String(rowNumber++).padStart(2, '0')}</td>
+          <td>ALUNO</td>
+          <td><strong>${student.studentName}</strong></td>
+          <td>-</td>
+          <td>${student.guests.length > 0 ? student.guests.length + ' convidado(s)' : '-'}</td>
+          <td class="checkbox">☐</td>
+        </tr>
+      `;
+      
+      student.guests.forEach(guest => {
+        const observations = guest.isMinor 
+          ? `<span class="minor">⚠️ MENOR - ${guest.parentName || 'Sem resp.'}</span>`
+          : '-';
+        
+        rows += `
+          <tr>
+            <td>${String(rowNumber++).padStart(2, '0')}</td>
+            <td>CONVIDADO</td>
+            <td style="padding-left: 20px;">└─ ${guest.guestName}</td>
+            <td>${guest.guestAge} anos</td>
+            <td>${observations}</td>
+            <td class="checkbox">☐</td>
+          </tr>
+        `;
+      });
+      
+      return rows;
+    }).join('');
+    
+    const totalPeople = stats.totalStudents + stats.totalGuests;
+    const attendanceRate = totalPeople > 0 ? ((stats.totalPresent / totalPeople) * 100).toFixed(1) : '0.0';
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Lista de Chamada - ${eventTitle}</title>
+        <style>
+          @media print {
+            @page { 
+              margin: 1cm; 
+              size: A4;
+            }
+            body { font-family: Arial, sans-serif; }
+            .no-print { display: none; }
+          }
+          body { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            font-family: Arial, sans-serif;
+          }
+          h1 { 
+            text-align: center; 
+            border-bottom: 3px solid #000; 
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+          }
+          .header { 
+            margin-bottom: 20px; 
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+          }
+          .header p { margin: 5px 0; }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+          }
+          th, td { 
+            border: 1px solid #000; 
+            padding: 8px; 
+            text-align: left; 
+            font-size: 12px;
+          }
+          th { 
+            background-color: #333; 
+            color: white;
+            font-weight: bold;
+          }
+          .checkbox { 
+            width: 40px; 
+            text-align: center;
+            font-size: 18px;
+          }
+          .minor { 
+            color: #dc2626; 
+            font-weight: bold; 
+          }
+          .summary { 
+            margin-top: 30px; 
+            border-top: 3px solid #000; 
+            padding-top: 20px; 
+          }
+          .summary h2 {
+            margin-bottom: 15px;
+          }
+          .summary-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+          }
+          .summary-row:last-child {
+            border-bottom: none;
+          }
+          .summary-row strong {
+            font-size: 16px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>📝 Lista de Chamada</h1>
+        <div class="header">
+          <p><strong>Evento:</strong> ${eventTitle}</p>
+          <p><strong>Data de Exportação:</strong> ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+          <p><strong>Total de Pessoas:</strong> ${totalPeople}</p>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">Nº</th>
+              <th style="width: 100px;">Tipo</th>
+              <th>Nome</th>
+              <th style="width: 80px;">Idade</th>
+              <th style="width: 200px;">Observações</th>
+              <th class="checkbox">✓</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+        
+        <div class="summary">
+          <h2>📊 Resumo do Evento</h2>
+          <div class="summary-row">
+            <span>Total de Alunos Confirmados:</span>
+            <strong>${stats.totalStudents}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Total de Convidados:</span>
+            <strong>${stats.totalGuests}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Total de Pessoas:</span>
+            <strong>${totalPeople}</strong>
+          </div>
+          <hr style="margin: 15px 0;">
+          <div class="summary-row">
+            <span>Presentes (situação atual):</span>
+            <strong style="color: #16a34a;">${stats.totalPresent}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Ausentes (situação atual):</span>
+            <strong style="color: #dc2626;">${stats.totalAbsent}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Taxa de Comparecimento:</span>
+            <strong>${attendanceRate}%</strong>
+          </div>
+        </div>
+        
+        <script>
+          window.onload = () => {
+            window.print();
+          };
+        </script>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
 
   // Atalhos de teclado
@@ -632,17 +917,35 @@ export function AttendanceChecklistModal({
             disabled={stats.pendingChanges === 0 || isSaving}
             className="gap-2 flex-1"
           >
-            <Save className="h-4 w-4" />
-            {isSaving ? 'Salvando...' : `Salvar Presenças ${stats.pendingChanges > 0 ? `(${stats.pendingChanges})` : ''}`}
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Salvar Presenças {stats.pendingChanges > 0 && `(${stats.pendingChanges})`}
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handlePrint}
+            variant="outline"
+            disabled={isLoading || students.length === 0}
+            className="gap-2"
+          >
+            <Printer className="h-4 w-4" />
+            Imprimir
           </Button>
           <Button
             onClick={exportAttendanceList}
             variant="outline"
-            disabled={students.length === 0}
+            disabled={isLoading || students.length === 0}
             className="gap-2"
           >
             <Download className="h-4 w-4" />
-            Exportar Lista
+            Exportar CSV
           </Button>
           <Button
             onClick={() => onOpenChange(false)}
