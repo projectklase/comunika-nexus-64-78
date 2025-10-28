@@ -593,7 +593,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row14 = worksheet.getRow(14);
       row14.getCell("H").value = "TOTAL AUSENTES";
       row14.getCell("H").font = { bold: true };
-      row14.getCell("I").value = { formula: "I9-I13" };
+      row14.getCell("I").value = { formula: 'COUNTIF(F:F, "Ausente")' };
       row14.getCell("I").numFmt = "0";
       row14.getCell("I").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFCCCC" } };
       addBorders(row14.getCell("H"));
