@@ -53,24 +53,64 @@ export function EventChip({ event, onClick, isDraggable = false, className, useU
   const { modalities } = useModalities();
   const { subjects } = useSubjects();
   
-  // Handle both CalendarEvent and NormalizedCalendarEvent
+  // VALIDAÇÃO DEFENSIVA COMPLETA - Previne erros de null/undefined
+  if (!event) {
+    console.warn('[EventChip] Event is null or undefined');
+    return null;
+  }
+
+  // Para NormalizedCalendarEvent, valida meta
+  if ('meta' in event) {
+    if (!event.meta || !event.meta.title || !event.subtype) {
+      console.warn('[EventChip] NormalizedCalendarEvent com meta incompleto:', event);
+      return null;
+    }
+  }
+
+  // Para CalendarEvent, valida post
+  if ('post' in event) {
+    if (!event.post || !event.post.title || !event.post.type) {
+      console.warn('[EventChip] CalendarEvent com post incompleto:', event);
+      return null;
+    }
+  }
+  
+  // Handle both CalendarEvent and NormalizedCalendarEvent COM FALLBACKS
   const post = 'meta' in event ? {
-    id: event.postId,
-    type: event.subtype,
-    title: event.meta.title,
-    authorName: event.meta.author,
-    audience: event.meta.audience,
-    classIds: event.classIds,
-    classId: event.classId,
-    eventLocation: event.meta.eventLocation,
-    activityMeta: event.meta.activityMeta,
-  } : event.post;
+    id: event.postId || 'unknown',
+    type: event.subtype || 'AVISO',
+    title: event.meta?.title || 'Título não disponível',
+    authorName: event.meta?.author || 'Autor desconhecido',
+    audience: event.meta?.audience || 'N/A',
+    classIds: event.classIds || [],
+    classId: event.classId || undefined,
+    eventLocation: event.meta?.eventLocation || undefined,
+    activityMeta: event.meta?.activityMeta || undefined,
+  } : (event.post || {
+    id: 'unknown',
+    type: 'AVISO',
+    title: 'Post não disponível',
+    authorName: 'Desconhecido',
+    audience: 'N/A',
+    classIds: [],
+  });
   
   const type = 'meta' in event ? event.type : event.type;
-  const startDate = event.startDate;
+  const startDate = event.startDate || new Date(); // Fallback para data atual
   
-  const Icon = typeIcons[post.type as keyof typeof typeIcons];
-  const chipStyle = typeStyles[post.type as keyof typeof typeStyles];
+  const Icon = typeIcons[post.type as keyof typeof typeIcons] || AlertCircle;
+  const chipStyle = typeStyles[post.type as keyof typeof typeStyles] || typeStyles.AVISO;
+
+  // Log detalhado em modo de desenvolvimento para rastreamento
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[EventChip] Rendering event:', {
+      postId: post.id,
+      type: post.type,
+      title: post.title,
+      hasIcon: !!Icon,
+      hasStyle: !!chipStyle
+    });
+  }
 
   // Safe date formatting with fallback
   const formatSafeTime = (date: Date | null | undefined): string => {
@@ -90,6 +130,10 @@ export function EventChip({ event, onClick, isDraggable = false, className, useU
 
   // Get class information for tooltip with safe string conversion
   const getClassInfo = () => {
+    if (!post || !post.audience) {
+      return 'Audiência: Não especificada';
+    }
+    
     if (post.audience === 'GLOBAL') {
       return 'Audiência: Global (Toda a escola)';
     }
