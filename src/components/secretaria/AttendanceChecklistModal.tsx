@@ -610,24 +610,6 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       addBorders(row16.getCell("H"));
       addBorders(row16.getCell("I"));
 
-      summaryData.forEach(([metric, value]) => {
-        const row = worksheet.addRow([metric, value]);
-        row.eachCell((cell, colNumber) => {
-          if (metric !== "") {
-            cell.border = {
-              top: { style: "thin" },
-              bottom: { style: "thin" },
-              left: { style: "thin" },
-              right: { style: "thin" },
-            };
-            if (colNumber === 1) {
-              cell.font = { bold: true };
-            }
-            cell.alignment = { vertical: "middle" };
-          }
-        });
-      });
-
       // 8. Gerar e baixar arquivo
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
