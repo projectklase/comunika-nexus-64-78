@@ -522,7 +522,7 @@ const Login = () => {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">Professor</div>
-                        <div className="text-xs text-muted-foreground truncate">professor@comunika.com</div>
+                        <div className="text-xs text-muted-foreground truncate">julianegrini@gmail.com</div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
@@ -535,7 +535,7 @@ const Login = () => {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">Aluno</div>
-                        <div className="text-xs text-muted-foreground truncate">aluno@comunika.com</div>
+                        <div className="text-xs text-muted-foreground truncate">alinemenezes@gmail.com</div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
