@@ -23,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { format, differenceInYears } from 'date-fns';
 import { ExportSelectionModal } from './ExportSelectionModal';
+import { AttendanceChecklistModal } from './AttendanceChecklistModal';
 
 interface EventInvitation {
   id: string;
@@ -85,6 +86,7 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
   const [confirmations, setConfirmations] = useState<EventConfirmation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -448,11 +450,17 @@ export function EventInvitationsTab({ eventId, eventTitle }: EventInvitationsTab
         onExportInvitations={exportToCSV}
         onExportConfirmations={exportConfirmationsToCSV}
         onOpenAttendanceChecklist={() => {
-          toast({
-            title: 'Em breve',
-            description: 'A lista de chamada será implementada na próxima fase.',
-          });
+          setShowExportModal(false);
+          setShowAttendanceModal(true);
         }}
+      />
+
+      {/* Modal de Lista de Chamada */}
+      <AttendanceChecklistModal
+        open={showAttendanceModal}
+        onOpenChange={setShowAttendanceModal}
+        eventId={eventId}
+        eventTitle={eventTitle}
       />
     </div>
   );
