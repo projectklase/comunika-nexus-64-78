@@ -540,7 +540,7 @@ export function AttendanceChecklistModal({ open, onOpenChange, eventId, eventTit
       const row7 = worksheet.getRow(7);
       row7.getCell("H").value = "TOTAL DE ALUNOS";
       row7.getCell("H").font = { bold: true };
-      row7.getCell("I").value = { COUNTIF(B4:B11, "ALUNO")' };
+      row7.getCell("I").value = { formula: 'COUNTIF(B:B, "ALUNO")' };
       row7.getCell("I").numFmt = "0";
       addBorders(row7.getCell("H"));
       addBorders(row7.getCell("I"));
