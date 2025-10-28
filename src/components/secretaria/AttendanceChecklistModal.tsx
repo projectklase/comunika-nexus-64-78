@@ -367,15 +367,15 @@ export function AttendanceChecklistModal({
     // Array para armazenar linhas de texto puro (melhor compatibilidade)
     const csvLines: string[] = [];
     
-    // Header decorativo
+    // Header decorativo - todas as colunas devem ser definidas
     const separator = '═'.repeat(80);
-    csvLines.push(separator);
-    csvLines.push(`LISTA DE CHAMADA - EVENTO: ${eventTitle} | Data: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`);
-    csvLines.push(separator);
-    csvLines.push(''); // Linha vazia
+    csvLines.push(`"${separator}","","","","",""`);
+    csvLines.push(`"LISTA DE CHAMADA - EVENTO: ${eventTitle} | Data: ${format(new Date(), 'dd/MM/yyyy HH:mm')}","","","","",""`);
+    csvLines.push(`"${separator}","","","","",""`);
+    csvLines.push('","","","","","'); // Linha vazia
     
     // Cabeçalho da tabela
-    csvLines.push('Nº,Tipo,Nome,Idade,Observações,Presente');
+    csvLines.push('"Nº","Tipo","Nome","Idade","Observações","Presente"');
     
     let rowNumber = 1;
     
@@ -383,12 +383,12 @@ export function AttendanceChecklistModal({
     for (const student of students) {
       // Linha do aluno
       const studentRow = [
-        String(rowNumber).padStart(2, '0'),
-        'ALUNO',
-        `"${student.studentName}"`, // Aspas para nomes com vírgula
-        '-',
-        student.guests.length > 0 ? `${student.guests.length} convidado(s)` : '-',
-        '[ ]'
+        `"${String(rowNumber).padStart(2, '0')}"`,
+        '"ALUNO"',
+        `"${student.studentName.replace(/"/g, '""')}"`, // Escape de aspas duplas
+        '"-"',
+        `"${student.guests.length > 0 ? student.guests.length + ' convidado(s)' : '-'}"`,
+        '"[ ]"'
       ].join(',');
       
       csvLines.push(studentRow);
@@ -401,12 +401,12 @@ export function AttendanceChecklistModal({
           : '-';
         
         const guestRow = [
-          String(rowNumber).padStart(2, '0'),
-          'CONVIDADO',
-          `"  └─ ${guest.guestName}"`, // Indentação + aspas para segurança
-          `${guest.guestAge} anos`,
-          `"${observations}"`, // Aspas para evitar problemas com caracteres especiais
-          '[ ]'
+          `"${String(rowNumber).padStart(2, '0')}"`,
+          '"CONVIDADO"',
+          `"  └─ ${guest.guestName.replace(/"/g, '""')}"`, // Escape de aspas duplas
+          `"${guest.guestAge} anos"`,
+          `"${observations.replace(/"/g, '""')}"`, // Escape de aspas duplas
+          '"[ ]"'
         ].join(',');
         
         csvLines.push(guestRow);
@@ -414,27 +414,27 @@ export function AttendanceChecklistModal({
       }
     }
     
-    // Separador para resumo
-    csvLines.push('');
-    csvLines.push(separator);
-    csvLines.push('RESUMO DO EVENTO');
-    csvLines.push(separator);
-    csvLines.push('Métrica,Valor');
+    // Separador para resumo - manter estrutura de 6 colunas
+    csvLines.push('"","","","","",""');
+    csvLines.push(`"${separator}","","","","",""`);
+    csvLines.push('"RESUMO DO EVENTO","","","","",""');
+    csvLines.push(`"${separator}","","","","",""`);
+    csvLines.push('"Métrica","Valor","","","",""');
     
-    // Dados do resumo
-    csvLines.push(`TOTAL DE ALUNOS CONFIRMADOS,${stats.totalStudents}`);
-    csvLines.push(`TOTAL DE CONVIDADOS,${stats.totalGuests}`);
-    csvLines.push(`TOTAL DE PESSOAS,${stats.totalStudents + stats.totalGuests}`);
-    csvLines.push(','); // Linha vazia (separador visual)
-    csvLines.push(`ALUNOS PRESENTES,${stats.studentsPresent}`);
-    csvLines.push(`CONVIDADOS PRESENTES,${stats.guestsPresent}`);
-    csvLines.push(`TOTAL PRESENTES,${stats.totalPresent}`);
-    csvLines.push(`TOTAL AUSENTES,${stats.totalAbsent}`);
-    csvLines.push(','); // Linha vazia (separador visual)
+    // Dados do resumo - manter estrutura de 6 colunas
+    csvLines.push(`"TOTAL DE ALUNOS CONFIRMADOS","${stats.totalStudents}","","","",""`);
+    csvLines.push(`"TOTAL DE CONVIDADOS","${stats.totalGuests}","","","",""`);
+    csvLines.push(`"TOTAL DE PESSOAS","${stats.totalStudents + stats.totalGuests}","","","",""`);
+    csvLines.push('"","","","","",""'); // Linha vazia (separador visual)
+    csvLines.push(`"ALUNOS PRESENTES","${stats.studentsPresent}","","","",""`);
+    csvLines.push(`"CONVIDADOS PRESENTES","${stats.guestsPresent}","","","",""`);
+    csvLines.push(`"TOTAL PRESENTES","${stats.totalPresent}","","","",""`);
+    csvLines.push(`"TOTAL AUSENTES","${stats.totalAbsent}","","","",""`);
+    csvLines.push('"","","","","",""'); // Linha vazia (separador visual)
     
     const totalPeople = stats.totalStudents + stats.totalGuests;
     const attendanceRate = totalPeople > 0 ? ((stats.totalPresent / totalPeople) * 100).toFixed(1) : '0.0';
-    csvLines.push(`TAXA DE COMPARECIMENTO,${attendanceRate}%`);
+    csvLines.push(`"TAXA DE COMPARECIMENTO","${attendanceRate}%","","","",""`);
     
     // Juntar todas as linhas
     const csvContent = csvLines.join('\n');
