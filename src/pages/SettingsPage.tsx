@@ -7,16 +7,14 @@ import { NotificationsTab } from '@/components/settings/NotificationsTab';
 import { PreferencesTab } from '@/components/settings/PreferencesTab';
 import { LoginPreferencesTab } from '@/components/settings/LoginPreferencesTab';
 import { SchoolEvaluationTab } from '@/components/settings/SchoolEvaluationTab';
-import { MyActivitiesTab } from '@/components/settings/MyActivitiesTab';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Settings, Shield, Bell, LogIn, BookOpen } from 'lucide-react';
+import { User, Settings, Shield, Bell, LogIn } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   
   const canAccessSchoolSettings = user?.role === 'secretaria';
-  const isStudent = user?.role === 'aluno';
 
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-6">
@@ -30,7 +28,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`grid w-full ${canAccessSchoolSettings ? 'grid-cols-7' : isStudent ? 'grid-cols-6' : 'grid-cols-5'}`}>
+        <TabsList className={`grid w-full ${canAccessSchoolSettings ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Perfil
@@ -51,12 +49,6 @@ export default function SettingsPage() {
             <Settings className="h-4 w-4" />
             Preferências
           </TabsTrigger>
-          {isStudent && (
-            <TabsTrigger value="activities" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Minhas Atividades
-            </TabsTrigger>
-          )}
           {canAccessSchoolSettings && (
             <TabsTrigger value="school" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -149,25 +141,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {isStudent && (
-          <TabsContent value="activities">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Minhas Atividades
-                </CardTitle>
-                <CardDescription>
-                  Visualize todas as atividades das suas turmas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MyActivitiesTab />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
 
         {canAccessSchoolSettings && (
           <TabsContent value="school">
