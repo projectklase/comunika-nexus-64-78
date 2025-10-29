@@ -8,6 +8,9 @@ import { deliveryStore } from '@/stores/delivery-store';
 import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
 import { TeacherPrefsService } from '@/services/teacher-prefs';
+import { useNavigate } from 'react-router-dom';
+import { usePostActions } from '@/hooks/usePostActions';
+import { toast } from 'sonner';
 import { ActivityFilters } from '@/components/activities/ActivityFilters';
 import { useSelectValidation } from '@/hooks/useSelectValidation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,6 +102,9 @@ export default function ProfessorActivities() {
 
   // Data hooks - always called in same order
   const { posts: allPosts } = usePosts();
+  const navigate = useNavigate();
+  const { deletePost, duplicatePost, archivePost } = usePostActions();
+  const { exportDeliveries } = useActivityExport();
 
   // Obter turmas do professor - this needs user but we handle it safely
   const professorClasses = useMemo(() => {
@@ -132,16 +138,33 @@ export default function ProfessorActivities() {
   } = useActivityFilters(professorActivities);
 
   // Calcular contadores usando delivery store - always called
-  const [deliveryMetrics, setDeliveryMetrics] = useState<any>({});
+  const [deliveryMetrics, setDeliveryMetrics] = useState<Record<string, any>>({});
   
   useEffect(() => {
     const loadMetrics = async () => {
-      if (!user) return;
-      const metrics = await deliveryStore.getProfessorMetrics(classIds);
-      setDeliveryMetrics(metrics);
+      if (!user || !hasClasses) return;
+      
+      const metricsMap: Record<string, any> = {};
+      
+      for (const activity of professorActivities) {
+        const schoolClass = professorClasses.find(c => 
+          activity.classIds?.includes(c.id) || activity.classId === c.id
+        );
+        
+        if (schoolClass) {
+          const metrics = await deliveryStore.getActivityMetrics(
+            activity.id, 
+            schoolClass.students.length
+          );
+          metricsMap[activity.id] = metrics;
+        }
+      }
+      
+      setDeliveryMetrics(metricsMap);
     };
+    
     loadMetrics();
-  }, [user, classIds]);
+  }, [user, hasClasses, professorActivities, professorClasses]);
 
   // Calcular contadores por status usando o delivery store - always called
   const finalFilteredPosts = useMemo(() => {
@@ -281,6 +304,69 @@ export default function ProfessorActivities() {
       return 'Atrasado';
     } else {
       return format(date, "dd/MM", { locale: ptBR });
+    }
+  };
+
+  // Handler: Editar
+  const handleEditActivity = (activityId: string) => {
+    navigate(`/professor/atividades/editar/${activityId}`);
+  };
+
+  // Handler: Excluir (com confirmação)
+  const handleDeleteActivity = async (activityId: string, activityTitle: string) => {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir a atividade "${activityTitle}"?\n\n` +
+      `Esta ação não pode ser desfeita e excluirá todas as entregas dos alunos.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      await deletePost(activityId);
+      toast.success('Atividade excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir atividade:', error);
+      toast.error('Erro ao excluir atividade.');
+    }
+  };
+
+  // Handler: Duplicar
+  const handleDuplicateActivity = async (activityId: string) => {
+    try {
+      const authorName = user?.email || 'Professor';
+      await duplicatePost(activityId, authorName);
+      toast.success('Atividade duplicada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao duplicar atividade:', error);
+      toast.error('Erro ao duplicar atividade.');
+    }
+  };
+
+  // Handler: Baixar entregas
+  const handleDownloadActivity = async (activityId: string) => {
+    const activity = finalFilteredPosts.find(p => p.id === activityId);
+    if (!activity) {
+      toast.error('Atividade não encontrada.');
+      return;
+    }
+
+    try {
+      await exportDeliveries(activityId, activity);
+      toast.success('Download iniciado!');
+    } catch (error) {
+      console.error('Erro ao exportar entregas:', error);
+      toast.error('Erro ao gerar o arquivo.');
+    }
+  };
+
+  // Handler: Arquivar
+  const handleArchiveActivity = async (activityId: string) => {
+    try {
+      await archivePost(activityId);
+      toast.success('Atividade arquivada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao arquivar atividade:', error);
+      toast.error('Erro ao arquivar atividade.');
     }
   };
 
@@ -511,24 +597,31 @@ export default function ProfessorActivities() {
                                 </div>
                               </div>
 
-                              {/* Contadores reais do delivery store (loaded async) */}
+                              {/* Contadores reais do delivery store */}
                               <div className="flex items-center gap-4 text-sm">
-                                <div className="text-center">
-                                  <div className="font-medium">-</div>
-                                  <div className="text-muted-foreground">Aprovadas</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="font-medium">-</div>
-                                  <div className="text-muted-foreground">Aguardando</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="font-medium">-</div>
-                                  <div className="text-muted-foreground">Pendentes</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="font-medium">-</div>
-                                  <div className="text-muted-foreground">Atrasadas</div>
-                                </div>
+                                {(() => {
+                                  const metrics = deliveryMetrics[activity.id];
+                                  return (
+                                    <>
+                                      <div className="text-center">
+                                        <div className="font-medium">{metrics?.aprovadas || 0}</div>
+                                        <div className="text-muted-foreground">Aprovadas</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="font-medium">{metrics?.aguardando || 0}</div>
+                                        <div className="text-muted-foreground">Aguardando</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="font-medium">{metrics?.naoEntregue || 0}</div>
+                                        <div className="text-muted-foreground">Pendentes</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="font-medium">{metrics?.atrasadas || 0}</div>
+                                        <div className="text-muted-foreground">Atrasadas</div>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
 
@@ -539,16 +632,37 @@ export default function ProfessorActivities() {
                                   <Eye className="h-4 w-4" />
                                 </Link>
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => handleEditActivity(activity.id)}
+                                title="Editar atividade"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => handleDuplicateActivity(activity.id)}
+                                title="Duplicar atividade"
+                              >
                                 <Copy className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => handleDownloadActivity(activity.id)}
+                                title="Baixar entregas"
+                              >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => handleDeleteActivity(activity.id, activity.title)}
+                                title="Excluir atividade"
+                                className="text-destructive hover:text-destructive"
+                              >
                                 <Archive className="h-4 w-4" />
                               </Button>
                             </div>
