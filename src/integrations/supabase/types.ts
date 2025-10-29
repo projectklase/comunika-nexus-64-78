@@ -720,6 +720,7 @@ export type Database = {
       posts: {
         Row: {
           activity_meta: Json | null
+          allow_attachments: boolean
           allow_invitations: boolean | null
           attachments: Json | null
           audience: string
@@ -744,6 +745,7 @@ export type Database = {
         }
         Insert: {
           activity_meta?: Json | null
+          allow_attachments?: boolean
           allow_invitations?: boolean | null
           attachments?: Json | null
           audience: string
@@ -768,6 +770,7 @@ export type Database = {
         }
         Update: {
           activity_meta?: Json | null
+          allow_attachments?: boolean
           allow_invitations?: boolean | null
           attachments?: Json | null
           audience?: string

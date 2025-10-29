@@ -232,67 +232,73 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
           )}
 
           {/* File Upload */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="file-upload" className="text-base font-medium">
-                Anexar Arquivos
-              </Label>
-              <p className="text-sm text-muted-foreground mb-3">
-                JPG, PNG, WEBP (máx. 4MB) • PDF (máx. 6MB) • Máximo {MAX_FILES} arquivos
-              </p>
-              
-              <Input
-                id="file-upload"
-                type="file"
-                multiple
-                accept=".jpg,.jpeg,.png,.webp,.pdf"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-              />
-            </div>
-
-            {/* Errors */}
-            {errors.length > 0 && (
-              <Alert className="border-destructive/50 bg-destructive/10">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-                <AlertDescription>
-                  {errors.map((error, index) => (
-                    <div key={index} className="text-destructive">{error}</div>
-                  ))}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* File List */}
-            {attachments.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="font-medium">Arquivos Selecionados ({attachments.length}/{MAX_FILES})</h4>
-                <div className="space-y-2">
-                  {attachments.map((attachment, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{attachment.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{formatFileSize(attachment.size || 0)}</span>
-                          <Badge variant="secondary" className="text-xs">
-                            {attachment.type?.includes('pdf') ? 'PDF' : 'Imagem'}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => removeAttachment(index)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <FileX className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+          {activity.allow_attachments ? (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="file-upload" className="text-base font-medium">
+                  Anexar Arquivos
+                </Label>
+                <p className="text-sm text-muted-foreground mb-3">
+                  JPG, PNG, WEBP (máx. 4MB) • PDF (máx. 6MB) • Máximo {MAX_FILES} arquivos
+                </p>
+                
+                <Input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept=".jpg,.jpeg,.png,.webp,.pdf"
+                  onChange={handleFileChange}
+                  className="cursor-pointer"
+                />
               </div>
-            )}
-          </div>
+
+              {/* Errors */}
+              {errors.length > 0 && (
+                <Alert className="border-destructive/50 bg-destructive/10">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  <AlertDescription>
+                    {errors.map((error, index) => (
+                      <div key={index} className="text-destructive">{error}</div>
+                    ))}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* File List */}
+              {attachments.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium">Arquivos Selecionados ({attachments.length}/{MAX_FILES})</h4>
+                  <div className="space-y-2">
+                    {attachments.map((attachment, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{attachment.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{formatFileSize(attachment.size || 0)}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {attachment.type?.includes('pdf') ? 'PDF' : 'Imagem'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => removeAttachment(index)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <FileX className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-input bg-muted/50 p-4 text-center text-sm text-muted-foreground">
+              Esta atividade não requer o envio de arquivos.
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-3">

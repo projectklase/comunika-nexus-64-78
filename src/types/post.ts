@@ -12,6 +12,7 @@ export interface ActivityMeta {
   usePeso?: boolean;  // Flag para controlar se deve usar peso nesta atividade
   koinReward?: number; // Koins que o aluno receberá ao concluir esta atividade
   requiresDelivery?: boolean; // Se a atividade requer entrega pelo aluno (padrão: true)
+  allow_attachments?: boolean; // Controla se alunos podem enviar anexos
   
   // ATIVIDADE
   rubrica?: string;
@@ -60,6 +61,7 @@ export interface Post {
   publishAt?: string;       // quando agendar post
   activityMeta?: ActivityMeta; // metadados específicos de atividades
   meta?: Record<string, any>; // metadados adicionais (importante, etc.)
+  allow_attachments: boolean; // Controla se alunos podem enviar anexos
   // Campos para compatibilidade com calendário
   postId?: string;
   subtype?: string;
@@ -82,6 +84,7 @@ export interface PostInput {
   publishAt?: string;
   activityMeta?: ActivityMeta; // metadados específicos de atividades
   meta?: Record<string, any>; // metadados adicionais (importante, etc.)
+  allow_attachments?: boolean; // Controla se alunos podem enviar anexos
 }
 
 export interface PostFilter {

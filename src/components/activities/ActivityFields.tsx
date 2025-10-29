@@ -13,8 +13,8 @@ import { Coins } from 'lucide-react';
 
 interface ActivityFieldsProps {
   type: ActivityType;
-  meta: ActivityMeta & { usePeso?: boolean };
-  onChange: (meta: ActivityMeta & { usePeso?: boolean }) => void;
+  meta: ActivityMeta & { usePeso?: boolean; allow_attachments?: boolean };
+  onChange: (meta: ActivityMeta & { usePeso?: boolean; allow_attachments?: boolean }) => void;
 }
 
 const deliveryFormatOptions = [
@@ -114,6 +114,17 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
             Koins que o aluno receberá ao concluir esta atividade
           </p>
         </div>
+
+        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
+          <Switch
+            id="allow-attachments"
+            checked={meta.allow_attachments ?? false}
+            onCheckedChange={(checked) => updateMeta({ allow_attachments: checked })}
+          />
+          <Label htmlFor="allow-attachments" className="cursor-pointer">
+            Permitir que alunos enviem arquivos anexos
+          </Label>
+        </div>
         
         <div className="space-y-2">
           <Label htmlFor="rubrica">Rubrica de Avaliação</Label>
@@ -168,6 +179,17 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           <p className="text-xs text-muted-foreground">
             Koins que o aluno receberá ao concluir este trabalho
           </p>
+        </div>
+
+        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
+          <Switch
+            id="allow-attachments-trabalho"
+            checked={meta.allow_attachments ?? false}
+            onCheckedChange={(checked) => updateMeta({ allow_attachments: checked })}
+          />
+          <Label htmlFor="allow-attachments-trabalho" className="cursor-pointer">
+            Permitir que alunos enviem arquivos anexos
+          </Label>
         </div>
 
         <div className="space-y-3">
@@ -268,6 +290,17 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           <p className="text-xs text-muted-foreground">
             Koins que o aluno receberá ao concluir esta prova
           </p>
+        </div>
+
+        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
+          <Switch
+            id="allow-attachments-prova"
+            checked={meta.allow_attachments ?? false}
+            onCheckedChange={(checked) => updateMeta({ allow_attachments: checked })}
+          />
+          <Label htmlFor="allow-attachments-prova" className="cursor-pointer">
+            Permitir que alunos enviem arquivos anexos
+          </Label>
         </div>
 
         <div className="space-y-2">

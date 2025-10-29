@@ -26,6 +26,7 @@ export interface NormalizedCalendarEvent {
     eventLocation?: string;
     audience: string;
     activityMeta?: any;
+    allow_attachments?: boolean;
   };
 }
 
@@ -49,6 +50,7 @@ export function buildCalendarEvent(post: Post, userRole?: string): NormalizedCal
       eventLocation: post.eventLocation,
       audience: post.audience,
       activityMeta: post.activityMeta,
+      allow_attachments: post.allow_attachments,
     }
   };
 

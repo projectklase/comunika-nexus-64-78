@@ -61,6 +61,7 @@ export function usePosts(filter?: PostFilter) {
         attachments: (p.attachments || []) as any,
         meta: p.meta,
         allowInvitations: p.allow_invitations, // Adicionado o campo allowInvitations
+        allow_attachments: p.allow_attachments ?? false,
       })) as Post[];
 
       setPosts(formattedData);

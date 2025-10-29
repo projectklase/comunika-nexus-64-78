@@ -58,6 +58,7 @@ export function extractPost(event: Post | NormalizedCalendarEvent): Post {
       classIds: event.classIds,
       activityMeta: event.meta.activityMeta,
       createdAt: new Date().toISOString(), // Default fallback
+      allow_attachments: event.meta.allow_attachments ?? false,
     };
   }
   return event;

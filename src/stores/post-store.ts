@@ -73,6 +73,7 @@ class PostStore {
       activityMeta: row.activity_meta,
       meta: row.meta,
       allowInvitations: row.allow_invitations,
+      allow_attachments: row.allow_attachments ?? false,
     };
   }
 
@@ -172,6 +173,7 @@ class PostStore {
       activity_meta: validation.data.activityMeta,
       meta: validation.data.meta,
       allow_invitations: validation.data.allowInvitations,
+      allow_attachments: validation.data.allow_attachments ?? false,
     };
 
     const { data, error } = await supabase.from("posts").insert([insertData]).select().single();
@@ -283,6 +285,7 @@ class PostStore {
       activity_meta: validation.data.activityMeta,
       meta: validation.data.meta,
       allow_invitations: validation.data.allowInvitations,
+      allow_attachments: validation.data.allow_attachments,
     };
 
     const { data, error } = await supabase.from("posts").update(updateData).eq("id", id).select().single();
