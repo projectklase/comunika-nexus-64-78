@@ -63,7 +63,9 @@ export function DayDrawerContent({ events, selectedDate }: DayDrawerContentProps
         </div>
       ) : (
         <div className="space-y-3">
-          {sortedEvents.map(event => {
+          {sortedEvents
+            .filter(event => event.post && event.post.title) // ✅ FILTRO DE SEGURANÇA
+            .map(event => {
             const Icon = typeIcons[event.post.type];
             const colorClass = typeColors[event.post.type];
 
@@ -80,7 +82,7 @@ export function DayDrawerContent({ events, selectedDate }: DayDrawerContentProps
                   
                   <div className="flex-1 space-y-2">
                     <div>
-                      <h4 className="font-medium">{event.post.title}</h4>
+                      <h4 className="font-medium">{event.post?.title || 'Sem título'}</h4>
                       {event.post.body && (
                         <p className="text-sm text-muted-foreground mt-1">
                           {event.post.body}

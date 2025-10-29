@@ -185,6 +185,16 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
   
   // Get post data
   const { post, isLoading } = usePost(postId);
+
+  // ✅ VALIDAÇÃO DE SEGURANÇA
+  if (!isLoading && !post) {
+    return null; // Não renderiza se não há post
+  }
+
+  if (post && !post.title) {
+    console.error('[ActivityDrawer] Post sem título:', post);
+    return null;
+  }
   
   // Get delivery for student
   const [delivery, setDelivery] = useState<any>(null);

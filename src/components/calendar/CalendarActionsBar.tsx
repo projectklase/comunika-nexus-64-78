@@ -53,17 +53,38 @@ export function CalendarActionsBar({
 
   if (!user) return null;
 
-  // Extract post data for easier access
+  // ✅ VALIDAÇÃO DEFENSIVA
+  if (!event) {
+    console.warn('[CalendarActionsBar] Event is null');
+    return null;
+  }
+
+  // Validar meta para NormalizedCalendarEvent
+  if ('meta' in event && (!event.meta || !event.meta.title)) {
+    console.warn('[CalendarActionsBar] Event meta is incomplete:', event);
+    return null;
+  }
+
+  // Validar post para CalendarEvent
+  if ('post' in event) {
+    const eventWithPost = event as any;
+    if (!eventWithPost.post || !eventWithPost.post.title) {
+      console.warn('[CalendarActionsBar] Event post is incomplete:', event);
+      return null;
+    }
+  }
+
+  // Extract post data for easier access COM FALLBACKS
   const extractedPost = 'meta' in event ? {
-    id: event.postId,
-    type: event.subtype,
-    title: event.meta.title,
-    status: event.status,
-    attachments: event.meta.attachments,
-    dueAt: event.meta.dueAt,
-    eventStartAt: event.meta.eventStartAt,
-    eventEndAt: event.meta.eventEndAt,
-    eventLocation: event.meta.eventLocation,
+    id: event.postId || 'unknown',
+    type: event.subtype || 'AVISO',
+    title: event.meta?.title || 'Sem título',
+    status: event.status || 'PUBLISHED',
+    attachments: event.meta?.attachments,
+    dueAt: event.meta?.dueAt,
+    eventStartAt: event.meta?.eventStartAt,
+    eventEndAt: event.meta?.eventEndAt,
+    eventLocation: event.meta?.eventLocation,
   } as Post : event as Post;
 
   // Helper function to check if post has date

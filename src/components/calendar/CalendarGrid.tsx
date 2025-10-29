@@ -121,32 +121,35 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
   };
 
   // Convert existing CalendarEvent[] to NormalizedCalendarEvent[] for unified handling
-  const normalizedEvents = events.map(event => ({
-    id: event.id,
-    postId: event.post.id,
-    type: event.type,
-    subtype: event.post.type,
-    status: event.post.status,
-    title: event.post.title,
-    startDate: event.startDate,
-    endDate: event.endDate,
-    clickable: ['professor', 'secretaria'].includes(user?.role || '') || event.post.status === 'PUBLISHED',
-    classId: event.post.classId || event.post.classIds?.[0],
-    classIds: event.post.classIds,
-    meta: {
-      title: event.post.title,
-      author: event.post.authorName,
-      attachments: event.post.attachments,
-      weight: event.post.activityMeta?.peso,
-      body: event.post.body,
-      dueAt: event.post.dueAt,
-      eventStartAt: event.post.eventStartAt,
-      eventEndAt: event.post.eventEndAt,
-      eventLocation: event.post.eventLocation,
-      audience: event.post.audience,
-      activityMeta: event.post.activityMeta,
-    }
-  }));
+  // ✅ FILTRO DE SEGURANÇA: Apenas eventos com post válido
+  const normalizedEvents = events
+    .filter(event => event.post && event.post.title && event.post.type)
+    .map(event => ({
+      id: event.id,
+      postId: event.post.id,
+      type: event.type,
+      subtype: event.post.type,
+      status: event.post.status,
+      title: event.post?.title || 'Sem título',
+      startDate: event.startDate,
+      endDate: event.endDate,
+      clickable: ['professor', 'secretaria'].includes(user?.role || '') || event.post.status === 'PUBLISHED',
+      classId: event.post.classId || event.post.classIds?.[0],
+      classIds: event.post.classIds,
+      meta: {
+        title: event.post?.title || 'Sem título',
+        author: event.post.authorName,
+        attachments: event.post.attachments,
+        weight: event.post.activityMeta?.peso,
+        body: event.post.body,
+        dueAt: event.post.dueAt,
+        eventStartAt: event.post.eventStartAt,
+        eventEndAt: event.post.eventEndAt,
+        eventLocation: event.post.eventLocation,
+        audience: event.post.audience,
+        activityMeta: event.post.activityMeta,
+      }
+    }));
 
   // Filter events based on active filters
   const filteredEvents = normalizedEvents.filter(event => {

@@ -33,6 +33,24 @@ class PostStore {
   }
 
   private dbRowToPost(row: any): Post {
+    // ✅ VALIDAÇÃO RIGOROSA DE DADOS
+    if (!row) {
+      throw new Error('[PostStore] Cannot convert null row to Post');
+    }
+    
+    if (!row.id) {
+      throw new Error('[PostStore] Row missing required field: id');
+    }
+    
+    if (!row.title || row.title.trim() === '') {
+      console.error('[PostStore] Row missing title:', row);
+      throw new Error(`[PostStore] Row ${row.id} missing required field: title`);
+    }
+    
+    if (!row.type) {
+      throw new Error('[PostStore] Row missing required field: type');
+    }
+
     return {
       id: row.id,
       type: row.type as PostType,
