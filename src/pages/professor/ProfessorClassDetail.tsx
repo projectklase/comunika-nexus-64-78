@@ -31,6 +31,12 @@ import {
 } from 'lucide-react';
 import { ActivityFilters } from '@/components/activities/ActivityFilters';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
+import { useState, useEffect } from 'react';
+import { deliveryService } from '@/services/delivery-service';
+import { supabase } from '@/integrations/supabase/client';
+import { DeliveryTable } from '@/components/activities/DeliveryTable';
+import { Delivery, ReviewStatus } from '@/types/delivery';
+import { toast } from 'sonner';
 
 export default function ProfessorClassDetail() {
   const { id } = useParams<{ id: string }>();
@@ -94,10 +100,138 @@ export default function ProfessorClassDetail() {
     .map(studentId => getPerson(studentId))
     .filter(student => student && student.role === 'ALUNO');
   
-  // TODO: Implementar métricas reais quando tiver DeliveryStore
+  // Estados para gerenciamento de entregas
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [deliveriesLoading, setDeliveriesLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [classMetrics, setClassMetrics] = useState({
+    total: 0,
+    aguardando: 0,
+    aprovadas: 0,
+    devolvidas: 0,
+    atrasadas: 0
+  });
+
+  // Buscar entregas da turma
+  useEffect(() => {
+    const loadDeliveries = async () => {
+      setDeliveriesLoading(true);
+      try {
+        const classDeliveries = await deliveryService.list({ classId: schoolClass.id });
+        setDeliveries(classDeliveries);
+        
+        // Calcular métricas agregadas
+        const now = new Date();
+        const metrics = {
+          total: classDeliveries.length,
+          aguardando: classDeliveries.filter(d => d.reviewStatus === 'AGUARDANDO').length,
+          aprovadas: classDeliveries.filter(d => d.reviewStatus === 'APROVADA').length,
+          devolvidas: classDeliveries.filter(d => d.reviewStatus === 'DEVOLVIDA').length,
+          atrasadas: classDeliveries.filter(d => {
+            if (!d.isLate) return false;
+            return d.reviewStatus === 'AGUARDANDO';
+          }).length
+        };
+        setClassMetrics(metrics);
+      } catch (error) {
+        console.error('[ProfessorClassDetail] Erro ao buscar entregas:', error);
+        toast.error('Erro ao carregar entregas da turma');
+      } finally {
+        setDeliveriesLoading(false);
+      }
+    };
+
+    loadDeliveries();
+  }, [schoolClass.id, refreshTrigger]);
+
+  // Handler para revisar entregas
+  const handleReview = async (deliveryIds: string[], reviewStatus: ReviewStatus, reviewNote?: string) => {
+    try {
+      // Atualizar status das entregas
+      await Promise.all(
+        deliveryIds.map(id =>
+          deliveryService.review(id, {
+            reviewStatus,
+            reviewNote,
+            reviewedBy: user.id
+          })
+        )
+      );
+
+      // Conceder Koins se aprovado
+      if (reviewStatus === 'APROVADA') {
+        try {
+          const approvedDeliveries = deliveries.filter(d => deliveryIds.includes(d.id));
+          
+          // Agrupar por atividade para conceder Koins
+          const deliveriesByActivity = approvedDeliveries.reduce((acc, delivery) => {
+            if (!acc[delivery.postId]) {
+              acc[delivery.postId] = [];
+            }
+            acc[delivery.postId].push(delivery);
+            return acc;
+          }, {} as Record<string, Delivery[]>);
+
+          // Conceder Koins por atividade
+          for (const [postId, postDeliveries] of Object.entries(deliveriesByActivity)) {
+            const activity = allClassPosts.find(p => p.id === postId);
+            
+            if (activity?.activityMeta?.koinReward && activity.activityMeta.koinReward > 0) {
+              const studentIds = postDeliveries.map(d => d.studentId);
+              
+              const { data: { session } } = await supabase.auth.getSession();
+              
+              const response = await fetch(
+                `https://yanspolqarficibgovia.supabase.co/functions/v1/grant-koin-bonus`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                  },
+                  body: JSON.stringify({
+                    eventName: `Atividade: ${activity.title}`,
+                    eventDescription: `Entrega aprovada`,
+                    koinAmount: activity.activityMeta.koinReward,
+                    studentIds: studentIds,
+                    grantedBy: user.id
+                  })
+                }
+              );
+              
+              if (!response.ok) {
+                console.error('[ProfessorClassDetail] Erro ao conceder Koins');
+              }
+            }
+          }
+        } catch (koinError) {
+          console.error('[ProfessorClassDetail] Erro ao conceder Koins:', koinError);
+          // Não bloquear a aprovação se os Koins falharem
+        }
+      }
+
+      toast.success(
+        reviewStatus === 'APROVADA'
+          ? `${deliveryIds.length} entrega(s) aprovada(s) com sucesso`
+          : `${deliveryIds.length} entrega(s) devolvida(s)`
+      );
+
+      // Forçar refresh
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('[ProfessorClassDetail] Erro ao revisar entregas:', error);
+      toast.error('Erro ao processar revisão');
+    }
+  };
+
+  // Handler para marcar como recebido (adaptado para interface do DeliveryTable)
+  const handleMarkAsReceived = async (studentId: string, studentName: string) => {
+    toast.info('Esta função está disponível apenas no detalhes da atividade');
+  };
+  
   const metrics = {
-    pendingDeliveries: 5,
-    weeklyDeadlines: 2,
+    pendingDeliveries: classMetrics.aguardando,
+    weeklyDeadlines: 2, // TODO: calcular prazos da semana
     publishedActivities: allClassActivities.length
   };
   
@@ -401,17 +535,92 @@ export default function ProfessorClassDetail() {
         
         {/* Entregas */}
         <TabsContent value="deliveries" className="space-y-6">
+          {/* KPIs de Entregas */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                    <FileText className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{classMetrics.total}</p>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                    <Clock className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{classMetrics.aguardando}</p>
+                    <p className="text-sm text-muted-foreground">Aguardando</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{classMetrics.aprovadas}</p>
+                    <p className="text-sm text-muted-foreground">Aprovadas</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                    <AlertCircle className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{classMetrics.devolvidas}</p>
+                    <p className="text-sm text-muted-foreground">Devolvidas</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                    <AlertCircle className="h-6 w-6 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{classMetrics.atrasadas}</p>
+                    <p className="text-sm text-muted-foreground">Atrasadas</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabela de Entregas */}
           <Card>
             <CardHeader>
-              <CardTitle>Entregas por Atividade</CardTitle>
+              <CardTitle>Todas as Entregas da Turma</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  Sistema de entregas em desenvolvimento
-                </p>
-              </div>
+              <DeliveryTable
+                deliveries={deliveries}
+                activityTitle={`Turma ${schoolClass.name}`}
+                isLoading={deliveriesLoading}
+                onReview={handleReview}
+                onMarkAsReceived={handleMarkAsReceived}
+              />
             </CardContent>
           </Card>
         </TabsContent>
