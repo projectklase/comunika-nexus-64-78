@@ -235,7 +235,7 @@ export default function ProfessorDashboard() {
       </div>
 
       {/* Ações Rápidas */}
-      <Card>
+      <Card className="max-w-fit mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -243,7 +243,7 @@ export default function ProfessorDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-center justify-center">
             <Button variant="outline" className="h-20 flex-col gap-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" asChild>
               <Link to="/professor/turmas">
                 <Users className="h-6 w-6" />
