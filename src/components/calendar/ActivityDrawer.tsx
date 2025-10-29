@@ -185,16 +185,6 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
   
   // Get post data
   const { post, isLoading } = usePost(postId);
-
-  // ✅ VALIDAÇÃO DE SEGURANÇA
-  if (!isLoading && !post) {
-    return null; // Não renderiza se não há post
-  }
-
-  if (post && !post.title) {
-    console.error('[ActivityDrawer] Post sem título:', post);
-    return null;
-  }
   
   // Get delivery for student
   const [delivery, setDelivery] = useState<any>(null);
@@ -205,11 +195,6 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
     }
   }, [user, post]);
 
-  const config = post ? TYPE_CONFIG[post.type as keyof typeof TYPE_CONFIG] : null;
-  const Icon = config?.icon || FileText;
-  
-  const classData = classId ? getClass(classId) : null;
-  
   const countdown = useMemo(() => {
     if (post?.type === 'EVENTO') {
       if (!post?.eventStartAt) return null;
@@ -245,6 +230,21 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
     
     return { text: `Faltam ${distance}`, isOverdue: false };
   }, [post?.dueAt, post?.eventStartAt, post?.type]);
+
+  // ✅ VALIDAÇÃO DE SEGURANÇA - APÓS TODOS OS HOOKS
+  if (!isLoading && !post) {
+    return null;
+  }
+
+  if (post && !post.title) {
+    console.error('[ActivityDrawer] Post sem título:', post);
+    return null;
+  }
+
+  const config = post ? TYPE_CONFIG[post.type as keyof typeof TYPE_CONFIG] : null;
+  const Icon = config?.icon || FileText;
+  
+  const classData = classId ? getClass(classId) : null;
 
   const formatDueDateTime = () => {
     if (!post?.dueAt) return '';
