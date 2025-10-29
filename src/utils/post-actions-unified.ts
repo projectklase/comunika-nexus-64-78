@@ -217,13 +217,13 @@ export function editPost(post: Post | NormalizedCalendarEvent, userRole: string,
 }
 
 // CRUD Operations
-export async function duplicatePost(post: Post | NormalizedCalendarEvent, authorName: string, authorId: string): Promise<boolean> {
+export async function duplicatePost(post: Post | NormalizedCalendarEvent, authorName: string, authorId: string, authorRole: 'secretaria' | 'professor' | 'aluno' = 'aluno'): Promise<boolean> {
   const postData = extractPost(post);
   
   try {
     const duplicateData = await postStore.duplicate(postData.id);
     if (duplicateData) {
-      await postStore.create(duplicateData, authorName, authorId);
+      await postStore.create(duplicateData, authorName, authorId, authorRole);
       return true;
     }
     return false;

@@ -427,7 +427,7 @@ export function DayFocusModal() {
                 onSubmit={async (postInput: PostInput) => {
                   if (!user) return;
                   
-                  await postStore.create(postInput, user.name, user.id);
+                  await postStore.create(postInput, user.name, user.id, user.role);
                   closeCalendarModal(MODAL_IDS.POST_COMPOSER);
                   
                   toast({

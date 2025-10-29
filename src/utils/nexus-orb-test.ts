@@ -45,9 +45,9 @@ export async function createTestActivities() {
   };
   
   try {
-    await postStore.create(overdueActivity, 'Sistema de Teste', 'system');
-    await postStore.create(todayActivity1, 'Sistema de Teste', 'system');
-    await postStore.create(todayActivity2, 'Sistema de Teste', 'system');
+    await postStore.create(overdueActivity, 'Sistema de Teste', 'system', 'secretaria');
+    await postStore.create(todayActivity1, 'Sistema de Teste', 'system', 'secretaria');
+    await postStore.create(todayActivity2, 'Sistema de Teste', 'system', 'secretaria');
     
     console.log('✅ Atividades de teste criadas:');
     console.log('  - 1 atividade atrasada (ontem)');

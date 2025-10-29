@@ -63,7 +63,7 @@ export function usePostActionsUnified() {
     
     setIsLoading('create');
     try {
-      await postStore.create(postInput, authorName, user?.id || '');
+      await postStore.create(postInput, authorName, user?.id || '', user?.role || 'aluno');
       toast({
         title: "Post criado",
         description: "O post foi criado com sucesso.",
@@ -213,7 +213,7 @@ export function usePostActionsUnified() {
     try {
       const duplicateData = await postStore.duplicate(id);
       if (duplicateData) {
-        await postStore.create(duplicateData, authorName, user?.id || '');
+        await postStore.create(duplicateData, authorName, user?.id || '', user?.role || 'aluno');
         toast({
           title: "Post duplicado",
           description: "Uma cópia do post foi criada com sucesso.",

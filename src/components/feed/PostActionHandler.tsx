@@ -89,7 +89,7 @@ export function PostActionHandler({ post, onEdit, onDuplicate, onRefresh }: Post
       try {
         const duplicateData = await postStore.duplicate(post.id);
         if (duplicateData) {
-          await postStore.create(duplicateData, post.authorName, post.authorId || '');
+          await postStore.create(duplicateData, post.authorName, post.authorId || '', post.authorRole || 'aluno');
           toast({
             title: "Post duplicado",
             description: "Uma cópia do post foi criada com sucesso.",

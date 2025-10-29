@@ -309,7 +309,7 @@ export default function SecretariaCalendar() {
                 onSubmit={async (postInput: PostInput) => {
                   if (!user) return;
                   
-                  await postStore.create(postInput, user.name, user.id);
+                  await postStore.create(postInput, user.name, user.id, user.role);
                   setShowEventComposer(false);
                   
                   toast({

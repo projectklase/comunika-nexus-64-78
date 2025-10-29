@@ -145,7 +145,7 @@ class PostStore {
     }
   }
 
-  async create(input: PostInput, authorName: string, authorId: string, allowPastOverride = false): Promise<Post> {
+  async create(input: PostInput, authorName: string, authorId: string, authorRole: 'secretaria' | 'professor' | 'aluno', allowPastOverride = false): Promise<Post> {
     // Validate and sanitize data
     const validation = validatePostData(input, allowPastOverride);
     if (!validation.isValid) {
@@ -166,7 +166,7 @@ class PostStore {
       audience: validation.data.audience,
       author_name: authorName,
       author_id: authorId,
-      author_role: this.inferAuthorRole(authorName),
+      author_role: authorRole,
       status: validation.data.status || "PUBLISHED",
       publish_at: validation.data.publishAt,
       activity_meta: validation.data.activityMeta,

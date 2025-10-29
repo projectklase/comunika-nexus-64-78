@@ -243,7 +243,7 @@ export default function NovaAtividade() {
           dueAt,
           status: 'PUBLISHED',
           activityMeta: finalMeta
-        }, user.name, user.id);
+        }, user.name, user.id, user.role);
       }
       
       const typeLabel = activityType === 'ATIVIDADE' ? 'Atividade' : 
