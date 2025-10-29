@@ -43,6 +43,7 @@ import AlunoHome from "./pages/AlunoHome";
 import AlunoActivityResult from "./pages/aluno/AlunoActivityResult";
 // import AlunoNexus from "./pages/AlunoNexus"; // NEXUS REMOVIDO
 import AlunoCalendario from "./pages/AlunoCalendario";
+import { MinhasAtividadesPage } from "./pages/aluno/MinhasAtividadesPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import ProfessorCalendar from "./pages/ProfessorCalendar";
 import SecretariaCalendar from "./pages/SecretariaCalendar";
@@ -321,6 +322,13 @@ const App = () => (
               <RoleGuard allowedRoles={['aluno']}>
                 <AppLayout>
                   <AlunoActivityResult />
+                </AppLayout>
+              </RoleGuard>
+            } />
+            <Route path="/minhas-atividades" element={
+              <RoleGuard allowedRoles={['aluno']}>
+                <AppLayout>
+                  <MinhasAtividadesPage />
                 </AppLayout>
               </RoleGuard>
             } />
