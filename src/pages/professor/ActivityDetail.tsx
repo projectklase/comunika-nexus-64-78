@@ -43,6 +43,12 @@ export default function ActivityDetail() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // All data hooks MUST come before any conditional returns
+  const { posts } = usePosts();
+  const { classes } = useClassStore();
+  const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any>(null);
 
   // Effect to handle URL tab parameter
   useEffect(() => {
@@ -51,15 +57,52 @@ export default function ActivityDetail() {
       setActiveTab('deliveries');
     }
   }, [searchParams]);
+  
+  // Effect to load deliveries (with refresh trigger to force reload)
+  useEffect(() => {
+    if (!postId) return;
+    
+    const loadDeliveries = async () => {
+      try {
+        const result = await deliveryService.list({ postId });
+        console.log('ActivityDetail - Loading deliveries for postId:', postId, 'Found:', result.length);
+        setDeliveries(result);
+      } catch (error) {
+        console.error('Error loading deliveries:', error);
+        setDeliveries([]);
+      }
+    };
+    
+    loadDeliveries();
+  }, [postId, refreshTrigger]);
+  
+  // Effect to load metrics
+  useEffect(() => {
+    if (!postId || !classId) return;
+    
+    const loadMetrics = async () => {
+      try {
+        // Find the class to get student count
+        const targetClass = classes.find(c => c.id === classId);
+        if (!targetClass) return;
+        
+        const result = await deliveryService.getActivityMetrics(postId, targetClass.students.length || 0);
+        setMetrics(result);
+      } catch (error) {
+        console.error('Error loading metrics:', error);
+      }
+    };
+    
+    loadMetrics();
+  }, [postId, classId, classes, refreshTrigger]);
 
+  // Now safe to do conditional returns - all hooks are called
   if (!user || !classId || !postId) {
     return <div>Parâmetros inválidos</div>;
   }
 
-  // Buscar dados
-  const { posts } = usePosts();
+  // Buscar dados derivados
   const activity = posts.find(p => p.id === postId);
-  const { classes } = useClassStore();
   const schoolClass = classes.find(c => c.id === classId);
 
   if (!activity || !schoolClass) {
@@ -76,41 +119,6 @@ export default function ActivityDetail() {
       </div>
     );
   }
-
-  // Buscar entregas (with refresh trigger to force reload)
-  const [deliveries, setDeliveries] = useState<any[]>([]);
-  
-  useEffect(() => {
-    const loadDeliveries = async () => {
-      try {
-        const result = await deliveryService.list({ postId });
-        console.log('ActivityDetail - Loading deliveries for postId:', postId, 'Found:', result.length);
-        setDeliveries(result);
-      } catch (error) {
-        console.error('Error loading deliveries:', error);
-        setDeliveries([]);
-      }
-    };
-    
-    loadDeliveries();
-  }, [postId, refreshTrigger]);
-  
-  const [metrics, setMetrics] = useState<any>(null);
-  
-  useEffect(() => {
-    const loadMetrics = async () => {
-      try {
-        const result = await deliveryService.getActivityMetrics(postId, schoolClass?.students.length || 0);
-        setMetrics(result);
-      } catch (error) {
-        console.error('Error loading metrics:', error);
-      }
-    };
-    
-    if (schoolClass) {
-      loadMetrics();
-    }
-  }, [postId, schoolClass?.students.length, refreshTrigger]);
 
   // Configuração do tipo de atividade
   const typeConfig = activityTypeConfig[activity.type as keyof typeof activityTypeConfig];
