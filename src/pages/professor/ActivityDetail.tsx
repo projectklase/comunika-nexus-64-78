@@ -48,7 +48,16 @@ export default function ActivityDetail() {
   const { posts } = usePosts();
   const { classes } = useClassStore();
   const [deliveries, setDeliveries] = useState<any[]>([]);
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<any>({
+    naoEntregue: 0,
+    aguardando: 0,
+    aprovadas: 0,
+    devolvidas: 0,
+    atrasadas: 0,
+    percentualEntrega: 0,
+    percentualAprovacao: 0,
+    total: 0
+  });
 
   // Effect to handle URL tab parameter
   useEffect(() => {
