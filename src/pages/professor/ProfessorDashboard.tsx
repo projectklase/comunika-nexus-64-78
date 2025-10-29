@@ -243,7 +243,7 @@ export default function ProfessorDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-wrap gap-3 items-center">
             <Button variant="outline" className="h-20 flex-col gap-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" asChild>
               <Link to="/professor/turmas">
                 <Users className="h-6 w-6" />
