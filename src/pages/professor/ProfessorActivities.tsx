@@ -309,7 +309,7 @@ export default function ProfessorActivities() {
 
   // Handler: Editar
   const handleEditActivity = (activityId: string) => {
-    navigate(`/professor/atividades/editar/${activityId}`);
+    navigate(`/professor/atividades/nova?edit=${activityId}`);
   };
 
   // Handler: Excluir (com confirmação)
