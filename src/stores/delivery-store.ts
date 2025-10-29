@@ -357,24 +357,44 @@ class DeliveryStore {
     }
   }
 
-  // Calcular contadores para um professor (todas as atividades)
   async getProfessorMetrics(classIds: string[]): Promise<{
     pendingDeliveries: number;
     weeklyDeadlines: number;
   }> {
     try {
-      const { data, error } = await supabase
+      // Count pending deliveries
+      const { data: pendingData, error: pendingError } = await supabase
         .from('deliveries')
         .select('id')
         .in('class_id', classIds)
         .eq('review_status', 'AGUARDANDO');
 
-      if (error) throw error;
+      if (pendingError) throw pendingError;
 
-      // TODO: Implementar cálculo de prazos da semana quando integrar com posts
+      // Count weekly deadlines
+      const now = new Date();
+      const endOfWeek = new Date(now);
+      endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      const { data: weeklyData, error: weeklyError } = await supabase
+        .from('posts')
+        .select('id, class_ids')
+        .in('type', ['ATIVIDADE', 'TRABALHO', 'PROVA'])
+        .gte('due_at', now.toISOString())
+        .lte('due_at', endOfWeek.toISOString())
+        .eq('status', 'PUBLISHED');
+
+      if (weeklyError) throw weeklyError;
+
+      // Filter by class_ids in array field
+      const filteredWeekly = weeklyData?.filter((post: any) => 
+        post.class_ids?.some((id: string) => classIds.includes(id))
+      ) || [];
+
       return {
-        pendingDeliveries: data ? data.length : 0,
-        weeklyDeadlines: 0
+        pendingDeliveries: pendingData ? pendingData.length : 0,
+        weeklyDeadlines: filteredWeekly.length
       };
     } catch (error) {
       console.error('Error getting professor metrics:', error);

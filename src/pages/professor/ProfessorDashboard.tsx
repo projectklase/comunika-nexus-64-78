@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useStoreInitialization } from '@/hooks/useStoreInitialization';
-import { getProfessorClasses, getProfessorMetrics } from '@/utils/professor-helpers';
+import { getProfessorClasses } from '@/utils/professor-helpers';
 import { DashboardCard } from '@/components/Dashboard/DashboardCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { orderClassesBySchedule, getClassDisplayInfo } from '@/utils/class-helpers';
 import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
+import { usePosts } from '@/hooks/usePosts';
+import { useState, useEffect } from 'react';
+import { deliveryStore } from '@/stores/delivery-store';
 
 export default function ProfessorDashboard() {
   const { user, isLoading } = useAuth();
@@ -16,6 +19,14 @@ export default function ProfessorDashboard() {
   useStoreInitialization();
   const { levels } = useLevels();
   const { modalities } = useModalities();
+  const { posts, isLoading: postsLoading } = usePosts({
+    status: 'PUBLISHED'
+  });
+  
+  const [deliveryMetrics, setDeliveryMetrics] = useState({
+    pendingDeliveries: 0,
+    weeklyDeadlines: 0
+  });
   
   if (isLoading) {
     return (
@@ -40,7 +51,28 @@ export default function ProfessorDashboard() {
   
   const professorClasses = getProfessorClasses(user.id);
   const orderedClasses = orderClassesBySchedule(professorClasses);
-  const metrics = getProfessorMetrics(user.id);
+  
+  const recentActivities = posts
+    .filter(p => p.authorId === user.id && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+  
+  const totalStudents = professorClasses.reduce((sum, c) => sum + (c.students?.length || 0), 0);
+  
+  useEffect(() => {
+    async function fetchDeliveryMetrics() {
+      if (professorClasses.length === 0) {
+        setDeliveryMetrics({ pendingDeliveries: 0, weeklyDeadlines: 0 });
+        return;
+      }
+      
+      const classIds = professorClasses.map(c => c.id);
+      const metrics = await deliveryStore.getProfessorMetrics(classIds);
+      setDeliveryMetrics(metrics);
+    }
+    
+    fetchDeliveryMetrics();
+  }, [professorClasses]);
   
   return (
     <div className="space-y-6">
@@ -70,7 +102,7 @@ export default function ProfessorDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardCard
           title="Minhas Turmas"
-          value={metrics.totalClasses}
+          value={professorClasses.length}
           description="turmas ativas"
           trend={{ value: 0, label: "+0%" }}
           icon={Users}
@@ -78,7 +110,7 @@ export default function ProfessorDashboard() {
         
         <DashboardCard
           title="Total de Alunos"
-          value={metrics.totalStudents}
+          value={totalStudents}
           description="em todas as turmas"
           trend={{ value: 0, label: "+0%" }}
           icon={BookOpen}
@@ -86,7 +118,7 @@ export default function ProfessorDashboard() {
         
         <DashboardCard
           title="Entregas Pendentes"
-          value={metrics.pendingDeliveries}
+          value={deliveryMetrics.pendingDeliveries}
           description="aguardando correção"
           trend={{ value: 0, label: "+0%" }}
           icon={Clock}
@@ -94,7 +126,7 @@ export default function ProfessorDashboard() {
         
         <DashboardCard
           title="Prazos esta Semana"
-          value={metrics.weeklyDeadlines}
+          value={deliveryMetrics.weeklyDeadlines}
           description="atividades com prazo"
           trend={{ value: 0, label: "+0%" }}
           icon={Calendar}
@@ -161,18 +193,43 @@ export default function ProfessorDashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-6">
-              <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">
-                Nenhuma atividade recente
-              </p>
-              <Button asChild>
-                <Link to="/professor/atividades/nova">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Primeira Atividade
-                </Link>
-              </Button>
-            </div>
+            {postsLoading ? (
+              <div className="text-center py-6">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground mt-4">Carregando...</p>
+              </div>
+            ) : recentActivities.length === 0 ? (
+              <div className="text-center py-6">
+                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  Nenhuma atividade recente
+                </p>
+                <Button asChild>
+                  <Link to="/professor/atividades/nova">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Primeira Atividade
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex-1">
+                      <h4 className="font-medium">{activity.title}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {activity.type} • {new Date(activity.createdAt).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/professor/atividade/${activity.id}`}>
+                        Ver
+                      </Link>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
