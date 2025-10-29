@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { deliveryService } from '@/services/delivery-service';
 import { useClassStore } from '@/stores/class-store';
+import { supabase } from '@/integrations/supabase/client';
 import { DeliveryTable } from '@/components/activities/DeliveryTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -159,14 +160,56 @@ export default function ActivityDetail() {
       }
 
       // Handle rewards for approved deliveries
-      if (reviewStatus === 'APROVADA') {
-        // TODO: Implement reward system integration when available
+      if (reviewStatus === 'APROVADA' && activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0) {
+        try {
+          // Get student IDs from approved deliveries
+          const approvedDeliveries = deliveries.filter(d => deliveryIds.includes(d.id));
+          const studentIds = approvedDeliveries.map(d => d.studentId);
+          
+          if (studentIds.length > 0) {
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            const response = await fetch(
+              `https://yanspolqarficibgovia.supabase.co/functions/v1/grant-koin-bonus`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({
+                  eventName: `Atividade: ${activity.title}`,
+                  eventDescription: `Entrega aprovada`,
+                  koinAmount: activity.activityMeta.koinReward,
+                  studentIds: studentIds,
+                  grantedBy: user.id
+                })
+              }
+            );
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              console.error('[ActivityDetail] Erro ao conceder Koins:', errorData);
+            } else {
+              const result = await response.json();
+              console.log('[ActivityDetail] Koins concedidos:', result);
+            }
+          }
+        } catch (koinError) {
+          console.error('[ActivityDetail] Erro ao conceder Koins:', koinError);
+          // Não bloquear a aprovação se os Koins falharem
+        }
       }
 
       toast({
         title: 'Revisão concluída',
-        description: `${deliveryIds.length} entrega(s) ${reviewStatus === 'APROVADA' ? 'aprovada(s)' : 'devolvida(s)'} com sucesso.`
+        description: reviewStatus === 'APROVADA' 
+          ? `${deliveryIds.length} entrega(s) aprovada(s)${activity.activityMeta?.koinReward ? ` (+${activity.activityMeta.koinReward} Koins)` : ''}`
+          : `${deliveryIds.length} entrega(s) devolvida(s)`
       });
+      
+      // Force refresh
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       toast({
         title: 'Erro',
@@ -359,6 +402,17 @@ export default function ActivityDetail() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-yellow-600 dark:text-yellow-400">
+                      💰 {activity.activityMeta.koinReward} Koins
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Recompensa por entrega
+                    </span>
                   </div>
                 )}
 
