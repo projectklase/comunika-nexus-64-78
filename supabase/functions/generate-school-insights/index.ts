@@ -26,6 +26,17 @@ serve(async (req) => {
       );
     }
 
+    // Criar cliente Supabase com JWT do usuário
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return new Response(
+        JSON.stringify({ error: "Configuração do Supabase ausente" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -34,28 +45,56 @@ serve(async (req) => {
       );
     }
 
-    // Criar cliente Supabase
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+      auth: {
+        persistSession: false,
+      },
     });
 
-    // Verificar se usuário é administrador
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // Extrair user ID do JWT (já validado pelo Supabase com verify_jwt = true)
+    const token = authHeader.replace('Bearer ', '');
+    const parts = token.split('.');
+    if (parts.length !== 3) {
       return new Response(
-        JSON.stringify({ error: "Usuário não autenticado" }),
+        JSON.stringify({ error: "Token JWT inválido" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const { data: roleData } = await supabase
+    let userId: string;
+    try {
+      const payload = JSON.parse(atob(parts[1]));
+      userId = payload.sub;
+      
+      if (!userId) {
+        throw new Error("User ID não encontrado no token");
+      }
+    } catch (e) {
+      console.error("Erro ao decodificar JWT:", e);
+      return new Response(
+        JSON.stringify({ error: "Erro ao processar token de autenticação" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verificar se usuário é administrador
+    const { data: roleData, error: roleError } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("role", "administrador")
-      .single();
+      .maybeSingle();
+
+    if (roleError) {
+      console.error("Erro ao verificar role:", roleError);
+      return new Response(
+        JSON.stringify({ error: "Erro ao verificar permissões" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!roleData) {
       return new Response(
