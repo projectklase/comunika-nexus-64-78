@@ -35,6 +35,7 @@ import { useEffect } from 'react';
 import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
 import { useSubjects } from '@/hooks/useSubjects';
+import { useReads } from '@/hooks/useReads';
 
 interface PostDetailDrawerProps {
   isOpen: boolean;
@@ -52,13 +53,17 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const { subjects } = useSubjects();
+  const { markAsRead } = useReads();
 
-  // Record post view when drawer opens
+  // Record post view and mark as read when drawer opens
   useEffect(() => {
     if (isOpen && post && user) {
       recordPostView(post.id, user, 'feed');
+      
+      // ✅ Marcar automaticamente como lido ao abrir
+      markAsRead(post.id);
     }
-  }, [isOpen, post, user, recordPostView]);
+  }, [isOpen, post, user, recordPostView, markAsRead]);
 
   if (!post) return null;
   

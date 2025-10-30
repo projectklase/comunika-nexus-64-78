@@ -245,8 +245,8 @@ export function PostCard({
   const handleMarkAsRead = () => {
     markAsRead(post.id);
     toast({
-      title: "Marcado como lido",
-      description: "Post foi marcado como lido com sucesso."
+      title: "✅ Post marcado como lido!",
+      description: "Continue lendo para completar o desafio 'Leitor Ativo' e ganhar Koins! 🪙"
     });
     onUpdate?.();
   };
@@ -452,11 +452,29 @@ export function PostCard({
 
           {/* Action Buttons */}
           {user && <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border/50">
-              {/* Mark as Read - for AVISO/COMUNICADO */}
-              {["AVISO", "COMUNICADO"].includes(post.type) && isNewPost && <Button size="sm" variant="outline" onClick={handleMarkAsRead} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Marcar como lido">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Marcar como lido
-                </Button>}
+              {/* Botão de leitura universal - TODOS os posts */}
+              <Button 
+                size="sm" 
+                variant={isNewPost ? "default" : "ghost"}
+                onClick={handleMarkAsRead}
+                className={cn(
+                  "text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  isNewPost && "bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                )}
+                aria-label={isNewPost ? "Marcar como lido" : "Já lido"}
+              >
+                {isNewPost ? (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" />
+                    Ler agora
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Lido
+                  </>
+                )}
+              </Button>
 
               {/* Activity Actions - Only for students */}
               {isActivity && user.role === "aluno" && <>
@@ -510,12 +528,6 @@ export function PostCard({
                   Ver Convites
                 </Button>}
 
-              {/* Read Toggle - for read posts */}
-              {!isNewPost && ["AVISO", "COMUNICADO"].includes(post.type) && <Button size="sm" variant="ghost" onClick={handleMarkAsRead} // This will toggle back to unread in a real implementation
-          className="text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Marcar como não lido">
-                  <Eye className="h-3 w-3 mr-1" />
-                  Lido
-                </Button>}
             </div>}
 
           {/* Footer */}
