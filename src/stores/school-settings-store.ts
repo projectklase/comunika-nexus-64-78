@@ -5,6 +5,9 @@ import type { SchoolSettings, SchoolSettingsStore } from '@/types/school-setting
 const STORAGE_KEY = 'school_settings';
 const DEFAULT_SCHOOL_SLUG = 'default';
 
+// Flag para prevenir múltiplas requisições simultâneas ao Supabase
+let isLoadingFromSupabase = false;
+
 export const useSchoolSettingsStore = create<SchoolSettingsStore>((set, get) => ({
   settings: {},
 
@@ -69,18 +72,26 @@ export const useSchoolSettingsStore = create<SchoolSettingsStore>((set, get) => 
         });
       }
       
-      // Load from Supabase asynchronously
-      loadSupabaseSettings().then((settings) => {
-        if (settings) {
-          set((state) => ({
-            settings: {
-              ...state.settings,
-              [DEFAULT_SCHOOL_SLUG]: settings,
-            },
-          }));
-          get().saveToStorage();
-        }
-      }).catch(console.error);
+      // Load from Supabase asynchronously (ONCE)
+      if (!isLoadingFromSupabase) {
+        isLoadingFromSupabase = true;
+        loadSupabaseSettings()
+          .then((settings) => {
+            if (settings) {
+              set((state) => ({
+                settings: {
+                  ...state.settings,
+                  [DEFAULT_SCHOOL_SLUG]: settings,
+                },
+              }));
+              get().saveToStorage();
+            }
+          })
+          .catch(console.error)
+          .finally(() => {
+            isLoadingFromSupabase = false;
+          });
+      }
     } catch (error) {
       console.error('Error loading school settings:', error);
     }
@@ -103,9 +114,13 @@ async function loadSupabaseSettings(): Promise<SchoolSettings | null> {
     .eq('key', 'use_activity_weights')
     .single();
 
-  if (error && error.code !== 'PGRST116') {
-    console.error('Error loading settings from Supabase:', error);
-    return null;
+  if (error) {
+    // PGRST116 = not found (ok, usar default)
+    // PGRST301 = RLS block (fallback para default)
+    if (error.code !== 'PGRST116' && error.code !== 'PGRST301') {
+      console.error('Error loading settings from Supabase:', error);
+    }
+    return null; // Fallback para weightsEnabled: true
   }
 
   if (!data) return null;
