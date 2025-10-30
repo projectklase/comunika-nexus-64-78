@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertTriangle, TrendingUp, Users, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
 
 export default function AdminAnalyticsPage() {
   const [daysFilter, setDaysFilter] = useState<number>(30);
@@ -204,16 +205,31 @@ export default function AdminAnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Placeholder para Gráfico de Tendência (Fase 2) */}
+      {/* Gráfico de Tendência de Atividades */}
       <Card className="glass">
         <CardHeader>
-          <CardTitle>Tendência de Atividades</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Tendência de Atividades
+          </CardTitle>
           <CardDescription>
-            Gráfico de linha comparando atividades publicadas vs. entregas realizadas
+            Comparação entre atividades publicadas e entregas realizadas ao longo do tempo
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-64 flex items-center justify-center text-muted-foreground">
-          📊 Gráfico de tendência será implementado na Fase 2
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-80 w-full" />
+          ) : analytics?.activity_trend && analytics.activity_trend.length > 0 ? (
+            <div className="h-80">
+              <ActivityTrendChart data={analytics.activity_trend} />
+            </div>
+          ) : (
+            <Alert>
+              <AlertDescription>
+                Nenhum dado disponível para o período selecionado.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
     </div>
