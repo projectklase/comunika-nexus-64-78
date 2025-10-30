@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { postStore } from '@/stores/post-store';
 import { PostInput, PostType } from '@/types/post';
+import { canAccessOperations } from '@/utils/auth-helpers';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -38,9 +39,9 @@ export default function SecretariaCalendar() {
   // Initialize stores once
   useStoreInitialization();
   
-  // Redirect if not secretaria
-  if (!user || user.role !== 'secretaria') {
-    return <Navigate to="/login" replace />;
+  // Redirect if not authorized for operations
+  if (!canAccessOperations(user?.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Parse URL parameters safely

@@ -28,7 +28,7 @@ import ModalitiesPage from "./pages/ModalitiesPage";
 import StudentsPage from "./pages/StudentsPage";
 // Removed ClassTemplatesPage import
 import CatalogoPage from "./pages/CatalogoPage";
-import { MANAGEMENT_ROLES } from "./utils/auth-helpers";
+import { MANAGEMENT_ROLES, OPERATIONAL_ROLES } from "./utils/auth-helpers";
 import TeachersPage from "./pages/TeachersPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -107,7 +107,7 @@ const App = () => (
             } />
             {/* Calendar routes for different roles */}
             <Route path="/calendario" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
+              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
                 <AppLayout>
                   <CalendarProviders>
                     <SecretariaCalendar />
@@ -116,7 +116,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/secretaria/calendario" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
+              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
                 <AppLayout>
                   <CalendarProviders>
                     <SecretariaCalendar />
@@ -214,7 +214,7 @@ const App = () => (
               <Navigate to="/secretaria/cadastros/programas" replace />
             } />
             <Route path="/secretaria/historico" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
+              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
                 <AppLayout>
                   <HistoricoPage />
                 </AppLayout>
@@ -293,7 +293,7 @@ const App = () => (
               </RoleGuard>
             } />
             <Route path="/secretaria/turma/:classId/calendario" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
+              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
                 <AppLayout>
                   <CalendarProviders>
                     <ClassCalendarPage />
@@ -382,14 +382,14 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/secretaria/gerenciar-recompensas" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
+              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
                 <AppLayout>
                   <RewardsManagement />
                 </AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/secretaria/gerenciar-desafios" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
+              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
                 <AppLayout>
                   <ChallengesManagement />
                 </AppLayout>
