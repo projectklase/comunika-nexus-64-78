@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Play, Target, Calendar, Clock, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Target, Calendar, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNexus } from '@/hooks/useNexus';
 import { useSmartAgenda } from '@/hooks/useSmartAgenda';
 import { ActivityTrail } from './ActivityTrail';
-import { FocusMode } from './FocusMode';
+import { ChallengeHub } from './ChallengeHub';
 import { SmartAgenda } from './SmartAgenda';
 import { cn } from '@/lib/utils';
 
@@ -20,15 +20,14 @@ interface NexusPanelProps {
 export function NexusPanel({ isOpen, onClose }: NexusPanelProps) {
   const { getNexusStatus, getActivityUrgency, activities } = useNexus();
   const { suggestStudyBlocks, scheduleStudyBlock } = useSmartAgenda();
-  const [activeView, setActiveView] = useState<'overview' | 'trail' | 'focus' | 'agenda'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'trail' | 'challenges' | 'agenda'>('overview');
   const [selectedActivityId, setSelectedActivityId] = useState<string>('');
 
   const status = getNexusStatus();
   const mostUrgent = status.mostUrgentActivity;
 
-  const handleStartFocus = (activityId: string, stepId?: string) => {
-    setSelectedActivityId(activityId);
-    setActiveView('focus');
+  const handleViewChallenges = () => {
+    setActiveView('challenges');
   };
 
   const handleViewTrail = (activityId: string) => {
@@ -145,15 +144,7 @@ export function NexusPanel({ isOpen, onClose }: NexusPanelProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2">
-              <Button 
-                size="sm"
-                onClick={() => handleStartFocus(mostUrgent.activity.id, status.nextStep?.id)}
-                className="h-9 bg-gradient-primary hover:bg-gradient-primary/90 text-primary-foreground text-xs font-medium shadow-glow transition-all duration-200"
-              >
-                <Play className="h-3 w-3 mr-1" />
-                <span className="truncate">Foco</span>
-              </Button>
+            <div className="grid grid-cols-2 gap-2">
               <Button 
                 size="sm" 
                 variant="outline"
@@ -192,11 +183,11 @@ export function NexusPanel({ isOpen, onClose }: NexusPanelProps) {
         <Button 
           variant="outline" 
           className="h-16 glass-card hover:glass-hover border-border/50 hover:border-secondary/30 group transition-all duration-300"
-          onClick={() => setActiveView('focus')}
+          onClick={handleViewChallenges}
         >
           <div className="text-center space-y-1">
-            <Clock className="h-5 w-5 mx-auto text-muted-foreground group-hover:text-secondary transition-colors duration-200" />
-            <div className="text-xs font-medium group-hover:text-foreground transition-colors duration-200">Foco</div>
+            <Sparkles className="h-5 w-5 mx-auto text-muted-foreground group-hover:text-secondary transition-colors duration-200" />
+            <div className="text-xs font-medium group-hover:text-foreground transition-colors duration-200">Desafios</div>
           </div>
         </Button>
       </div>
@@ -254,8 +245,8 @@ export function NexusPanel({ isOpen, onClose }: NexusPanelProps) {
             {activeView === 'trail' && selectedActivityId && (
               <ActivityTrail activityId={selectedActivityId} />
             )}
-            {activeView === 'focus' && (
-              <FocusMode activityId={selectedActivityId} onExit={handleBack} />
+            {activeView === 'challenges' && (
+              <ChallengeHub />
             )}
             {activeView === 'agenda' && (
               <SmartAgenda />

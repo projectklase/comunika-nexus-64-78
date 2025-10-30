@@ -73,6 +73,48 @@ export type Database = {
           },
         ]
       }
+      challenges: {
+        Row: {
+          action_count: number
+          action_target: string
+          created_at: string
+          description: string
+          icon_name: string | null
+          id: string
+          is_active: boolean
+          koin_reward: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          action_count?: number
+          action_target: string
+          created_at?: string
+          description: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          koin_reward: number
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          action_count?: number
+          action_target?: string
+          created_at?: string
+          description?: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          koin_reward?: number
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       class_students: {
         Row: {
           class_id: string
@@ -1017,6 +1059,60 @@ export type Database = {
           value?: Json | null
         }
         Relationships: []
+      }
+      student_challenges: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          created_at: string
+          current_progress: number
+          expires_at: string | null
+          id: string
+          started_at: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_progress?: number
+          expires_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_progress?: number
+          expires_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_challenges_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subjects: {
         Row: {
