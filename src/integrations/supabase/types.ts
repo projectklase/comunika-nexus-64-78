@@ -1291,6 +1291,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_evasion_risk_analytics: {
+        Args: { days_filter?: number }
+        Returns: Json
+      }
       get_student_challenges_with_progress: {
         Args: { p_student_id: string }
         Returns: {

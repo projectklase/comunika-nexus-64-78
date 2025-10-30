@@ -56,6 +56,7 @@ import RewardsStore from "./pages/RewardsStore";
 import RewardsManagement from "./pages/Secretaria/RewardsManagement";
 import ChallengesManagement from "./pages/Secretaria/ChallengesManagement";
 import SecretariasPage from "./pages/admin/SecretariasPage";
+import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,15 @@ const App = () => (
             <Route path="/admin/gerenciar-secretarias" element={
               <ProtectedRoute allowedRoles={['administrador']}>
                 <SecretariasPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin - Centro de Inteligência (Analytics) */}
+            <Route path="/admin/analytics" element={
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <AppLayout>
+                  <AdminAnalyticsPage />
+                </AppLayout>
               </ProtectedRoute>
             } />
             

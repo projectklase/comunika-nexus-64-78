@@ -36,11 +36,13 @@ import {
   ListTodo,
   Sparkles,
   Shield,
+  BarChart3,
 } from 'lucide-react';
 
 const menuItems = {
   administrador: [
     { title: 'Dashboard Admin', url: '/admin/dashboard', icon: LayoutDashboard },
+    { title: 'Inteligência', url: '/admin/analytics', icon: BarChart3 },
     { title: 'Gerenciar Secretarias', url: '/admin/gerenciar-secretarias', icon: Shield },
     { title: 'Histórico', url: '/secretaria/historico', icon: History },
     { title: 'Calendário', url: '/secretaria/calendario', icon: Calendar },
