@@ -67,20 +67,19 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verificar se o usuário tem role de secretaria
+    // Verificar se o usuário tem role de secretaria ou administrador
     const { data: userRoles, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', callerUser.id)
-      .eq('role', 'secretaria')
       .single()
 
-    if (roleError || !userRoles) {
-      console.error('User does not have secretaria role:', callerUser.id)
+    if (roleError || !userRoles || !['secretaria', 'administrador'].includes(userRoles.role)) {
+      console.error('User does not have secretaria or administrador role:', callerUser.id)
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Apenas usuários da secretaria podem criar logins' 
+          error: 'Apenas usuários da secretaria ou administradores podem criar logins' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -88,6 +87,9 @@ Deno.serve(async (req) => {
         }
       )
     }
+
+    const callerRole = userRoles.role
+    console.log('Caller role:', callerRole)
 
     const { email, password, name, role, dob, phone, enrollment_number, student_notes, userId, updatePasswordOnly }: DemoUserRequest = await req.json()
 
@@ -211,6 +213,21 @@ Deno.serve(async (req) => {
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
+        }
+      )
+    }
+
+    // CRITICAL: Only administrators can create 'secretaria' role users
+    if (role === 'secretaria' && callerRole !== 'administrador') {
+      console.error('Only administrators can create secretaria users. Caller:', callerRole)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Apenas administradores podem criar usuários com papel de secretaria' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403 
         }
       )
     }

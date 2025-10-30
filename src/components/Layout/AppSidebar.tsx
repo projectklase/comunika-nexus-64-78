@@ -35,11 +35,13 @@ import {
   Store,
   ListTodo,
   Sparkles,
+  Shield,
 } from 'lucide-react';
 
 const menuItems = {
   administrador: [
     { title: 'Dashboard Admin', url: '/admin/dashboard', icon: LayoutDashboard },
+    { title: 'Gerenciar Secretarias', url: '/admin/gerenciar-secretarias', icon: Shield },
     { title: 'Histórico', url: '/secretaria/historico', icon: History },
     { title: 'Calendário', url: '/secretaria/calendario', icon: Calendar },
     { title: 'Recompensas', url: '/secretaria/gerenciar-recompensas', icon: Gift },

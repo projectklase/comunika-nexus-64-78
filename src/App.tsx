@@ -55,6 +55,7 @@ import { PostFallback } from "./pages/PostFallback";
 import RewardsStore from "./pages/RewardsStore";
 import RewardsManagement from "./pages/Secretaria/RewardsManagement";
 import ChallengesManagement from "./pages/Secretaria/ChallengesManagement";
+import SecretariasPage from "./pages/admin/SecretariasPage";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,13 @@ const App = () => (
                 <AppLayout>
                   <AdminDashboard />
                 </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin - Gerenciar Secretarias */}
+            <Route path="/admin/gerenciar-secretarias" element={
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <SecretariasPage />
               </ProtectedRoute>
             } />
             
