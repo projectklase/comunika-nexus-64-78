@@ -18,7 +18,6 @@ import { useReads } from '@/hooks/useReads';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCalendarNavigation } from '@/hooks/useCalendarNavigation';
 import { usePostActionsUnified } from '@/hooks/usePostActionsUnified';
-import { useSmartAgenda } from '@/hooks/useSmartAgenda';
 import { useStudentGamification } from '@/stores/studentGamification';
 import { Post, PostType } from '@/types/post';
 import { ROUTES } from '@/constants/routes';
@@ -39,7 +38,6 @@ export default function AlunoHome() {
   const { savedIds } = useSaved();
   const { markAsRead } = useReads();
   const { openInCalendar } = usePostActionsUnified();
-  const { scheduleStudyBlock, getTodayBlocks } = useSmartAgenda();
   const navigate = useNavigate();
   
   const [filters, setFilters] = useState<QuickFiltersState>(defaultFilters);
@@ -214,58 +212,6 @@ export default function AlunoHome() {
     setUpdateKey(prev => prev + 1);
   };
 
-  const handleScheduleStudyBlock = (post: Post) => {
-    trackEvent('AGENDA_SCHEDULE_STUDY', { postId: post.id, postType: post.type });
-    
-    try {
-      // Simple scheduling logic - in production, you might want a more sophisticated approach
-      const now = new Date();
-      const suggestedStart = new Date(now.getTime() + 2 * 60 * 60 * 1000); // +2 hours
-      const duration = 60; // 1 hour default
-      
-      scheduleStudyBlock(post.id, suggestedStart, duration);
-      
-      toast({
-        title: 'Bloco de estudo agendado',
-        description: `Estudo para "${post.title}" agendado para ${suggestedStart.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-      });
-      setUpdateKey(prev => prev + 1);
-    } catch (error) {
-      console.error('Error scheduling study block:', error);
-      toast({
-        title: 'Erro ao agendar estudo',
-        description: 'Não foi possível agendar o bloco de estudo.',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const handleRemoveStudyBlock = (post: Post) => {
-    trackEvent('AGENDA_REMOVE_STUDY', { postId: post.id, postType: post.type });
-    
-    try {
-      // Find and remove study blocks for this activity
-      const blocks = getTodayBlocks();
-      const activityBlocks = blocks.filter(block => block.activityId === post.id);
-      
-      // In a real implementation, you'd call a remove method on the smart agenda store
-      // For now, we'll just show a success message
-      
-      toast({
-        title: 'Bloco de estudo removido',
-        description: `Estudo para "${post.title}" foi removido da sua agenda`
-      });
-      setUpdateKey(prev => prev + 1);
-    } catch (error) {
-      console.error('Error removing study block:', error);
-      toast({
-        title: 'Erro ao remover estudo',
-        description: 'Não foi possível remover o bloco de estudo.',
-        variant: 'destructive'
-      });
-    }
-  };
-
   const handleUpdate = () => {
     setUpdateKey(prev => prev + 1);
   };
@@ -376,8 +322,6 @@ export default function AlunoHome() {
                       onGoToCalendar={handleGoToCalendar}
                       onMarkDelivered={handleMarkDelivered}
                       onMarkAsRead={handleMarkAsRead}
-                      onScheduleStudyBlock={handleScheduleStudyBlock}
-                      onRemoveStudyBlock={handleRemoveStudyBlock}
                     />
                   ))}
                 </div>

@@ -15,8 +15,6 @@ import {
   Paperclip,
   Image as ImageIcon,
   FileIcon,
-  BookOpen,
-  X,
   Calendar as CalendarPlus,
   Users
 } from 'lucide-react';
@@ -25,7 +23,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useReads } from '@/hooks/useReads';
 import { useSaved } from '@/hooks/useSaved';
 import { deliveryStore } from '@/stores/delivery-store';
-import { useSmartAgenda } from '@/hooks/useSmartAgenda';
 import { usePostViews } from '@/stores/post-views.store';
 import { PostReadInsights } from '@/components/feed/PostReadInsights';
 import { EventConfirmationManager } from '@/components/student/EventConfirmationManager';
@@ -38,8 +35,6 @@ interface ImmersivePostCardProps {
   onGoToCalendar: (post: Post) => void;
   onMarkDelivered: (post: Post) => void;
   onMarkAsRead: (post: Post) => void;
-  onScheduleStudyBlock?: (post: Post) => void;
-  onRemoveStudyBlock?: (post: Post) => void;
   onInviteFriend?: (post: Post) => void;
 }
 
@@ -49,14 +44,11 @@ export function ImmersivePostCard({
   onGoToCalendar, 
   onMarkDelivered,
   onMarkAsRead,
-  onScheduleStudyBlock,
-  onRemoveStudyBlock,
   onInviteFriend
 }: ImmersivePostCardProps) {
   const { user } = useAuth();
   const { isRead } = useReads();
   const { isSaved } = useSaved();
-  const { getTodayBlocks, scheduleStudyBlock } = useSmartAgenda();
   const { recordPostView } = usePostViews();
   const [isHovering, setIsHovering] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
@@ -72,10 +64,6 @@ export function ImmersivePostCard({
   const isNewPost = !isRead(post.id);
   const isPostSaved = isSaved(post.id);
   const isOverdue = post.dueAt ? new Date() > new Date(post.dueAt) : false;
-  
-  // Check if there's a study block scheduled for this activity
-  const todayBlocks = getTodayBlocks();
-  const hasStudyBlock = isActivity && todayBlocks.some(block => block.activityId === post.id);
 
   const getTypeConfig = (type: PostType) => {
     switch (type) {
@@ -201,41 +189,6 @@ export function ImmersivePostCard({
     }
   };
 
-  const handleScheduleStudy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    await handleActionWithLoading('schedule', async () => {
-      if (onScheduleStudyBlock) {
-        onScheduleStudyBlock(post);
-      } else {
-        // Fallback to direct scheduling
-        const suggestions = useSmartAgenda().suggestStudyBlocks(post.id);
-        if (suggestions.length > 0) {
-          const firstSuggestion = suggestions[0];
-          scheduleStudyBlock(post.id, firstSuggestion.startTime, firstSuggestion.duration);
-          toast({
-            title: 'Bloco de estudo agendado',
-            description: `Estudo agendado para ${firstSuggestion.startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-          });
-        }
-      }
-    });
-  };
-
-  const handleRemoveStudy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    await handleActionWithLoading('remove', async () => {
-      if (onRemoveStudyBlock) {
-        onRemoveStudyBlock(post);
-      }
-      toast({
-        title: 'Bloco de estudo removido',
-        description: 'O bloco de estudo foi removido da sua agenda'
-      });
-    });
-  };
-
   const getPrimaryCTA = () => {
     // Activity CTAs
     if (isActivity) {
@@ -315,48 +268,13 @@ export function ImmersivePostCard({
     );
   };
 
-  const getStudyCTA = () => {
-    if (!isActivity || delivery?.reviewStatus === 'APROVADA') return null;
-    
-    if (hasStudyBlock) {
-      return (
-        <Button 
-          size="sm" 
-          variant="ghost"
-          className="opacity-70 hover:opacity-100 text-red-400 hover:text-red-300 hover:bg-red-500/10 min-h-[32px] max-w-[140px]"
-          disabled={isActionLoading === 'remove'}
-          onClick={handleRemoveStudy}
-          aria-label={`Remover bloco de estudo de ${post.title}`}
-        >
-          <X className="h-3 w-3 mr-1 flex-shrink-0" />
-          <span className="truncate text-xs">Remover Estudo</span>
-        </Button>
-      );
-    }
-    
-    return (
-      <Button 
-        size="sm" 
-        variant="ghost"
-        className="opacity-70 hover:opacity-100 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 min-h-[32px] max-w-[140px]"
-        disabled={isActionLoading === 'schedule'}
-        onClick={handleScheduleStudy}
-        aria-label={`Agendar estudo para ${post.title}`}
-      >
-        <BookOpen className="h-3 w-3 mr-1 flex-shrink-0" />
-        <span className="truncate text-xs">Agendar Estudo</span>
-      </Button>
-    );
-  };
-
   return (
     <Card 
       className={cn(
         "glass-card hover:scale-[1.02] transition-all duration-300 cursor-pointer group relative overflow-hidden min-h-[200px] flex flex-col",
         `bg-gradient-to-br ${typeConfig.color}`,
         isNewPost && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
-        isHovering && "shadow-xl shadow-primary/20",
-        hasStudyBlock && "ring-2 ring-blue-400/30"
+        isHovering && "shadow-xl shadow-primary/20"
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
@@ -470,12 +388,6 @@ export function ImmersivePostCard({
               <ExternalLink className="h-3 w-3" />
             </Button>
           </div>
-
-          {getStudyCTA() && (
-            <div className="flex justify-center">
-              {getStudyCTA()}
-            </div>
-          )}
           
           {/* Event Confirmation - Student View */}
           {post.type === 'EVENTO' && user?.id && (
