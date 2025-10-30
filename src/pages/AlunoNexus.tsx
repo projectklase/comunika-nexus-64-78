@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -5,6 +6,23 @@ import { SimplifiedNexusPanel } from '@/components/nexus/SimplifiedNexusPanel';
 
 export default function AlunoNexus() {
   const navigate = useNavigate();
+
+  // One-time cleanup of legacy Nexus data from localStorage
+  useEffect(() => {
+    const legacyKeys = ['nexus-storage', 'student-planner-storage'];
+    let cleaned = false;
+    
+    legacyKeys.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+        cleaned = true;
+      }
+    });
+    
+    if (cleaned) {
+      console.log('✅ Legacy Nexus data cleaned from localStorage');
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
