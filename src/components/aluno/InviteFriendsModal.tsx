@@ -35,6 +35,7 @@ import { onlyDigits } from '@/lib/validation';
 import { parseDateBR } from '@/lib/date-helpers';
 import { differenceInYears } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface InviteFriendsModalProps {
   isOpen: boolean;
@@ -150,6 +151,7 @@ type InviteFormData = z.infer<typeof inviteSchema>;
 
 export function InviteFriendsModal({ isOpen, onClose, event, studentId }: InviteFriendsModalProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
   const [showParentData, setShowParentData] = useState(false);
@@ -233,6 +235,9 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
         title: 'Amigo convidado com sucesso!',
         description: `${data.friendName} foi convidado(a) para o evento.`,
       });
+
+      // ✅ Invalidar queries de desafios para atualizar UI
+      queryClient.invalidateQueries({ queryKey: ['student_challenges'] });
 
       // Mostrar dialog para convidar mais amigos
       setShowInviteMoreDialog(true);

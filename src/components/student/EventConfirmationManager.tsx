@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types/post';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface EventConfirmationManagerProps {
   event: Post;
@@ -17,6 +18,7 @@ export function EventConfirmationManager({
   onConfirmationChange 
 }: EventConfirmationManagerProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
@@ -78,6 +80,9 @@ export function EventConfirmationManager({
           title: '✅ Presença confirmada!', 
           description: 'Você está confirmado para este evento.' 
         });
+        
+        // ✅ Invalidar queries de desafios para atualizar UI
+        queryClient.invalidateQueries({ queryKey: ['student_challenges'] });
       }
       
       onConfirmationChange?.();

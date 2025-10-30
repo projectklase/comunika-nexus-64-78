@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { readStore } from '@/stores/read-store';
 import { usePostReads } from '@/stores/post-reads.store';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePostRead } from '@/hooks/usePostRead';
 
 export function useReads() {
   const [_, forceUpdate] = useState({});
   const { recordPostRead } = usePostReads();
+  const { recordRead } = usePostRead();
   const { user } = useAuth();
 
   const markAsRead = (postId: string) => {
@@ -15,6 +17,9 @@ export function useReads() {
     if (user) {
       recordPostRead(postId, user, user.classId);
     }
+    
+    // ✅ NOVO: Registrar no Supabase (dispara trigger de desafio)
+    recordRead(postId);
     
     forceUpdate({}); // Force re-render
   };
