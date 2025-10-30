@@ -52,6 +52,7 @@ import PasswordResetsPage from "./pages/Secretaria/PasswordResets/index";
 import { PostFallback } from "./pages/PostFallback";
 import RewardsStore from "./pages/RewardsStore";
 import RewardsManagement from "./pages/Secretaria/RewardsManagement";
+import ChallengesManagement from "./pages/Secretaria/ChallengesManagement";
 
 const queryClient = new QueryClient();
 
@@ -372,6 +373,13 @@ const App = () => (
               <ProtectedRoute allowedRoles={['secretaria']}>
                 <AppLayout>
                   <RewardsManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/secretaria/gerenciar-desafios" element={
+              <ProtectedRoute allowedRoles={['secretaria']}>
+                <AppLayout>
+                  <ChallengesManagement />
                 </AppLayout>
               </ProtectedRoute>
             } />

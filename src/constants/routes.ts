@@ -22,6 +22,7 @@ export const ROUTES = {
     NOVO_POST: '/novo-post',
     NOTIFICACOES: '/secretaria/notificacoes',
     REWARDS_MANAGEMENT: '/secretaria/gerenciar-recompensas',
+    CHALLENGES_MANAGEMENT: '/secretaria/gerenciar-desafios',
     SEGURANCA: {
       RESETS: '/secretaria/seguranca/resets'
     },

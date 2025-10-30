@@ -40,6 +40,7 @@ const menuItems = {
     { title: 'Feed', url: '/secretaria/feed', icon: Rss },
     { title: 'Calendário', url: '/secretaria/calendario', icon: Calendar },
     { title: 'Recompensas', url: '/secretaria/gerenciar-recompensas', icon: Gift },
+    { title: 'Desafios', url: '/secretaria/gerenciar-desafios', icon: Target },
     { title: 'Histórico', url: '/secretaria/historico', icon: History },
   ],
   secretariaCadastros: [
