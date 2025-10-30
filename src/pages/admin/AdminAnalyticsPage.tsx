@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
 import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
 import { PostReadAnalytics } from '@/components/admin/PostReadAnalytics';
+import { PredictiveInsightsDashboard } from '@/components/admin/PredictiveInsightsDashboard';
 import { Separator } from '@/components/ui/separator';
 
 export default function AdminAnalyticsPage() {
@@ -252,6 +253,12 @@ export default function AdminAnalyticsPage() {
           </p>
         </div>
         <PostReadAnalytics daysFilter={daysFilter} />
+      </section>
+
+      {/* ✅ FASE 5: Dashboard de Insights Preditivos com IA */}
+      <Separator className="my-8" />
+      <section>
+        <PredictiveInsightsDashboard daysFilter={daysFilter} />
       </section>
     </div>
   );
