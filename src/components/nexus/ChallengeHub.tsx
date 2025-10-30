@@ -103,8 +103,7 @@ export function ChallengeHub() {
         key={challenge.student_challenge_id}
         className={cn(
           "glass-card border-border/50 transition-all duration-300 hover:border-primary/30",
-          // FASE 3: Efeito visual para completados
-          isComplete && "bg-gradient-to-br from-green-500/10 via-primary/5 to-green-500/10 border-green-500/50 shadow-lg shadow-green-500/20 animate-pulse"
+          isComplete && "bg-gradient-to-br from-green-500/10 via-primary/5 to-green-500/10 border-green-500/50 shadow-lg shadow-green-500/20"
         )}
       >
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
