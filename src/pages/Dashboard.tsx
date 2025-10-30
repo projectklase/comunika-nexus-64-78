@@ -13,6 +13,7 @@ import { PostLinkBuilder, UserRole } from "@/utils/post-links";
 import { Bell, Calendar, Users, FileText, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePostActions } from "@/hooks/usePostActions";
+import { getRoleRoutePrefix } from "@/utils/auth-helpers";
 
 const Dashboard = () => {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -42,6 +43,22 @@ const Dashboard = () => {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Redirecionar roles que têm dashboards específicos
+  useEffect(() => {
+    if (!user || isAuthLoading) return;
+
+    // Apenas secretaria usa este Dashboard.tsx
+    if (user.role !== 'secretaria') {
+      const routePrefix = getRoleRoutePrefix(user.role);
+      const targetPath = `/${routePrefix}/dashboard`;
+      
+      // Evitar loop infinito
+      if (window.location.pathname !== targetPath) {
+        navigate(targetPath, { replace: true });
+      }
+    }
+  }, [user, isAuthLoading, navigate]);
 
   // Juntando os dois 'isLoading' para uma experiência de carregamento unificada
   if (isAuthLoading || isLoadingPosts) {
@@ -164,10 +181,6 @@ const Dashboard = () => {
       case "secretaria":
         return renderSecretariaDashboard();
       default:
-        const dashboardPath = `/${user.role}/dashboard`;
-        if (window.location.pathname !== dashboardPath) {
-          navigate(dashboardPath);
-        }
         return <div>Redirecionando...</div>;
     }
   };

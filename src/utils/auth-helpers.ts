@@ -28,3 +28,18 @@ export function canAccessOperations(role: UserRole | undefined): boolean {
   if (!role) return false;
   return OPERATIONAL_ROLES.includes(role);
 }
+
+/**
+ * Mapeia o role do usuário para o prefixo correto da rota do dashboard
+ * @param role - Role do usuário
+ * @returns Prefixo da rota (ex: 'admin', 'professor', 'aluno')
+ */
+export function getRoleRoutePrefix(role: UserRole): string {
+  const roleMap: Record<UserRole, string> = {
+    'administrador': 'admin',
+    'secretaria': 'secretaria',
+    'professor': 'professor',
+    'aluno': 'aluno'
+  };
+  return roleMap[role];
+}
