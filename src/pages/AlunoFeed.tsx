@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { FilterBar } from '@/components/feed/FilterBar';
 import { PostList } from '@/components/feed/PostList';
-import { NexusOrb } from '@/components/nexus/NexusOrb';
-import { NexusPanel } from '@/components/nexus/NexusPanel';
 import { SmartFeedInsights } from '@/components/feed/SmartFeedInsights';
 import { SmartFilterStatus } from '@/components/feed/SmartFilterStatus';
 import { InviteFriendsModal } from '@/components/aluno/InviteFriendsModal';
@@ -22,7 +20,6 @@ export default function AlunoFeed() {
   const { savedIds } = useSaved();
   const [filter, setFilter] = useState<PostFilter & { saved?: boolean; authorRole?: 'secretaria' | 'professor' | 'aluno' }>({});
   const [updateKey, setUpdateKey] = useState(0);
-  const [showNexusPanel, setShowNexusPanel] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedEventForInvite, setSelectedEventForInvite] = useState<Post | null>(null);
 
@@ -152,13 +149,6 @@ export default function AlunoFeed() {
           </div>
         </div>
       </div>
-
-      {/* NEXUS Integration - Replaced by UniversalNexusOrb in AppLayout */}
-      {/* <NexusOrb onOpenPanel={() => setShowNexusPanel(true)} /> */}
-      <NexusPanel 
-        isOpen={showNexusPanel} 
-        onClose={() => setShowNexusPanel(false)} 
-      />
       
       {/* Invite Friends Modal */}
       {selectedEventForInvite && user && (
