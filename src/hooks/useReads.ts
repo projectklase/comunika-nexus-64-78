@@ -96,7 +96,13 @@ export function useReads() {
   const { user } = useAuth();
 
   const markAsRead = (postId: string) => {
-    // ✅ SEGURANÇA: Verificar rate limiting
+    // Check if already read FIRST (before rate limiting)
+    if (readStore.isRead(postId)) {
+      // Post already read, don't trigger rate limiter
+      return;
+    }
+
+    // Apply rate limiting only for new posts
     const rateLimitCheck = rateLimiter.canRead();
     if (!rateLimitCheck.allowed) {
       toast.error('Calma aí! 🚫', {
@@ -105,27 +111,22 @@ export function useReads() {
       return;
     }
 
-    // ✅ SEGURANÇA: Verificar se já foi lido (evitar duplicatas)
-    if (readStore.isRead(postId)) {
-      // Post já foi lido, não fazer nada
-      return;
-    }
-
-    // Marcar no localStorage (UI rápida)
+    // Mark in localStorage (fast UI feedback)
     readStore.markAsRead(postId);
     
-    // Registrar insights localmente
+    // Record insights locally
     if (user) {
       recordPostRead(postId, user, user.classId);
     }
     
-    // ✅ Registrar no Supabase (dispara trigger de desafio)
+    // Record in Supabase (triggers challenge)
     recordRead(postId);
     
-    // ✅ SEGURANÇA: Registrar leitura no rate limiter
+    // Record successful read in rate limiter
     rateLimiter.recordRead();
     
-    forceUpdate({}); // Force re-render
+    // Force re-render to update UI
+    forceUpdate({});
   };
 
   const isRead = (postId: string): boolean => {

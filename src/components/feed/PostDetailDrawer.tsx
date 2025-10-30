@@ -58,23 +58,29 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
 
   // Record post view and mark as read when drawer opens
   useEffect(() => {
-    if (isOpen && post && user) {
+    if (!isOpen || !post || !user) return;
+
+    // Debounce to avoid multiple calls if drawer opens/closes quickly
+    const timer = setTimeout(() => {
+      // Record post view for analytics
       recordPostView(post.id, user, 'feed');
       
-      // ✅ Verificar se já estava lido (evitar toast duplicado)
+      // Check if already read (avoid duplicate toast)
       const wasAlreadyRead = isRead(post.id);
       
-      // Marcar automaticamente como lido ao abrir
+      // Automatically mark as read when drawer opens
       markAsRead(post.id);
       
-      // ✅ Toast apenas se era novo (previne spam de toasts)
+      // Show toast only if it was new (prevent spam)
       if (!wasAlreadyRead) {
         toast({
           title: "📖 Post lido!",
           description: "Progresso dos desafios atualizado. Continue lendo para ganhar mais Koins! 🪙",
         });
       }
-    }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [isOpen, post, user, recordPostView, markAsRead, isRead]);
 
   if (!post) return null;
@@ -301,7 +307,12 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent className="max-h-[95vh]" role="dialog" aria-labelledby="post-detail-title">
+      <DrawerContent 
+        className="max-h-[95vh]"
+        role="dialog"
+        aria-labelledby="post-detail-title"
+        aria-describedby="post-detail-description"
+      >
         <DrawerHeader>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -332,10 +343,17 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
             )}
           </div>
           
-          <DrawerTitle id="post-detail-title" className="text-left text-xl leading-tight">
+          <DrawerTitle 
+            id="post-detail-title"
+            className="text-left text-xl leading-tight"
+          >
             {post.title}
           </DrawerTitle>
-          <DrawerDescription className="text-left">
+          
+          <DrawerDescription
+            id="post-detail-description"
+            className="text-left"
+          >
             Por {post.authorName} • {formatDate(post.createdAt)}
           </DrawerDescription>
         </DrawerHeader>
