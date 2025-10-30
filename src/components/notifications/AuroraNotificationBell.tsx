@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import confetti from 'canvas-confetti';
 
 interface AuroraNotificationBellProps {
   count: number;
@@ -58,11 +59,22 @@ export function AuroraNotificationBell({
     if (count > prevCountRef.current && count > 0) {
       setJustReceivedNotification(true);
       setTimeout(() => setJustReceivedNotification(false), 600);
+      
+      // QOL 3: Trigger confetti for challenge completion notifications
+      // Note: This will trigger for any new notification. 
+      // For more specific control, pass notification metadata via props
+      if (hasImportant) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
     }
     
     setDisplayCount(newDisplay);
     prevCountRef.current = count;
-  }, [count]);
+  }, [count, hasImportant]);
 
   // Determine counter state for styling
   const counterState: CounterState = hasImportant ? 'important' : hasUnread ? 'normal' : 'silent';

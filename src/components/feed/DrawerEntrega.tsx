@@ -165,10 +165,10 @@ export function DrawerEntrega({ isOpen, onClose, activity, classId, onSuccess }:
       // Note: Teacher notification will be generated automatically by the delivery system
 
       toast({
-        title: isOverdue ? 'Entrega atrasada realizada' : 'Entrega realizada',
+        title: isOverdue ? 'Entrega atrasada realizada' : '✅ Entrega realizada!',
         description: isOverdue 
-          ? 'Atividade marcada como entregue (fora do prazo)'
-          : 'Atividade entregue com sucesso!'
+          ? 'Atividade marcada como entregue (fora do prazo). Aguarde aprovação do professor.'
+          : '🪙 Koins serão creditados após aprovação do professor. Acompanhe no Nexus Hub!'
       });
 
       handleClose();

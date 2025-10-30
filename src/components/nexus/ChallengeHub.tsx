@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,7 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, CheckCircle, Trophy, Flame, Sparkles, Frown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { BookOpen, CheckCircle, Trophy, Flame, Sparkles, Frown, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const iconMap = {
@@ -29,10 +32,22 @@ interface Challenge {
   started_at: string;
   expires_at: string | null;
   icon_name: string;
+  is_current_cycle?: boolean;
+}
+
+interface CompletedChallenge {
+  id: string;
+  completed_at: string;
+  challenges: {
+    title: string;
+    koin_reward: number;
+    icon_name: string;
+  };
 }
 
 export function ChallengeHub() {
   const { user } = useAuth();
+  const [showHistory, setShowHistory] = useState(false);
 
   const { data: challenges, isLoading } = useQuery({
     queryKey: ['student_challenges', user?.id],
@@ -49,6 +64,32 @@ export function ChallengeHub() {
     refetchInterval: 30000, // Refetch a cada 30s
   });
 
+  // QOL 2: Histórico de desafios completados (últimos 7 dias)
+  const { data: completedChallenges } = useQuery({
+    queryKey: ['completed_challenges_history', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data, error } = await supabase
+        .from('student_challenges')
+        .select(`
+          id,
+          completed_at,
+          challenges(title, koin_reward, icon_name)
+        `)
+        .eq('student_id', user.id)
+        .eq('status', 'COMPLETED')
+        .gte('completed_at', sevenDaysAgo.toISOString())
+        .order('completed_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as CompletedChallenge[];
+    },
+    enabled: !!user && showHistory
+  });
+
   const dailyChallenges = challenges?.filter(c => c.challenge_type === 'DAILY') || [];
   const weeklyChallenges = challenges?.filter(c => c.challenge_type === 'WEEKLY') || [];
 
@@ -62,19 +103,21 @@ export function ChallengeHub() {
         key={challenge.student_challenge_id}
         className={cn(
           "glass-card border-border/50 transition-all duration-300 hover:border-primary/30",
-          isComplete && "bg-primary/5 border-primary/50"
+          // FASE 3: Efeito visual para completados
+          isComplete && "bg-gradient-to-br from-green-500/10 via-primary/5 to-green-500/10 border-green-500/50 shadow-lg shadow-green-500/20 animate-pulse"
         )}
       >
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <div className="flex items-center gap-2">
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center",
-              isComplete ? "bg-primary/20" : "bg-muted/50"
+              isComplete ? "bg-green-500/20 ring-2 ring-green-500/50" : "bg-muted/50"
             )}>
-              <Icon className={cn(
-                "h-4 w-4",
-                isComplete ? "text-primary" : "text-muted-foreground"
-              )} />
+              {isComplete ? (
+                <Trophy className="h-4 w-4 text-green-500" />
+              ) : (
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              )}
             </div>
             <CardTitle className="text-sm font-medium">{challenge.title}</CardTitle>
           </div>
@@ -91,7 +134,7 @@ export function ChallengeHub() {
               <span className="text-muted-foreground">Progresso</span>
               <span className={cn(
                 "font-medium",
-                isComplete ? "text-primary" : "text-foreground"
+                isComplete ? "text-green-500" : "text-foreground"
               )}>
                 {challenge.current_progress}/{challenge.action_count}
               </span>
@@ -100,14 +143,17 @@ export function ChallengeHub() {
               value={progressPercent} 
               className={cn(
                 "h-2",
-                isComplete && "bg-primary/20"
+                isComplete && "bg-green-500/20 [&>div]:bg-gradient-to-r [&>div]:from-green-500 [&>div]:to-green-400"
               )}
             />
           </div>
 
           {isComplete && (
-            <Badge variant="default" className="w-full justify-center text-xs bg-primary/20 text-primary border-primary/30">
-              ✓ Completo! Koins creditados
+            <Badge 
+              variant="default" 
+              className="w-full justify-center text-xs bg-green-500/20 text-green-500 border-green-500/30 font-medium"
+            >
+              ✓ Completado {challenge.challenge_type === 'DAILY' ? 'hoje' : 'esta semana'}! 🎉
             </Badge>
           )}
         </CardContent>
@@ -183,6 +229,42 @@ export function ChallengeHub() {
           </div>
         </div>
       )}
+
+      {/* QOL 2: Histórico de desafios completados */}
+      <Collapsible open={showHistory} onOpenChange={setShowHistory} className="space-y-2">
+        <CollapsibleTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full justify-between hover:bg-muted/50"
+          >
+            <span className="text-sm font-medium">Histórico (últimos 7 dias)</span>
+            {showHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-2">
+          {completedChallenges && completedChallenges.length > 0 ? (
+            completedChallenges.map((c) => (
+              <div 
+                key={c.id} 
+                className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <span className="text-xs font-medium">{c.challenges.title}</span>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  +{c.challenges.koin_reward} Koins
+                </Badge>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-center text-muted-foreground py-4">
+              Nenhum desafio completado nos últimos 7 dias
+            </p>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Info Footer */}
       <Card className="glass-card border-primary/20 bg-primary/5">

@@ -1302,6 +1302,7 @@ export type Database = {
           description: string
           expires_at: string
           icon_name: string
+          is_current_cycle: boolean
           koin_reward: number
           started_at: string
           status: string
