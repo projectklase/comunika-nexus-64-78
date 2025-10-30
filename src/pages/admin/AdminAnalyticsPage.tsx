@@ -258,7 +258,7 @@ export default function AdminAnalyticsPage() {
       {/* ✅ FASE 5: Dashboard de Insights Preditivos com IA */}
       <Separator className="my-8" />
       <section>
-        <PredictiveInsightsDashboard daysFilter={daysFilter} />
+        <PredictiveInsightsDashboard />
       </section>
     </div>
   );

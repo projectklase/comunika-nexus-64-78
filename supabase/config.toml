@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.generate-school-insights]
 verify_jwt = true
+
+[functions.generate-daily-briefing]
+verify_jwt = false

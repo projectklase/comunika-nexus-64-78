@@ -1,8 +1,7 @@
-import { useSchoolInsights } from '@/hooks/useSchoolInsights';
+import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Brain,
@@ -11,15 +10,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   Sparkles,
-  RefreshCw,
   Zap,
   Target,
 } from 'lucide-react';
-import { SeverityLevel, TrendLevel, PriorityLevel } from '@/types/school-insights';
-
-interface PredictiveInsightsDashboardProps {
-  daysFilter: number;
-}
+import { SeverityLevel, TrendLevel, PriorityLevel, SchoolInsights } from '@/types/school-insights';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 function getSeverityConfig(severity: SeverityLevel) {
   const configs = {
@@ -49,8 +45,13 @@ function getPriorityConfig(priority: PriorityLevel) {
   return configs[priority];
 }
 
-export function PredictiveInsightsDashboard({ daysFilter }: PredictiveInsightsDashboardProps) {
-  const { data, isLoading, error, refetch, isFetching } = useSchoolInsights(daysFilter);
+export function PredictiveInsightsDashboard() {
+  const { getSetting, isLoading } = useSchoolSettings();
+  
+  // Ler do banco
+  const briefing = getSetting('ai_daily_briefing', { insights: null, generatedAt: null });
+  const insights: SchoolInsights | null = briefing?.insights || null;
+  const lastRun: string | null = briefing?.generatedAt || null;
 
   if (isLoading) {
     return (
@@ -68,37 +69,16 @@ export function PredictiveInsightsDashboard({ daysFilter }: PredictiveInsightsDa
     );
   }
 
-  if (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    const isRateLimit = errorMessage.includes('429') || errorMessage.includes('limite');
-    const isPayment = errorMessage.includes('402') || errorMessage.includes('créditos');
-
+  if (!insights) {
     return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
+      <Alert>
+        <Brain className="h-4 w-4" />
         <AlertDescription>
-          {isRateLimit && 'Limite de requisições excedido. Aguarde alguns minutos e tente novamente.'}
-          {isPayment && 'Créditos insuficientes. Adicione créditos ao seu workspace Lovable.'}
-          {!isRateLimit && !isPayment && `Erro ao gerar insights: ${errorMessage}`}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="ml-4"
-            onClick={() => refetch()}
-          >
-            <RefreshCw className="h-3 w-3 mr-1" />
-            Tentar Novamente
-          </Button>
+          Aguardando primeira análise diária. O sistema gera insights automaticamente às 03h UTC (0h BRT).
         </AlertDescription>
       </Alert>
     );
   }
-
-  if (!data?.insights) {
-    return null;
-  }
-
-  const { insights } = data;
   const severityConfig = getSeverityConfig(insights.evasionInsights.severity);
   const trendConfig = getTrendConfig(insights.engagementInsights.trend);
   const SeverityIcon = severityConfig.icon;
@@ -106,26 +86,22 @@ export function PredictiveInsightsDashboard({ daysFilter }: PredictiveInsightsDa
 
   return (
     <div className="space-y-6">
-      {/* Header com botão de refresh */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Brain className="h-6 w-6 text-primary" />
-          <div>
-            <h3 className="text-2xl font-bold">Insights Preditivos com IA</h3>
-            <p className="text-sm text-muted-foreground">
-              Análise gerada em {new Date(data.generatedAt).toLocaleString('pt-BR')}
-            </p>
-          </div>
+      {/* Header read-only */}
+      <div className="flex items-center gap-2">
+        <Brain className="h-6 w-6 text-primary" />
+        <div>
+          <h3 className="text-2xl font-bold">Insights Preditivos com IA</h3>
+          <p className="text-sm text-muted-foreground">
+            {lastRun ? (
+              `Última análise: ${formatDistanceToNow(new Date(lastRun), { 
+                addSuffix: true, 
+                locale: ptBR 
+              })}`
+            ) : (
+              "Análise sendo processada..."
+            )}
+          </p>
         </div>
-        <Button 
-          onClick={() => refetch()} 
-          disabled={isFetching}
-          variant="outline"
-          size="sm"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-          Atualizar Insights
-        </Button>
       </div>
 
       {/* Grid principal */}
