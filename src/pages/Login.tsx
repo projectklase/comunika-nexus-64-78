@@ -543,20 +543,18 @@ const Login = () => {
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
                     
-                    {import.meta.env.DEV && (
-                      <button
-                        type="button"
-                        onClick={() => quickLogin('administrador')}
-                        disabled={isFormSubmitting}
-                        className="w-full h-12 flex items-center justify-between px-3 text-left bg-primary/10 hover:bg-primary/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-primary/30 hover:border-primary/50"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-primary">Admin</div>
-                          <div className="text-xs text-primary/70 truncate">admin.klase@comunika.com</div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-primary/70 group-hover:text-primary flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => quickLogin('administrador')}
+                      disabled={isFormSubmitting}
+                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-primary/10 hover:bg-primary/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-primary/30 hover:border-primary/50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-primary">Admin</div>
+                        <div className="text-xs text-primary/70 truncate">admin.klase@comunika.com</div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-primary/70 group-hover:text-primary flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
+                    </button>
                   </div>
                 </div>
               </CardContent>
