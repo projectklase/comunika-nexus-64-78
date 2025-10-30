@@ -1,4 +1,7 @@
 export const ROUTES = {
+  ADMIN: {
+    DASHBOARD: '/admin/dashboard',
+  },
   ALUNO: {
     CALENDARIO: '/aluno/calendario',
     FEED: '/aluno/feed',

@@ -106,8 +106,9 @@ const Login = () => {
   // Role-based routing helper
   const getRoleBasedRoute = (role: UserRole): string => {
     switch (role) {
-      case 'secretaria':
       case 'administrador':
+        return ROUTES.ADMIN.DASHBOARD;
+      case 'secretaria':
         return ROUTES.SECRETARIA.DASHBOARD;
       case 'professor':
         return ROUTES.PROFESSOR.DASHBOARD;

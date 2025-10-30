@@ -35,6 +35,20 @@ import {
 } from 'lucide-react';
 
 const menuItems = {
+  administrador: [
+    { title: 'Dashboard Admin', url: '/admin/dashboard', icon: LayoutDashboard },
+    { title: 'Histórico', url: '/secretaria/historico', icon: History },
+    { title: 'Calendário', url: '/secretaria/calendario', icon: Calendar },
+    { title: 'Recompensas', url: '/secretaria/gerenciar-recompensas', icon: Gift },
+    { title: 'Desafios', url: '/secretaria/gerenciar-desafios', icon: Target },
+  ],
+  administradorCadastros: [
+    { title: 'Programas', url: '/secretaria/cadastros/programas', icon: Target },
+    { title: 'Catálogo Global', url: '/secretaria/cadastros/catalogo', icon: BookOpen },
+    { title: 'Alunos', url: '/secretaria/cadastros/alunos', icon: Users },
+    { title: 'Professores', url: '/secretaria/cadastros/professores', icon: UserCog },
+    { title: 'Turmas', url: '/secretaria/turmas', icon: Users },
+  ],
   secretaria: [
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     { title: 'Feed', url: '/secretaria/feed', icon: Rss },
@@ -75,8 +89,10 @@ export function AppSidebar() {
 
   if (!user) return null;
 
-  const items = menuItems[user.role];
-  const cadastrosItems = user.role === 'secretaria' ? menuItems.secretariaCadastros : [];
+  const items = menuItems[user.role as keyof typeof menuItems] || [];
+  const cadastrosItems = (user.role === 'secretaria' || user.role === 'administrador') 
+    ? menuItems[`${user.role}Cadastros` as keyof typeof menuItems] || []
+    : [];
   const isActive = (path: string) => {
     if (path === '/secretaria/cadastros/catalogo') {
       return currentPath.startsWith('/secretaria/cadastros/catalogo');
@@ -129,7 +145,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user.role === 'secretaria' && (
+        {(user.role === 'secretaria' || user.role === 'administrador') && cadastrosItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className={isCollapsed ? 'sr-only' : ''}>
               Cadastros

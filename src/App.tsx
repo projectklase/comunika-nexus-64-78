@@ -16,6 +16,7 @@ import { ModalManagerProvider } from "@/components/ui/app-dialog";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import SecretariaFeed from "./pages/SecretariaFeed";
 import HistoricoPage from "./pages/HistoricoPage";
 import ClassesPage from "./pages/ClassesPage";
@@ -77,6 +78,16 @@ const App = () => (
                 </AppLayout>
               </ProtectedRoute>
             } />
+            
+            {/* Admin Dashboard - exclusive route for administrador role */}
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <AppLayout>
+                  <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
             {/* Professor Dashboard - separate route */}
             <Route path="/professor/dashboard" element={
               <ProtectedRoute allowedRoles={['professor']}>
