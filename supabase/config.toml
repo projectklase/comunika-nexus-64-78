@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.request-redemption]
 verify_jwt = true
+
+[functions.renew-daily-weekly-challenges]
+verify_jwt = false

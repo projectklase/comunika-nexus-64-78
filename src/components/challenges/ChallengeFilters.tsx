@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { getChallengeTypeLabel } from '@/constants/challenge-labels';
 
 interface ChallengeFiltersProps {
   typeFilter: string;
@@ -33,9 +34,9 @@ export function ChallengeFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="ALL">Todos os tipos</SelectItem>
-          <SelectItem value="DAILY">Diários</SelectItem>
-          <SelectItem value="WEEKLY">Semanais</SelectItem>
-          <SelectItem value="ACHIEVEMENT">Conquistas</SelectItem>
+          <SelectItem value="DAILY">{getChallengeTypeLabel('DAILY')}</SelectItem>
+          <SelectItem value="WEEKLY">{getChallengeTypeLabel('WEEKLY')}</SelectItem>
+          <SelectItem value="ACHIEVEMENT">{getChallengeTypeLabel('ACHIEVEMENT')}</SelectItem>
         </SelectContent>
       </Select>
     </div>

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Challenge } from '@/hooks/useChallenges';
 import { Edit, Trash2, Power, PowerOff } from 'lucide-react';
+import { getActionTargetLabel, getChallengeTypeLabel } from '@/constants/challenge-labels';
 
 interface ChallengesTableProps {
   challenges: Challenge[];
@@ -11,11 +12,7 @@ interface ChallengesTableProps {
   onToggleActive: (id: string, isActive: boolean) => void;
 }
 
-const TYPE_LABELS = {
-  DAILY: 'Diário',
-  WEEKLY: 'Semanal',
-  ACHIEVEMENT: 'Conquista',
-};
+// Labels agora vêm de constants/challenge-labels.ts
 
 const TYPE_COLORS = {
   DAILY: 'bg-blue-500/20 text-blue-500',
@@ -33,7 +30,7 @@ export function ChallengesTable({ challenges, onEdit, onDelete, onToggleActive }
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-lg font-semibold text-foreground">{challenge.title}</h3>
                 <Badge className={TYPE_COLORS[challenge.type]}>
-                  {TYPE_LABELS[challenge.type]}
+                  {getChallengeTypeLabel(challenge.type)}
                 </Badge>
                 {challenge.is_active ? (
                   <Badge variant="outline" className="bg-green-500/20 text-green-500 border-green-500/30">
@@ -49,7 +46,7 @@ export function ChallengesTable({ challenges, onEdit, onDelete, onToggleActive }
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">Ação:</span>
-                  <span className="font-medium">{challenge.action_target}</span>
+                  <span className="font-medium">{getActionTargetLabel(challenge.action_target)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">Quantidade:</span>

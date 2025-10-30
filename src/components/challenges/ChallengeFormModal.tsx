@@ -6,27 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Challenge } from '@/hooks/useChallenges';
+import { ACTION_TARGET_LABELS, CHALLENGE_TYPE_LABELS, ICON_LABELS } from '@/constants/challenge-labels';
+import * as Icons from 'lucide-react';
 
-const ACTION_TARGETS = [
-  { value: 'READ_POST', label: 'Ler postagem' },
-  { value: 'SUBMIT_ACTIVITY', label: 'Entregar atividade' },
-  { value: 'COMMENT_POST', label: 'Comentar postagem' },
-  { value: 'LIKE_POST', label: 'Curtir postagem' },
-  { value: 'SHARE_POST', label: 'Compartilhar postagem' },
-  { value: 'LOGIN_STREAK', label: 'Dias de login consecutivos' },
-  { value: 'PERFECT_SCORE', label: 'Nota perfeita' },
-];
-
-const CHALLENGE_TYPES = [
-  { value: 'DAILY', label: 'Diário' },
-  { value: 'WEEKLY', label: 'Semanal' },
-  { value: 'ACHIEVEMENT', label: 'Conquista' },
-];
-
-const ICON_OPTIONS = [
-  'target', 'trophy', 'star', 'flame', 'zap', 'award', 
-  'medal', 'crown', 'sparkles', 'rocket', 'heart', 'book'
-];
+// Usar constantes do arquivo challenge-labels.ts
+const ACTION_TARGETS = Object.entries(ACTION_TARGET_LABELS).map(([value, label]) => ({ value, label }));
+const CHALLENGE_TYPES = Object.entries(CHALLENGE_TYPE_LABELS).map(([value, label]) => ({ value, label }));
+const ICON_OPTIONS = Object.keys(ICON_LABELS);
 
 interface ChallengeFormModalProps {
   isOpen: boolean;
@@ -196,11 +182,19 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ICON_OPTIONS.map(icon => (
-                    <SelectItem key={icon} value={icon}>
-                      {icon}
-                    </SelectItem>
-                  ))}
+                  {ICON_OPTIONS.map(iconKey => {
+                    // Converter para PascalCase para importar do lucide-react
+                    const IconComponent = Icons[iconKey.charAt(0).toUpperCase() + iconKey.slice(1) as keyof typeof Icons] as any;
+                    const label = ICON_LABELS[iconKey as keyof typeof ICON_LABELS];
+                    return (
+                      <SelectItem key={iconKey} value={iconKey}>
+                        <div className="flex items-center gap-2">
+                          {IconComponent && <IconComponent className="h-4 w-4" />}
+                          <span>{label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
