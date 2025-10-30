@@ -8,6 +8,7 @@ import { AlertTriangle, TrendingUp, Users, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
 import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
+import { PostReadAnalytics } from '@/components/admin/PostReadAnalytics';
 import { Separator } from '@/components/ui/separator';
 
 export default function AdminAnalyticsPage() {
@@ -235,11 +236,23 @@ export default function AdminAnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Separador */}
+      {/* ✅ FASE 3: Performance por Turma */}
       <Separator className="my-8" />
-
-      {/* Análise de Performance por Turma */}
       <ClassPerformanceSection daysFilter={daysFilter} />
+
+      {/* ✅ FASE 4: Análise de Engajamento de Posts */}
+      <Separator className="my-8" />
+      <section>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold tracking-tight">
+            📖 Análise de Engajamento
+          </h2>
+          <p className="text-muted-foreground">
+            Métricas detalhadas de leituras e engajamento dos alunos com posts
+          </p>
+        </div>
+        <PostReadAnalytics daysFilter={daysFilter} />
+      </section>
     </div>
   );
 }

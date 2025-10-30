@@ -1299,6 +1299,7 @@ export type Database = {
         Args: { days_filter?: number }
         Returns: Json
       }
+      get_post_read_analytics: { Args: { days_filter?: number }; Returns: Json }
       get_student_challenges_with_progress: {
         Args: { p_student_id: string }
         Returns: {
