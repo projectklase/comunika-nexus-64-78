@@ -107,6 +107,7 @@ const Login = () => {
   const getRoleBasedRoute = (role: UserRole): string => {
     switch (role) {
       case 'secretaria':
+      case 'administrador':
         return ROUTES.SECRETARIA.DASHBOARD;
       case 'professor':
         return ROUTES.PROFESSOR.DASHBOARD;
@@ -211,7 +212,8 @@ const Login = () => {
       const credentials = {
         secretaria: { email: 'secretaria@comunika.com', password: '123456', name: 'Maria Silva' },
         professor: { email: 'julianegrini@gmail.com', password: 'Prof9105!', name: 'Juliane Grini' },
-        aluno: { email: 'alinemenezes@gmail.com', password: 'Praia-Chuva-Lua-814$', name: 'Aline Menezes' }
+        aluno: { email: 'alinemenezes@gmail.com', password: 'Praia-Chuva-Lua-814$', name: 'Aline Menezes' },
+        administrador: { email: 'admin.klase@comunika.com', password: 'NexusAdmin#2025!', name: 'Admin Klase' }
       };
       
       const { email, password, name } = credentials[role as keyof typeof credentials];
@@ -539,6 +541,21 @@ const Login = () => {
                       </div>
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
+                    
+                    {import.meta.env.DEV && (
+                      <button
+                        type="button"
+                        onClick={() => quickLogin('administrador')}
+                        disabled={isFormSubmitting}
+                        className="w-full h-12 flex items-center justify-between px-3 text-left bg-primary/10 hover:bg-primary/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-primary/30 hover:border-primary/50"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-primary">Admin</div>
+                          <div className="text-xs text-primary/70 truncate">admin.klase@comunika.com</div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-primary/70 group-hover:text-primary flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </CardContent>

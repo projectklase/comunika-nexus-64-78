@@ -3,7 +3,7 @@ import { ROUTES } from '@/constants/routes';
 import { format } from 'date-fns';
 import { UnifiedCalendarLinks } from '@/utils/unified-calendar-links';
 
-export type UserRole = 'aluno' | 'professor' | 'secretaria';
+export type UserRole = 'aluno' | 'professor' | 'secretaria' | 'administrador';
 
 /**
  * Unified post link builder
@@ -111,6 +111,7 @@ export class PostLinkBuilder {
       case 'professor':
         return ROUTES.PROFESSOR.CALENDARIO;
       case 'secretaria':
+      case 'administrador':
         return ROUTES.SECRETARIA.CALENDARIO;
       default:
         return ROUTES.SECRETARIA.CALENDARIO; // Safe fallback
@@ -128,6 +129,7 @@ export class PostLinkBuilder {
         // Professor doesn't have a traditional feed, use activities
         return '/professor/atividades';
       case 'secretaria':
+      case 'administrador':
         return ROUTES.SECRETARIA.FEED;
       default:
         return ROUTES.SECRETARIA.FEED; // Safe fallback

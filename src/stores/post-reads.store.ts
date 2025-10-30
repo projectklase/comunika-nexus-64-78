@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import { User } from '@/types/auth';
+import { User, UserRole } from '@/types/auth';
 
 export interface PostRead {
   postId: string;
   userId: string;
   name: string;
-  role: 'secretaria' | 'professor' | 'aluno';
+  role: UserRole;
   classId?: string | null;
   readAt: string; // ISO string
 }

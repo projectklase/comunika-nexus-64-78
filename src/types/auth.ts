@@ -1,4 +1,4 @@
-export type UserRole = 'secretaria' | 'professor' | 'aluno';
+export type UserRole = 'secretaria' | 'professor' | 'aluno' | 'administrador';
 
 export interface UserPreferences {
   notifications: {

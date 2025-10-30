@@ -3,7 +3,7 @@ import { ROUTES } from '@/constants/routes';
 import { Post } from '@/types/post';
 import { parseYmdLocal } from '@/lib/date-helpers';
 
-export type UserRole = 'aluno' | 'professor' | 'secretaria';
+export type UserRole = 'aluno' | 'professor' | 'secretaria' | 'administrador';
 export type FocusType = 'post' | 'holiday';
 
 export interface CalendarLinkParams {
@@ -126,6 +126,7 @@ export class UnifiedCalendarLinks {
       case 'professor':
         return ROUTES.PROFESSOR.CALENDARIO;
       case 'secretaria':
+      case 'administrador':
         return ROUTES.SECRETARIA.CALENDARIO;
       default:
         return ROUTES.SECRETARIA.CALENDARIO; // Safe fallback

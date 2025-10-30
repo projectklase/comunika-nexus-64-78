@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User } from '@/types/auth';
+import { User, UserRole } from '@/types/auth';
 
 export type PostViewSource = 'feed' | 'calendar' | 'notification' | 'deep-link' | 'dashboard';
 
@@ -7,7 +7,7 @@ export interface PostView {
   postId: string;
   userId: string;
   name: string;
-  role: 'secretaria' | 'professor' | 'aluno';
+  role: UserRole;
   classId?: string | null;
   source: PostViewSource;
   viewedAt: string; // ISO string

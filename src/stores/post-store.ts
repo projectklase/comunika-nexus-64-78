@@ -1,4 +1,5 @@
 import { Post, PostInput, PostFilter, PostStatus, PostType, PostAudience } from "@/types/post";
+import { UserRole } from "@/types/auth";
 import { validatePostData } from "@/lib/data-hygiene";
 import { logAudit } from "@/stores/audit-store";
 import { generateDiff } from "@/utils/audit-helpers";
@@ -66,7 +67,7 @@ class PostStore {
       audience: row.audience as PostAudience,
       authorName: row.author_name,
       authorId: row.author_id,
-      authorRole: row.author_role as "secretaria" | "professor" | "aluno",
+      authorRole: row.author_role as UserRole,
       createdAt: row.created_at,
       status: row.status as PostStatus,
       publishAt: row.publish_at,
@@ -146,7 +147,7 @@ class PostStore {
     }
   }
 
-  async create(input: PostInput, authorName: string, authorId: string, authorRole: 'secretaria' | 'professor' | 'aluno', allowPastOverride = false): Promise<Post> {
+  async create(input: PostInput, authorName: string, authorId: string, authorRole: UserRole, allowPastOverride = false): Promise<Post> {
     // Validate and sanitize data
     const validation = validatePostData(input, allowPastOverride);
     if (!validation.isValid) {

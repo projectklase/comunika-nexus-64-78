@@ -55,7 +55,7 @@ export interface Post {
   audience: PostAudience;
   authorName: string;       // ex.: "Secretaria Central"
   authorId?: string;        // ID do autor para RBAC de insights
-  authorRole?: 'secretaria' | 'professor' | 'aluno';  // role do autor
+  authorRole?: 'secretaria' | 'professor' | 'aluno' | 'administrador';  // role do autor
   createdAt: string;
   status: PostStatus;
   publishAt?: string;       // quando agendar post
@@ -92,5 +92,5 @@ export interface PostFilter {
   status?: PostStatus;
   query?: string;
   classId?: string;  // para filtrar posts de uma turma específica
-  authorRole?: 'secretaria' | 'professor' | 'aluno';  // para filtrar por role do autor
+  authorRole?: 'secretaria' | 'professor' | 'aluno' | 'administrador';  // para filtrar por role do autor
 }
