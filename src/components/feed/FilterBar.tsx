@@ -288,9 +288,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
             >
               <SelectValue placeholder="Turma" />
             </SelectTrigger>
-            <SelectContent className="glass-card border-border/50"
-              {...a11y.focusManagement}
-            >
+            <SelectContent className="glass-card border-border/50">
               <SelectItem value={DEFAULT_SELECT_TOKENS.ALL_CLASSES}>
                 {allClasses.length === 0 ? 'Nenhuma turma atribuída' : 'Todas as turmas'}
               </SelectItem>

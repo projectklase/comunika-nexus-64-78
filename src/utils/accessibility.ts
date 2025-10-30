@@ -16,7 +16,16 @@ export const a11y = {
     return !!(ariaLabel || ariaLabelledBy);
   },
 
-  // Focus management utilities
+  /**
+   * Focus management utilities for custom implementations
+   * 
+   * ⚠️ WARNING: These are utility FUNCTIONS, NOT React props!
+   * ❌ DON'T: <SelectContent {...a11y.focusManagement} />
+   * ✅ DO: const cleanup = a11y.focusManagement.trapFocus(element);
+   * 
+   * Most UI libraries (Radix, HeadlessUI) handle focus automatically.
+   * Only use these for custom components that need manual focus management.
+   */
   focusManagement: {
     // Trap focus within a container (for modals, drawers, etc.)
     trapFocus: (containerElement: HTMLElement) => {
