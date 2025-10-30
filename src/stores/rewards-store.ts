@@ -2,6 +2,46 @@ import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import type { RewardItem, KoinTransaction, RedemptionRequest, KoinBalance, BonusEvent } from '@/types/rewards';
 
+// Helper function to log audit events
+async function logAudit(params: {
+  actorId: string;
+  action: string;
+  entity: string;
+  entityId: string;
+  entityLabel: string;
+  meta?: any;
+}) {
+  try {
+    // Get actor details
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, email')
+      .eq('id', params.actorId)
+      .single();
+
+    const { data: userRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', params.actorId)
+      .single();
+
+    await supabase.from('audit_events').insert({
+      actor_id: params.actorId,
+      actor_name: profile?.name || 'Desconhecido',
+      actor_email: profile?.email || '',
+      actor_role: userRole?.role || 'unknown',
+      action: params.action,
+      entity: params.entity,
+      entity_id: params.entityId,
+      entity_label: params.entityLabel,
+      scope: 'GLOBAL',
+      meta: params.meta || {}
+    });
+  } catch (error) {
+    console.error('Failed to log audit event:', error);
+  }
+}
+
 interface TransactionFilters {
   search?: string;
   type?: KoinTransaction['type'] | 'all';
@@ -573,6 +613,9 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   addItem: async (item: Omit<RewardItem, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      // Get current user for audit
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('reward_items')
         .insert({
@@ -605,6 +648,22 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       set(state => ({
         items: [...state.items, newItem],
       }));
+
+      // Log audit event
+      if (user?.id) {
+        await logAudit({
+          actorId: user.id,
+          action: 'CREATE',
+          entity: 'reward_item',
+          entityId: data.id,
+          entityLabel: data.name,
+          meta: {
+            price_koins: data.price_koins,
+            stock: data.stock,
+            category: data.category
+          }
+        });
+      }
     } catch (error) {
       console.error('Error adding item:', error);
       throw error;
@@ -613,6 +672,10 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   updateItem: async (id: string, updates: Partial<RewardItem>) => {
     try {
+      // Get current user and item name for audit
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentItem = get().items.find(item => item.id === id);
+      
       const dbUpdates: any = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
@@ -636,6 +699,21 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
           item.id === id ? { ...item, ...updates } : item
         ),
       }));
+
+      // Log audit event
+      if (user?.id && currentItem) {
+        await logAudit({
+          actorId: user.id,
+          action: 'UPDATE',
+          entity: 'reward_item',
+          entityId: id,
+          entityLabel: currentItem.name,
+          meta: {
+            fields: Object.keys(dbUpdates),
+            updates: dbUpdates
+          }
+        });
+      }
     } catch (error) {
       console.error('Error updating item:', error);
       throw error;
@@ -644,6 +722,10 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   deleteItem: async (id: string) => {
     try {
+      // Get current user and item name for audit
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentItem = get().items.find(item => item.id === id);
+      
       const { error } = await supabase
         .from('reward_items')
         .update({ is_active: false })
@@ -654,6 +736,20 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       set(state => ({
         items: state.items.filter(item => item.id !== id),
       }));
+
+      // Log audit event
+      if (user?.id && currentItem) {
+        await logAudit({
+          actorId: user.id,
+          action: 'DELETE',
+          entity: 'reward_item',
+          entityId: id,
+          entityLabel: currentItem.name,
+          meta: {
+            soft_delete: true
+          }
+        });
+      }
     } catch (error) {
       console.error('Error deleting item:', error);
       throw error;

@@ -14,6 +14,7 @@ import { AddStudentsDrawer } from '@/components/classes/AddStudentsDrawer';
 import { TransferStudentsDialog } from '@/components/classes/TransferStudentsDialog';
 import { ConfirmDialog } from '@/components/classes/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { canAccessManagement } from '@/utils/auth-helpers';
 
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,9 +46,9 @@ export default function ClassDetailPage() {
     loadPeople();
   }, [loadClasses, loadPeople]);
 
-  // RBAC: Only secretaria can access full features
-  if (!user || user.role !== 'secretaria') {
-    return <Navigate to="/login" replace />;
+  // RBAC: Only management roles can access
+  if (!canAccessManagement(user?.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (!schoolClass) {
