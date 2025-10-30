@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertTriangle, TrendingUp, Users, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
+import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
+import { Separator } from '@/components/ui/separator';
 
 export default function AdminAnalyticsPage() {
   const [daysFilter, setDaysFilter] = useState<number>(30);
@@ -232,6 +234,12 @@ export default function AdminAnalyticsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Separador */}
+      <Separator className="my-8" />
+
+      {/* Análise de Performance por Turma */}
+      <ClassPerformanceSection daysFilter={daysFilter} />
     </div>
   );
 }

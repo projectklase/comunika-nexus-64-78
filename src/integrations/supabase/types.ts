@@ -1291,6 +1291,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_class_performance_analytics: {
+        Args: { days_filter?: number; p_class_id: string }
+        Returns: Json
+      }
       get_evasion_risk_analytics: {
         Args: { days_filter?: number }
         Returns: Json
