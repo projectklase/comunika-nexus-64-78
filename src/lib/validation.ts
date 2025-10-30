@@ -154,8 +154,17 @@ export const validatePassword = (v = '') => {
   const req = required(v);
   if (req) return req;
   
-  if (v.length < 6) return 'Senha deve ter no mínimo 6 caracteres';
-  if (v.length > 100) return 'Senha muito longa (máximo 100 caracteres)';
+  if (v.length < 8) return 'Senha deve ter no mínimo 8 caracteres';
+  if (v.length > 72) return 'Senha deve ter no máximo 72 caracteres';
+  
+  // Validar complexidade: deve conter letras, números e símbolos
+  const hasLetter = /[a-zA-Z]/.test(v);
+  const hasNumber = /\d/.test(v);
+  const hasSymbol = /[!@#$%&*]/.test(v);
+  
+  if (!hasLetter || !hasNumber || !hasSymbol) {
+    return 'Senha deve conter letras, números e símbolos (!@#$%&*)';
+  }
   
   return null;
 };

@@ -18,7 +18,7 @@ interface CredentialsDialogProps {
   name: string;
   email: string;
   password: string;
-  role: 'aluno' | 'professor';
+  role: 'aluno' | 'professor' | 'secretaria';
 }
 
 export function CredentialsDialog({
@@ -58,7 +58,7 @@ export function CredentialsDialog({
       <DialogContent className="glass sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="gradient-text">
-            {role === 'aluno' ? 'Aluno' : 'Professor'} Criado com Sucesso!
+            {role === 'aluno' ? 'Aluno' : role === 'professor' ? 'Professor' : 'Secretaria'} Criado com Sucesso!
           </DialogTitle>
           <DialogDescription>
             {name} foi cadastrado. Guarde estas credenciais em local seguro.
@@ -129,8 +129,11 @@ export function CredentialsDialog({
 
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-sm">
             <p className="text-amber-600 dark:text-amber-400">
-              <strong>Importante:</strong> Esta senha não será exibida novamente. 
-              Copie e envie para o {role === 'aluno' ? 'aluno/responsável' : 'professor'}.
+              <strong>⚠️ Importante:</strong> Copie e envie para {
+                role === 'aluno' ? 'o aluno/responsável' : 
+                role === 'professor' ? 'o professor' : 
+                'a secretaria'
+              }. As credenciais não serão exibidas novamente.
             </p>
           </div>
         </div>
