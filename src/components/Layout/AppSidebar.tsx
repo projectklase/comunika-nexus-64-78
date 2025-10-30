@@ -31,6 +31,7 @@ import {
   Gift,
   Store,
   ListTodo,
+  Sparkles,
 } from 'lucide-react';
 
 const menuItems = {
@@ -58,6 +59,7 @@ const menuItems = {
   aluno: [
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     { title: 'Feed', url: '/aluno/feed', icon: Rss },
+    { title: 'Nexus', url: '/aluno/nexus', icon: Sparkles },
     { title: 'Minhas Atividades', url: '/minhas-atividades', icon: ListTodo },
     { title: 'Calendário', url: '/aluno/calendario', icon: Calendar },
     { title: 'Loja de Recompensas', url: '/aluno/loja-recompensas', icon: Store },
