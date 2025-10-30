@@ -759,6 +759,45 @@ export type Database = {
         }
         Relationships: []
       }
+      post_reads: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reads_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           activity_meta: Json | null
@@ -1238,6 +1277,33 @@ export type Database = {
       cleanup_old_system_logs: {
         Args: { days_to_keep?: number }
         Returns: number
+      }
+      complete_challenge_and_reward: {
+        Args: {
+          p_challenge_title: string
+          p_koin_reward: number
+          p_student_challenge_id: string
+          p_student_id: string
+        }
+        Returns: undefined
+      }
+      get_student_challenges_with_progress: {
+        Args: { p_student_id: string }
+        Returns: {
+          action_count: number
+          action_target: string
+          challenge_id: string
+          challenge_type: string
+          current_progress: number
+          description: string
+          expires_at: string
+          icon_name: string
+          koin_reward: number
+          started_at: string
+          status: string
+          student_challenge_id: string
+          title: string
+        }[]
       }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       grant_koin_bonus: {
