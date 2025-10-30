@@ -36,6 +36,7 @@ import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useReads } from '@/hooks/useReads';
+import { toast } from 'sonner';
 
 interface PostDetailDrawerProps {
   isOpen: boolean;
@@ -53,17 +54,28 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const { subjects } = useSubjects();
-  const { markAsRead } = useReads();
+  const { markAsRead, isRead } = useReads();
 
   // Record post view and mark as read when drawer opens
   useEffect(() => {
     if (isOpen && post && user) {
       recordPostView(post.id, user, 'feed');
       
-      // ✅ Marcar automaticamente como lido ao abrir
+      // ✅ Verificar se já estava lido (evitar toast duplicado)
+      const wasAlreadyRead = isRead(post.id);
+      
+      // Marcar automaticamente como lido ao abrir
       markAsRead(post.id);
+      
+      // ✅ Toast apenas se era novo (previne spam de toasts)
+      if (!wasAlreadyRead) {
+        toast({
+          title: "📖 Post lido!",
+          description: "Progresso dos desafios atualizado. Continue lendo para ganhar mais Koins! 🪙",
+        });
+      }
     }
-  }, [isOpen, post, user, recordPostView, markAsRead]);
+  }, [isOpen, post, user, recordPostView, markAsRead, isRead]);
 
   if (!post) return null;
   

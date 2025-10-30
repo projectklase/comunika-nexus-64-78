@@ -242,14 +242,8 @@ export function PostCard({
         <span className="text-xs">{displayText}</span>
       </div>;
   };
-  const handleMarkAsRead = () => {
-    markAsRead(post.id);
-    toast({
-      title: "✅ Post marcado como lido!",
-      description: "Continue lendo para completar o desafio 'Leitor Ativo' e ganhar Koins! 🪙"
-    });
-    onUpdate?.();
-  };
+  // ✅ Função removida: Marcar como lido agora só acontece ao abrir o drawer
+  // Isso previne exploits onde alunos marcavam como lido sem ler de fato
   const handleSaveToggle = () => {
     toggleSave(post.id);
     toast({
@@ -452,29 +446,29 @@ export function PostCard({
 
           {/* Action Buttons */}
           {user && <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border/50">
-              {/* Botão de leitura universal - TODOS os posts */}
-              <Button 
-                size="sm" 
-                variant={isNewPost ? "default" : "ghost"}
-                onClick={handleMarkAsRead}
-                className={cn(
-                  "text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                  isNewPost && "bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-                )}
-                aria-label={isNewPost ? "Marcar como lido" : "Já lido"}
-              >
-                {isNewPost ? (
-                  <>
-                    <Eye className="h-3 w-3 mr-1" />
-                    Ler agora
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Lido
-                  </>
-                )}
-              </Button>
+            {/* Botão de leitura universal - Abre drawer (previne exploits) */}
+            <Button 
+              size="sm" 
+              variant={isNewPost ? "default" : "ghost"}
+              onClick={() => setIsDetailDrawerOpen(true)}
+              className={cn(
+                "text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                isNewPost && "bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              )}
+              aria-label={isNewPost ? "Ler post completo" : "Post já lido"}
+            >
+              {isNewPost ? (
+                <>
+                  <Eye className="h-3 w-3 mr-1" />
+                  Ler agora
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Lido
+                </>
+              )}
+            </Button>
 
               {/* Activity Actions - Only for students */}
               {isActivity && user.role === "aluno" && <>
