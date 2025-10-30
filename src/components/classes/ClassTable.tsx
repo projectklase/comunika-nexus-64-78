@@ -297,7 +297,7 @@ export function ClassTable({ filters }: ClassTableProps) {
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">
-                      {schoolClass.students.length}
+                      {(schoolClass as any).student_count ?? schoolClass.students.length}
                     </Badge>
                   </TableCell>
                   <TableCell>
