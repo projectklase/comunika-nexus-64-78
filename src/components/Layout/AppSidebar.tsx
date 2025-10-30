@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -12,6 +13,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { CadastrosModal } from '@/components/admin/CadastrosModal';
 import {
   LayoutDashboard,
   Rss,
@@ -86,6 +89,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const [cadastrosModalOpen, setCadastrosModalOpen] = useState(false);
 
   if (!user) return null;
 
@@ -145,7 +149,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {(user.role === 'secretaria' || user.role === 'administrador') && cadastrosItems.length > 0 && (
+        {user.role === 'secretaria' && cadastrosItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className={isCollapsed ? 'sr-only' : ''}>
               Cadastros
@@ -167,6 +171,30 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
+        {user.role === 'administrador' && cadastrosItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className={isCollapsed ? 'sr-only' : ''}>
+              Cadastros
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+                      onClick={() => setCadastrosModalOpen(true)}
+                    >
+                      <Target className="h-4 w-4" />
+                      {!isCollapsed && <span>Abrir Cadastros</span>}
+                    </Button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <div className="mt-auto p-4">
           <SidebarMenuButton
             onClick={logout}
@@ -177,6 +205,11 @@ export function AppSidebar() {
           </SidebarMenuButton>
         </div>
       </SidebarContent>
+
+      <CadastrosModal 
+        open={cadastrosModalOpen} 
+        onOpenChange={setCadastrosModalOpen} 
+      />
     </Sidebar>
   );
 }

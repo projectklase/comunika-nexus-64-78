@@ -6,13 +6,14 @@ import { CatalogoSubjectsTab } from '@/components/catalogo/CatalogoSubjectsTab';
 import { CatalogoModalitiesTab } from '@/components/catalogo/CatalogoModalitiesTab';
 import { SchoolEvaluationTab } from '@/components/settings/SchoolEvaluationTab';
 import { Layers, BookOpen, Target, Settings } from 'lucide-react';
+import { canAccessManagement } from '@/utils/auth-helpers';
 
 export default function CatalogoPage() {
   const { user } = useAuth();
 
-  // RBAC: Only secretaria can access
-  if (!user || user.role !== 'secretaria') {
-    return <Navigate to="/login" replace />;
+  // RBAC: Only management roles can access
+  if (!canAccessManagement(user?.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (

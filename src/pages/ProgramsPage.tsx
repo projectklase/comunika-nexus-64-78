@@ -9,6 +9,7 @@ import { ProgramFormModal } from '@/components/curriculum/ProgramFormModal';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { canAccessManagement } from '@/utils/auth-helpers';
 
 export default function ProgramsPage() {
   const { user } = useAuth();
@@ -18,8 +19,8 @@ export default function ProgramsPage() {
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // RBAC: Only secretaria can access
-  if (!user || user.role !== 'secretaria') {
+  // RBAC: Only management roles can access
+  if (!canAccessManagement(user?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 

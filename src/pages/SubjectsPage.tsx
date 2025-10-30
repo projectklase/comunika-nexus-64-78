@@ -9,6 +9,7 @@ import { SubjectFormModal } from '@/components/curriculum/SubjectFormModal';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { canAccessManagement } from '@/utils/auth-helpers';
 
 export default function SubjectsPage() {
   const { user } = useAuth();
@@ -20,8 +21,8 @@ export default function SubjectsPage() {
     loadPrograms();
   }, [loadPrograms]);
 
-  // RBAC: Only secretaria can access
-  if (!user || user.role !== 'secretaria') {
+  // RBAC: Only management roles can access
+  if (!canAccessManagement(user?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 

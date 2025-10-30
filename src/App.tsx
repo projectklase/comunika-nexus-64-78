@@ -28,6 +28,7 @@ import ModalitiesPage from "./pages/ModalitiesPage";
 import StudentsPage from "./pages/StudentsPage";
 // Removed ClassTemplatesPage import
 import CatalogoPage from "./pages/CatalogoPage";
+import { MANAGEMENT_ROLES } from "./utils/auth-helpers";
 import TeachersPage from "./pages/TeachersPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -162,51 +163,51 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/secretaria/turmas" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <ClassesPage />
               </RoleGuard>
             } />
             <Route path="/secretaria/turmas/:id" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <ClassDetailPage />
               </RoleGuard>
             } />
             <Route path="/secretaria/cadastros/programas" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <ProgramsPage />
               </RoleGuard>
             } />
             <Route path="/secretaria/cadastros/niveis" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <LevelsPage />
               </RoleGuard>
             } />
             <Route path="/secretaria/cadastros/materias" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <SubjectsPage />
               </RoleGuard>
             } />
             <Route path="/secretaria/cadastros/modalidades" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <ModalitiesPage />
               </RoleGuard>
             } />
             <Route path="/secretaria/cadastros/catalogo" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <AppLayout>
                   <CatalogoPage />
                 </AppLayout>
               </RoleGuard>
             } />
             <Route path="/secretaria/cadastros/alunos" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <StudentsPage />
               </RoleGuard>
             } />
             <Route path="/secretaria/cadastros/professores" element={
-              <ProtectedRoute allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={MANAGEMENT_ROLES}>
                 <TeachersPage />
-              </ProtectedRoute>
+              </RoleGuard>
             } />
             {/* Redirect old class templates route to programs */}
             <Route path="/secretaria/modelos-turma" element={

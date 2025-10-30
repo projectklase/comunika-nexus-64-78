@@ -14,6 +14,7 @@ import { SplitButton } from '@/components/ui/split-button';
 import { Button } from '@/components/ui/button';
 import { Plus, Download } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { canAccessManagement } from '@/utils/auth-helpers';
 
 export default function ClassesPage() {
   const { user } = useAuth();
@@ -30,8 +31,8 @@ export default function ClassesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
 
-  // RBAC: Only secretaria can access
-  if (!user || user.role !== 'secretaria') {
+  // RBAC: Only management roles can access
+  if (!canAccessManagement(user?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
