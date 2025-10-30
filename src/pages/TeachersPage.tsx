@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users, Loader2 } from 'lucide-react';
@@ -288,23 +288,21 @@ export default function TeachersPage() {
                         <TableCell>{getTeacherPhone(teacher)}</TableCell>
                         <TableCell>
                           {teacherClasses.length > 0 ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge variant="secondary" className="cursor-pointer">
-                                    <Users className="h-3 w-3 mr-1" />
-                                    {teacherClasses.length}
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="space-y-1">
-                                    {teacherClasses.map((c, index) => (
-                                      <div key={index}>{c.name}</div>
-                                    ))}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="cursor-pointer">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {teacherClasses.length}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  {teacherClasses.map((c, index) => (
+                                    <div key={index}>{c.name}</div>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}

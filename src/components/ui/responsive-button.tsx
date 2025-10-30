@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, ButtonProps, ResponsiveButtonProps } from './button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 import { cn } from '@/lib/utils';
 
 const ResponsiveButton = React.forwardRef<HTMLButtonElement, ResponsiveButtonProps>(
@@ -54,16 +54,14 @@ const ResponsiveButton = React.forwardRef<HTMLButtonElement, ResponsiveButtonPro
     // If tooltip provided, wrap with tooltip
     if (tooltip || iconOnly) {
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {buttonContent}
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{tooltip || (typeof children === 'string' ? children : shortLabel)}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {buttonContent}
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tooltip || (typeof children === 'string' ? children : shortLabel)}</p>
+          </TooltipContent>
+        </Tooltip>
       );
     }
 

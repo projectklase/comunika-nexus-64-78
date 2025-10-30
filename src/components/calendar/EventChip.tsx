@@ -5,7 +5,7 @@ import { Clock, AlertCircle, Calendar as CalendarIcon, FileText, FolderOpen, Cli
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useClassStore } from '@/stores/class-store';
 import { getClassDisplayInfo, resolveSubjectNames } from '@/utils/class-helpers';
 import { useWeightsEnabled } from '@/hooks/useWeightsEnabled';
@@ -260,30 +260,28 @@ const badge = (
   );
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {badge}
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-sm whitespace-pre-line">
-          <div className="space-y-1">
-            <div className="font-medium">{String(post.title || 'Sem título')}</div>
-            <div className="text-sm text-muted-foreground">
-              {getClassInfo()}
-            </div>
-            {post.eventLocation && typeof post.eventLocation === 'string' && post.eventLocation.trim() && (
-              <div className="text-sm text-muted-foreground">
-                📍 {String(post.eventLocation).trim()}
-              </div>
-            )}
-            {weightsEnabled && post.activityMeta?.peso !== null && post.activityMeta?.peso !== undefined && post.activityMeta?.usePeso !== false && (
-              <div className="text-sm text-muted-foreground">
-                ⚖️ Peso: {String(Number(post.activityMeta.peso) || 0)}
-              </div>
-            )}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {badge}
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-sm whitespace-pre-line">
+        <div className="space-y-1">
+          <div className="font-medium">{String(post.title || 'Sem título')}</div>
+          <div className="text-sm text-muted-foreground">
+            {getClassInfo()}
           </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+          {post.eventLocation && typeof post.eventLocation === 'string' && post.eventLocation.trim() && (
+            <div className="text-sm text-muted-foreground">
+              📍 {String(post.eventLocation).trim()}
+            </div>
+          )}
+          {weightsEnabled && post.activityMeta?.peso !== null && post.activityMeta?.peso !== undefined && post.activityMeta?.usePeso !== false && (
+            <div className="text-sm text-muted-foreground">
+              ⚖️ Peso: {String(Number(post.activityMeta.peso) || 0)}
+            </div>
+          )}
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }

@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ClassFormModal } from './ClassFormModal';
 import { AssignTeachersDialog } from './AssignTeachersDialog';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -246,26 +246,24 @@ export function ClassTable({ filters }: ClassTableProps) {
                     {getModalityName(schoolClass.modalityId)}
                   </TableCell>
                   <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge variant="outline" className="cursor-help">
-                            {subjectNames.length} matéria(s)
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="space-y-1 max-w-xs">
-                            {subjectNames.length > 0 ? (
-                              subjectNames.map((name, index) => (
-                                <div key={index}>{name}</div>
-                              ))
-                            ) : (
-                              <div>Nenhuma matéria selecionada</div>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge variant="outline" className="cursor-help">
+                          {subjectNames.length} matéria(s)
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="space-y-1 max-w-xs">
+                          {subjectNames.length > 0 ? (
+                            subjectNames.map((name, index) => (
+                              <div key={index}>{name}</div>
+                            ))
+                          ) : (
+                            <div>Nenhuma matéria selecionada</div>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell>
                     {schoolClass.grade && schoolClass.year 
@@ -274,26 +272,24 @@ export function ClassTable({ filters }: ClassTableProps) {
                     }
                   </TableCell>
                   <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge variant="outline" className="cursor-help">
-                            {schoolClass.teachers.length}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="space-y-1">
-                            {teacherNames.length > 0 ? (
-                              teacherNames.map((name, index) => (
-                                <div key={index}>{name}</div>
-                              ))
-                            ) : (
-                              <div>Nenhum professor atribuído</div>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge variant="outline" className="cursor-help">
+                          {schoolClass.teachers.length}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="space-y-1">
+                          {teacherNames.length > 0 ? (
+                            teacherNames.map((name, index) => (
+                              <div key={index}>{name}</div>
+                            ))
+                          ) : (
+                            <div>Nenhum professor atribuído</div>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">

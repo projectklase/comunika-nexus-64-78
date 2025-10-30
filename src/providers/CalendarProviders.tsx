@@ -3,7 +3,6 @@
  */
 
 import React from 'react';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { CalendarModalProvider } from '@/components/calendar/CalendarModalManager';
 
 interface CalendarProvidersProps {
@@ -12,10 +11,8 @@ interface CalendarProvidersProps {
 
 export function CalendarProviders({ children }: CalendarProvidersProps) {
   return (
-    <TooltipProvider>
-      <CalendarModalProvider>
-        {children}
-      </CalendarModalProvider>
-    </TooltipProvider>
+    <CalendarModalProvider>
+      {children}
+    </CalendarModalProvider>
   );
 }

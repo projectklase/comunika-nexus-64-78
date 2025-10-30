@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar, Clock, MapPin, Send, Clock3, X, Plus, Search, Filter, Info, Settings2, Save, Star } from 'lucide-react';
 import { PostType, PostInput } from '@/types/post';
 import { useToast } from '@/hooks/use-toast';
@@ -852,7 +852,7 @@ export function PostComposer({
   };
 
 return (
-    <TooltipProvider>
+    <>
       <Card className="glass-card border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -1538,6 +1538,6 @@ return (
         onConfirm={confirmHoliday}
         onCancel={cancelHoliday}
       />
-    </TooltipProvider>
+    </>
   );
 }
