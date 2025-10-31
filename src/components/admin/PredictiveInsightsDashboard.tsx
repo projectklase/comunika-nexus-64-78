@@ -1,8 +1,11 @@
+import { useState, useMemo } from 'react';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Brain,
   TrendingUp,
@@ -12,10 +15,13 @@ import {
   Sparkles,
   Zap,
   Target,
+  Loader2,
 } from 'lucide-react';
 import { SeverityLevel, TrendLevel, PriorityLevel, SchoolInsights } from '@/types/school-insights';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 function getSeverityConfig(severity: SeverityLevel) {
   const configs = {
@@ -46,12 +52,64 @@ function getPriorityConfig(priority: PriorityLevel) {
 }
 
 export function PredictiveInsightsDashboard() {
-  const { getSetting, isLoading } = useSchoolSettings();
+  const { getSetting, isLoading, refetch } = useSchoolSettings();
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Ler do banco
   const briefing = getSetting('ai_daily_briefing', { insights: null, generatedAt: null });
   const insights: SchoolInsights | null = briefing?.insights || null;
   const lastRun: string | null = briefing?.generatedAt || null;
+
+  // Calcular se pode gerar (24h passadas)
+  const canGenerate = useMemo(() => {
+    if (!lastRun) return true; // Nunca gerou, pode gerar
+    const now = new Date();
+    const lastRunDate = new Date(lastRun);
+    const hoursSinceLastRun = (now.getTime() - lastRunDate.getTime()) / (1000 * 60 * 60);
+    return hoursSinceLastRun >= 24;
+  }, [lastRun]);
+
+  const hoursUntilNext = useMemo(() => {
+    if (!lastRun) return 0;
+    const now = new Date();
+    const lastRunDate = new Date(lastRun);
+    const hoursSinceLastRun = (now.getTime() - lastRunDate.getTime()) / (1000 * 60 * 60);
+    return Math.max(0, 24 - hoursSinceLastRun);
+  }, [lastRun]);
+
+  const handleGenerateInsights = async () => {
+    if (!canGenerate) return;
+    
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-daily-briefing', {
+        body: {}
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Análise Gerada com Sucesso!",
+        description: "Os insights foram atualizados e estarão disponíveis em alguns segundos.",
+      });
+
+      // Aguardar 2s para o banco atualizar e recarregar
+      setTimeout(() => {
+        refetch();
+      }, 2000);
+
+    } catch (error: any) {
+      console.error("Erro ao gerar insights:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao Gerar Análise",
+        description: error.message || "Tente novamente em alguns minutos.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -73,8 +131,26 @@ export function PredictiveInsightsDashboard() {
     return (
       <Alert>
         <Brain className="h-4 w-4" />
-        <AlertDescription>
-          Aguardando primeira análise diária. O sistema gera insights automaticamente às 03h UTC (0h BRT).
+        <AlertDescription className="flex items-center justify-between">
+          <span>Nenhuma análise gerada ainda. Clique no botão "Gerar Análise Diária" para começar.</span>
+          <Button
+            onClick={handleGenerateInsights}
+            disabled={isGenerating}
+            size="sm"
+            variant="outline"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Gerar Agora
+              </>
+            )}
+          </Button>
         </AlertDescription>
       </Alert>
     );
@@ -86,22 +162,59 @@ export function PredictiveInsightsDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header read-only */}
-      <div className="flex items-center gap-2">
-        <Brain className="h-6 w-6 text-primary" />
-        <div>
-          <h3 className="text-2xl font-bold">Insights Preditivos com IA</h3>
-          <p className="text-sm text-muted-foreground">
-            {lastRun ? (
-              `Última análise: ${formatDistanceToNow(new Date(lastRun), { 
-                addSuffix: true, 
-                locale: ptBR 
-              })}`
-            ) : (
-              "Análise sendo processada..."
-            )}
-          </p>
+      {/* Header com botão de geração */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Brain className="h-6 w-6 text-primary" />
+          <div>
+            <h3 className="text-2xl font-bold">Insights Preditivos com IA</h3>
+            <p className="text-sm text-muted-foreground">
+              {lastRun ? (
+                `Última análise: ${formatDistanceToNow(new Date(lastRun), { 
+                  addSuffix: true, 
+                  locale: ptBR 
+                })}`
+              ) : (
+                "Nenhuma análise gerada ainda"
+              )}
+            </p>
+          </div>
         </div>
+
+        {/* Botão Gerar Análise */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleGenerateInsights}
+                disabled={!canGenerate || isGenerating}
+                variant="default"
+                className="gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Gerar Análise Diária
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {canGenerate ? (
+                <p>Clique para gerar uma nova análise com IA</p>
+              ) : (
+                <p>
+                  Disponível novamente em {Math.ceil(hoursUntilNext)}h
+                </p>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Grid principal */}
