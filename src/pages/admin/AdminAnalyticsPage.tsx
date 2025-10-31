@@ -59,117 +59,172 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* KPIs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* KPI 1: Alunos em Risco */}
-        <Card className="glass border-destructive/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alunos em Risco</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
+        <div className="group relative h-40 rounded-2xl overflow-hidden
+                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                        border-2 border-destructive/30 hover:border-destructive/60
+                        shadow-lg hover:shadow-2xl hover:shadow-destructive/20
+                        transition-all duration-500 hover:scale-102
+                        animate-float cursor-default">
+          
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-destructive/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-destructive/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
+            <AlertTriangle className="h-10 w-10 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-lg mb-1">Alunos em Risco</h3>
+              <p className="text-xs text-muted-foreground">
+                Sem login há 7+ dias ou com entregas pendentes
+              </p>
+            </div>
             {isLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-20 mt-2" />
             ) : (
-              <div className="text-2xl font-bold text-destructive">
+              <div className="text-3xl font-bold text-destructive mt-2">
                 {analytics?.students_at_risk_count || 0}
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
-              Sem login há 7+ dias ou com entregas pendentes
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* KPI 2: Pior Turma */}
-        <Card className="glass border-warning/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Turma de Atenção</CardTitle>
-            <Users className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-32" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-warning truncate">
-                  {analytics?.worst_class_name || 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {analytics?.worst_class_pending_count || 0} entregas pendentes
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <div className="group relative h-40 rounded-2xl overflow-hidden
+                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                        border-2 border-warning/30 hover:border-warning/60
+                        shadow-lg hover:shadow-2xl hover:shadow-warning/20
+                        transition-all duration-500 hover:scale-102
+                        animate-float cursor-default"
+                        style={{ animationDelay: '0.2s' }}>
+          
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-warning/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-warning/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
+            <Users className="h-10 w-10 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-lg mb-1">Turma de Atenção</h3>
+              {isLoading ? (
+                <Skeleton className="h-6 w-32 mx-auto" />
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-warning truncate mb-1">
+                    {analytics?.worst_class_name || 'N/A'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {analytics?.worst_class_pending_count || 0} entregas pendentes
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* KPI 3: Atividades Publicadas */}
-        <Card className="glass border-primary/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atividades Publicadas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
+        <div className="group relative h-40 rounded-2xl overflow-hidden
+                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                        border-2 border-primary/30 hover:border-primary/60
+                        shadow-lg hover:shadow-2xl hover:shadow-primary/20
+                        transition-all duration-500 hover:scale-102
+                        animate-float cursor-default"
+                        style={{ animationDelay: '0.4s' }}>
+          
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
+            <TrendingUp className="h-10 w-10 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-lg mb-1">Atividades Publicadas</h3>
+              <p className="text-xs text-muted-foreground">
+                Nos últimos {daysFilter} dias
+              </p>
+            </div>
             {isLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-20 mt-2" />
             ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {analytics?.activity_trend.reduce((sum, day) => sum + day.activities_published, 0) || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Nos últimos {daysFilter} dias
-                </p>
-              </>
+              <div className="text-3xl font-bold text-primary mt-2">
+                {analytics?.activity_trend.reduce((sum, day) => sum + day.activities_published, 0) || 0}
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* KPI 4: Entregas Realizadas */}
-        <Card className="glass border-success/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Entregas Realizadas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
+        <div className="group relative h-40 rounded-2xl overflow-hidden
+                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                        border-2 border-success/30 hover:border-success/60
+                        shadow-lg hover:shadow-2xl hover:shadow-success/20
+                        transition-all duration-500 hover:scale-102
+                        animate-float cursor-default"
+                        style={{ animationDelay: '0.6s' }}>
+          
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-success/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-success/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
+            <TrendingUp className="h-10 w-10 text-success group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-lg mb-1">Entregas Realizadas</h3>
+              <p className="text-xs text-muted-foreground">
+                Nos últimos {daysFilter} dias
+              </p>
+            </div>
             {isLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-20 mt-2" />
             ) : (
-              <>
-                <div className="text-2xl font-bold text-success">
-                  {analytics?.activity_trend.reduce((sum, day) => sum + day.deliveries_made, 0) || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Nos últimos {daysFilter} dias
-                </p>
-              </>
+              <div className="text-3xl font-bold text-success mt-2">
+                {analytics?.activity_trend.reduce((sum, day) => sum + day.deliveries_made, 0) || 0}
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Ações Rápidas - Glassmorphism Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 my-12">
         {/* Botão 1: Alunos em Risco */}
         <button
           onClick={() => setOpenModal('students-at-risk')}
-          className="group relative h-[140px] rounded-xl overflow-hidden
-                     backdrop-blur-xl bg-white/5 border border-white/10
-                     hover:bg-white/10 hover:scale-105 hover:border-destructive/40
-                     transition-all duration-300 ease-out
-                     flex flex-col items-start justify-between p-6"
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-destructive/30 hover:border-destructive/60
+                     shadow-lg hover:shadow-2xl hover:shadow-destructive/20
+                     transition-all duration-500 hover:scale-102
+                     animate-float cursor-pointer"
+          style={{ animationDelay: '0.8s' }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10 w-full">
-            <div className="flex items-center gap-3 mb-3">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-              <div className="text-left">
-                <h3 className="font-bold text-lg">Alunos em Risco</h3>
-                <p className="text-xs text-muted-foreground">
-                  Identificar prioridades
-                </p>
-              </div>
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-destructive/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-destructive/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <AlertTriangle className="h-12 w-12 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Alunos em Risco</h3>
+              <p className="text-xs text-muted-foreground">Identificar prioridades</p>
             </div>
-            <div className="text-3xl font-bold text-destructive">
+            <div className="text-4xl font-bold text-destructive">
               {isLoading ? '...' : analytics?.students_at_risk_count || 0}
             </div>
           </div>
@@ -178,24 +233,28 @@ export default function AdminAnalyticsPage() {
         {/* Botão 2: Tendência de Atividades */}
         <button
           onClick={() => setOpenModal('activity-trend')}
-          className="group relative h-[140px] rounded-xl overflow-hidden
-                     backdrop-blur-xl bg-white/5 border border-white/10
-                     hover:bg-white/10 hover:scale-105 hover:border-primary/40
-                     transition-all duration-300 ease-out
-                     flex flex-col items-start justify-between p-6"
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-primary/30 hover:border-primary/60
+                     shadow-lg hover:shadow-2xl hover:shadow-primary/20
+                     transition-all duration-500 hover:scale-102
+                     animate-float cursor-pointer"
+          style={{ animationDelay: '1s' }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10 w-full">
-            <div className="flex items-center gap-3 mb-3">
-              <TrendingUp className="h-8 w-8 text-primary" />
-              <div className="text-left">
-                <h3 className="font-bold text-lg">Tendência de Atividades</h3>
-                <p className="text-xs text-muted-foreground">
-                  Evolução temporal
-                </p>
-              </div>
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <TrendingUp className="h-12 w-12 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Tendência de Atividades</h3>
+              <p className="text-xs text-muted-foreground">Evolução temporal</p>
             </div>
-            <div className="text-3xl font-bold text-primary">
+            <div className="text-4xl font-bold text-primary">
               {isLoading ? '...' : analytics?.activity_trend.reduce((sum, day) => sum + day.activities_published, 0) || 0}
             </div>
           </div>
@@ -204,24 +263,28 @@ export default function AdminAnalyticsPage() {
         {/* Botão 3: Performance por Turma */}
         <button
           onClick={() => setOpenModal('class-performance')}
-          className="group relative h-[140px] rounded-xl overflow-hidden
-                     backdrop-blur-xl bg-white/5 border border-white/10
-                     hover:bg-white/10 hover:scale-105 hover:border-warning/40
-                     transition-all duration-300 ease-out
-                     flex flex-col items-start justify-between p-6"
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-warning/30 hover:border-warning/60
+                     shadow-lg hover:shadow-2xl hover:shadow-warning/20
+                     transition-all duration-500 hover:scale-102
+                     animate-float cursor-pointer"
+          style={{ animationDelay: '1.2s' }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-warning/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10 w-full">
-            <div className="flex items-center gap-3 mb-3">
-              <Users className="h-8 w-8 text-warning" />
-              <div className="text-left">
-                <h3 className="font-bold text-lg">Performance por Turma</h3>
-                <p className="text-xs text-muted-foreground">
-                  Comparativo de classes
-                </p>
-              </div>
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-warning/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-warning/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <Users className="h-12 w-12 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Performance por Turma</h3>
+              <p className="text-xs text-muted-foreground">Comparativo de classes</p>
             </div>
-            <div className="text-lg font-bold text-warning truncate">
+            <div className="text-2xl font-bold text-warning truncate max-w-full">
               {isLoading ? '...' : analytics?.worst_class_name || 'N/A'}
             </div>
           </div>
@@ -230,24 +293,28 @@ export default function AdminAnalyticsPage() {
         {/* Botão 4: Análise de Engajamento */}
         <button
           onClick={() => setOpenModal('post-engagement')}
-          className="group relative h-[140px] rounded-xl overflow-hidden
-                     backdrop-blur-xl bg-white/5 border border-white/10
-                     hover:bg-white/10 hover:scale-105 hover:border-success/40
-                     transition-all duration-300 ease-out
-                     flex flex-col items-start justify-between p-6"
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-success/30 hover:border-success/60
+                     shadow-lg hover:shadow-2xl hover:shadow-success/20
+                     transition-all duration-500 hover:scale-102
+                     animate-float cursor-pointer"
+          style={{ animationDelay: '1.4s' }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-success/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10 w-full">
-            <div className="flex items-center gap-3 mb-3">
-              <BookOpen className="h-8 w-8 text-success" />
-              <div className="text-left">
-                <h3 className="font-bold text-lg">Análise de Engajamento</h3>
-                <p className="text-xs text-muted-foreground">
-                  Leituras e interações
-                </p>
-              </div>
+          {/* Efeito de partículas */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-success/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-success/10 rounded-full blur-2xl animate-ping" />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <BookOpen className="h-12 w-12 text-success group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Análise de Engajamento</h3>
+              <p className="text-xs text-muted-foreground">Leituras e interações</p>
             </div>
-            <div className="text-3xl font-bold text-success">
+            <div className="text-4xl font-bold text-success">
               {isLoading ? '...' : analytics?.activity_trend.reduce((sum, day) => sum + day.deliveries_made, 0) || 0}
             </div>
           </div>
