@@ -65,8 +65,8 @@ export default function AdminAnalyticsPage() {
                         backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                         border-2 border-destructive/30 hover:border-destructive/60
                         shadow-lg hover:shadow-2xl hover:shadow-destructive/20
-                        transition-all duration-500 hover:scale-102
-                        animate-float cursor-default">
+                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                        cursor-default">
           
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -76,7 +76,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <AlertTriangle className="h-10 w-10 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <AlertTriangle className="h-10 w-10 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-lg mb-1">Alunos em Risco</h3>
               <p className="text-xs text-muted-foreground">
@@ -98,9 +98,8 @@ export default function AdminAnalyticsPage() {
                         backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                         border-2 border-warning/30 hover:border-warning/60
                         shadow-lg hover:shadow-2xl hover:shadow-warning/20
-                        transition-all duration-500 hover:scale-102
-                        animate-float cursor-default"
-                        style={{ animationDelay: '0.2s' }}>
+                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                        cursor-default">
           
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -110,7 +109,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <Users className="h-10 w-10 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <Users className="h-10 w-10 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-lg mb-1">Turma de Atenção</h3>
               {isLoading ? (
@@ -134,9 +133,8 @@ export default function AdminAnalyticsPage() {
                         backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                         border-2 border-primary/30 hover:border-primary/60
                         shadow-lg hover:shadow-2xl hover:shadow-primary/20
-                        transition-all duration-500 hover:scale-102
-                        animate-float cursor-default"
-                        style={{ animationDelay: '0.4s' }}>
+                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                        cursor-default">
           
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -146,7 +144,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <TrendingUp className="h-10 w-10 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <TrendingUp className="h-10 w-10 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-lg mb-1">Atividades Publicadas</h3>
               <p className="text-xs text-muted-foreground">
@@ -168,9 +166,8 @@ export default function AdminAnalyticsPage() {
                         backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                         border-2 border-success/30 hover:border-success/60
                         shadow-lg hover:shadow-2xl hover:shadow-success/20
-                        transition-all duration-500 hover:scale-102
-                        animate-float cursor-default"
-                        style={{ animationDelay: '0.6s' }}>
+                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                        cursor-default">
           
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -180,7 +177,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <TrendingUp className="h-10 w-10 text-success group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <TrendingUp className="h-10 w-10 text-success group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-lg mb-1">Entregas Realizadas</h3>
               <p className="text-xs text-muted-foreground">
@@ -207,9 +204,8 @@ export default function AdminAnalyticsPage() {
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-destructive/30 hover:border-destructive/60
                      shadow-lg hover:shadow-2xl hover:shadow-destructive/20
-                     transition-all duration-500 hover:scale-102
-                     animate-float cursor-pointer"
-          style={{ animationDelay: '0.8s' }}
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
         >
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -219,7 +215,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
-            <AlertTriangle className="h-12 w-12 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <AlertTriangle className="h-12 w-12 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-xl mb-1">Alunos em Risco</h3>
               <p className="text-xs text-muted-foreground">Identificar prioridades</p>
@@ -237,9 +233,8 @@ export default function AdminAnalyticsPage() {
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-primary/30 hover:border-primary/60
                      shadow-lg hover:shadow-2xl hover:shadow-primary/20
-                     transition-all duration-500 hover:scale-102
-                     animate-float cursor-pointer"
-          style={{ animationDelay: '1s' }}
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
         >
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -249,7 +244,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
-            <TrendingUp className="h-12 w-12 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <TrendingUp className="h-12 w-12 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-xl mb-1">Tendência de Atividades</h3>
               <p className="text-xs text-muted-foreground">Evolução temporal</p>
@@ -267,9 +262,8 @@ export default function AdminAnalyticsPage() {
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-warning/30 hover:border-warning/60
                      shadow-lg hover:shadow-2xl hover:shadow-warning/20
-                     transition-all duration-500 hover:scale-102
-                     animate-float cursor-pointer"
-          style={{ animationDelay: '1.2s' }}
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
         >
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -279,7 +273,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
-            <Users className="h-12 w-12 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <Users className="h-12 w-12 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-xl mb-1">Performance por Turma</h3>
               <p className="text-xs text-muted-foreground">Comparativo de classes</p>
@@ -297,9 +291,8 @@ export default function AdminAnalyticsPage() {
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-success/30 hover:border-success/60
                      shadow-lg hover:shadow-2xl hover:shadow-success/20
-                     transition-all duration-500 hover:scale-102
-                     animate-float cursor-pointer"
-          style={{ animationDelay: '1.4s' }}
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
         >
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -309,7 +302,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
-            <BookOpen className="h-12 w-12 text-success group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300" />
+            <BookOpen className="h-12 w-12 text-success group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
               <h3 className="font-bold text-xl mb-1">Análise de Engajamento</h3>
               <p className="text-xs text-muted-foreground">Leituras e interações</p>
