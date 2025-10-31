@@ -1,10 +1,19 @@
 import { useState } from 'react';
 import { useAdminAnalytics } from '@/hooks/useAdminAnalytics';
+import { useExecutiveDashboard } from '@/hooks/useExecutiveDashboard';
+import { useClassesComparison } from '@/hooks/useClassesComparison';
+import { useActivitiesLibrary } from '@/hooks/useActivitiesLibrary';
+import { useTemporalHeatmap } from '@/hooks/useTemporalHeatmap';
+import { usePostReadAnalytics } from '@/hooks/usePostReadAnalytics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, TrendingUp, Users, AlertCircle, BookOpen, Phone, Calendar, FileText, UserCheck, Mail, Bell, Book, TrendingDown, FileDown, Trophy, ArrowDown, Send, Eye } from 'lucide-react';
+import { 
+  AlertTriangle, TrendingUp, Users, AlertCircle, BookOpen, Phone, Calendar, FileText, 
+  UserCheck, Mail, Bell, Book, TrendingDown, FileDown, Trophy, ArrowDown, Send, Eye,
+  Gauge, BarChart3, Library, Clock
+} from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
 import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
@@ -16,15 +25,35 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PieChart, Pie, BarChart, Bar, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip, Legend, LineChart, Line } from 'recharts';
+import { 
+  PieChart, Pie, BarChart, Bar, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, 
+  PolarRadiusAxis, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, 
+  Tooltip as RechartsTooltip, Legend, LineChart, Line 
+} from 'recharts';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { StudentAtRisk } from '@/types/admin-analytics';
 
 export default function AdminAnalyticsPage() {
   const [daysFilter, setDaysFilter] = useState<number>(30);
-  const [openModal, setOpenModal] = useState<'students-at-risk' | 'activity-trend' | 'class-performance' | 'post-engagement' | null>(null);
+  const [openModal, setOpenModal] = useState<
+    | 'executive' 
+    | 'classes-comparison' 
+    | 'activities-library' 
+    | 'temporal-heatmap'
+    | 'students-at-risk' 
+    | 'activity-trend' 
+    | 'class-performance' 
+    | 'post-engagement' 
+    | null
+  >(null);
+
+  // Hooks para dados reais
   const { data: analytics, isLoading, error } = useAdminAnalytics(daysFilter);
+  const { data: executive, isLoading: loadingExecutive } = useExecutiveDashboard(daysFilter);
+  const { data: classesComparison, isLoading: loadingClasses } = useClassesComparison(daysFilter);
+  const { data: activitiesLib, isLoading: loadingActivities } = useActivitiesLibrary(90);
+  const { data: heatmap, isLoading: loadingHeatmap } = useTemporalHeatmap(daysFilter);
+  const { data: postReadData, isLoading: loadingPostReads } = usePostReadAnalytics(daysFilter);
 
   if (error) {
     return (
@@ -46,7 +75,7 @@ export default function AdminAnalyticsPage() {
         <div className="flex-1 text-center">
           <h1 className="text-4xl font-bold gradient-text">Centro de Inteligência</h1>
           <p className="text-muted-foreground mt-2 text-lg">
-            Monitoramento avançado de engajamento e risco de evasão
+            Sistema completo de analytics em tempo real
           </p>
         </div>
         
@@ -65,7 +94,7 @@ export default function AdminAnalyticsPage() {
         </Select>
       </div>
 
-      {/* KPIs Grid */}
+      {/* KPIs Grid (Não Clicáveis) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* KPI 1: Alunos em Risco */}
         <div className="group relative h-40 rounded-2xl overflow-hidden
@@ -74,14 +103,10 @@ export default function AdminAnalyticsPage() {
                         shadow-lg hover:shadow-2xl hover:shadow-destructive/20
                         transition-all duration-500 hover:scale-102 hover:-translate-y-2
                         cursor-default">
-          
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-destructive/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-destructive/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <AlertTriangle className="h-10 w-10 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -107,14 +132,10 @@ export default function AdminAnalyticsPage() {
                         shadow-lg hover:shadow-2xl hover:shadow-warning/20
                         transition-all duration-500 hover:scale-102 hover:-translate-y-2
                         cursor-default">
-          
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-warning/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-warning/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <Users className="h-10 w-10 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -142,14 +163,10 @@ export default function AdminAnalyticsPage() {
                         shadow-lg hover:shadow-2xl hover:shadow-primary/20
                         transition-all duration-500 hover:scale-102 hover:-translate-y-2
                         cursor-default">
-          
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <TrendingUp className="h-10 w-10 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -175,14 +192,10 @@ export default function AdminAnalyticsPage() {
                         shadow-lg hover:shadow-2xl hover:shadow-success/20
                         transition-all duration-500 hover:scale-102 hover:-translate-y-2
                         cursor-default">
-          
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-success/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-success/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <TrendingUp className="h-10 w-10 text-success group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -202,8 +215,115 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
 
-      {/* Ações Rápidas - Glassmorphism Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 my-12">
+      {/* FILEIRA SUPERIOR - NOVOS BOTÕES */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+        {/* BOTÃO 1: Dashboard Executivo */}
+        <button
+          onClick={() => setOpenModal('executive')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-blue-500/30 hover:border-blue-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-blue-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full blur-2xl animate-ping" />
+          </div>
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <Gauge className="h-12 w-12 text-blue-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Dashboard Executivo</h3>
+              <p className="text-xs text-muted-foreground">KPIs e Score de Saúde</p>
+            </div>
+            <div className="text-4xl font-bold text-blue-500">
+              {loadingExecutive ? '...' : `${executive?.health_score || 0}%`}
+            </div>
+          </div>
+        </button>
+
+        {/* BOTÃO 2: Comparativo de Turmas */}
+        <button
+          onClick={() => setOpenModal('classes-comparison')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-purple-500/30 hover:border-purple-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-purple-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-purple-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full blur-2xl animate-ping" />
+          </div>
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <BarChart3 className="h-12 w-12 text-purple-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Comparativo de Turmas</h3>
+              <p className="text-xs text-muted-foreground">Ranking e Performance</p>
+            </div>
+            <div className="text-4xl font-bold text-purple-500">
+              {loadingClasses ? '...' : classesComparison?.length || 0}
+            </div>
+          </div>
+        </button>
+
+        {/* BOTÃO 3: Biblioteca de Atividades */}
+        <button
+          onClick={() => setOpenModal('activities-library')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-amber-500/30 hover:border-amber-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-amber-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-amber-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl animate-ping" />
+          </div>
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <Library className="h-12 w-12 text-amber-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Biblioteca de Atividades</h3>
+              <p className="text-xs text-muted-foreground">Análise de Performance</p>
+            </div>
+            <div className="text-4xl font-bold text-amber-500">
+              {loadingActivities ? '...' : activitiesLib?.activities?.length || 0}
+            </div>
+          </div>
+        </button>
+
+        {/* BOTÃO 4: Mapa de Calor Temporal */}
+        <button
+          onClick={() => setOpenModal('temporal-heatmap')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
+                     border-2 border-cyan-500/30 hover:border-cyan-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-cyan-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-16 h-16 bg-cyan-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-cyan-500/10 rounded-full blur-2xl animate-ping" />
+          </div>
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+            <Clock className="h-12 w-12 text-cyan-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-xl mb-1">Mapa de Calor Temporal</h3>
+              <p className="text-xs text-muted-foreground">Padrões de Atividade</p>
+            </div>
+            <div className="text-2xl font-bold text-cyan-500">
+              {loadingHeatmap ? '...' : 'Horários'}
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* FILEIRA INFERIOR - BOTÕES EXISTENTES */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
         {/* Botão 1: Alunos em Risco */}
         <button
           onClick={() => setOpenModal('students-at-risk')}
@@ -214,13 +334,10 @@ export default function AdminAnalyticsPage() {
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
                      cursor-pointer"
         >
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-destructive/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-destructive/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
             <AlertTriangle className="h-12 w-12 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -243,13 +360,10 @@ export default function AdminAnalyticsPage() {
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
                      cursor-pointer"
         >
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
             <TrendingUp className="h-12 w-12 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -272,13 +386,10 @@ export default function AdminAnalyticsPage() {
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
                      cursor-pointer"
         >
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-warning/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-warning/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
             <Users className="h-12 w-12 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -301,13 +412,10 @@ export default function AdminAnalyticsPage() {
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
                      cursor-pointer"
         >
-          {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-success/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-success/10 rounded-full blur-2xl animate-ping" />
           </div>
-
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
             <BookOpen className="h-12 w-12 text-success group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
@@ -327,935 +435,724 @@ export default function AdminAnalyticsPage() {
         <PredictiveInsightsDashboard />
       </section>
 
-      {/* Modal 1: Alunos em Risco - Advanced with Tabs */}
-      <Dialog open={openModal === 'students-at-risk'} onOpenChange={() => setOpenModal(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden backdrop-blur-xl bg-background/95 border border-white/10">
+      {/* MODAL 1: Dashboard Executivo */}
+      <Dialog open={openModal === 'executive'} onOpenChange={() => setOpenModal(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-2xl">
-              <AlertTriangle className="h-6 w-6 text-destructive" />
-              Alunos em Risco de Evasão
+            <DialogTitle className="flex items-center gap-2">
+              <Gauge className="h-6 w-6 text-blue-500" />
+              Dashboard Executivo
             </DialogTitle>
             <DialogDescription>
-              Análise completa de alunos que necessitam atenção imediata
+              Visão geral dos principais indicadores de performance
             </DialogDescription>
           </DialogHeader>
-          
-          <Tabs defaultValue="visao-geral" className="mt-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
-              <TabsTrigger value="detalhamento">Detalhamento</TabsTrigger>
-              <TabsTrigger value="acoes">Ações</TabsTrigger>
-              <TabsTrigger value="tendencias">Tendências</TabsTrigger>
-            </TabsList>
-            
-            <div className="overflow-y-auto max-h-[calc(90vh-250px)] mt-4 pr-2">
-              {/* Tab 1: Visão Geral */}
-              <TabsContent value="visao-geral" className="space-y-6">
-                {isLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-32 w-full" />
-                    <Skeleton className="h-64 w-full" />
-                  </div>
-                ) : analytics && analytics.students_at_risk_list.length > 0 ? (
-                  <>
-                    {/* KPIs */}
-                    <div className="grid md:grid-cols-3 gap-4">
-                      {(() => {
-                        const criticoCount = analytics.students_at_risk_list.filter(s => 
-                          (s.days_since_last_login ?? 0) >= 14 && s.pending_deliveries >= 5
-                        ).length;
-                        const moderadoCount = analytics.students_at_risk_list.filter(s => 
-                          (s.days_since_last_login ?? 0) >= 10 && s.pending_deliveries >= 3 && 
-                          !((s.days_since_last_login ?? 0) >= 14 && s.pending_deliveries >= 5)
-                        ).length;
-                        
-                        return (
-                          <>
-                            <Card className="border-destructive/50">
-                              <CardHeader>
-                                <CardTitle className="text-sm">Risco Crítico</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="text-3xl font-bold text-destructive">{criticoCount}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  ≥14 dias + ≥5 pendentes
-                                </p>
-                              </CardContent>
-                            </Card>
 
-                            <Card className="border-warning/50">
-                              <CardHeader>
-                                <CardTitle className="text-sm">Risco Moderado</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="text-3xl font-bold text-warning">{moderadoCount}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  ≥10 dias ou ≥3 pendentes
-                                </p>
-                              </CardContent>
-                            </Card>
-
-                            <Card className="border-success/50">
-                              <CardHeader>
-                                <CardTitle className="text-sm">Taxa de Intervenção</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="text-3xl font-bold text-success">0%</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {/* Mock - TODO: Implementar tracking */}
-                                </p>
-                              </CardContent>
-                            </Card>
-                          </>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Gráficos */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {/* Gráfico Pizza */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Distribuição por Tipo de Risco</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {(() => {
-                            const tipoRisco = analytics.students_at_risk_list.map(s => {
-                              const diasInativo = s.days_since_last_login ?? 0;
-                              const pendentes = s.pending_deliveries;
-                              
-                              if (diasInativo === 0 && pendentes > 0) return 'Apenas Pendentes';
-                              if (diasInativo > 0 && pendentes === 0) return 'Apenas Inatividade';
-                              if (diasInativo > 0 && pendentes > 0) return 'Duplo Risco';
-                              return 'Outro';
-                            });
-
-                            const pieData = [
-                              { name: 'Apenas Pendentes', value: tipoRisco.filter(t => t === 'Apenas Pendentes').length, fill: 'hsl(var(--warning))' },
-                              { name: 'Apenas Inatividade', value: tipoRisco.filter(t => t === 'Apenas Inatividade').length, fill: 'hsl(var(--primary))' },
-                              { name: 'Duplo Risco', value: tipoRisco.filter(t => t === 'Duplo Risco').length, fill: 'hsl(var(--destructive))' },
-                            ].filter(d => d.value > 0);
-
-                            return (
-                              <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label />
-                                  <RechartsTooltip />
-                                  <Legend />
-                                </PieChart>
-                              </ResponsiveContainer>
-                            );
-                          })()}
-                        </CardContent>
-                      </Card>
-
-                      {/* Gráfico Barras */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Alunos em Risco por Turma</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {(() => {
-                            const porTurma = analytics.students_at_risk_list.reduce((acc, s) => {
-                              const turma = s.class_name || 'Sem Turma';
-                              acc[turma] = (acc[turma] || 0) + 1;
-                              return acc;
-                            }, {} as Record<string, number>);
-
-                            const barData = Object.entries(porTurma)
-                              .map(([name, count]) => ({ turma: name, alunos: count }))
-                              .sort((a, b) => b.alunos - a.alunos)
-                              .slice(0, 10);
-
-                            return (
-                              <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={barData} layout="vertical">
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis type="number" />
-                                  <YAxis dataKey="turma" type="category" width={120} />
-                                  <RechartsTooltip />
-                                  <Bar dataKey="alunos" fill="hsl(var(--destructive))" />
-                                </BarChart>
-                              </ResponsiveContainer>
-                            );
-                          })()}
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Gráfico Radar - Top 5 Casos Críticos */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Top 5 Casos Críticos</CardTitle>
-                        <CardDescription>Análise multidimensional dos alunos em maior risco</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {(() => {
-                          const top5 = analytics.students_at_risk_list
-                            .map(s => ({
-                              name: s.student_name.split(' ').slice(0, 2).join(' '),
-                              'Dias Inativo': s.days_since_last_login ?? 0,
-                              'Pendentes': s.pending_deliveries,
-                              'Avaliações': s.pending_evaluations,
-                            }))
-                            .sort((a, b) => (b['Dias Inativo'] + b.Pendentes * 2) - (a['Dias Inativo'] + a.Pendentes * 2))
-                            .slice(0, 5);
-
-                          return (
-                            <ResponsiveContainer width="100%" height={400}>
-                              <RadarChart data={top5}>
-                                <PolarGrid />
-                                <PolarAngleAxis dataKey="name" />
-                                <PolarRadiusAxis angle={90} domain={[0, 30]} />
-                                <Radar name="Dias Inativo" dataKey="Dias Inativo" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" fillOpacity={0.3} />
-                                <Radar name="Pendentes" dataKey="Pendentes" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" fillOpacity={0.3} />
-                                <Radar name="Avaliações" dataKey="Avaliações" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                                <Legend />
-                                <RechartsTooltip />
-                              </RadarChart>
-                            </ResponsiveContainer>
-                          );
-                        })()}
-                      </CardContent>
-                    </Card>
-                  </>
-                ) : (
-                  <Alert>
-                    <AlertDescription>
-                      ✅ Ótimas notícias! Nenhum aluno identificado em risco de evasão no momento.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </TabsContent>
-
-              {/* Tab 2: Detalhamento */}
-              <TabsContent value="detalhamento" className="space-y-4">
-                {isLoading ? (
-                  <Skeleton className="h-96 w-full" />
-                ) : analytics?.students_at_risk_list.length === 0 ? (
-                  <Alert>
-                    <AlertDescription>
-                      ✅ Nenhum aluno em risco identificado.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Lista Completa de Alunos em Risco</CardTitle>
-                      <CardDescription>Detalhamento com severidade calculada</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Nome</TableHead>
-                            <TableHead>Turma</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Dias Inativo</TableHead>
-                            <TableHead className="text-right">Pendentes</TableHead>
-                            <TableHead className="text-right">Avaliações</TableHead>
-                            <TableHead>Severidade</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {analytics?.students_at_risk_list.map((student) => {
-                            const dias = student.days_since_last_login ?? 0;
-                            const pendentes = student.pending_deliveries;
-                            
-                            let severity: { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } = { label: 'MODERADO', variant: 'secondary' };
-                            if (dias >= 14 && pendentes >= 5) {
-                              severity = { label: 'CRÍTICO', variant: 'destructive' };
-                            } else if (dias >= 10 || pendentes >= 4) {
-                              severity = { label: 'ALTO', variant: 'default' };
-                            }
-
-                            return (
-                              <TableRow key={student.student_id}>
-                                <TableCell className="font-medium">{student.student_name}</TableCell>
-                                <TableCell>{student.class_name || 'Sem turma'}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">
-                                    {student.days_since_last_login === null ? 'Nunca logou' : 'Inativo'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {student.days_since_last_login ?? 'N/A'}
-                                </TableCell>
-                                <TableCell className="text-right">{student.pending_deliveries}</TableCell>
-                                <TableCell className="text-right">{student.pending_evaluations}</TableCell>
-                                <TableCell>
-                                  <Badge variant={severity.variant}>{severity.label}</Badge>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-
-              {/* Tab 3: Ações */}
-              <TabsContent value="acoes" className="space-y-6">
-                {(() => {
-                  if (isLoading) return <Skeleton className="h-96 w-full" />;
-                  if (!analytics || analytics.students_at_risk_list.length === 0) {
-                    return (
-                      <Alert>
-                        <AlertDescription>
-                          Nenhuma ação necessária no momento.
-                        </AlertDescription>
-                      </Alert>
-                    );
-                  }
-
-                  const criticoCount = analytics.students_at_risk_list.filter(s => 
-                    (s.days_since_last_login ?? 0) >= 14 && s.pending_deliveries >= 5
-                  ).length;
-                  const moderadoCount = analytics.students_at_risk_list.filter(s => 
-                    (s.days_since_last_login ?? 0) >= 10 && s.pending_deliveries >= 3 && 
-                    !((s.days_since_last_login ?? 0) >= 14 && s.pending_deliveries >= 5)
-                  ).length;
-
-                  return (
-                    <>
-                      <Alert className="border-primary/50 bg-primary/5">
-                        <AlertCircle className="h-5 w-5" />
-                        <AlertDescription>
-                          <strong>Protocolo de Intervenção:</strong> Alunos em risco crítico devem ser contatados em até 24h. 
-                          Alunos em risco moderado devem receber notificações automáticas e suporte pedagógico.
-                        </AlertDescription>
-                      </Alert>
-
-                      <div className="grid md:grid-cols-2 gap-6">
-                        {/* Card Risco Crítico */}
-                        <Card className="border-destructive/50 bg-destructive/5">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-destructive">
-                              <AlertTriangle className="h-5 w-5" />
-                              Risco Crítico ({criticoCount} alunos)
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div className="flex items-start gap-2">
-                              <Phone className="h-4 w-4 mt-1 text-destructive" />
-                              <p className="text-sm">Contato telefônico imediato com responsáveis</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <Calendar className="h-4 w-4 mt-1 text-destructive" />
-                              <p className="text-sm">Agendar reunião presencial em 48h</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <FileText className="h-4 w-4 mt-1 text-destructive" />
-                              <p className="text-sm">Criar plano de ação individualizado</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <UserCheck className="h-4 w-4 mt-1 text-destructive" />
-                              <p className="text-sm">Designar tutor de acompanhamento</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Card Risco Moderado */}
-                        <Card className="border-warning/50 bg-warning/5">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-warning">
-                              <AlertCircle className="h-5 w-5" />
-                              Risco Moderado ({moderadoCount} alunos)
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div className="flex items-start gap-2">
-                              <Mail className="h-4 w-4 mt-1 text-warning" />
-                              <p className="text-sm">Enviar email de reengajamento</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <Bell className="h-4 w-4 mt-1 text-warning" />
-                              <p className="text-sm">Notificações push personalizadas</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <Book className="h-4 w-4 mt-1 text-warning" />
-                              <p className="text-sm">Disponibilizar material de apoio</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <Users className="h-4 w-4 mt-1 text-warning" />
-                              <p className="text-sm">Sugerir grupos de estudo</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <Button variant="destructive" className="flex-1">
-                          <Mail className="mr-2 h-4 w-4" />
-                          Enviar Emails em Massa
-                        </Button>
-                        <Button variant="outline" className="flex-1">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          Agendar Reuniões
-                        </Button>
-                      </div>
-                    </>
-                  );
-                })()}
-              </TabsContent>
-
-              {/* Tab 4: Tendências */}
-              <TabsContent value="tendencias" className="space-y-6">
-                {isLoading ? (
-                  <Skeleton className="h-96 w-full" />
-                ) : analytics && analytics.students_at_risk_list.length > 0 ? (
-                  <>
-                    {(() => {
-                      const criticoCount = analytics.students_at_risk_list.filter(s => 
-                        (s.days_since_last_login ?? 0) >= 14 && s.pending_deliveries >= 5
-                      ).length;
-                      const moderadoCount = analytics.students_at_risk_list.filter(s => 
-                        (s.days_since_last_login ?? 0) >= 10 && s.pending_deliveries >= 3 && 
-                        !((s.days_since_last_login ?? 0) >= 14 && s.pending_deliveries >= 5)
-                      ).length;
-
-                      // Mock data - evolução nos últimos 30 dias
-                      const trendData = Array.from({ length: 30 }, (_, i) => {
-                        const date = new Date();
-                        date.setDate(date.getDate() - (29 - i));
-                        return {
-                          data: format(date, 'dd/MM'),
-                          Crítico: Math.max(0, Math.floor(Math.random() * 5) + criticoCount - 2),
-                          Alto: Math.max(0, Math.floor(Math.random() * 8) + moderadoCount - 4),
-                          Moderado: Math.max(0, Math.floor(Math.random() * 10) + 5),
-                        };
-                      });
-
-                      return (
-                        <>
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Evolução do Risco ao Longo do Tempo</CardTitle>
-                              <CardDescription>
-                                Últimos 30 dias (dados de exemplo)
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <ResponsiveContainer width="100%" height={350}>
-                                <AreaChart data={trendData}>
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis dataKey="data" />
-                                  <YAxis />
-                                  <RechartsTooltip />
-                                  <Legend />
-                                  <Area type="monotone" dataKey="Crítico" stackId="1" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" />
-                                  <Area type="monotone" dataKey="Alto" stackId="1" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" />
-                                  <Area type="monotone" dataKey="Moderado" stackId="1" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" />
-                                </AreaChart>
-                              </ResponsiveContainer>
-                            </CardContent>
-                          </Card>
-
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <Card>
-                              <CardHeader>
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                  <TrendingDown className="h-4 w-4 text-success" />
-                                  Tendência Positiva
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <p className="text-sm text-muted-foreground">
-                                  5 alunos saíram do grupo de risco nos últimos 7 dias. {/* Mock */}
-                                </p>
-                                <Badge variant="outline" className="mt-2 border-success text-success">-12% esta semana</Badge>
-                              </CardContent>
-                            </Card>
-
-                            <Card>
-                              <CardHeader>
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                  <AlertTriangle className="h-4 w-4 text-warning" />
-                                  Novos Casos
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <p className="text-sm text-muted-foreground">
-                                  3 novos alunos identificados em risco moderado esta semana. {/* Mock */}
-                                </p>
-                                <Badge variant="outline" className="mt-2 border-warning text-warning">+3 novos</Badge>
-                              </CardContent>
-                            </Card>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </>
-                ) : (
-                  <Alert>
-                    <AlertDescription>
-                      Nenhum dado de tendência disponível.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </TabsContent>
+          {loadingExecutive ? (
+            <div className="space-y-4">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
             </div>
-          </Tabs>
-
-          <DialogFooter className="flex gap-3 mt-4">
-            <Button variant="outline" onClick={() => setOpenModal(null)}>
-              Fechar
-            </Button>
-            <Button variant="default">
-              <FileDown className="mr-2 h-4 w-4" />
-              Exportar Relatório PDF
-            </Button>
-            <Button variant="destructive">
-              <Users className="mr-2 h-4 w-4" />
-              Acionar Equipe
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal 2: Tendência de Atividades - Enhanced */}
-      <Dialog open={openModal === 'activity-trend'} onOpenChange={() => setOpenModal(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden backdrop-blur-xl bg-background/95 border border-white/10">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-2xl">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              Tendência de Atividades
-            </DialogTitle>
-            <DialogDescription>
-              Análise temporal completa de publicações e entregas
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="overflow-y-auto max-h-[calc(90vh-200px)] mt-4 pr-2 space-y-6">
-            {isLoading ? (
-              <Skeleton className="h-96 w-full" />
-            ) : analytics?.activity_trend && analytics.activity_trend.length > 0 ? (
-              <>
-                {/* KPIs Principais */}
-                {(() => {
-                  const totalPublicadas = analytics.activity_trend.reduce((sum, d) => sum + d.activities_published, 0);
-                  const totalEntregas = analytics.activity_trend.reduce((sum, d) => sum + d.deliveries_made, 0);
-                  const taxaConversao = totalPublicadas > 0 ? ((totalEntregas / totalPublicadas) * 100).toFixed(1) : '0';
-                  const mediaDiaria = (totalPublicadas / analytics.activity_trend.length).toFixed(1);
-
-                  const picoDay = analytics.activity_trend.reduce((max, d) => 
-                    d.activities_published > max.activities_published ? d : max
-                  , analytics.activity_trend[0]);
-
-                  return (
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <Card className="border-success/50">
-                        <CardHeader>
-                          <CardTitle className="text-sm">Taxa de Conversão</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-success">{taxaConversao}%</div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {totalEntregas} entregas de {totalPublicadas} publicadas
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border-primary/50">
-                        <CardHeader>
-                          <CardTitle className="text-sm">Média Diária</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-primary">{mediaDiaria}</div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Atividades publicadas por dia
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border-warning/50">
-                        <CardHeader>
-                          <CardTitle className="text-sm">Pico de Atividade</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-warning">{picoDay.activities_published}</div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Em {format(parseISO(picoDay.date), 'dd/MM/yyyy')}
-                          </p>
-                        </CardContent>
-                      </Card>
+          ) : executive ? (
+            <div className="space-y-6">
+              {/* Score de Saúde */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Score de Saúde da Plataforma</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center">
+                    <div className="relative w-48 h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Score', value: executive.health_score },
+                              { name: 'Restante', value: 100 - executive.health_score }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            startAngle={90}
+                            endAngle={-270}
+                            dataKey="value"
+                          >
+                            <Cell fill="#3b82f6" />
+                            <Cell fill="#e5e7eb" />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-4xl font-bold text-blue-500">
+                            {executive.health_score}%
+                          </div>
+                          <div className="text-sm text-muted-foreground">Saúde</div>
+                        </div>
+                      </div>
                     </div>
-                  );
-                })()}
+                  </div>
+                </CardContent>
+              </Card>
 
-                {/* ActivityTrendChart MAIOR */}
+              {/* KPIs Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Evolução Temporal</CardTitle>
-                    <CardDescription>Atividades publicadas vs entregas realizadas</CardDescription>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Total de Alunos</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[400px] w-full">
-                      <ActivityTrendChart data={analytics.activity_trend} />
+                    <div className="text-2xl font-bold">{executive.total_students}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Ativos Hoje</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-500">
+                      {executive.active_students_today}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {executive.active_students_change > 0 ? '+' : ''}
+                      {executive.active_students_change}% vs ontem
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* BarChart Comparativo Semanal */}
-                {(() => {
-                  const semanas = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
-                  const semanaData = semanas.map((sem, i) => {
-                    const inicio = i * 7;
-                    const fim = Math.min(inicio + 7, analytics.activity_trend.length);
-                    const subset = analytics.activity_trend.slice(inicio, fim);
-                    return {
-                      semana: sem,
-                      Publicadas: subset.reduce((s, d) => s + d.activities_published, 0),
-                      Entregas: subset.reduce((s, d) => s + d.deliveries_made, 0),
-                    };
-                  }).filter(s => s.Publicadas > 0 || s.Entregas > 0);
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Atividades</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{executive.total_activities}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {executive.activities_today} hoje
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  return (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Comparativo Semanal</CardTitle>
-                        <CardDescription>Distribuição de atividades por semana</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={semanaData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="semana" />
-                            <YAxis />
-                            <RechartsTooltip />
-                            <Legend />
-                            <Bar dataKey="Publicadas" fill="hsl(var(--primary))" />
-                            <Bar dataKey="Entregas" fill="hsl(var(--success))" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Entregas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{executive.total_deliveries}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {executive.deliveries_today} hoje
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {/* Predição LineChart */}
-                {(() => {
-                  const totalPublicadas = analytics.activity_trend.reduce((sum, d) => sum + d.activities_published, 0);
-                  const totalEntregas = analytics.activity_trend.reduce((sum, d) => sum + d.deliveries_made, 0);
-                  const avgPublicadas = totalPublicadas / analytics.activity_trend.length;
-                  const avgEntregas = totalEntregas / analytics.activity_trend.length;
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Pendentes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-500">
+                      {executive.pending_evaluations}
+                    </div>
+                    <div className="text-xs text-muted-foreground">avaliações</div>
+                  </CardContent>
+                </Card>
 
-                  const predicaoData = [
-                    ...analytics.activity_trend.slice(-14).map(d => ({ ...d, isPrediction: false })),
-                    ...Array.from({ length: 7 }, (_, i) => {
-                      const futureDate = new Date();
-                      futureDate.setDate(futureDate.getDate() + i + 1);
-                      return {
-                        date: format(futureDate, 'yyyy-MM-dd'),
-                        activities_published: Math.round(avgPublicadas * (0.9 + Math.random() * 0.2)),
-                        deliveries_made: Math.round(avgEntregas * (0.9 + Math.random() * 0.2)),
-                        isPrediction: true,
-                      };
-                    })
-                  ];
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Média Geral</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-500">
+                      {executive.avg_grade}
+                    </div>
+                    <div className="text-xs text-muted-foreground">nota média</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhum dado disponível</AlertDescription>
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
 
-                  return (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-primary" />
-                          Predição para Próximos 7 Dias
-                          <Badge variant="outline" className="ml-2">Experimental</Badge>
-                        </CardTitle>
-                        <CardDescription>
-                          Baseado na média móvel dos últimos {daysFilter} dias {/* Mock */}
+      {/* MODAL 2: Comparativo de Turmas */}
+      <Dialog open={openModal === 'classes-comparison'} onOpenChange={() => setOpenModal(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-purple-500" />
+              Comparativo de Turmas
+            </DialogTitle>
+            <DialogDescription>
+              Ranking e análise comparativa de performance entre turmas
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingClasses ? (
+            <Skeleton className="h-96 w-full" />
+          ) : classesComparison && classesComparison.length > 0 ? (
+            <div className="space-y-6">
+              {/* Gráfico de Barras */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Taxa de Conclusão por Turma</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={classesComparison}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Bar dataKey="completion_rate" fill="#8b5cf6" name="Taxa de Conclusão (%)" />
+                      <Bar dataKey="avg_grade" fill="#3b82f6" name="Média de Notas" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Tabela Detalhada */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detalhamento por Turma</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Turma</TableHead>
+                        <TableHead className="text-center">Alunos</TableHead>
+                        <TableHead className="text-center">Ativos 7d</TableHead>
+                        <TableHead className="text-center">Atividades</TableHead>
+                        <TableHead className="text-center">Entregas</TableHead>
+                        <TableHead className="text-center">Taxa Conclusão</TableHead>
+                        <TableHead className="text-center">Média</TableHead>
+                        <TableHead className="text-center">Tempo Médio</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {classesComparison.map((cls) => (
+                        <TableRow key={cls.id}>
+                          <TableCell className="font-medium">{cls.name}</TableCell>
+                          <TableCell className="text-center">{cls.total_students}</TableCell>
+                          <TableCell className="text-center">{cls.active_students_7d}</TableCell>
+                          <TableCell className="text-center">{cls.total_activities}</TableCell>
+                          <TableCell className="text-center">{cls.total_deliveries}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={cls.completion_rate >= 70 ? 'default' : 'destructive'}>
+                              {cls.completion_rate}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={cls.avg_grade >= 70 ? 'default' : 'destructive'}>
+                              {cls.avg_grade}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {cls.avg_delivery_time_days} dias
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhuma turma encontrada</AlertDescription>
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL 3: Biblioteca de Atividades */}
+      <Dialog open={openModal === 'activities-library'} onOpenChange={() => setOpenModal(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Library className="h-6 w-6 text-amber-500" />
+              Biblioteca de Atividades
+            </DialogTitle>
+            <DialogDescription>
+              Análise detalhada de performance de todas as atividades
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingActivities ? (
+            <Skeleton className="h-96 w-full" />
+          ) : activitiesLib ? (
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all">Todas ({activitiesLib.activities?.length || 0})</TabsTrigger>
+                <TabsTrigger value="top">Top Performers ({activitiesLib.top_performers?.length || 0})</TabsTrigger>
+                <TabsTrigger value="low">Baixo Engajamento ({activitiesLib.low_engagement?.length || 0})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all" className="space-y-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-center">Visualizações</TableHead>
+                      <TableHead className="text-center">Entregas</TableHead>
+                      <TableHead className="text-center">No Prazo</TableHead>
+                      <TableHead className="text-center">Atrasadas</TableHead>
+                      <TableHead className="text-center">Média</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activitiesLib.activities?.map((activity) => (
+                      <TableRow key={activity.id}>
+                        <TableCell className="font-medium">{activity.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{activity.type}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center">{activity.total_views}</TableCell>
+                        <TableCell className="text-center">{activity.total_deliveries}</TableCell>
+                        <TableCell className="text-center text-green-600">
+                          {activity.on_time_deliveries}
+                        </TableCell>
+                        <TableCell className="text-center text-red-600">
+                          {activity.late_deliveries}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={activity.avg_grade >= 70 ? 'default' : 'destructive'}>
+                            {activity.avg_grade}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+
+              <TabsContent value="top" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Atividades com Melhor Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Título</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead className="text-center">Entregas</TableHead>
+                          <TableHead className="text-center">Aprovadas</TableHead>
+                          <TableHead className="text-center">Média</TableHead>
+                          <TableHead className="text-center">Score</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {activitiesLib.top_performers?.map((activity) => (
+                          <TableRow key={activity.id}>
+                            <TableCell className="font-medium">{activity.title}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{activity.type}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">{activity.deliveries}</TableCell>
+                            <TableCell className="text-center text-green-600">
+                              {activity.approved_deliveries}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="default">{activity.avg_grade}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="default" className="bg-amber-500">
+                                {activity.success_score.toFixed(1)}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="low" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Atividades com Baixo Engajamento</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Título</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead className="text-center">Visualizações</TableHead>
+                          <TableHead className="text-center">Entregas</TableHead>
+                          <TableHead className="text-center">Taxa Engajamento</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {activitiesLib.low_engagement?.map((activity) => (
+                          <TableRow key={activity.id}>
+                            <TableCell className="font-medium">{activity.title}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{activity.type}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">{activity.total_views}</TableCell>
+                            <TableCell className="text-center">{activity.total_deliveries}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="destructive">{activity.engagement_rate}%</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhuma atividade encontrada</AlertDescription>
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL 4: Mapa de Calor Temporal */}
+      <Dialog open={openModal === 'temporal-heatmap'} onOpenChange={() => setOpenModal(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-cyan-500" />
+              Mapa de Calor Temporal
+            </DialogTitle>
+            <DialogDescription>
+              Análise de padrões de atividade por dia da semana e horário
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingHeatmap ? (
+            <Skeleton className="h-96 w-full" />
+          ) : heatmap ? (
+            <div className="space-y-6">
+              {/* Melhores Horários para Publicar */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Melhores Horários para Publicar Atividades</CardTitle>
+                  <CardDescription>
+                    Baseado na taxa de sucesso (entregas recebidas / atividades publicadas)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Dia da Semana</TableHead>
+                        <TableHead>Horário</TableHead>
+                        <TableHead className="text-center">Atividades Publicadas</TableHead>
+                        <TableHead className="text-center">Entregas Recebidas</TableHead>
+                        <TableHead className="text-center">Taxa de Sucesso</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {heatmap.best_publish_times?.map((time, idx) => {
+                        const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell>{days[time.day_of_week]}</TableCell>
+                            <TableCell>{time.hour}:00</TableCell>
+                            <TableCell className="text-center">{time.activities_published}</TableCell>
+                            <TableCell className="text-center">{time.deliveries_received}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="default" className="bg-cyan-500">
+                                {(time.success_rate * 100).toFixed(0)}%
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Gráfico de Logins */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Padrão de Logins por Horário</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={heatmap.login_heatmap}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="hour" label={{ value: 'Hora do Dia', position: 'insideBottom', offset: -5 }} />
+                      <YAxis label={{ value: 'Quantidade de Logins', angle: -90, position: 'insideLeft' }} />
+                      <RechartsTooltip />
+                      <Bar dataKey="count" fill="#06b6d4" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Gráfico de Entregas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Padrão de Entregas por Horário</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={heatmap.delivery_heatmap}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="hour" label={{ value: 'Hora do Dia', position: 'insideBottom', offset: -5 }} />
+                      <YAxis label={{ value: 'Quantidade de Entregas', angle: -90, position: 'insideLeft' }} />
+                      <RechartsTooltip />
+                      <Bar dataKey="count" fill="#f59e0b" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhum dado disponível</AlertDescription>
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL 5: Alunos em Risco (EXISTENTE) */}
+      <Sheet open={openModal === 'students-at-risk'} onOpenChange={() => setOpenModal(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Alunos em Risco de Evasão
+            </SheetTitle>
+            <SheetDescription>
+              Lista de alunos que precisam de atenção imediata
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-4">
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-32 w-full" />
+                ))}
+              </div>
+            ) : analytics?.students_at_risk && analytics.students_at_risk.length > 0 ? (
+              analytics.students_at_risk.map((student) => (
+                <Card key={student.student_id} className="border-destructive/30">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{student.student_name}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {student.class_name}
                         </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <LineChart data={predicaoData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" tickFormatter={(d) => format(parseISO(d), 'dd/MM')} />
-                            <YAxis />
-                            <RechartsTooltip labelFormatter={(d) => format(parseISO(d), 'dd/MM/yyyy')} />
-                            <Legend />
-                            <Line 
-                              type="monotone" 
-                              dataKey="activities_published" 
-                              stroke="hsl(var(--primary))" 
-                              strokeWidth={2}
-                              name="Publicadas"
-                            />
-                            <Line 
-                              type="monotone" 
-                              dataKey="deliveries_made" 
-                              stroke="hsl(var(--success))" 
-                              strokeWidth={2}
-                              name="Entregas"
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                        <p className="text-xs text-muted-foreground mt-4">
-                          ⚠️ Esta predição é apenas uma estimativa baseada em dados históricos e pode não refletir eventos futuros.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-              </>
+                      </div>
+                      <Badge variant="destructive" className="ml-2">
+                        Risco Alto
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Último login:</span>
+                        <span className="font-medium">
+                          {student.days_since_last_login} dias atrás
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Pendentes:</span>
+                        <span className="font-medium text-destructive">
+                          {student.pending_deliveries}
+                        </span>
+                      </div>
+                    </div>
+
+                    {student.contact_phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Telefone:</span>
+                        <span className="font-medium">{student.contact_phone}</span>
+                      </div>
+                    )}
+
+                    {student.contact_email && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium">{student.contact_email}</span>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Phone className="h-4 w-4 mr-2" />
+                        Ligar
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Email
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Send className="h-4 w-4 mr-2" />
+                        WhatsApp
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             ) : (
               <Alert>
+                <UserCheck className="h-4 w-4" />
                 <AlertDescription>
-                  Nenhum dado disponível para o período selecionado.
+                  Nenhum aluno em risco identificado no momento.
                 </AlertDescription>
               </Alert>
             )}
           </div>
+        </SheetContent>
+      </Sheet>
 
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setOpenModal(null)}>
-              Fechar
-            </Button>
-            <Button variant="default">
-              <FileDown className="mr-2 h-4 w-4" />
-              Exportar Análise
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* MODAL 6: Tendência de Atividades (EXISTENTE) */}
+      <Dialog open={openModal === 'activity-trend'} onOpenChange={() => setOpenModal(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-primary" />
+              Tendência de Atividades e Entregas
+            </DialogTitle>
+            <DialogDescription>
+              Evolução temporal das atividades publicadas e entregas realizadas
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Drawer 3: Performance por Turma - Enhanced */}
-      <Sheet open={openModal === 'class-performance'} onOpenChange={() => setOpenModal(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-6xl overflow-y-auto backdrop-blur-xl bg-background/95 border-l border-white/10">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2 text-2xl">
-              <Users className="h-6 w-6 text-warning" />
-              Performance por Turma
-            </SheetTitle>
-            <SheetDescription>
-              Análise comparativa e detalhamento por classe
-            </SheetDescription>
-          </SheetHeader>
-          
-          <div className="mt-6 space-y-6">
-            {/* Ranking de Turmas (Mock) */}
-            {analytics && (
-              <>
+          {isLoading ? (
+            <Skeleton className="h-96 w-full" />
+          ) : analytics?.activity_trend ? (
+            <div className="space-y-6">
+              <ActivityTrendChart data={analytics.activity_trend} />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Ranking de Turmas por Performance</CardTitle>
-                    <CardDescription>
-                      Baseado na taxa de entrega nos últimos {daysFilter} dias (dados de exemplo)
-                    </CardDescription>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total de Atividades</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {(() => {
-                      const rankingData = [
-                        { turma: analytics.worst_class_name || 'Turma A', score: 45, pendentes: analytics.worst_class_pending_count },
-                        { turma: 'Turma B', score: 67, pendentes: 8 },
-                        { turma: 'Turma C', score: 78, pendentes: 5 },
-                        { turma: 'Turma D', score: 85, pendentes: 3 },
-                        { turma: 'Turma E', score: 92, pendentes: 1 },
-                      ].sort((a, b) => b.score - a.score);
-
-                      return (
-                        <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={rankingData} layout="horizontal">
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" domain={[0, 100]} />
-                            <YAxis dataKey="turma" type="category" width={100} />
-                            <RechartsTooltip />
-                            <Bar dataKey="score" fill="hsl(var(--primary))" label={{ position: 'right' }} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      );
-                    })()}
+                    <div className="text-3xl font-bold text-primary">
+                      {analytics.activity_trend.reduce((sum, day) => sum + day.activities_published, 0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Nos últimos {daysFilter} dias
+                    </p>
                   </CardContent>
                 </Card>
 
-                {/* Comparativo: Melhor vs Pior */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Card className="border-success/50 bg-success/5">
-                    <CardHeader>
-                      <CardTitle className="text-success flex items-center gap-2">
-                        <Trophy className="h-5 w-5" />
-                        Melhor Turma
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-2xl font-bold">Turma E</p> {/* Mock */}
-                      <p className="text-sm text-muted-foreground mt-2">
-                        92% de taxa de entrega • 1 entrega pendente
-                      </p>
-                      <Badge variant="outline" className="mt-3 border-success text-success">
-                        +15% vs média
-                      </Badge>
-                    </CardContent>
-                  </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total de Entregas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-success">
+                      {analytics.activity_trend.reduce((sum, day) => sum + day.deliveries_made, 0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Nos últimos {daysFilter} dias
+                    </p>
+                  </CardContent>
+                </Card>
 
-                  <Card className="border-destructive/50 bg-destructive/5">
-                    <CardHeader>
-                      <CardTitle className="text-destructive flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5" />
-                        Turma de Atenção
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-2xl font-bold">{analytics.worst_class_name || 'N/A'}</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {analytics.worst_class_pending_count} entregas pendentes
-                      </p>
-                      <Badge variant="outline" className="mt-3 border-destructive text-destructive">
-                        Requer intervenção
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                </div>
-              </>
-            )}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Taxa de Entrega</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-blue-500">
+                      {(() => {
+                        const totalActivities = analytics.activity_trend.reduce((sum, day) => sum + day.activities_published, 0);
+                        const totalDeliveries = analytics.activity_trend.reduce((sum, day) => sum + day.deliveries_made, 0);
+                        return totalActivities > 0 ? Math.round((totalDeliveries / totalActivities) * 100) : 0;
+                      })()}%
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Média do período
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhum dado disponível para o período selecionado</AlertDescription>
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
 
-            {/* Componente existente */}
-            <ClassPerformanceSection daysFilter={daysFilter} />
+      {/* MODAL 7: Performance por Turma (EXISTENTE) */}
+      <Dialog open={openModal === 'class-performance'} onOpenChange={() => setOpenModal(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-6 w-6 text-warning" />
+              Performance por Turma
+            </DialogTitle>
+            <DialogDescription>
+              Análise comparativa de desempenho entre turmas
+            </DialogDescription>
+          </DialogHeader>
 
-            {/* TODO: Drill-down */}
-            {/* TODO: Implementar drill-down ao clicar em uma turma
-              - Mostrar lista de alunos da turma
-              - Filtrar students_at_risk_list por class_name
-              - Adicionar botão "Ver Alunos" em cada card do ranking
-            */}
-          </div>
-        </SheetContent>
-      </Sheet>
+          {isLoading ? (
+            <Skeleton className="h-96 w-full" />
+          ) : analytics?.class_performance ? (
+            <ClassPerformanceSection data={analytics.class_performance} />
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhum dado disponível</AlertDescription>
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Drawer 4: Análise de Engajamento - Enhanced */}
-      <Sheet open={openModal === 'post-engagement'} onOpenChange={() => setOpenModal(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-6xl overflow-y-auto backdrop-blur-xl bg-background/95 border-l border-white/10">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2 text-2xl">
+      {/* MODAL 8: Análise de Engajamento (EXISTENTE) */}
+      <Dialog open={openModal === 'post-engagement'} onOpenChange={() => setOpenModal(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
               <BookOpen className="h-6 w-6 text-success" />
               Análise de Engajamento
-            </SheetTitle>
-            <SheetDescription>
-              Métricas avançadas de leituras e interações
-            </SheetDescription>
-          </SheetHeader>
-          
-          <div className="mt-6 space-y-6">
-            {/* Funil de Conversão (Mock) */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Funil de Conversão</CardTitle>
-                <CardDescription>
-                  Da publicação até a aprovação nos últimos {daysFilter} dias (dados de exemplo)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const funilData = [
-                    { etapa: 'Posts Publicados', quantidade: 45, taxa: 100 },
-                    { etapa: 'Posts Lidos', quantidade: 38, taxa: 84 },
-                    { etapa: 'Atividades Entregues', quantidade: 28, taxa: 62 },
-                    { etapa: 'Aprovadas', quantidade: 24, taxa: 53 },
-                  ];
+            </DialogTitle>
+            <DialogDescription>
+              Métricas de leitura e interação com conteúdos publicados
+            </DialogDescription>
+          </DialogHeader>
 
-                  return (
-                    <div className="space-y-4">
-                      {funilData.map((etapa, i) => (
-                        <div key={i} className="relative">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium">{etapa.etapa}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl font-bold">{etapa.quantidade}</span>
-                              <Badge variant={i === 0 ? 'default' : etapa.taxa >= 70 ? 'default' : etapa.taxa >= 40 ? 'secondary' : 'destructive'}>
-                                {etapa.taxa}%
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="h-3 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className={cn(
-                                "h-full transition-all duration-500",
-                                i === 0 ? "bg-primary" : etapa.taxa >= 70 ? "bg-success" : etapa.taxa >= 40 ? "bg-warning" : "bg-destructive"
-                              )}
-                              style={{ width: `${etapa.taxa}%` }}
-                            />
-                          </div>
-                          {i < funilData.length - 1 && (
-                            <div className="flex items-center justify-center my-2">
-                              <ArrowDown className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-
-            {/* Heatmap de Engajamento (Mock) */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Heatmap de Engajamento</CardTitle>
-                <CardDescription>
-                  Horários de maior atividade por dia da semana (dados de exemplo)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const heatmapData = [
-                    { dia: 'Segunda', manha: 12, tarde: 25, noite: 8 },
-                    { dia: 'Terça', manha: 15, tarde: 30, noite: 10 },
-                    { dia: 'Quarta', manha: 18, tarde: 28, noite: 12 },
-                    { dia: 'Quinta', manha: 20, tarde: 32, noite: 15 },
-                    { dia: 'Sexta', manha: 14, tarde: 20, noite: 5 },
-                    { dia: 'Sábado', manha: 5, tarde: 8, noite: 3 },
-                    { dia: 'Domingo', manha: 3, tarde: 6, noite: 2 },
-                  ];
-
-                  return (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={heatmapData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="dia" />
-                        <YAxis />
-                        <RechartsTooltip />
-                        <Legend />
-                        <Bar dataKey="manha" stackId="a" fill="hsl(var(--primary))" name="Manhã (6-12h)" />
-                        <Bar dataKey="tarde" stackId="a" fill="hsl(var(--warning))" name="Tarde (12-18h)" />
-                        <Bar dataKey="noite" stackId="a" fill="hsl(var(--destructive))" name="Noite (18-24h)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-
-            {/* Componente existente */}
-            <PostReadAnalytics daysFilter={daysFilter} />
-
-            {/* Ações Rápidas */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Ações Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="outline">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Ver Todos os Posts
-                  </Button>
-                  <Button variant="outline">
-                    <Send className="mr-2 h-4 w-4" />
-                    Reenviar Notificações
-                  </Button>
-                  <Button variant="outline">
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Exportar Relatório
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </SheetContent>
-      </Sheet>
+          {loadingPostReads ? (
+            <Skeleton className="h-96 w-full" />
+          ) : postReadData ? (
+            <PostReadAnalytics data={postReadData} />
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhum dado disponível</AlertDescription>
+            </Alert>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
