@@ -947,8 +947,8 @@ export default function AdminAnalyticsPage() {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : analytics?.students_at_risk && analytics.students_at_risk.length > 0 ? (
-              analytics.students_at_risk.map((student) => (
+            ) : analytics?.students_at_risk_list && analytics.students_at_risk_list.length > 0 ? (
+              analytics.students_at_risk_list.map((student) => (
                 <Card key={student.student_id} className="border-destructive/30">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -980,22 +980,6 @@ export default function AdminAnalyticsPage() {
                         </span>
                       </div>
                     </div>
-
-                    {student.contact_phone && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Telefone:</span>
-                        <span className="font-medium">{student.contact_phone}</span>
-                      </div>
-                    )}
-
-                    {student.contact_email && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="font-medium">{student.contact_email}</span>
-                      </div>
-                    )}
 
                     <div className="flex gap-2 pt-2">
                       <Button size="sm" variant="outline" className="flex-1">
@@ -1115,16 +1099,9 @@ export default function AdminAnalyticsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {isLoading ? (
-            <Skeleton className="h-96 w-full" />
-          ) : analytics?.class_performance ? (
-            <ClassPerformanceSection data={analytics.class_performance} />
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>Nenhum dado disponível</AlertDescription>
-            </Alert>
-          )}
+          <div className="p-6">
+            <ClassPerformanceSection daysFilter={daysFilter} />
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1141,16 +1118,9 @@ export default function AdminAnalyticsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {loadingPostReads ? (
-            <Skeleton className="h-96 w-full" />
-          ) : postReadData ? (
-            <PostReadAnalytics data={postReadData} />
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>Nenhum dado disponível</AlertDescription>
-            </Alert>
-          )}
+          <div className="p-6">
+            <PostReadAnalytics daysFilter={daysFilter} />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
