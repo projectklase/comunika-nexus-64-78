@@ -111,6 +111,83 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'activity': return data.total_activities;
     }
   };
+
+  const getTooltipLabel = () => {
+    switch (activeView) {
+      case 'deliveries': return 'entregas';
+      case 'posts': return 'posts publicados';
+      case 'corrections': return 'correções realizadas';
+      case 'activity': return 'atividades registradas';
+    }
+  };
+
+  const getExplanationTooltip = () => {
+    switch (activeView) {
+      case 'deliveries':
+        return {
+          description: 'Este mapa mostra os horários em que os alunos mais entregam atividades.',
+          darkColor: 'Roxo escuro',
+          lightColor: 'Roxo claro',
+          interpretation: 'muitas entregas',
+          usage: 'Identifique os melhores horários para publicar atividades e maximizar o engajamento dos alunos.'
+        };
+      case 'posts':
+        return {
+          description: 'Este mapa mostra os horários em que os professores mais publicam conteúdo.',
+          darkColor: 'Verde escuro',
+          lightColor: 'Verde claro',
+          interpretation: 'muitos posts',
+          usage: 'Entenda os padrões de publicação dos professores para coordenar melhor o fluxo de conteúdo.'
+        };
+      case 'corrections':
+        return {
+          description: 'Este mapa mostra os horários em que os professores mais corrigem atividades.',
+          darkColor: 'Laranja escuro',
+          lightColor: 'Laranja claro',
+          interpretation: 'muitas correções',
+          usage: 'Identifique os períodos de maior dedicação dos professores às correções para otimizar processos.'
+        };
+      case 'activity':
+        return {
+          description: 'Este mapa mostra os horários de maior atividade geral dos professores no sistema.',
+          darkColor: 'Azul escuro',
+          lightColor: 'Azul claro',
+          interpretation: 'muita atividade',
+          usage: 'Visualize os momentos de maior uso da plataforma pelos professores para planejamento estratégico.'
+        };
+    }
+  };
+
+  const getDialogDescription = () => {
+    switch (activeView) {
+      case 'deliveries': 
+        return 'Intensidade de entregas de alunos por dia da semana e hora do dia (últimos 30 dias)';
+      case 'posts': 
+        return 'Intensidade de publicações de professores por dia da semana e hora do dia (últimos 30 dias)';
+      case 'corrections': 
+        return 'Intensidade de correções realizadas por professores por dia da semana e hora do dia (últimos 30 dias)';
+      case 'activity': 
+        return 'Intensidade de atividades gerais dos professores por dia da semana e hora do dia (últimos 30 dias)';
+    }
+  };
+
+  const getPeakHourTooltip = () => {
+    switch (activeView) {
+      case 'deliveries': return 'Horário com maior número de entregas realizadas pelos alunos';
+      case 'posts': return 'Horário com maior número de posts publicados pelos professores';
+      case 'corrections': return 'Horário com maior número de correções realizadas pelos professores';
+      case 'activity': return 'Horário com maior atividade geral dos professores no sistema';
+    }
+  };
+
+  const getPeakDayTooltip = () => {
+    switch (activeView) {
+      case 'deliveries': return 'Dia da semana com maior volume de entregas dos alunos';
+      case 'posts': return 'Dia da semana com maior volume de publicações dos professores';
+      case 'corrections': return 'Dia da semana com maior volume de correções dos professores';
+      case 'activity': return 'Dia da semana com maior atividade geral dos professores';
+    }
+  };
   
   const currentData = getHeatmapData();
   const matrix = createHeatmapMatrix(currentData);
@@ -133,23 +210,23 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                 </TooltipTrigger>
                 <TooltipContent className="max-w-md">
                   <p className="text-xs">
-                    Este mapa mostra os horários de maior atividade dos alunos:
+                    {getExplanationTooltip().description}
                     <br/><br/>
                     <strong>Como interpretar:</strong>
-                    <br/>• <strong>Roxo escuro</strong>: muitas entregas nesse horário
-                    <br/>• <strong>Roxo claro</strong>: poucas entregas
-                    <br/>• <strong>Cinza</strong>: nenhuma entrega
+                    <br/>• <strong>{getExplanationTooltip().darkColor}</strong>: {getExplanationTooltip().interpretation} nesse horário
+                    <br/>• <strong>{getExplanationTooltip().lightColor}</strong>: pouca atividade
+                    <br/>• <strong>Cinza</strong>: nenhuma atividade registrada
                     <br/><br/>
                     <strong>Para que serve:</strong>
-                    <br/>Identifique os melhores horários para publicar atividades e maximizar o engajamento dos alunos.
+                    <br/>{getExplanationTooltip().usage}
                   </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </DialogTitle>
-          <DialogDescription>
-            Intensidade de atividades por dia da semana e hora do dia (últimos 30 dias)
-          </DialogDescription>
+        <DialogDescription>
+          {getDialogDescription()}
+        </DialogDescription>
         </DialogHeader>
 
         {/* Tabs de visualização */}
@@ -232,7 +309,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-xs">
-                                {day} {hour}h: <strong>{value}</strong> entregas
+                                {day} {hour}h: <strong>{value}</strong> {getTooltipLabel()}
                               </p>
                             </TooltipContent>
                           </Tooltip>
@@ -254,7 +331,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                   <div
                     key={intensity}
                     className="w-8 h-4 rounded"
-                    style={{ backgroundColor: `hsl(264 89% ${58 - intensity * 30}% / ${intensity})` }}
+                    style={{ backgroundColor: `hsl(${heatmapColor} ${58 - intensity * 30}% / ${intensity})` }}
                   />
                 ))}
               </div>
@@ -290,7 +367,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                         <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="text-xs">Horário com maior número de entregas realizadas</p>
+                        <p className="text-xs">{getPeakHourTooltip()}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -313,7 +390,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                         <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="text-xs">Dia da semana com maior volume de entregas</p>
+                        <p className="text-xs">{getPeakDayTooltip()}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
