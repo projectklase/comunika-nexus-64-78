@@ -148,7 +148,8 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--popover))',
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
                     }}
                   />
                   <Line 

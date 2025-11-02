@@ -90,10 +90,11 @@ export function RetentionModal({ isOpen, onClose, data }: RetentionModalProps) {
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--popover))',
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
                   <Line 
                     type="monotone" 
                     dataKey="enrolled" 

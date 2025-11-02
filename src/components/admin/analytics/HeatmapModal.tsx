@@ -38,15 +38,15 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
           <div className="overflow-x-auto">
             <div className="inline-grid grid-cols-25 gap-1 min-w-max">
               {/* Header com horas */}
-              <div className="text-xs font-medium p-2"></div>
+              <div className="text-xs font-medium text-foreground p-2"></div>
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="text-xs text-center p-2">{i}h</div>
+                <div key={i} className="text-xs text-center text-foreground p-2">{i}h</div>
               ))}
               
               {/* Linhas por dia da semana */}
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, dayIdx) => (
                 <React.Fragment key={`day-${dayIdx}`}>
-                  <div className="text-xs font-medium p-2 flex items-center">
+                  <div className="text-xs font-medium text-foreground p-2 flex items-center">
                     {day}
                   </div>
                   {Array.from({ length: 24 }, (_, hour) => {

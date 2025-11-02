@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { OperationalMetrics } from '@/hooks/useOperationalMetrics';
 
 interface OperationalModalProps {
@@ -63,7 +63,6 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                       innerRadius={50}
                       outerRadius={80}
                       dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}`}
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index]} />
@@ -73,8 +72,13 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--popover))',
                         border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        borderRadius: '8px',
+                        color: 'hsl(var(--foreground))'
                       }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                      formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
                     />
                   </PieChart>
                 </ResponsiveContainer>
