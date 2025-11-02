@@ -1,9 +1,9 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { OperationalMetrics } from '@/hooks/useOperationalMetrics';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { OperationalMetrics } from "@/hooks/useOperationalMetrics";
 
 interface OperationalModalProps {
   isOpen: boolean;
@@ -27,24 +27,22 @@ function calculateIdleCapacity(occupancyData: Array<{ occupancy_rate: number }>)
 
 export function OperationalModal({ isOpen, onClose, data }: OperationalModalProps) {
   if (!data) return null;
-  
+
   const pieData = [
-    { name: 'Ocupadas', value: calculateOccupied(data.occupancy_data) },
-    { name: 'Disponíveis', value: calculateAvailable(data.occupancy_data) }
+    { name: "Ocupadas", value: calculateOccupied(data.occupancy_data) },
+    { name: "Disponíveis", value: calculateAvailable(data.occupancy_data) },
   ];
-  
-  const COLORS = ['hsl(var(--success))', 'hsl(var(--muted))'];
-  
+
+  const COLORS = ["hsl(var(--success))", "hsl(var(--muted))"];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Métricas Operacionais</DialogTitle>
-          <DialogDescription>
-            Eficiência, capacidade e distribuição de recursos
-          </DialogDescription>
+          <DialogDescription>Eficiência, capacidade e distribuição de recursos</DialogDescription>
         </DialogHeader>
-        
+
         <div className="mt-6 space-y-8">
           {/* Grid com 3 cards */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -56,35 +54,32 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
               <CardContent>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      dataKey="value"
-                    >
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value">
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index]} />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        color: 'hsl(var(--foreground))'
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
                       }}
                     />
-                    <Legend 
-                      wrapperStyle={{ color: 'hsl(var(--foreground))' }}
-                      formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                    <Legend
+                      wrapperStyle={{ color: "hsl(var(--foreground))" }}
+                      formatter={(value, entry: any) => (
+                        <span style={{ color: "hsl(var(--foreground))" }}>
+                          {value}: {entry.payload.value}
+                        </span>
+                      )}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-            
+
             {/* 2. Distribuição de Koins */}
             <Card>
               <CardHeader>
@@ -107,7 +102,7 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* 3. Capacidade Ociosa */}
             <Card>
               <CardHeader>
@@ -116,25 +111,19 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
               <CardContent>
                 <div className="flex items-center justify-center h-[200px]">
                   <div className="text-center">
-                    <div className="text-5xl font-bold text-warning">
-                      {calculateIdleCapacity(data.occupancy_data)}%
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Vagas não preenchidas
-                    </p>
+                    <div className="text-5xl font-bold text-warning">{calculateIdleCapacity(data.occupancy_data)}%</div>
+                    <p className="text-sm text-muted-foreground mt-2">Vagas não preenchidas</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Tabela de ROI de Professores */}
           <Card>
             <CardHeader>
               <CardTitle>ROI de Professores</CardTitle>
-              <CardDescription>
-                Produtividade e taxa de entrega por professor
-              </CardDescription>
+              <CardDescription>Produtividade e taxa de entrega por professor</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -158,7 +147,7 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                         <TableCell className="font-medium">{teacher.teacher_name}</TableCell>
                         <TableCell className="text-right">{teacher.students_count}</TableCell>
                         <TableCell className="text-right">
-                          <Badge variant={teacher.delivery_rate >= 80 ? 'default' : 'secondary'}>
+                          <Badge variant={teacher.delivery_rate >= 80 ? "default" : "secondary"}>
                             {teacher.delivery_rate.toFixed(1)}%
                           </Badge>
                         </TableCell>
