@@ -71,7 +71,6 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
                       outerRadius={100}
                       dataKey="value"
                       nameKey="name"
-                      label={({ name, value }) => `${name}: ${value.toFixed(0)}`}
                     >
                       {componentData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index]} />
@@ -81,8 +80,13 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--popover))',
                         border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        borderRadius: '8px',
+                        color: 'hsl(var(--foreground))'
                       }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                      formatter={(value, entry: any) => `${value}: ${entry.payload.value.toFixed(0)}`}
                     />
                   </PieChart>
                 </ResponsiveContainer>

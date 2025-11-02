@@ -1,3 +1,4 @@
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WeeklyHeatmapData } from '@/hooks/useWeeklyHeatmap';
@@ -44,8 +45,8 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
               
               {/* Linhas por dia da semana */}
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, dayIdx) => (
-                <>
-                  <div key={`day-${dayIdx}`} className="text-xs font-medium p-2 flex items-center">
+                <React.Fragment key={`day-${dayIdx}`}>
+                  <div className="text-xs font-medium p-2 flex items-center">
                     {day}
                   </div>
                   {Array.from({ length: 24 }, (_, hour) => {
@@ -56,13 +57,15 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                         key={`${dayIdx}-${hour}`}
                         className="aspect-square rounded-sm cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                         style={{
-                          backgroundColor: `hsl(264 89% ${58 - intensity * 30}% / ${intensity})`,
+                          backgroundColor: value > 0 
+                            ? `hsl(264 89% ${58 - intensity * 30}% / ${Math.max(0.3, intensity)})` 
+                            : 'hsl(var(--muted) / 0.2)',
                         }}
                         title={`${day} ${hour}h: ${value} entregas`}
                       />
                     );
                   })}
-                </>
+                </React.Fragment>
               ))}
             </div>
           </div>

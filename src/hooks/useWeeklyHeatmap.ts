@@ -83,6 +83,13 @@ export function useWeeklyHeatmap(daysFilter: number = 30) {
       const deliveriesHeatmap = processHeatmapData(deliveriesData || [], 'submitted_at');
       const postsHeatmap = processHeatmapData(postsData || [], 'created_at');
       
+      // Debug
+      console.log('🔥 Heatmap Debug:', {
+        totalDeliveries: deliveriesData?.length,
+        heatmapPoints: deliveriesHeatmap.length,
+        sampleData: deliveriesHeatmap.slice(0, 3)
+      });
+      
       return {
         deliveries_heatmap: deliveriesHeatmap,
         posts_heatmap: postsHeatmap,
