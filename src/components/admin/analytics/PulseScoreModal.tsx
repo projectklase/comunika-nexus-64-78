@@ -3,13 +3,26 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Zap, AlertCircle } from 'lucide-react';
+import { Zap, AlertCircle, Info } from 'lucide-react';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PulseScoreData } from '@/hooks/usePulseScore';
 
 interface PulseScoreModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: PulseScoreData | undefined;
+}
+
+// Helper para obter explicação de cada componente
+function getComponentExplanation(componentName: string): string {
+  const explanations: Record<string, string> = {
+    'Engajamento': 'Percentual de alunos que fizeram entregas nos últimos 7 dias. Quanto maior, mais engajados os alunos estão com as atividades.',
+    'Performance Prof.': 'Percentual de atividades avaliadas em até 48 horas. Feedback rápido aumenta o engajamento dos alunos.',
+    'Ocupação': 'Taxa média de ocupação das turmas (alunos matriculados / vagas disponíveis). Indica eficiência na utilização da capacidade.',
+    'Taxa Aprovação': 'Percentual de entregas aprovadas versus total de entregas. Reflete qualidade das entregas e adequação das atividades.',
+    'Retenção': 'Percentual de alunos ativos há 30 dias ou mais. Mede a fidelização e continuidade dos estudos.'
+  };
+  return explanations[componentName] || '';
 }
 
 export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps) {
@@ -57,7 +70,26 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card>
               <CardHeader>
-                <CardTitle>Composição do Score</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  Composição do Score
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-xs">
+                          O Pulse Score combina 5 métricas-chave com pesos diferentes:
+                          <br/>• Engajamento (30%): alunos ativos nos últimos 7 dias
+                          <br/>• Performance Prof. (25%): avaliações em até 48h
+                          <br/>• Ocupação (20%): % de vagas preenchidas
+                          <br/>• Taxa Aprovação (15%): entregas aprovadas
+                          <br/>• Retenção (10%): alunos ativos há 30+ dias
+                        </p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
+                </CardTitle>
                 <CardDescription>Peso de cada componente</CardDescription>
               </CardHeader>
               <CardContent>
@@ -114,7 +146,18 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
                   {componentData.map((component, idx) => (
                     <div key={idx}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">{component.name}</span>
+                        <TooltipProvider>
+                          <UITooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm font-medium cursor-help border-b border-dashed border-muted-foreground">
+                                {component.name}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-xs">{getComponentExplanation(component.name)}</p>
+                            </TooltipContent>
+                          </UITooltip>
+                        </TooltipProvider>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold">{component.value.toFixed(0)}</span>
                           <Badge variant="outline" className="text-xs">

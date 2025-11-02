@@ -1,6 +1,8 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WeeklyHeatmapData } from '@/hooks/useWeeklyHeatmap';
 
 interface HeatmapModalProps {
@@ -27,7 +29,29 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Mapa de Calor Semanal - Entregas</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Mapa de Calor Semanal - Entregas
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-md">
+                  <p className="text-xs">
+                    Este mapa mostra os horários de maior atividade dos alunos:
+                    <br/><br/>
+                    <strong>Como interpretar:</strong>
+                    <br/>• <strong>Roxo escuro</strong>: muitas entregas nesse horário
+                    <br/>• <strong>Roxo claro</strong>: poucas entregas
+                    <br/>• <strong>Cinza</strong>: nenhuma entrega
+                    <br/><br/>
+                    <strong>Para que serve:</strong>
+                    <br/>Identifique os melhores horários para publicar atividades e maximizar o engajamento dos alunos.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </DialogTitle>
           <DialogDescription>
             Intensidade de entregas por dia da semana e hora do dia (últimos 30 dias)
           </DialogDescription>
@@ -71,25 +95,55 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
           </div>
           
           {/* Legenda */}
-          <div className="flex items-center gap-4 justify-center">
-            <span className="text-sm text-muted-foreground">Baixa</span>
-            <div className="flex gap-1">
-              {[0.2, 0.4, 0.6, 0.8, 1.0].map((intensity) => (
-                <div
-                  key={intensity}
-                  className="w-8 h-4 rounded"
-                  style={{ backgroundColor: `hsl(264 89% ${58 - intensity * 30}% / ${intensity})` }}
-                />
-              ))}
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 justify-center">
+              <span className="text-sm text-muted-foreground">Baixa atividade</span>
+              <div className="flex gap-1">
+                {[0.2, 0.4, 0.6, 0.8, 1.0].map((intensity) => (
+                  <div
+                    key={intensity}
+                    className="w-8 h-4 rounded"
+                    style={{ backgroundColor: `hsl(264 89% ${58 - intensity * 30}% / ${intensity})` }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">Alta atividade</span>
             </div>
-            <span className="text-sm text-muted-foreground">Alta</span>
+            
+            {/* Explicação visual adicional */}
+            <div className="flex items-center justify-center gap-6 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(264 89% 58% / 0.3)' }} />
+                <span className="text-muted-foreground">Pouca atividade</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(264 89% 43% / 0.65)' }} />
+                <span className="text-muted-foreground">Atividade moderada</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(264 89% 28% / 1)' }} />
+                <span className="text-muted-foreground">Muita atividade</span>
+              </div>
+            </div>
           </div>
           
           {/* Insights */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Horário de Pico</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Horário de Pico
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Horário com maior número de entregas realizadas</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-primary">
@@ -100,7 +154,19 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Dia Mais Ativo</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Dia Mais Ativo
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Dia da semana com maior volume de entregas</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-primary">
