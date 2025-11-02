@@ -93,8 +93,21 @@ export function RetentionModal({ isOpen, onClose, data }: RetentionModalProps) {
                       borderRadius: '8px',
                       color: 'hsl(var(--foreground))'
                     }}
+                    labelStyle={{
+                      color: 'hsl(var(--foreground))'
+                    }}
+                    itemStyle={{
+                      color: 'hsl(var(--foreground))'
+                    }}
                   />
-                  <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
+                  <Legend 
+                    wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={(value) => (
+                      <span style={{ color: 'hsl(var(--foreground))' }}>
+                        {value}
+                      </span>
+                    )}
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="enrolled" 

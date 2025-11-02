@@ -83,10 +83,20 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
                         borderRadius: '8px',
                         color: 'hsl(var(--foreground))'
                       }}
+                      labelStyle={{
+                        color: 'hsl(var(--foreground))'
+                      }}
+                      itemStyle={{
+                        color: 'hsl(var(--foreground))'
+                      }}
                     />
                     <Legend 
                       wrapperStyle={{ color: 'hsl(var(--foreground))' }}
-                      formatter={(value, entry: any) => `${value}: ${entry.payload.value.toFixed(0)}`}
+                      formatter={(value, entry: any) => (
+                        <span style={{ color: 'hsl(var(--foreground))' }}>
+                          {value}: {entry.payload.value.toFixed(0)}
+                        </span>
+                      )}
                     />
                   </PieChart>
                 </ResponsiveContainer>
