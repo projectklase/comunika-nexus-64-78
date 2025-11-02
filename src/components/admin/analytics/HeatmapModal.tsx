@@ -1,14 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Info } from 'lucide-react';
+import { Info, Package, FileText, CheckCircle, Activity, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WeeklyHeatmapData } from '@/hooks/useWeeklyHeatmap';
+import { cn } from '@/lib/utils';
+
+type HeatmapView = 'deliveries' | 'posts' | 'corrections' | 'activity';
 
 interface HeatmapModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: WeeklyHeatmapData | undefined;
+}
+
+interface TabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+  color: string;
+}
+
+function TabButton({ active, onClick, icon: Icon, label, color }: TabButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative flex items-center gap-2 px-4 py-2.5 rounded-lg",
+        "border transition-all duration-300",
+        "text-sm font-medium",
+        active
+          ? "bg-primary/10 border-primary text-foreground shadow-sm"
+          : "border-transparent text-muted-foreground hover:border-border hover:text-foreground hover:bg-muted/50"
+      )}
+    >
+      <Icon className="h-4 w-4" style={active ? { color } : undefined} />
+      <span>{label}</span>
+      
+      {active && (
+        <div
+          className="absolute inset-0 rounded-lg border-2 pointer-events-none"
+          style={{ borderColor: color }}
+        />
+      )}
+    </button>
+  );
 }
 
 function createHeatmapMatrix(data: Array<{ day_of_week: number; hour: number; count: number }>): number[][] {
@@ -22,10 +59,64 @@ function createHeatmapMatrix(data: Array<{ day_of_week: number; hour: number; co
 }
 
 export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
+  const [activeView, setActiveView] = useState<HeatmapView>('deliveries');
+  
   if (!data) return null;
   
-  const matrix = createHeatmapMatrix(data.deliveries_heatmap);
-  const maxValue = Math.max(...data.deliveries_heatmap.map(d => d.count), 1);
+  const getHeatmapData = () => {
+    switch (activeView) {
+      case 'deliveries': return data.deliveries_heatmap;
+      case 'posts': return data.posts_heatmap;
+      case 'corrections': return data.corrections_heatmap;
+      case 'activity': return data.activity_heatmap;
+    }
+  };
+
+  const getHeatmapColor = () => {
+    switch (activeView) {
+      case 'deliveries': return '264 89%'; // Roxo
+      case 'posts': return '142 76%';      // Verde
+      case 'corrections': return '24 95%'; // Laranja
+      case 'activity': return '217 91%';   // Azul
+    }
+  };
+
+  const getViewTitle = () => {
+    switch (activeView) {
+      case 'deliveries': return 'Entregas de Alunos';
+      case 'posts': return 'Posts de Professores';
+      case 'corrections': return 'Correções de Professores';
+      case 'activity': return 'Atividade Geral';
+    }
+  };
+
+  const getInsightsLabels = () => {
+    switch (activeView) {
+      case 'deliveries': 
+        return { peak: 'Horário de Maior Entrega', day: 'Dia Mais Ativo', total: 'Total de Entregas' };
+      case 'posts': 
+        return { peak: 'Horário de Maior Publicação', day: 'Dia Mais Ativo', total: 'Total de Posts' };
+      case 'corrections': 
+        return { peak: 'Horário de Maior Correção', day: 'Dia Mais Ativo', total: 'Total de Correções' };
+      case 'activity': 
+        return { peak: 'Horário de Maior Atividade', day: 'Dia Mais Ativo', total: 'Total de Atividades' };
+    }
+  };
+
+  const getTotalValue = () => {
+    switch (activeView) {
+      case 'deliveries': return data.total_deliveries;
+      case 'posts': return data.total_posts;
+      case 'corrections': return data.total_corrections;
+      case 'activity': return data.total_activities;
+    }
+  };
+  
+  const currentData = getHeatmapData();
+  const matrix = createHeatmapMatrix(currentData);
+  const maxValue = Math.max(...currentData.map(d => d.count), 1);
+  const heatmapColor = getHeatmapColor();
+  const insights = getInsightsLabels();
   
   const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   
@@ -34,7 +125,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Mapa de Calor Semanal - Entregas
+            Mapa de Calor Semanal - {getViewTitle()}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -57,11 +148,43 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             </TooltipProvider>
           </DialogTitle>
           <DialogDescription>
-            Intensidade de entregas por dia da semana e hora do dia (últimos 30 dias)
+            Intensidade de atividades por dia da semana e hora do dia (últimos 30 dias)
           </DialogDescription>
         </DialogHeader>
+
+        {/* Tabs de visualização */}
+        <div className="flex gap-2 border-b pb-3 flex-wrap">
+          <TabButton
+            active={activeView === 'deliveries'}
+            onClick={() => setActiveView('deliveries')}
+            icon={Package}
+            label="Entregas"
+            color="hsl(264 89% 58%)"
+          />
+          <TabButton
+            active={activeView === 'posts'}
+            onClick={() => setActiveView('posts')}
+            icon={FileText}
+            label="Posts"
+            color="hsl(142 76% 45%)"
+          />
+          <TabButton
+            active={activeView === 'corrections'}
+            onClick={() => setActiveView('corrections')}
+            icon={CheckCircle}
+            label="Correções"
+            color="hsl(24 95% 50%)"
+          />
+          <TabButton
+            active={activeView === 'activity'}
+            onClick={() => setActiveView('activity')}
+            icon={Activity}
+            label="Atividade"
+            color="hsl(217 91% 60%)"
+          />
+        </div>
         
-        <div className="mt-6 space-y-6">
+        <div className="space-y-6">
           {/* Heatmap com estrutura de tabela */}
           <div className="overflow-x-auto">
             <div className="inline-block min-w-full">
@@ -102,7 +225,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                                 className="flex-1 min-w-[32px] h-8 rounded-sm cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                                 style={{
                                   backgroundColor: value > 0 
-                                    ? `hsl(264 89% ${58 - intensity * 30}% / ${Math.max(0.3, intensity)})` 
+                                    ? `hsl(${heatmapColor} ${58 - intensity * 30}% / ${Math.max(0.3, intensity)})` 
                                     : 'hsl(var(--muted) / 0.2)',
                                 }}
                               />
@@ -141,15 +264,15 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             {/* Explicação visual adicional */}
             <div className="flex items-center justify-center gap-6 text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(264 89% 58% / 0.3)' }} />
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 58% / 0.3)` }} />
                 <span className="text-muted-foreground">Pouca atividade</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(264 89% 43% / 0.65)' }} />
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 43% / 0.65)` }} />
                 <span className="text-muted-foreground">Atividade moderada</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(264 89% 28% / 1)' }} />
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 28% / 1)` }} />
                 <span className="text-muted-foreground">Muita atividade</span>
               </div>
             </div>
@@ -160,7 +283,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
-                  Horário de Pico
+                  {insights.peak}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -183,7 +306,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
-                  Dia Mais Ativo
+                  {insights.day}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -205,11 +328,11 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Total de Entregas</CardTitle>
+                <CardTitle className="text-sm">{insights.total}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-primary">
-                  {data.total_deliveries}
+                  {getTotalValue()}
                 </p>
               </CardContent>
             </Card>

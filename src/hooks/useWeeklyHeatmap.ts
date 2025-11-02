@@ -10,9 +10,14 @@ export interface HeatmapDataPoint {
 export interface WeeklyHeatmapData {
   deliveries_heatmap: HeatmapDataPoint[];
   posts_heatmap: HeatmapDataPoint[];
+  corrections_heatmap: HeatmapDataPoint[];
+  activity_heatmap: HeatmapDataPoint[];
   peak_hour: string;
   peak_day: string;
   total_deliveries: number;
+  total_posts: number;
+  total_corrections: number;
+  total_activities: number;
 }
 
 function processHeatmapData(data: any[], dateField: string): HeatmapDataPoint[] {
@@ -78,10 +83,31 @@ export function useWeeklyHeatmap(daysFilter: number = 30) {
         .gte('created_at', startDate);
       
       if (postsError) throw postsError;
+
+      // Query para correções
+      const { data: correctionsData, error: correctionsError } = await supabase
+        .from('deliveries')
+        .select('reviewed_at')
+        .not('reviewed_at', 'is', null)
+        .not('reviewed_by', 'is', null)
+        .gte('reviewed_at', startDate);
+      
+      if (correctionsError) throw correctionsError;
+
+      // Query para atividades gerais de professores
+      const { data: activityData, error: activityError } = await supabase
+        .from('audit_events')
+        .select('at, actor_role')
+        .ilike('actor_role', 'professor')
+        .gte('at', startDate);
+      
+      if (activityError) throw activityError;
       
       // Processar dados
       const deliveriesHeatmap = processHeatmapData(deliveriesData || [], 'submitted_at');
       const postsHeatmap = processHeatmapData(postsData || [], 'created_at');
+      const correctionsHeatmap = processHeatmapData(correctionsData || [], 'reviewed_at');
+      const activityHeatmap = processHeatmapData(activityData || [], 'at');
       
       // Debug
       console.log('🔥 Heatmap Debug:', {
@@ -93,9 +119,14 @@ export function useWeeklyHeatmap(daysFilter: number = 30) {
       return {
         deliveries_heatmap: deliveriesHeatmap,
         posts_heatmap: postsHeatmap,
+        corrections_heatmap: correctionsHeatmap,
+        activity_heatmap: activityHeatmap,
         peak_hour: findPeakHour(deliveriesHeatmap),
         peak_day: findPeakDay(deliveriesHeatmap),
-        total_deliveries: deliveriesData?.length || 0
+        total_deliveries: deliveriesData?.length || 0,
+        total_posts: postsData?.length || 0,
+        total_corrections: correctionsData?.length || 0,
+        total_activities: activityData?.length || 0
       };
     },
     staleTime: 5 * 60 * 1000,
