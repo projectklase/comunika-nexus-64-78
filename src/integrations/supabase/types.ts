@@ -687,6 +687,50 @@ export type Database = {
         }
         Relationships: []
       }
+      login_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          logged_at: string
+          profile_id: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string
+          user_role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_at?: string
+          profile_id?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id: string
+          user_role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_at?: string
+          profile_id?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+          user_role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "login_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modalities: {
         Row: {
           code: string | null

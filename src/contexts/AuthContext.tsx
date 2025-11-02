@@ -255,6 +255,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         console.log('[login] ✅ Login successful for:', data.user.email);
+        
+        // Registrar login no histórico para analytics
+        supabase.functions.invoke('track-login').catch(err => {
+          console.warn('[login] ⚠️ Falha ao registrar login no histórico:', err);
+          // Não bloqueia o login se falhar
+        });
+        
         setIsLoading(false);
         return { success: true };
       }

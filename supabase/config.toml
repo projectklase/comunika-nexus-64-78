@@ -3,6 +3,9 @@ project_id = "yanspolqarficibgovia"
 [functions.create-demo-user]
 verify_jwt = false
 
+[functions.track-login]
+verify_jwt = true
+
 [functions.delete-user]
 verify_jwt = true
 

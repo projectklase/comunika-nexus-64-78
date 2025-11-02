@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Info, Package, FileText, CheckCircle, Activity, type LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Info, Package, FileText, CheckCircle, Activity, Users, GraduationCap, BookOpen, Briefcase, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WeeklyHeatmapData } from '@/hooks/useWeeklyHeatmap';
+import { useLoginHeatmap, LoginHeatmapDataPoint } from '@/hooks/useLoginHeatmap';
 import { cn } from '@/lib/utils';
 
-type HeatmapView = 'deliveries' | 'posts' | 'corrections' | 'activity';
+type HeatmapView = 'deliveries' | 'posts' | 'corrections' | 'activity' | 'logins';
+type LoginRoleFilter = 'all' | 'aluno' | 'professor' | 'secretaria';
 
 interface HeatmapModalProps {
   isOpen: boolean;
@@ -21,6 +25,12 @@ interface TabButtonProps {
   label: string;
   color: string;
 }
+
+const ROLE_COLORS = {
+  aluno: { hsl: '217 91%', name: 'Azul', label: 'Alunos' },
+  professor: { hsl: '142 76%', name: 'Verde', label: 'Professores' },
+  secretaria: { hsl: '24 95%', name: 'Laranja', label: 'Secretaria' }
+};
 
 function TabButton({ active, onClick, icon: Icon, label, color }: TabButtonProps) {
   return (
@@ -58,8 +68,20 @@ function createHeatmapMatrix(data: Array<{ day_of_week: number; hour: number; co
   return matrix;
 }
 
+function createLoginHeatmapMatrix(data: LoginHeatmapDataPoint[]): Map<string, LoginHeatmapDataPoint> {
+  const matrix = new Map<string, LoginHeatmapDataPoint>();
+  data.forEach((point) => {
+    const key = `${point.day_of_week}-${point.hour}`;
+    matrix.set(key, point);
+  });
+  return matrix;
+}
+
 export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
   const [activeView, setActiveView] = useState<HeatmapView>('deliveries');
+  const [loginFilter, setLoginFilter] = useState<LoginRoleFilter>('all');
+  
+  const { data: loginData, isLoading: isLoginLoading } = useLoginHeatmap(30, loginFilter);
   
   if (!data) return null;
   
@@ -69,6 +91,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'posts': return data.posts_heatmap;
       case 'corrections': return data.corrections_heatmap;
       case 'activity': return data.activity_heatmap;
+      case 'logins': return loginData?.heatmap_data || [];
     }
   };
 
@@ -78,6 +101,10 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'posts': return '142 76%';      // Verde
       case 'corrections': return '24 95%'; // Laranja
       case 'activity': return '217 91%';   // Azul
+      case 'logins': 
+        return loginFilter !== 'all' 
+          ? ROLE_COLORS[loginFilter].hsl 
+          : '217 91%'; // Azul por padrão
     }
   };
 
@@ -87,6 +114,10 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'posts': return 'Posts de Professores';
       case 'corrections': return 'Correções de Professores';
       case 'activity': return 'Atividade Geral';
+      case 'logins': 
+        return loginFilter === 'all' 
+          ? 'Logins de Todos os Usuários' 
+          : `Logins de ${ROLE_COLORS[loginFilter].label}`;
     }
   };
 
@@ -100,6 +131,8 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
         return { peak: 'Horário de Maior Correção', day: 'Dia Mais Ativo', total: 'Total de Correções' };
       case 'activity': 
         return { peak: 'Horário de Maior Atividade', day: 'Dia Mais Ativo', total: 'Total de Atividades' };
+      case 'logins': 
+        return { peak: 'Horário de Maior Acesso', day: 'Dia Mais Ativo', total: 'Total de Logins' };
     }
   };
 
@@ -109,6 +142,21 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'posts': return data.total_posts;
       case 'corrections': return data.total_corrections;
       case 'activity': return data.total_activities;
+      case 'logins': return loginData?.total_logins || 0;
+    }
+  };
+
+  const getPeakHour = () => {
+    switch (activeView) {
+      case 'logins': return loginData?.peak_hour || '--';
+      default: return data.peak_hour;
+    }
+  };
+
+  const getPeakDay = () => {
+    switch (activeView) {
+      case 'logins': return loginData?.peak_day || '--';
+      default: return data.peak_day;
     }
   };
 
@@ -118,6 +166,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'posts': return 'posts publicados';
       case 'corrections': return 'correções realizadas';
       case 'activity': return 'atividades registradas';
+      case 'logins': return 'logins';
     }
   };
 
@@ -155,6 +204,16 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
           interpretation: 'muita atividade',
           usage: 'Visualize os momentos de maior uso da plataforma pelos professores para planejamento estratégico.'
         };
+      case 'logins':
+        return {
+          description: loginFilter === 'all'
+            ? 'Este mapa mostra os horários em que todos os usuários mais acessam o sistema.'
+            : `Este mapa mostra os horários em que ${ROLE_COLORS[loginFilter].label.toLowerCase()} mais acessam o sistema.`,
+          darkColor: loginFilter !== 'all' ? `${ROLE_COLORS[loginFilter].name} escuro` : 'Cores variadas',
+          lightColor: loginFilter !== 'all' ? `${ROLE_COLORS[loginFilter].name} claro` : 'Cores variadas',
+          interpretation: 'muitos acessos',
+          usage: 'Identifique os melhores horários para comunicações importantes e atualizações do sistema.'
+        };
     }
   };
 
@@ -168,6 +227,10 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
         return 'Intensidade de correções realizadas por professores por dia da semana e hora do dia (últimos 30 dias)';
       case 'activity': 
         return 'Intensidade de atividades gerais dos professores por dia da semana e hora do dia (últimos 30 dias)';
+      case 'logins':
+        return loginFilter === 'all'
+          ? 'Horários de acesso ao sistema por todos os usuários em tempo real (últimos 30 dias)'
+          : `Horários de acesso de ${ROLE_COLORS[loginFilter].label} em tempo real (últimos 30 dias)`;
     }
   };
 
@@ -177,6 +240,10 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'posts': return 'Horário com maior número de posts publicados pelos professores';
       case 'corrections': return 'Horário com maior número de correções realizadas pelos professores';
       case 'activity': return 'Horário com maior atividade geral dos professores no sistema';
+      case 'logins': 
+        return loginFilter === 'all'
+          ? 'Horário com maior número de acessos ao sistema por todos os usuários'
+          : `Horário com maior número de acessos por ${ROLE_COLORS[loginFilter].label.toLowerCase()}`;
     }
   };
 
@@ -186,16 +253,124 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'posts': return 'Dia da semana com maior volume de publicações dos professores';
       case 'corrections': return 'Dia da semana com maior volume de correções dos professores';
       case 'activity': return 'Dia da semana com maior atividade geral dos professores';
+      case 'logins': 
+        return loginFilter === 'all'
+          ? 'Dia da semana com maior volume de acessos ao sistema'
+          : `Dia da semana com maior volume de acessos por ${ROLE_COLORS[loginFilter].label.toLowerCase()}`;
     }
   };
   
   const currentData = getHeatmapData();
-  const matrix = createHeatmapMatrix(currentData);
+  const isLoginView = activeView === 'logins';
+  const loginMatrix = isLoginView ? createLoginHeatmapMatrix(currentData as LoginHeatmapDataPoint[]) : null;
+  const matrix = !isLoginView ? createHeatmapMatrix(currentData) : null;
   const maxValue = Math.max(...currentData.map(d => d.count), 1);
   const heatmapColor = getHeatmapColor();
   const insights = getInsightsLabels();
   
   const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  const renderLoginCell = (dayIdx: number, hour: number) => {
+    const key = `${dayIdx}-${hour}`;
+    const cellData = loginMatrix?.get(key);
+
+    if (!cellData || cellData.count === 0) {
+      return (
+        <div
+          className="flex-1 min-w-[32px] h-8 rounded-sm"
+          style={{ backgroundColor: 'hsl(var(--muted) / 0.2)' }}
+        />
+      );
+    }
+
+    const intensity = maxValue > 0 ? cellData.count / maxValue : 0;
+
+    // Modo filtrado: cor única
+    if (loginFilter !== 'all') {
+      const roleConfig = ROLE_COLORS[loginFilter];
+      return (
+        <TooltipProvider key={key}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className="flex-1 min-w-[32px] h-8 rounded-sm cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                style={{
+                  backgroundColor: `hsl(${roleConfig.hsl} ${58 - intensity * 30}% / ${Math.max(0.3, intensity)})`
+                }}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">
+                {dayLabels[dayIdx]} {hour}h: <strong>{cellData.count}</strong> logins de {roleConfig.label}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    // Modo "Todos": blocos divididos por role
+    const sortedRoles = cellData.roles.sort((a, b) => b.count - a.count);
+    const totalCount = cellData.count;
+
+    return (
+      <TooltipProvider key={key}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex-1 min-w-[32px] h-8 rounded-sm overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+              {sortedRoles.length === 1 ? (
+                // Um único role: bloco inteiro
+                <div
+                  className="w-full h-full"
+                  style={{
+                    backgroundColor: `hsl(${ROLE_COLORS[sortedRoles[0].role as keyof typeof ROLE_COLORS].hsl} 50% / 0.8)`
+                  }}
+                />
+              ) : (
+                // Múltiplos roles: dividir verticalmente
+                <div className="flex h-full">
+                  {sortedRoles.map((roleData, idx) => {
+                    const percentage = (roleData.count / totalCount) * 100;
+                    const roleConfig = ROLE_COLORS[roleData.role as keyof typeof ROLE_COLORS];
+                    
+                    return (
+                      <div
+                        key={`${roleData.role}-${idx}`}
+                        className="h-full"
+                        style={{
+                          width: `${percentage}%`,
+                          backgroundColor: `hsl(${roleConfig.hsl} 50% / 0.8)`
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs space-y-1">
+              <p className="font-semibold">{dayLabels[dayIdx]} {hour}h</p>
+              <p className="text-muted-foreground">Total: {cellData.count} logins</p>
+              <div className="space-y-0.5 mt-2">
+                {sortedRoles.map(roleData => (
+                  <div key={roleData.role} className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-sm"
+                      style={{ 
+                        backgroundColor: `hsl(${ROLE_COLORS[roleData.role as keyof typeof ROLE_COLORS].hsl} 50%)`
+                      }}
+                    />
+                    <span>{ROLE_COLORS[roleData.role as keyof typeof ROLE_COLORS].label}: {roleData.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -203,6 +378,12 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Mapa de Calor Semanal - {getViewTitle()}
+            {activeView === 'logins' && (
+              <Badge variant="secondary" className="text-xs animate-pulse">
+                <Activity className="h-3 w-3 mr-1" />
+                Tempo Real
+              </Badge>
+            )}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -224,9 +405,9 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
               </Tooltip>
             </TooltipProvider>
           </DialogTitle>
-        <DialogDescription>
-          {getDialogDescription()}
-        </DialogDescription>
+          <DialogDescription>
+            {getDialogDescription()}
+          </DialogDescription>
         </DialogHeader>
 
         {/* Tabs de visualização */}
@@ -259,7 +440,59 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             label="Atividade"
             color="hsl(217 91% 60%)"
           />
+          <TabButton
+            active={activeView === 'logins'}
+            onClick={() => setActiveView('logins')}
+            icon={Users}
+            label="Logins"
+            color="hsl(280 80% 55%)"
+          />
         </div>
+
+        {/* Filtros de Login */}
+        {activeView === 'logins' && (
+          <div className="flex items-center gap-2 border-b pb-3">
+            <span className="text-sm text-muted-foreground font-medium">Filtrar por:</span>
+            <div className="flex gap-1 flex-wrap">
+              <Button
+                variant={loginFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setLoginFilter('all')}
+                className="h-8 text-xs"
+              >
+                <Users className="h-3 w-3 mr-1" />
+                Todos
+              </Button>
+              <Button
+                variant={loginFilter === 'aluno' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setLoginFilter('aluno')}
+                className="h-8 text-xs"
+              >
+                <GraduationCap className="h-3 w-3 mr-1" />
+                Alunos
+              </Button>
+              <Button
+                variant={loginFilter === 'professor' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setLoginFilter('professor')}
+                className="h-8 text-xs"
+              >
+                <BookOpen className="h-3 w-3 mr-1" />
+                Professores
+              </Button>
+              <Button
+                variant={loginFilter === 'secretaria' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setLoginFilter('secretaria')}
+                className="h-8 text-xs"
+              >
+                <Briefcase className="h-3 w-3 mr-1" />
+                Secretaria
+              </Button>
+            </div>
+          </div>
+        )}
         
         <div className="space-y-6">
           {/* Heatmap com estrutura de tabela */}
@@ -267,7 +500,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             <div className="inline-block min-w-full">
               {/* Header com horas */}
               <div className="flex">
-                <div className="w-16 flex-shrink-0" /> {/* Espaço para labels dos dias */}
+                <div className="w-16 flex-shrink-0" />
                 <div className="flex flex-1">
                   {Array.from({ length: 24 }, (_, i) => (
                     <div 
@@ -283,15 +516,17 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
               {/* Linhas do heatmap */}
               {dayLabels.map((day, dayIdx) => (
                 <div key={`day-${dayIdx}`} className="flex items-stretch">
-                  {/* Label do dia */}
                   <div className="w-16 flex-shrink-0 text-xs font-medium text-foreground flex items-center pr-2">
                     {day}
                   </div>
                   
-                  {/* Células de horas */}
                   <div className="flex flex-1 gap-1">
                     {Array.from({ length: 24 }, (_, hour) => {
-                      const value = matrix[dayIdx]?.[hour] || 0;
+                      if (isLoginView) {
+                        return renderLoginCell(dayIdx, hour);
+                      }
+
+                      const value = matrix?.[dayIdx]?.[hour] || 0;
                       const intensity = maxValue > 0 ? value / maxValue : 0;
                       
                       return (
@@ -324,35 +559,53 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
           
           {/* Legenda */}
           <div className="space-y-3">
-            <div className="flex items-center gap-4 justify-center">
-              <span className="text-sm text-muted-foreground">Baixa atividade</span>
-              <div className="flex gap-1">
-                {[0.2, 0.4, 0.6, 0.8, 1.0].map((intensity) => (
-                  <div
-                    key={intensity}
-                    className="w-8 h-4 rounded"
-                    style={{ backgroundColor: `hsl(${heatmapColor} ${58 - intensity * 30}% / ${intensity})` }}
-                  />
+            {isLoginView && loginFilter === 'all' ? (
+              // Legenda especial para modo "Todos"
+              <div className="flex items-center gap-4 justify-center flex-wrap">
+                <span className="text-sm text-muted-foreground font-medium">Tipos de usuário:</span>
+                {Object.entries(ROLE_COLORS).map(([role, config]) => (
+                  <div key={role} className="flex items-center gap-2">
+                    <div 
+                      className="w-6 h-4 rounded"
+                      style={{ backgroundColor: `hsl(${config.hsl} 50%)` }}
+                    />
+                    <span className="text-sm text-muted-foreground">{config.label}</span>
+                  </div>
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground">Alta atividade</span>
-            </div>
+            ) : (
+              // Legenda normal
+              <div className="flex items-center gap-4 justify-center">
+                <span className="text-sm text-muted-foreground">Baixa atividade</span>
+                <div className="flex gap-1">
+                  {[0.2, 0.4, 0.6, 0.8, 1.0].map((intensity) => (
+                    <div
+                      key={intensity}
+                      className="w-8 h-4 rounded"
+                      style={{ backgroundColor: `hsl(${heatmapColor} ${58 - intensity * 30}% / ${intensity})` }}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm text-muted-foreground">Alta atividade</span>
+              </div>
+            )}
             
-            {/* Explicação visual adicional */}
-            <div className="flex items-center justify-center gap-6 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 58% / 0.3)` }} />
-                <span className="text-muted-foreground">Pouca atividade</span>
+            {!isLoginView && (
+              <div className="flex items-center justify-center gap-6 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 58% / 0.3)` }} />
+                  <span className="text-muted-foreground">Pouca atividade</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 43% / 0.65)` }} />
+                  <span className="text-muted-foreground">Atividade moderada</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 28% / 1)` }} />
+                  <span className="text-muted-foreground">Muita atividade</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 43% / 0.65)` }} />
-                <span className="text-muted-foreground">Atividade moderada</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: `hsl(${heatmapColor} 28% / 1)` }} />
-                <span className="text-muted-foreground">Muita atividade</span>
-              </div>
-            </div>
+            )}
           </div>
           
           {/* Insights */}
@@ -375,7 +628,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-primary">
-                  {data.peak_hour}
+                  {getPeakHour()}
                 </p>
               </CardContent>
             </Card>
@@ -398,7 +651,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-primary">
-                  {data.peak_day}
+                  {getPeakDay()}
                 </p>
               </CardContent>
             </Card>
