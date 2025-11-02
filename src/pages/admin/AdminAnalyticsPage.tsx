@@ -1,23 +1,35 @@
 import { useState } from 'react';
 import { useAdminAnalytics } from '@/hooks/useAdminAnalytics';
+import { useWeeklyHeatmap } from '@/hooks/useWeeklyHeatmap';
+import { useRetentionMetrics } from '@/hooks/useRetentionMetrics';
+import { useOperationalMetrics } from '@/hooks/useOperationalMetrics';
+import { usePulseScore } from '@/hooks/usePulseScore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, TrendingUp, Users, AlertCircle, BookOpen } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Users, AlertCircle, BookOpen, Activity, Building, Zap } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
 import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
 import { PostReadAnalytics } from '@/components/admin/PostReadAnalytics';
 import { PredictiveInsightsDashboard } from '@/components/admin/PredictiveInsightsDashboard';
+import { HeatmapModal } from '@/components/admin/analytics/HeatmapModal';
+import { RetentionModal } from '@/components/admin/analytics/RetentionModal';
+import { OperationalModal } from '@/components/admin/analytics/OperationalModal';
+import { PulseScoreModal } from '@/components/admin/analytics/PulseScoreModal';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 export default function AdminAnalyticsPage() {
   const [daysFilter, setDaysFilter] = useState<number>(30);
-  const [openModal, setOpenModal] = useState<'students-at-risk' | 'activity-trend' | 'class-performance' | 'post-engagement' | null>(null);
+  const [openModal, setOpenModal] = useState<'heatmap' | 'retention' | 'operational' | 'pulse' | 'students-at-risk' | 'activity-trend' | 'class-performance' | 'post-engagement' | null>(null);
   const { data: analytics, isLoading, error } = useAdminAnalytics(daysFilter);
+  const { data: heatmapData, isLoading: loadingHeatmap } = useWeeklyHeatmap(daysFilter);
+  const { data: retentionData, isLoading: loadingRetention } = useRetentionMetrics(daysFilter);
+  const { data: operationalData, isLoading: loadingOperational } = useOperationalMetrics();
+  const { data: pulseData, isLoading: loadingPulse } = usePulseScore(daysFilter);
 
   if (error) {
     return (
@@ -58,141 +70,137 @@ export default function AdminAnalyticsPage() {
         </Select>
       </div>
 
-      {/* KPIs Grid */}
+      {/* KPIs Grid - Novos Cards Estratégicos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {/* KPI 1: Alunos em Risco */}
-        <div className="group relative h-40 rounded-2xl overflow-hidden
-                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
-                        border-2 border-destructive/30 hover:border-destructive/60
-                        shadow-lg hover:shadow-2xl hover:shadow-destructive/20
-                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                        cursor-default">
-          
+        {/* Card 1: Mapa de Calor Semanal */}
+        <button
+          onClick={() => setOpenModal('heatmap')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-purple-500/20 to-blue-500/20
+                     border-2 border-purple-500/30 hover:border-purple-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-purple-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute top-0 left-0 w-16 h-16 bg-destructive/20 rounded-full blur-xl animate-pulse" />
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-destructive/10 rounded-full blur-2xl animate-ping" />
+            <div className="absolute top-0 left-0 w-16 h-16 bg-purple-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full blur-2xl animate-ping" />
           </div>
 
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <AlertTriangle className="h-10 w-10 text-destructive group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
+            <Activity className="h-10 w-10 text-purple-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Alunos em Risco</h3>
+              <h3 className="font-bold text-lg mb-1">Mapa de Calor Semanal</h3>
               <p className="text-xs text-muted-foreground">
-                Sem login há 7+ dias ou com entregas pendentes
+                Padrões de uso e horários de pico
               </p>
             </div>
-            {isLoading ? (
+            {loadingHeatmap ? (
               <Skeleton className="h-8 w-20 mt-2" />
             ) : (
-              <div className="text-3xl font-bold text-destructive mt-2">
-                {analytics?.students_at_risk_count || 0}
+              <div className="text-2xl font-bold text-purple-500 mt-2">
+                {heatmapData?.peak_hour || '--'}
               </div>
             )}
           </div>
-        </div>
+        </button>
 
-        {/* KPI 2: Pior Turma */}
-        <div className="group relative h-40 rounded-2xl overflow-hidden
-                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
-                        border-2 border-warning/30 hover:border-warning/60
-                        shadow-lg hover:shadow-2xl hover:shadow-warning/20
-                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                        cursor-default">
-          
-          {/* Efeito de partículas */}
+        {/* Card 2: Retenção e Progressão */}
+        <button
+          onClick={() => setOpenModal('retention')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-green-500/20 to-emerald-500/20
+                     border-2 border-green-500/30 hover:border-green-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-green-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute top-0 left-0 w-16 h-16 bg-warning/20 rounded-full blur-xl animate-pulse" />
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-warning/10 rounded-full blur-2xl animate-ping" />
+            <div className="absolute top-0 left-0 w-16 h-16 bg-green-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl animate-ping" />
           </div>
 
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <Users className="h-10 w-10 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
+            <TrendingUp className="h-10 w-10 text-green-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Turma de Atenção</h3>
-              {isLoading ? (
-                <Skeleton className="h-6 w-32 mx-auto" />
-              ) : (
-                <>
-                  <p className="text-sm font-semibold text-warning truncate mb-1">
-                    {analytics?.worst_class_name || 'N/A'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {analytics?.worst_class_pending_count || 0} entregas pendentes
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 3: Atividades Publicadas */}
-        <div className="group relative h-40 rounded-2xl overflow-hidden
-                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
-                        border-2 border-primary/30 hover:border-primary/60
-                        shadow-lg hover:shadow-2xl hover:shadow-primary/20
-                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                        cursor-default">
-          
-          {/* Efeito de partículas */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute top-0 left-0 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse" />
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-ping" />
-          </div>
-
-          {/* Conteúdo */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <TrendingUp className="h-10 w-10 text-primary group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
-            <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Atividades Publicadas</h3>
+              <h3 className="font-bold text-lg mb-1">Retenção e Progressão</h3>
               <p className="text-xs text-muted-foreground">
-                Nos últimos {daysFilter} dias
+                Ciclo de vida dos alunos
               </p>
             </div>
-            {isLoading ? (
+            {loadingRetention ? (
               <Skeleton className="h-8 w-20 mt-2" />
             ) : (
-              <div className="text-3xl font-bold text-primary mt-2">
-                {analytics?.activity_trend.reduce((sum, day) => sum + day.activities_published, 0) || 0}
+              <div className="text-3xl font-bold text-green-500 mt-2">
+                {retentionData?.retention_rate.toFixed(0) || 0}%
               </div>
             )}
           </div>
-        </div>
+        </button>
 
-        {/* KPI 4: Entregas Realizadas */}
-        <div className="group relative h-40 rounded-2xl overflow-hidden
-                        backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
-                        border-2 border-success/30 hover:border-success/60
-                        shadow-lg hover:shadow-2xl hover:shadow-success/20
-                        transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                        cursor-default">
-          
-          {/* Efeito de partículas */}
+        {/* Card 3: Métricas Operacionais */}
+        <button
+          onClick={() => setOpenModal('operational')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-orange-500/20 to-amber-500/20
+                     border-2 border-orange-500/30 hover:border-orange-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-orange-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute top-0 left-0 w-16 h-16 bg-success/20 rounded-full blur-xl animate-pulse" />
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-success/10 rounded-full blur-2xl animate-ping" />
+            <div className="absolute top-0 left-0 w-16 h-16 bg-orange-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl animate-ping" />
           </div>
 
-          {/* Conteúdo */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
-            <TrendingUp className="h-10 w-10 text-success group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
+            <Building className="h-10 w-10 text-orange-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Entregas Realizadas</h3>
+              <h3 className="font-bold text-lg mb-1">Métricas Operacionais</h3>
               <p className="text-xs text-muted-foreground">
-                Nos últimos {daysFilter} dias
+                Eficiência e capacidade
               </p>
             </div>
-            {isLoading ? (
+            {loadingOperational ? (
               <Skeleton className="h-8 w-20 mt-2" />
             ) : (
-              <div className="text-3xl font-bold text-success mt-2">
-                {analytics?.activity_trend.reduce((sum, day) => sum + day.deliveries_made, 0) || 0}
+              <div className="text-3xl font-bold text-orange-500 mt-2">
+                {operationalData?.avg_occupancy || 0}%
               </div>
             )}
           </div>
-        </div>
+        </button>
+
+        {/* Card 4: Pulse Score™ */}
+        <button
+          onClick={() => setOpenModal('pulse')}
+          className="group relative h-40 rounded-2xl overflow-hidden
+                     backdrop-blur-md bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20
+                     border-2 border-purple-500/30 hover:border-purple-500/60
+                     shadow-lg hover:shadow-2xl hover:shadow-purple-500/20
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 animate-pulse" />
+          
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
+            <Zap className="h-10 w-10 text-purple-500 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" />
+            <div className="text-center">
+              <h3 className="font-bold text-lg mb-1">Pulse Score™</h3>
+              <p className="text-xs text-muted-foreground">
+                Índice de saúde institucional
+              </p>
+            </div>
+            {loadingPulse ? (
+              <Skeleton className="h-12 w-16 mt-2" />
+            ) : (
+              <div className="text-4xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mt-2">
+                {pulseData?.overall_score || 0}
+              </div>
+            )}
+          </div>
+        </button>
       </div>
 
       {/* Ações Rápidas - Glassmorphism Buttons */}
@@ -456,6 +464,31 @@ export default function AdminAnalyticsPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Novos Modais Estratégicos */}
+      <HeatmapModal 
+        isOpen={openModal === 'heatmap'} 
+        onClose={() => setOpenModal(null)}
+        data={heatmapData}
+      />
+
+      <RetentionModal 
+        isOpen={openModal === 'retention'} 
+        onClose={() => setOpenModal(null)}
+        data={retentionData}
+      />
+
+      <OperationalModal 
+        isOpen={openModal === 'operational'} 
+        onClose={() => setOpenModal(null)}
+        data={operationalData}
+      />
+
+      <PulseScoreModal 
+        isOpen={openModal === 'pulse'} 
+        onClose={() => setOpenModal(null)}
+        data={pulseData}
+      />
     </div>
   );
 }
