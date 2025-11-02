@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, TrendingUp, Users, AlertCircle, BookOpen, Activity, Building, Zap } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Users, AlertCircle, BookOpen, Activity, Building, Zap, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
 import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
@@ -335,6 +336,18 @@ export default function AdminAnalyticsPage() {
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <AlertTriangle className="h-6 w-6 text-destructive" />
               Alunos em Risco de Evasão
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-md">
+                    <p className="text-xs">
+                      Lista dos 10 alunos com maior risco de evasão baseado em: dias sem login, entregas pendentes e atividades aguardando avaliação. Priorize contato com alunos que não fazem login há mais de 14 dias.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </DialogTitle>
             <DialogDescription>
               Top 10 alunos que necessitam atenção imediata
@@ -403,6 +416,18 @@ export default function AdminAnalyticsPage() {
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <TrendingUp className="h-6 w-6 text-primary" />
               Tendência de Atividades
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-md">
+                    <p className="text-xs">
+                      Visualize a relação entre atividades publicadas e entregas realizadas ao longo do tempo. Identifique períodos de baixo engajamento ou sobrecarga de atividades.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </DialogTitle>
             <DialogDescription>
               Comparação entre atividades publicadas e entregas realizadas ao longo do tempo
@@ -434,6 +459,18 @@ export default function AdminAnalyticsPage() {
             <SheetTitle className="flex items-center gap-2 text-2xl">
               <Users className="h-6 w-6 text-warning" />
               Performance por Turma
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-md">
+                    <p className="text-xs">
+                      Análise completa de métricas por turma: taxa de entrega, tempo médio, aprovações e devoluções. Selecione uma turma para ver detalhes e identificar necessidades de suporte.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </SheetTitle>
             <SheetDescription>
               Análise detalhada de desempenho de cada turma
@@ -453,6 +490,18 @@ export default function AdminAnalyticsPage() {
             <SheetTitle className="flex items-center gap-2 text-2xl">
               <BookOpen className="h-6 w-6 text-success" />
               Análise de Engajamento
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-md">
+                    <p className="text-xs">
+                      Métricas detalhadas sobre leitura de posts: quais posts têm mais engajamento, quais tipos geram mais interesse, e quais alunos são mais engajados. Use para otimizar comunicação.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </SheetTitle>
             <SheetDescription>
               Métricas detalhadas de leituras e engajamento dos alunos com posts

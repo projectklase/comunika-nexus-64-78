@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, TrendingUp, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle2, XCircle, Clock, AlertCircle, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ClassPerformanceSectionProps {
   daysFilter: number;
@@ -77,7 +78,19 @@ export function ClassPerformanceSection({ daysFilter }: ClassPerformanceSectionP
                 {/* Total de Alunos */}
                 <Card className="glass border-primary/30">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total de Alunos</CardTitle>
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      Total de Alunos
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Total de alunos matriculados na turma</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </CardTitle>
                     <Users className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
@@ -91,7 +104,19 @@ export function ClassPerformanceSection({ daysFilter }: ClassPerformanceSectionP
                 {/* Taxa de Entrega */}
                 <Card className="glass border-success/30">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Taxa de Entrega</CardTitle>
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      Taxa de Entrega
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Percentual de entregas realizadas vs atividades atribuídas</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </CardTitle>
                     <TrendingUp className="h-4 w-4 text-success" />
                   </CardHeader>
                   <CardContent>
@@ -107,7 +132,19 @@ export function ClassPerformanceSection({ daysFilter }: ClassPerformanceSectionP
                 {/* Média de Dias para Entrega */}
                 <Card className="glass border-warning/30">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Tempo Médio de Entrega</CardTitle>
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      Tempo Médio de Entrega
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Tempo médio entre publicação da atividade e entrega do aluno</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </CardTitle>
                     <Clock className="h-4 w-4 text-warning" />
                   </CardHeader>
                   <CardContent>
@@ -125,7 +162,19 @@ export function ClassPerformanceSection({ daysFilter }: ClassPerformanceSectionP
                 {/* Entregas Aprovadas */}
                 <Card className="glass border-success/30">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Aprovadas</CardTitle>
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      Aprovadas
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Total de entregas aprovadas pelo professor no período</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </CardTitle>
                     <CheckCircle2 className="h-4 w-4 text-success" />
                   </CardHeader>
                   <CardContent>
@@ -141,7 +190,19 @@ export function ClassPerformanceSection({ daysFilter }: ClassPerformanceSectionP
                 {/* Entregas Devolvidas */}
                 <Card className="glass border-destructive/30">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Devolvidas</CardTitle>
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      Devolvidas
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Entregas que foram devolvidas para correção</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </CardTitle>
                     <XCircle className="h-4 w-4 text-destructive" />
                   </CardHeader>
                   <CardContent>
@@ -157,7 +218,19 @@ export function ClassPerformanceSection({ daysFilter }: ClassPerformanceSectionP
                 {/* Entregas Atrasadas */}
                 <Card className="glass border-warning/30">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Atrasadas</CardTitle>
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      Atrasadas
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Entregas realizadas após o prazo estabelecido</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </CardTitle>
                     <AlertCircle className="h-4 w-4 text-warning" />
                   </CardHeader>
                   <CardContent>
