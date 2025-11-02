@@ -1,8 +1,6 @@
 import { ReadRateByType } from '@/types/post-read-analytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { Info } from 'lucide-react';
-import { Tooltip as InfoTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EngagementChartProps {
   data: ReadRateByType[];
@@ -35,21 +33,7 @@ export function EngagementChart({ data }: EngagementChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Taxa de Leitura por Tipo de Post
-          <TooltipProvider>
-            <InfoTooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="text-xs">
-                  Compare o engajamento entre diferentes tipos de posts (Avisos, Atividades, etc). Use para identificar quais formatos geram mais interesse dos alunos.
-                </p>
-              </TooltipContent>
-            </InfoTooltip>
-          </TooltipProvider>
-        </CardTitle>
+        <CardTitle>Taxa de Leitura por Tipo de Post</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
