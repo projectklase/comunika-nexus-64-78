@@ -14,7 +14,9 @@ interface HeatmapModalProps {
 function createHeatmapMatrix(data: Array<{ day_of_week: number; hour: number; count: number }>): number[][] {
   const matrix: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
   data.forEach(({ day_of_week, hour, count }) => {
-    matrix[day_of_week][hour] = count;
+    if (day_of_week >= 0 && day_of_week <= 6 && hour >= 0 && hour <= 23) {
+      matrix[day_of_week][hour] = count;
+    }
   });
   return matrix;
 }
@@ -25,9 +27,11 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
   const matrix = createHeatmapMatrix(data.deliveries_heatmap);
   const maxValue = Math.max(...data.deliveries_heatmap.map(d => d.count), 1);
   
+  const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Mapa de Calor Semanal - Entregas
@@ -58,38 +62,62 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
         </DialogHeader>
         
         <div className="mt-6 space-y-6">
-          {/* Heatmap */}
+          {/* Heatmap com estrutura de tabela */}
           <div className="overflow-x-auto">
-            <div className="inline-grid grid-cols-25 gap-1 min-w-max">
+            <div className="inline-block min-w-full">
               {/* Header com horas */}
-              <div className="text-xs font-medium text-foreground p-2"></div>
-              {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="text-xs text-center text-foreground p-2">{i}h</div>
-              ))}
+              <div className="flex">
+                <div className="w-16 flex-shrink-0" /> {/* Espaço para labels dos dias */}
+                <div className="flex flex-1">
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <div 
+                      key={i} 
+                      className="text-xs text-center text-foreground flex-1 min-w-[32px] p-1"
+                    >
+                      {i}h
+                    </div>
+                  ))}
+                </div>
+              </div>
               
-              {/* Linhas por dia da semana */}
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, dayIdx) => (
-                <React.Fragment key={`day-${dayIdx}`}>
-                  <div className="text-xs font-medium text-foreground p-2 flex items-center">
+              {/* Linhas do heatmap */}
+              {dayLabels.map((day, dayIdx) => (
+                <div key={`day-${dayIdx}`} className="flex items-stretch">
+                  {/* Label do dia */}
+                  <div className="w-16 flex-shrink-0 text-xs font-medium text-foreground flex items-center pr-2">
                     {day}
                   </div>
-                  {Array.from({ length: 24 }, (_, hour) => {
-                    const value = matrix[dayIdx]?.[hour] || 0;
-                    const intensity = value / maxValue;
-                    return (
-                      <div
-                        key={`${dayIdx}-${hour}`}
-                        className="aspect-square rounded-sm cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                        style={{
-                          backgroundColor: value > 0 
-                            ? `hsl(264 89% ${58 - intensity * 30}% / ${Math.max(0.3, intensity)})` 
-                            : 'hsl(var(--muted) / 0.2)',
-                        }}
-                        title={`${day} ${hour}h: ${value} entregas`}
-                      />
-                    );
-                  })}
-                </React.Fragment>
+                  
+                  {/* Células de horas */}
+                  <div className="flex flex-1 gap-1">
+                    {Array.from({ length: 24 }, (_, hour) => {
+                      const value = matrix[dayIdx]?.[hour] || 0;
+                      const intensity = maxValue > 0 ? value / maxValue : 0;
+                      
+                      return (
+                        <TooltipProvider key={`${dayIdx}-${hour}`}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className="flex-1 min-w-[32px] h-8 rounded-sm cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                style={{
+                                  backgroundColor: value > 0 
+                                    ? `hsl(264 89% ${58 - intensity * 30}% / ${Math.max(0.3, intensity)})` 
+                                    : 'hsl(var(--muted) / 0.2)',
+                                }}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">
+                                {day} {hour}h: <strong>{value}</strong> entregas
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
