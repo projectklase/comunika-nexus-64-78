@@ -84,6 +84,7 @@ export function useLoginHeatmap(daysFilter: number = 30, roleFilter: LoginRoleFi
         .from('login_history')
         .select('logged_at, user_role')
         .gte('logged_at', startDate)
+        .in('user_role', ['aluno', 'professor', 'secretaria'])
         .order('logged_at', { ascending: false });
       
       // Aplicar filtro de role se não for "all"
@@ -97,9 +98,11 @@ export function useLoginHeatmap(daysFilter: number = 30, roleFilter: LoginRoleFi
       
       const heatmapData = processLoginHeatmapData(loginData || [], roleFilter);
       
+      const uniqueRoles = [...new Set(loginData?.map(l => l.user_role) || [])];
       console.log('🔐 Login Heatmap Debug:', {
         filter: roleFilter,
         totalLogins: loginData?.length,
+        uniqueRoles,
         heatmapPoints: heatmapData.length,
         sampleData: heatmapData.slice(0, 3)
       });

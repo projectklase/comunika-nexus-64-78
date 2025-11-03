@@ -32,6 +32,21 @@ const ROLE_COLORS = {
   secretaria: { hsl: '24 95%', name: 'Laranja', label: 'Secretaria' }
 };
 
+// Função para validar e obter config de role
+const getRoleConfig = (role: string) => {
+  const validRoles: (keyof typeof ROLE_COLORS)[] = ['aluno', 'professor', 'secretaria'];
+  if (validRoles.includes(role as keyof typeof ROLE_COLORS)) {
+    return ROLE_COLORS[role as keyof typeof ROLE_COLORS];
+  }
+  // Fallback para roles desconhecidos
+  return { hsl: '0 0%', name: 'Cinza', label: 'Outro' };
+};
+
+// Função para verificar se é um role válido
+const isValidRole = (role: string): boolean => {
+  return role in ROLE_COLORS;
+};
+
 function TabButton({ active, onClick, icon: Icon, label, color }: TabButtonProps) {
   return (
     <button
@@ -268,7 +283,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
 
     // Modo filtrado: cor única
     if (loginFilter !== 'all') {
-      const roleConfig = ROLE_COLORS[loginFilter];
+      const roleConfig = getRoleConfig(loginFilter);
       return (
         <TooltipProvider key={key}>
           <Tooltip>
@@ -290,9 +305,23 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       );
     }
 
-    // Modo "Todos": blocos divididos por role
-    const sortedRoles = cellData.roles.sort((a, b) => b.count - a.count);
-    const totalCount = cellData.count;
+        // Modo "Todos": blocos divididos por role
+        const sortedRoles = cellData.roles
+          .filter(r => isValidRole(r.role))
+          .sort((a, b) => b.count - a.count);
+        
+        // Se não há roles válidos, não renderizar célula
+        if (sortedRoles.length === 0) {
+          return (
+            <div 
+              key={key}
+              className="flex-1 min-w-[32px] h-8 rounded-sm"
+              style={{ backgroundColor: 'hsl(var(--muted) / 0.2)' }}
+            />
+          );
+        }
+        
+        const totalCount = sortedRoles.reduce((sum, r) => sum + r.count, 0);
 
     return (
       <TooltipProvider key={key}>
@@ -301,18 +330,18 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             <div className="flex-1 min-w-[32px] h-8 rounded-sm overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all">
               {sortedRoles.length === 1 ? (
                 // Um único role: bloco inteiro
-                <div
-                  className="w-full h-full"
-                  style={{
-                    backgroundColor: `hsl(${ROLE_COLORS[sortedRoles[0].role as keyof typeof ROLE_COLORS].hsl} 50% / 0.8)`
-                  }}
-                />
+              <div
+                className="w-full h-full"
+                style={{
+                  backgroundColor: `hsl(${getRoleConfig(sortedRoles[0].role).hsl} 50% / 0.8)`
+                }}
+              />
               ) : (
                 // Múltiplos roles: dividir verticalmente
                 <div className="flex h-full">
-                  {sortedRoles.map((roleData, idx) => {
-                    const percentage = (roleData.count / totalCount) * 100;
-                    const roleConfig = ROLE_COLORS[roleData.role as keyof typeof ROLE_COLORS];
+              {sortedRoles.map((roleData, idx) => {
+                const percentage = (roleData.count / totalCount) * 100;
+                const roleConfig = getRoleConfig(roleData.role);
                     
                     return (
                       <div
@@ -332,19 +361,22 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
           <TooltipContent>
             <div className="text-xs space-y-1">
               <p className="font-semibold">{dayLabels[dayIdx]} {hour}h</p>
-              <p className="text-muted-foreground">Total: {cellData.count} logins</p>
+              <p className="text-muted-foreground">Total: {totalCount} logins</p>
               <div className="space-y-0.5 mt-2">
-                {sortedRoles.map(roleData => (
-                  <div key={roleData.role} className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-sm"
-                      style={{ 
-                        backgroundColor: `hsl(${ROLE_COLORS[roleData.role as keyof typeof ROLE_COLORS].hsl} 50%)`
-                      }}
-                    />
-                    <span>{ROLE_COLORS[roleData.role as keyof typeof ROLE_COLORS].label}: {roleData.count}</span>
-                  </div>
-                ))}
+                {sortedRoles.map(roleData => {
+                  const roleConfig = getRoleConfig(roleData.role);
+                  return (
+                    <div key={roleData.role} className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-sm"
+                        style={{ 
+                          backgroundColor: `hsl(${roleConfig.hsl} 50%)`
+                        }}
+                      />
+                      <span>{roleConfig.label}: {roleData.count}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </TooltipContent>
