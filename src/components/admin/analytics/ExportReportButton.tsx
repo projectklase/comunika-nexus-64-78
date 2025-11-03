@@ -2,13 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileDown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAdminAnalytics } from '@/hooks/useAdminAnalytics';
-import { useWeeklyHeatmap } from '@/hooks/useWeeklyHeatmap';
-import { useRetentionMetrics } from '@/hooks/useRetentionMetrics';
-import { useOperationalMetrics } from '@/hooks/useOperationalMetrics';
-import { usePulseScore } from '@/hooks/usePulseScore';
-import { usePostReadAnalytics } from '@/hooks/usePostReadAnalytics';
 import { generateAnalyticsReport } from '@/utils/excel-export';
+import { fetchCompleteAnalyticsData } from '@/utils/excel-data-fetcher';
 
 interface ExportReportButtonProps {
   daysFilter: number;
@@ -18,60 +13,38 @@ export function ExportReportButton({ daysFilter }: ExportReportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
-  // Carregar todos os dados necessários
-  const { data: analytics, isLoading: loadingAnalytics } = useAdminAnalytics(daysFilter);
-  const { data: heatmapData, isLoading: loadingHeatmap } = useWeeklyHeatmap(daysFilter);
-  const { data: retentionData, isLoading: loadingRetention } = useRetentionMetrics(daysFilter);
-  const { data: operationalData, isLoading: loadingOperational } = useOperationalMetrics();
-  const { data: pulseData, isLoading: loadingPulse } = usePulseScore(daysFilter);
-  const { data: postReadData, isLoading: loadingPostRead } = usePostReadAnalytics(daysFilter);
-
-  const isLoadingAny = loadingAnalytics || loadingHeatmap || loadingRetention || 
-                       loadingOperational || loadingPulse || loadingPostRead;
-
   const handleExport = async () => {
-    // Validar se todos os dados estão carregados
-    if (isLoadingAny) {
-      toast({
-        title: 'Aguarde',
-        description: 'Carregando dados para exportação...',
-        variant: 'default'
-      });
-      return;
-    }
-
-    if (!analytics || !heatmapData || !retentionData || !operationalData || !pulseData || !postReadData) {
-      toast({
-        title: 'Dados incompletos',
-        description: 'Alguns dados ainda não foram carregados. Aguarde um momento.',
-        variant: 'default'
-      });
-      return;
-    }
-
     setIsExporting(true);
     
     try {
-      await generateAnalyticsReport({
-        analytics,
-        heatmapData,
-        retentionData,
-        operationalData,
-        pulseData,
-        postReadData,
-        daysFilter
+      toast({
+        title: 'Buscando dados...',
+        description: 'Coletando informações completas do sistema. Isso pode levar alguns segundos.',
+        variant: 'default'
       });
+
+      // Buscar dados completos diretamente das tabelas
+      const completeData = await fetchCompleteAnalyticsData(daysFilter);
+
+      toast({
+        title: 'Gerando relatório...',
+        description: 'Criando arquivo Excel com todas as abas.',
+        variant: 'default'
+      });
+
+      // Gerar relatório Excel
+      await generateAnalyticsReport(completeData);
 
       toast({
         title: 'Relatório gerado!',
-        description: 'O arquivo Excel foi baixado com sucesso.',
+        description: 'O arquivo Excel foi baixado com sucesso com todos os dados do sistema.',
         variant: 'default'
       });
     } catch (error) {
       console.error('Erro ao exportar relatório:', error);
       toast({
         title: 'Erro na exportação',
-        description: 'Ocorreu um erro ao gerar o relatório. Tente novamente.',
+        description: 'Ocorreu um erro ao gerar o relatório. Verifique o console para mais detalhes.',
         variant: 'destructive'
       });
     } finally {
@@ -82,7 +55,7 @@ export function ExportReportButton({ daysFilter }: ExportReportButtonProps) {
   return (
     <Button
       onClick={handleExport}
-      disabled={isExporting || isLoadingAny}
+      disabled={isExporting}
       variant="outline"
       size="default"
       className="gap-2"
@@ -90,12 +63,7 @@ export function ExportReportButton({ daysFilter }: ExportReportButtonProps) {
       {isExporting ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          Gerando...
-        </>
-      ) : isLoadingAny ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Carregando dados...
+          Gerando relatório completo...
         </>
       ) : (
         <>
