@@ -48,7 +48,7 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center" sideOffset={8} className="max-w-sm">
+                <TooltipContent side="bottom" align="center" sideOffset={8} className="max-w-sm">
                   <p className="text-xs">
                     Acompanhe a eficiência operacional: taxa de ocupação das turmas, capacidade disponível e aproveitamento de recursos. Use estes dados para otimizar a distribuição de alunos e maximizar a utilização da infraestrutura.
                   </p>

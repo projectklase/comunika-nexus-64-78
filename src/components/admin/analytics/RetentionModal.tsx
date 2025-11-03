@@ -26,7 +26,7 @@ export function RetentionModal({ isOpen, onClose, data }: RetentionModalProps) {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center" sideOffset={8} className="max-w-sm">
+                <TooltipContent side="bottom" align="center" sideOffset={8} className="max-w-sm">
                   <p className="text-xs">
                     Monitore o ciclo de vida completo dos alunos desde matrícula até conclusão. A taxa de retenção indica quantos alunos permanecem ativos após 30 dias. Identifique tendências de evasão e tome ações preventivas.
                   </p>

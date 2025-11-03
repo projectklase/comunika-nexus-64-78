@@ -77,7 +77,7 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
                       <TooltipTrigger asChild>
                         <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
+                      <TooltipContent side="bottom" align="center" sideOffset={8} className="max-w-xs">
                         <p className="text-xs">
                           O Pulse Score combina 5 métricas-chave com pesos diferentes:
                           <br/>• Engajamento (30%): alunos ativos nos últimos 7 dias
@@ -153,7 +153,7 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
                                 {component.name}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
+                            <TooltipContent side="right" align="center" sideOffset={8} className="max-w-xs">
                               <p className="text-xs">{getComponentExplanation(component.name)}</p>
                             </TooltipContent>
                           </UITooltip>

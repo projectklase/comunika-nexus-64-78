@@ -402,7 +402,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-md">
+                <TooltipContent side="bottom" align="center" sideOffset={8} className="max-w-md">
                   <p className="text-xs">
                     {getExplanationTooltip().description}
                     <br/><br/>
