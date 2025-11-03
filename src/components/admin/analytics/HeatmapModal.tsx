@@ -3,13 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Info, Package, FileText, CheckCircle, Activity, Users, GraduationCap, BookOpen, Briefcase, type LucideIcon } from 'lucide-react';
+import { Info, Package, FileText, CheckCircle, Users, GraduationCap, BookOpen, Briefcase, Zap, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WeeklyHeatmapData } from '@/hooks/useWeeklyHeatmap';
 import { useLoginHeatmap, LoginHeatmapDataPoint } from '@/hooks/useLoginHeatmap';
 import { cn } from '@/lib/utils';
 
-type HeatmapView = 'deliveries' | 'posts' | 'corrections' | 'activity' | 'logins';
+type HeatmapView = 'deliveries' | 'posts' | 'corrections' | 'logins';
 type LoginRoleFilter = 'all' | 'aluno' | 'professor' | 'secretaria';
 
 interface HeatmapModalProps {
@@ -90,7 +90,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'deliveries': return data.deliveries_heatmap;
       case 'posts': return data.posts_heatmap;
       case 'corrections': return data.corrections_heatmap;
-      case 'activity': return data.activity_heatmap;
       case 'logins': return loginData?.heatmap_data || [];
     }
   };
@@ -100,7 +99,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'deliveries': return '264 89%'; // Roxo
       case 'posts': return '142 76%';      // Verde
       case 'corrections': return '24 95%'; // Laranja
-      case 'activity': return '217 91%';   // Azul
       case 'logins': 
         return loginFilter !== 'all' 
           ? ROLE_COLORS[loginFilter].hsl 
@@ -113,7 +111,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'deliveries': return 'Entregas de Alunos';
       case 'posts': return 'Posts de Professores';
       case 'corrections': return 'Correções de Professores';
-      case 'activity': return 'Atividade Geral';
       case 'logins': 
         return loginFilter === 'all' 
           ? 'Logins de Todos os Usuários' 
@@ -129,8 +126,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
         return { peak: 'Horário de Maior Publicação', day: 'Dia Mais Ativo', total: 'Total de Posts' };
       case 'corrections': 
         return { peak: 'Horário de Maior Correção', day: 'Dia Mais Ativo', total: 'Total de Correções' };
-      case 'activity': 
-        return { peak: 'Horário de Maior Atividade', day: 'Dia Mais Ativo', total: 'Total de Atividades' };
       case 'logins': 
         return { peak: 'Horário de Maior Acesso', day: 'Dia Mais Ativo', total: 'Total de Logins' };
     }
@@ -141,7 +136,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'deliveries': return data.total_deliveries;
       case 'posts': return data.total_posts;
       case 'corrections': return data.total_corrections;
-      case 'activity': return data.total_activities;
       case 'logins': return loginData?.total_logins || 0;
     }
   };
@@ -165,7 +159,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'deliveries': return 'entregas';
       case 'posts': return 'posts publicados';
       case 'corrections': return 'correções realizadas';
-      case 'activity': return 'atividades registradas';
       case 'logins': return 'logins';
     }
   };
@@ -196,14 +189,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
           interpretation: 'muitas correções',
           usage: 'Identifique os períodos de maior dedicação dos professores às correções para otimizar processos.'
         };
-      case 'activity':
-        return {
-          description: 'Este mapa mostra os horários de maior atividade geral dos professores no sistema.',
-          darkColor: 'Azul escuro',
-          lightColor: 'Azul claro',
-          interpretation: 'muita atividade',
-          usage: 'Visualize os momentos de maior uso da plataforma pelos professores para planejamento estratégico.'
-        };
       case 'logins':
         return {
           description: loginFilter === 'all'
@@ -225,8 +210,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
         return 'Intensidade de publicações de professores por dia da semana e hora do dia (últimos 30 dias)';
       case 'corrections': 
         return 'Intensidade de correções realizadas por professores por dia da semana e hora do dia (últimos 30 dias)';
-      case 'activity': 
-        return 'Intensidade de atividades gerais dos professores por dia da semana e hora do dia (últimos 30 dias)';
       case 'logins':
         return loginFilter === 'all'
           ? 'Horários de acesso ao sistema por todos os usuários em tempo real (últimos 30 dias)'
@@ -239,7 +222,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'deliveries': return 'Horário com maior número de entregas realizadas pelos alunos';
       case 'posts': return 'Horário com maior número de posts publicados pelos professores';
       case 'corrections': return 'Horário com maior número de correções realizadas pelos professores';
-      case 'activity': return 'Horário com maior atividade geral dos professores no sistema';
       case 'logins': 
         return loginFilter === 'all'
           ? 'Horário com maior número de acessos ao sistema por todos os usuários'
@@ -252,7 +234,6 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
       case 'deliveries': return 'Dia da semana com maior volume de entregas dos alunos';
       case 'posts': return 'Dia da semana com maior volume de publicações dos professores';
       case 'corrections': return 'Dia da semana com maior volume de correções dos professores';
-      case 'activity': return 'Dia da semana com maior atividade geral dos professores';
       case 'logins': 
         return loginFilter === 'all'
           ? 'Dia da semana com maior volume de acessos ao sistema'
@@ -380,7 +361,7 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             Mapa de Calor Semanal - {getViewTitle()}
             {activeView === 'logins' && (
               <Badge variant="secondary" className="text-xs animate-pulse">
-                <Activity className="h-3 w-3 mr-1" />
+                <Zap className="h-3 w-3 mr-1" />
                 Tempo Real
               </Badge>
             )}
@@ -433,20 +414,13 @@ export function HeatmapModal({ isOpen, onClose, data }: HeatmapModalProps) {
             label="Correções"
             color="hsl(24 95% 50%)"
           />
-          <TabButton
-            active={activeView === 'activity'}
-            onClick={() => setActiveView('activity')}
-            icon={Activity}
-            label="Atividade"
-            color="hsl(217 91% 60%)"
-          />
-          <TabButton
-            active={activeView === 'logins'}
-            onClick={() => setActiveView('logins')}
-            icon={Users}
-            label="Logins"
-            color="hsl(280 80% 55%)"
-          />
+            <TabButton
+              active={activeView === 'logins'}
+              onClick={() => setActiveView('logins')}
+              icon={Users}
+              label="Logins"
+              color="hsl(217 91% 60%)"
+            />
         </div>
 
         {/* Filtros de Login */}
