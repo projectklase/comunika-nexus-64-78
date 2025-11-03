@@ -45,6 +45,28 @@ export function PulseScoreModal({ isOpen, onClose, data }: PulseScoreModalProps)
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-6 w-6 text-primary" />
             Pulse Score™ - Saúde Institucional
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="center" sideOffset={8} className="max-w-sm">
+                  <p className="text-xs">
+                    O <strong>Pulse Score™</strong> é um indicador único que mede a saúde institucional em tempo real, combinando 5 dimensões críticas com pesos ponderados:
+                    <br/><br/>
+                    <strong>📊 Componentes:</strong>
+                    <br/>• <strong>Engajamento (30%)</strong>: Alunos ativos nos últimos 7 dias
+                    <br/>• <strong>Performance Prof. (25%)</strong>: Avaliações em até 48h
+                    <br/>• <strong>Ocupação (20%)</strong>: Taxa de vagas preenchidas
+                    <br/>• <strong>Taxa Aprovação (15%)</strong>: Entregas aprovadas
+                    <br/>• <strong>Retenção (10%)</strong>: Alunos ativos há 30+ dias
+                    <br/><br/>
+                    <strong>🎯 Para que serve:</strong>
+                    <br/>Use para identificar rapidamente áreas que precisam de atenção imediata e monitorar tendências ao longo do tempo. Scores acima de 80 indicam excelência operacional.
+                  </p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
           </DialogTitle>
           <DialogDescription>
             Índice consolidado de 5 dimensões críticas
