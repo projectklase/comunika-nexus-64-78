@@ -92,7 +92,21 @@ export default function AdminAnalyticsPage() {
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <Activity className="h-10 w-10 text-purple-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Mapa de Calor Semanal</h3>
+              <h3 className="font-bold text-lg mb-1 flex items-center justify-center gap-2">
+                Mapa de Calor Semanal
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-purple-500 transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={8} className="max-w-xs">
+                      <p className="text-xs">
+                        Visualize os horários e dias da semana com maior atividade no sistema. Identifique padrões de uso de alunos e professores para otimizar comunicações.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </h3>
               <p className="text-xs text-muted-foreground">
                 Padrões de uso e horários de pico
               </p>
@@ -125,7 +139,21 @@ export default function AdminAnalyticsPage() {
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <TrendingUp className="h-10 w-10 text-green-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Retenção e Progressão</h3>
+              <h3 className="font-bold text-lg mb-1 flex items-center justify-center gap-2">
+                Retenção e Progressão
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-green-500 transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={8} className="max-w-xs">
+                      <p className="text-xs">
+                        Monitore a taxa de retenção de alunos e identifique tendências de evasão. Analise o ciclo de vida desde a matrícula até conclusão ou saída.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </h3>
               <p className="text-xs text-muted-foreground">
                 Ciclo de vida dos alunos
               </p>
@@ -158,7 +186,21 @@ export default function AdminAnalyticsPage() {
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <Building className="h-10 w-10 text-orange-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Métricas Operacionais</h3>
+              <h3 className="font-bold text-lg mb-1 flex items-center justify-center gap-2">
+                Métricas Operacionais
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-orange-500 transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={8} className="max-w-xs">
+                      <p className="text-xs">
+                        Acompanhe a eficiência operacional: ocupação de turmas, capacidade e aproveitamento de recursos. Identifique oportunidades de otimização.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </h3>
               <p className="text-xs text-muted-foreground">
                 Eficiência e capacidade
               </p>
@@ -188,7 +230,21 @@ export default function AdminAnalyticsPage() {
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <Zap className="h-10 w-10 text-purple-500 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-lg mb-1">Pulse Score™</h3>
+              <h3 className="font-bold text-lg mb-1 flex items-center justify-center gap-2">
+                Pulse Score™
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-purple-500 transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={8} className="max-w-xs">
+                      <p className="text-xs">
+                        Índice proprietário que consolida múltiplas métricas em um único indicador de saúde. Pontuação 0-100 baseada em engajamento, desempenho e eficiência.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </h3>
               <p className="text-xs text-muted-foreground">
                 Índice de saúde institucional
               </p>
