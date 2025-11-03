@@ -15,6 +15,7 @@ import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
 import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
 import { PostReadAnalytics } from '@/components/admin/PostReadAnalytics';
 import { PredictiveInsightsDashboard } from '@/components/admin/PredictiveInsightsDashboard';
+import { ExportReportButton } from '@/components/admin/analytics/ExportReportButton';
 import { HeatmapModal } from '@/components/admin/analytics/HeatmapModal';
 import { RetentionModal } from '@/components/admin/analytics/RetentionModal';
 import { OperationalModal } from '@/components/admin/analytics/OperationalModal';
@@ -56,19 +57,23 @@ export default function AdminAnalyticsPage() {
           </p>
         </div>
         
-        <Select
-          value={daysFilter.toString()}
-          onValueChange={(value) => setDaysFilter(parseInt(value))}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Período" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Últimos 7 dias</SelectItem>
-            <SelectItem value="30">Últimos 30 dias</SelectItem>
-            <SelectItem value="90">Últimos 90 dias</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <ExportReportButton daysFilter={daysFilter} />
+          
+          <Select
+            value={daysFilter.toString()}
+            onValueChange={(value) => setDaysFilter(parseInt(value))}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Últimos 7 dias</SelectItem>
+              <SelectItem value="30">Últimos 30 dias</SelectItem>
+              <SelectItem value="90">Últimos 90 dias</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* KPIs Grid - Novos Cards Estratégicos */}
