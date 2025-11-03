@@ -2,7 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Info } from 'lucide-react';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { RetentionMetrics } from '@/hooks/useRetentionMetrics';
 
 interface RetentionModalProps {
@@ -18,7 +19,21 @@ export function RetentionModal({ isOpen, onClose, data }: RetentionModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Retenção e Progressão de Alunos</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Retenção e Progressão de Alunos
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center" sideOffset={8} className="max-w-sm">
+                  <p className="text-xs">
+                    Monitore o ciclo de vida completo dos alunos desde matrícula até conclusão. A taxa de retenção indica quantos alunos permanecem ativos após 30 dias. Identifique tendências de evasão e tome ações preventivas.
+                  </p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </DialogTitle>
           <DialogDescription>
             Análise do ciclo de vida e taxa de retenção
           </DialogDescription>

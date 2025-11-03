@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Info } from "lucide-react";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OperationalMetrics } from "@/hooks/useOperationalMetrics";
 
 interface OperationalModalProps {
@@ -39,7 +41,21 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Métricas Operacionais</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Métricas Operacionais
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center" sideOffset={8} className="max-w-sm">
+                  <p className="text-xs">
+                    Acompanhe a eficiência operacional: taxa de ocupação das turmas, capacidade disponível e aproveitamento de recursos. Use estes dados para otimizar a distribuição de alunos e maximizar a utilização da infraestrutura.
+                  </p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </DialogTitle>
           <DialogDescription>Eficiência, capacidade e distribuição de recursos</DialogDescription>
         </DialogHeader>
 
