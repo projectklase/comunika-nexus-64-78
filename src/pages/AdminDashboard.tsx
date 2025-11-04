@@ -149,43 +149,85 @@ export default function AdminDashboard() {
     trend?: string;
     variant?: 'default' | 'success' | 'warning' | 'danger';
   }) => {
-    const variantColors = {
-      default: 'text-primary',
-      success: 'text-green-600 dark:text-green-400',
-      warning: 'text-amber-600 dark:text-amber-400',
-      danger: 'text-red-600 dark:text-red-400'
+    const variantStyles = {
+      default: {
+        border: 'border-cyan-500/30',
+        shadow: 'shadow-[0_0_15px_rgba(0,217,255,0.2)]',
+        icon: 'text-cyan-400',
+        value: 'text-cyan-400',
+        glow: 'group-hover:shadow-[0_0_25px_rgba(0,217,255,0.4)]'
+      },
+      success: {
+        border: 'border-green-500/30',
+        shadow: 'shadow-[0_0_15px_rgba(0,255,65,0.2)]',
+        icon: 'text-green-400',
+        value: 'text-green-400',
+        glow: 'group-hover:shadow-[0_0_25px_rgba(0,255,65,0.4)]'
+      },
+      warning: {
+        border: 'border-amber-500/30',
+        shadow: 'shadow-[0_0_15px_rgba(255,165,0,0.2)]',
+        icon: 'text-amber-400',
+        value: 'text-amber-400',
+        glow: 'group-hover:shadow-[0_0_25px_rgba(255,165,0,0.4)]'
+      },
+      danger: {
+        border: 'border-red-500/30',
+        shadow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]',
+        icon: 'text-red-400',
+        value: 'text-red-400',
+        glow: 'group-hover:shadow-[0_0_25px_rgba(239,68,68,0.4)]'
+      }
     };
 
+    const styles = variantStyles[variant];
+
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-          <Icon className={`h-4 w-4 ${variantColors[variant]}`} />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{value}</div>
-          {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+      <div className={`group relative bg-slate-950/50 backdrop-blur-sm rounded-lg border ${styles.border} ${styles.shadow} ${styles.glow} transition-all duration-300 hover:scale-[1.02] p-5`}>
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(0,255,65,0.05),transparent)] pointer-events-none" />
+        
+        {/* Content */}
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1">
+                {title}
+              </p>
+              <div className={`text-4xl font-mono font-bold ${styles.value} tracking-tight`}>
+                {value}
+              </div>
+            </div>
+            <Icon className={`h-5 w-5 ${styles.icon} opacity-70 group-hover:opacity-100 transition-opacity`} strokeWidth={1.5} />
+          </div>
+          
+          {description && (
+            <p className="text-[11px] font-mono text-slate-400 border-t border-slate-800 pt-3 mt-3">
+              {description}
+            </p>
+          )}
+          
           {trend && (
-            <div className="flex items-center gap-1 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-600" />
-              <span className="text-xs text-green-600">{trend}</span>
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800">
+              <TrendingUp className={`h-3 w-3 ${styles.icon}`} />
+              <span className={`text-xs font-mono ${styles.icon}`}>{trend}</span>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
+      <div className="min-h-screen bg-black p-6 space-y-8">
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-96 bg-slate-900" />
+          <Skeleton className="h-4 w-64 bg-slate-900" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-32 bg-slate-900 rounded-lg" />
           ))}
         </div>
       </div>
@@ -212,17 +254,37 @@ export default function AdminDashboard() {
     : '0';
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black p-6 space-y-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground">
-          Visão geral completa do sistema • Última atualização: {format(new Date(), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-        </p>
+      <div className="space-y-3 pb-4 border-b border-green-500/20">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-mono font-bold tracking-tight text-white uppercase">
+              <span className="text-green-400">///</span> Dashboard Administrativo
+            </h1>
+            <p className="text-xs font-mono uppercase tracking-wider text-slate-500">
+              Sistema de Monitoramento
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-mono font-bold text-green-400">
+              {format(new Date(), 'HH:mm:ss')}
+            </div>
+            <p className="text-xs font-mono text-slate-500 uppercase">
+              {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <span className="text-green-400 uppercase">Online</span>
+          <span className="text-slate-600">|</span>
+          <span className="text-slate-400">Última atualização: {format(new Date(), 'HH:mm', { locale: ptBR })}</span>
+        </div>
       </div>
 
       {/* KPIs Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <MetricCard
           title="Total de Usuários"
           value={metrics.totalUsers}
@@ -257,7 +319,14 @@ export default function AdminDashboard() {
       </div>
 
       {/* Métricas de Entregas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-4">
+        <h2 className="text-xs font-mono uppercase tracking-widest text-green-400 flex items-center gap-2">
+          <div className="h-px flex-1 bg-gradient-to-r from-green-500/50 to-transparent" />
+          <span>Status de Entregas</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-green-500/50 to-transparent" />
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <MetricCard
           title="Entregas Aprovadas"
           value={metrics.approvedDeliveries}
@@ -281,10 +350,38 @@ export default function AdminDashboard() {
           description="Ação necessária"
           variant="warning"
         />
+        </div>
+        
+        {/* Barra de proporção visual */}
+        <div className="bg-slate-950/50 backdrop-blur-sm rounded-lg border border-slate-800 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Activity className="h-4 w-4 text-cyan-400" />
+            <span className="text-xs font-mono uppercase text-slate-400">Distribuição</span>
+          </div>
+          <div className="flex h-3 rounded-full overflow-hidden bg-slate-900">
+            <div 
+              className="bg-green-500 transition-all" 
+              style={{ width: `${metrics.totalDeliveries > 0 ? (metrics.approvedDeliveries / metrics.totalDeliveries) * 100 : 0}%` }}
+            />
+            <div 
+              className="bg-amber-500 transition-all" 
+              style={{ width: `${metrics.totalDeliveries > 0 ? (metrics.pendingDeliveries / metrics.totalDeliveries) * 100 : 0}%` }}
+            />
+            <div 
+              className="bg-red-500 transition-all" 
+              style={{ width: `${metrics.totalDeliveries > 0 ? (metrics.rejectedDeliveries / metrics.totalDeliveries) * 100 : 0}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-3 text-[10px] font-mono">
+            <span className="text-green-400">{metrics.approvedDeliveries} aprovadas</span>
+            <span className="text-amber-400">{metrics.pendingDeliveries} pendentes</span>
+            <span className="text-red-400">{metrics.rejectedDeliveries} rejeitadas</span>
+          </div>
+        </div>
       </div>
 
       {/* Gamificação */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <MetricCard
           title="Koins em Circulação"
           value={metrics.totalKoins.toLocaleString('pt-BR')}
@@ -311,116 +408,121 @@ export default function AdminDashboard() {
       </div>
 
       {/* Atividade Recente */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Atividade Recente do Sistema
-          </CardTitle>
-          <CardDescription>
-            Últimas 10 ações registradas no sistema de auditoria
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-3">
-              {metrics.recentAudits.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhuma atividade registrada ainda</p>
-                </div>
-              ) : (
-                metrics.recentAudits.map((audit) => (
+      <div className="bg-slate-950/50 backdrop-blur-sm rounded-lg border border-slate-800 p-6">
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <Activity className="h-5 w-5 text-green-400" />
+            <h2 className="text-sm font-mono uppercase tracking-wider text-white">
+              System Activity Log
+            </h2>
+          </div>
+          <Badge variant="outline" className="font-mono text-[10px] border-green-500/30 text-green-400">
+            {metrics.recentAudits.length} eventos
+          </Badge>
+        </div>
+        
+        <ScrollArea className="h-[400px]">
+          <div className="space-y-2 font-mono text-xs">
+            {metrics.recentAudits.length === 0 ? (
+              <div className="text-center py-12 text-slate-600">
+                <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="uppercase tracking-wider">No events logged</p>
+              </div>
+            ) : (
+              metrics.recentAudits.map((audit) => {
+                const actionColor = 
+                  audit.action.includes('CREATE') ? 'text-green-400' :
+                  audit.action.includes('UPDATE') ? 'text-cyan-400' :
+                  audit.action.includes('DELETE') ? 'text-red-400' :
+                  'text-slate-400';
+                
+                const actionIcon = 
+                  audit.action.includes('CREATE') ? '●' :
+                  audit.action.includes('UPDATE') ? '◆' :
+                  audit.action.includes('DELETE') ? '■' :
+                  '○';
+                
+                return (
                   <div 
                     key={audit.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                    className="flex items-start gap-3 p-3 rounded border border-slate-800/50 bg-slate-900/20 hover:bg-slate-900/40 transition-colors group"
                   >
-                    <div className="flex-shrink-0 mt-1">
-                      {audit.action.includes('CREATE') && <CheckCircle className="h-4 w-4 text-green-600" />}
-                      {audit.action.includes('UPDATE') && <Activity className="h-4 w-4 text-blue-600" />}
-                      {audit.action.includes('DELETE') && <XCircle className="h-4 w-4 text-red-600" />}
-                      {!audit.action.includes('CREATE') && !audit.action.includes('UPDATE') && !audit.action.includes('DELETE') && (
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm">{audit.actor_name}</span>
-                        <Badge variant="outline" className="text-xs">
+                    <span className={`${actionColor} mt-0.5`}>{actionIcon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-white">{audit.actor_name}</span>
+                        <Badge variant="outline" className="text-[9px] border-slate-700 text-slate-400 uppercase">
                           {audit.actor_role}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {audit.action.replace(/_/g, ' ').toLowerCase()} • {audit.entity_label || audit.entity}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(audit.at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      <p className="text-slate-400 text-[11px]">
+                        {audit.action.replace(/_/g, ' ').toLowerCase()} → {audit.entity_label || audit.entity}
                       </p>
                     </div>
+                    <span className="text-[10px] text-slate-600 group-hover:text-slate-500 transition-colors whitespace-nowrap">
+                      {format(new Date(audit.at), 'HH:mm:ss')}
+                    </span>
                   </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                );
+              })
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ações Rápidas</CardTitle>
-          <CardDescription>
-            Acesso rápido às funcionalidades mais utilizadas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <a 
-              href="/secretaria/cadastros/alunos"
-              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-            >
-              <Users className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-sm">Gerenciar Alunos</p>
-                <p className="text-xs text-muted-foreground">Cadastros e matrículas</p>
-              </div>
-            </a>
+      <div className="bg-slate-950/50 backdrop-blur-sm rounded-lg border border-slate-800 p-6">
+        <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2">
+          <div className="w-1 h-4 bg-cyan-400" />
+          Quick Access
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a 
+            href="/secretaria/cadastros/alunos"
+            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-cyan-500/30 transition-all"
+          >
+            <Users className="h-5 w-5 text-cyan-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            <div>
+              <p className="text-sm font-mono font-medium text-white">Alunos</p>
+              <p className="text-[10px] font-mono text-slate-500 uppercase">Gestão</p>
+            </div>
+          </a>
 
-            <a 
-              href="/secretaria/turmas"
-              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-            >
-              <GraduationCap className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-sm">Gerenciar Turmas</p>
-                <p className="text-xs text-muted-foreground">Classes e horários</p>
-              </div>
-            </a>
+          <a 
+            href="/secretaria/turmas"
+            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-green-500/30 transition-all"
+          >
+            <GraduationCap className="h-5 w-5 text-green-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            <div>
+              <p className="text-sm font-mono font-medium text-white">Turmas</p>
+              <p className="text-[10px] font-mono text-slate-500 uppercase">Classes</p>
+            </div>
+          </a>
 
-            <a 
-              href="/secretaria/historico"
-              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-            >
-              <Activity className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-sm">Auditoria</p>
-                <p className="text-xs text-muted-foreground">Histórico completo</p>
-              </div>
-            </a>
+          <a 
+            href="/secretaria/historico"
+            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-amber-500/30 transition-all"
+          >
+            <Activity className="h-5 w-5 text-amber-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            <div>
+              <p className="text-sm font-mono font-medium text-white">Auditoria</p>
+              <p className="text-[10px] font-mono text-slate-500 uppercase">Histórico</p>
+            </div>
+          </a>
 
-            <a 
-              href="/secretaria/gerenciar-recompensas"
-              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-            >
-              <Award className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-sm">Recompensas</p>
-                <p className="text-xs text-muted-foreground">Loja e resgates</p>
-              </div>
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+          <a 
+            href="/secretaria/gerenciar-recompensas"
+            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-purple-500/30 transition-all"
+          >
+            <Award className="h-5 w-5 text-purple-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            <div>
+              <p className="text-sm font-mono font-medium text-white">Recompensas</p>
+              <p className="text-[10px] font-mono text-slate-500 uppercase">Loja</p>
+            </div>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
