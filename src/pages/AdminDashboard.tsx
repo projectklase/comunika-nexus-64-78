@@ -422,7 +422,7 @@ export default function AdminDashboard() {
         </div>
         
         <ScrollArea className="h-[400px]">
-          <div className="space-y-2 font-mono text-xs">
+          <div className="space-y-2 font-mono text-xs px-3 py-1">
             {metrics.recentAudits.length === 0 ? (
               <div className="text-center py-12 text-slate-600">
                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
@@ -445,7 +445,7 @@ export default function AdminDashboard() {
                 return (
             <div 
               key={audit.id}
-              className="flex items-start gap-3 p-3 rounded border border-slate-800/50 bg-slate-900/20 hover:bg-slate-900/40 hover:scale-105 hover:-translate-y-1 hover:z-10 hover:border-slate-700 transition-all duration-200 ease-out cursor-pointer group"
+              className="flex items-start gap-3 p-3 rounded border border-slate-800/50 bg-slate-900/20 hover:bg-slate-900/40 hover:scale-[1.03] hover:-translate-y-1 hover:z-10 hover:border-slate-700 transition-all duration-200 ease-out cursor-pointer group origin-center"
             >
               <span className={`${actionColor} mt-0.5`}>{actionIcon}</span>
               <div className="flex-1 min-w-0">
