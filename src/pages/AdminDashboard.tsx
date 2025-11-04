@@ -149,30 +149,67 @@ export default function AdminDashboard() {
     trend?: string;
     variant?: 'default' | 'success' | 'warning' | 'danger';
   }) => {
-    const variantColors = {
-      default: 'text-primary',
-      success: 'text-green-600 dark:text-green-400',
-      warning: 'text-amber-600 dark:text-amber-400',
-      danger: 'text-red-600 dark:text-red-400'
+    const variantStyles = {
+      default: {
+        gradient: 'from-blue-500/20 to-cyan-500/20',
+        border: 'border-blue-500/30 hover:border-blue-500/60',
+        shadow: 'hover:shadow-blue-500/20',
+        particle1: 'bg-blue-500/20',
+        particle2: 'bg-cyan-500/10',
+        icon: 'text-blue-500'
+      },
+      success: {
+        gradient: 'from-green-500/20 to-emerald-500/20',
+        border: 'border-green-500/30 hover:border-green-500/60',
+        shadow: 'hover:shadow-green-500/20',
+        particle1: 'bg-green-500/20',
+        particle2: 'bg-emerald-500/10',
+        icon: 'text-green-500'
+      },
+      warning: {
+        gradient: 'from-amber-500/20 to-yellow-500/20',
+        border: 'border-amber-500/30 hover:border-amber-500/60',
+        shadow: 'hover:shadow-amber-500/20',
+        particle1: 'bg-amber-500/20',
+        particle2: 'bg-yellow-500/10',
+        icon: 'text-amber-500'
+      },
+      danger: {
+        gradient: 'from-red-500/20 to-rose-500/20',
+        border: 'border-red-500/30 hover:border-red-500/60',
+        shadow: 'hover:shadow-red-500/20',
+        particle1: 'bg-red-500/20',
+        particle2: 'bg-rose-500/10',
+        icon: 'text-red-500'
+      }
     };
 
+    const style = variantStyles[variant];
+
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-          <Icon className={`h-4 w-4 ${variantColors[variant]}`} />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{value}</div>
-          {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+      <div className={`group relative h-40 rounded-2xl overflow-hidden backdrop-blur-md bg-gradient-to-br ${style.gradient} border-2 ${style.border} shadow-lg hover:shadow-2xl ${style.shadow} transition-all duration-500 hover:scale-[1.02] hover:-translate-y-2`}>
+        {/* Efeitos de partículas */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+          <div className={`absolute top-0 left-0 w-16 h-16 ${style.particle1} rounded-full blur-xl animate-pulse`} />
+          <div className={`absolute bottom-0 right-0 w-20 h-20 ${style.particle2} rounded-full blur-2xl animate-ping`} style={{ animationDuration: '3s' }} />
+        </div>
+
+        {/* Conteúdo */}
+        <div className="relative z-10 h-full flex flex-col justify-center p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+            <Icon className={`h-5 w-5 ${style.icon} group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300`} />
+          </div>
+          <div className="text-3xl font-bold text-foreground mb-1">{value}</div>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
           {trend && (
             <div className="flex items-center gap-1 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-600" />
-              <span className="text-xs text-green-600">{trend}</span>
+              <TrendingUp className="h-3 w-3 text-green-500" />
+              <span className="text-xs text-green-500 font-medium">{trend}</span>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
@@ -222,7 +259,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPIs Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total de Usuários"
           value={metrics.totalUsers}
@@ -257,7 +294,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Métricas de Entregas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MetricCard
           title="Entregas Aprovadas"
           value={metrics.approvedDeliveries}
@@ -284,7 +321,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Gamificação */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MetricCard
           title="Koins em Circulação"
           value={metrics.totalKoins.toLocaleString('pt-BR')}
