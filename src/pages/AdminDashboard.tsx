@@ -470,59 +470,6 @@ export default function AdminDashboard() {
         </ScrollArea>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-slate-950/50 backdrop-blur-sm rounded-lg border border-slate-800 p-6">
-        <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2">
-          <div className="w-1 h-4 bg-cyan-400" />
-          Quick Access
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a 
-            href="/secretaria/cadastros/alunos"
-            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-cyan-500/30 transition-all"
-          >
-            <Users className="h-5 w-5 text-cyan-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-            <div>
-              <p className="text-sm font-mono font-medium text-white">Alunos</p>
-              <p className="text-[10px] font-mono text-slate-500 uppercase">Gestão</p>
-            </div>
-          </a>
-
-          <a 
-            href="/secretaria/turmas"
-            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-green-500/30 transition-all"
-          >
-            <GraduationCap className="h-5 w-5 text-green-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-            <div>
-              <p className="text-sm font-mono font-medium text-white">Turmas</p>
-              <p className="text-[10px] font-mono text-slate-500 uppercase">Classes</p>
-            </div>
-          </a>
-
-          <a 
-            href="/secretaria/historico"
-            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-amber-500/30 transition-all"
-          >
-            <Activity className="h-5 w-5 text-amber-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-            <div>
-              <p className="text-sm font-mono font-medium text-white">Auditoria</p>
-              <p className="text-[10px] font-mono text-slate-500 uppercase">Histórico</p>
-            </div>
-          </a>
-
-          <a 
-            href="/secretaria/gerenciar-recompensas"
-            className="group relative flex items-center gap-3 p-4 rounded-lg border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-purple-500/30 transition-all"
-          >
-            <Award className="h-5 w-5 text-purple-400 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-            <div>
-              <p className="text-sm font-mono font-medium text-white">Recompensas</p>
-              <p className="text-[10px] font-mono text-slate-500 uppercase">Loja</p>
-            </div>
-          </a>
-        </div>
-      </div>
     </div>
   );
 }
