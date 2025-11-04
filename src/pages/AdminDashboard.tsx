@@ -182,40 +182,40 @@ export default function AdminDashboard() {
 
     const styles = variantStyles[variant];
 
-    return (
-      <div className={`group relative bg-slate-950/50 backdrop-blur-sm rounded-lg border ${styles.border} ${styles.shadow} ${styles.glow} transition-all duration-300 hover:scale-[1.02] p-5`}>
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(0,255,65,0.05),transparent)] pointer-events-none" />
-        
-        {/* Content */}
-        <div className="relative z-10">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1">
-                {title}
-              </p>
-              <div className={`text-4xl font-mono font-bold ${styles.value} tracking-tight`}>
-                {value}
-              </div>
-            </div>
-            <Icon className={`h-5 w-5 ${styles.icon} opacity-70 group-hover:opacity-100 transition-opacity`} strokeWidth={1.5} />
-          </div>
-          
-          {description && (
-            <p className="text-[11px] font-mono text-slate-400 border-t border-slate-800 pt-3 mt-3">
-              {description}
+  return (
+    <div className={`group relative bg-slate-950/50 backdrop-blur-sm rounded-lg border ${styles.border} ${styles.shadow} ${styles.glow} transition-all duration-300 ease-out hover:scale-110 hover:-translate-y-2 hover:z-20 cursor-pointer p-5`}>
+      {/* Background pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(0,255,65,0.05),transparent)] pointer-events-none" />
+      
+      {/* Content */}
+      <div className="relative z-10">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1 group-hover:text-slate-400 transition-colors">
+              {title}
             </p>
-          )}
-          
-          {trend && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800">
-              <TrendingUp className={`h-3 w-3 ${styles.icon}`} />
-              <span className={`text-xs font-mono ${styles.icon}`}>{trend}</span>
+            <div className={`text-4xl font-mono font-bold ${styles.value} tracking-tight group-hover:scale-105 transition-transform origin-left`}>
+              {value}
             </div>
-          )}
+          </div>
+          <Icon className={`h-5 w-5 ${styles.icon} opacity-70 group-hover:opacity-100 group-hover:scale-125 transition-all`} strokeWidth={1.5} />
         </div>
+        
+        {description && (
+          <p className="text-[11px] font-mono text-slate-400 border-t border-slate-800 pt-3 mt-3 group-hover:text-slate-300 transition-colors">
+            {description}
+          </p>
+        )}
+        
+        {trend && (
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800">
+            <TrendingUp className={`h-3 w-3 ${styles.icon}`} />
+            <span className={`text-xs font-mono ${styles.icon}`}>{trend}</span>
+          </div>
+        )}
       </div>
-    );
+    </div>
+  );
   };
 
   if (isLoading) {
@@ -443,26 +443,26 @@ export default function AdminDashboard() {
                   '○';
                 
                 return (
-                  <div 
-                    key={audit.id}
-                    className="flex items-start gap-3 p-3 rounded border border-slate-800/50 bg-slate-900/20 hover:bg-slate-900/40 transition-colors group"
-                  >
-                    <span className={`${actionColor} mt-0.5`}>{actionIcon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-white">{audit.actor_name}</span>
-                        <Badge variant="outline" className="text-[9px] border-slate-700 text-slate-400 uppercase">
-                          {audit.actor_role}
-                        </Badge>
-                      </div>
-                      <p className="text-slate-400 text-[11px]">
-                        {audit.action.replace(/_/g, ' ').toLowerCase()} → {audit.entity_label || audit.entity}
-                      </p>
-                    </div>
-                    <span className="text-[10px] text-slate-600 group-hover:text-slate-500 transition-colors whitespace-nowrap">
-                      {format(new Date(audit.at), 'HH:mm:ss')}
-                    </span>
-                  </div>
+            <div 
+              key={audit.id}
+              className="flex items-start gap-3 p-3 rounded border border-slate-800/50 bg-slate-900/20 hover:bg-slate-900/40 hover:scale-105 hover:-translate-y-1 hover:z-10 hover:border-slate-700 transition-all duration-200 ease-out cursor-pointer group"
+            >
+              <span className={`${actionColor} mt-0.5`}>{actionIcon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="text-white group-hover:text-cyan-300 transition-colors">{audit.actor_name}</span>
+                  <Badge variant="outline" className="text-[9px] border-slate-700 text-slate-400 uppercase">
+                    {audit.actor_role}
+                  </Badge>
+                </div>
+                <p className="text-slate-400 group-hover:text-slate-300 text-[11px] transition-colors">
+                  {audit.action.replace(/_/g, ' ').toLowerCase()} → {audit.entity_label || audit.entity}
+                </p>
+              </div>
+              <span className="text-[10px] text-slate-600 group-hover:text-slate-500 transition-colors whitespace-nowrap">
+                {format(new Date(audit.at), 'HH:mm:ss')}
+              </span>
+            </div>
                 );
               })
             )}
