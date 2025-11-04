@@ -131,26 +131,8 @@ export function PredictiveInsightsDashboard() {
     return (
       <Alert>
         <Brain className="h-4 w-4" />
-        <AlertDescription className="flex items-center justify-between">
-          <span>Nenhuma análise gerada ainda. Clique no botão "Gerar Análise Diária" para começar.</span>
-          <Button
-            onClick={handleGenerateInsights}
-            disabled={isGenerating}
-            size="sm"
-            variant="outline"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Gerando...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Gerar Agora
-              </>
-            )}
-          </Button>
+        <AlertDescription>
+          <span>Nenhuma análise gerada ainda. A análise diária é gerada automaticamente.</span>
         </AlertDescription>
       </Alert>
     );
@@ -162,59 +144,22 @@ export function PredictiveInsightsDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header com botão de geração */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Brain className="h-6 w-6 text-primary" />
-          <div>
-            <h3 className="text-2xl font-bold">Insights Preditivos com IA</h3>
-            <p className="text-sm text-muted-foreground">
-              {lastRun ? (
-                `Última análise: ${formatDistanceToNow(new Date(lastRun), { 
-                  addSuffix: true, 
-                  locale: ptBR 
-                })}`
-              ) : (
-                "Nenhuma análise gerada ainda"
-              )}
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Brain className="h-6 w-6 text-primary" />
+        <div>
+          <h3 className="text-2xl font-bold">Insights Preditivos com IA</h3>
+          <p className="text-sm text-muted-foreground">
+            {lastRun ? (
+              `Última análise: ${formatDistanceToNow(new Date(lastRun), { 
+                addSuffix: true, 
+                locale: ptBR 
+              })}`
+            ) : (
+              "Nenhuma análise gerada ainda"
+            )}
+          </p>
         </div>
-
-        {/* Botão Gerar Análise */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleGenerateInsights}
-                disabled={!canGenerate || isGenerating}
-                variant="default"
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Gerar Análise Diária
-                  </>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {canGenerate ? (
-                <p>Clique para gerar uma nova análise com IA</p>
-              ) : (
-                <p>
-                  Disponível novamente em {Math.ceil(hoursUntilNext)}h
-                </p>
-              )}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
 
       {/* Grid principal */}
