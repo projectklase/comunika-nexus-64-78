@@ -422,7 +422,7 @@ export default function AdminDashboard() {
         </div>
         
         <ScrollArea className="h-[400px]">
-          <div className="space-y-2 font-mono text-xs px-3 py-1">
+          <div className="space-y-2 font-mono text-xs px-1 py-0.5">
             {metrics.recentAudits.length === 0 ? (
               <div className="text-center py-12 text-slate-600">
                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
