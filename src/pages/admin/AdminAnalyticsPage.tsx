@@ -286,10 +286,10 @@ export default function AdminAnalyticsPage() {
           </div>
 
           {/* Conteúdo */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-3 p-6">
+          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <Users className="h-12 w-12 text-warning group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
             <div className="text-center">
-              <h3 className="font-bold text-xl mb-1">Performance por Turma</h3>
+              <h3 className="font-bold text-lg mb-1">Performance por Turma</h3>
               <p className="text-xs text-muted-foreground">Comparativo de classes</p>
             </div>
             <div className="text-2xl font-bold text-warning truncate max-w-full">
