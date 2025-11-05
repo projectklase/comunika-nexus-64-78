@@ -141,17 +141,24 @@ export function PostEngagementModal({ open, onOpenChange, daysFilter }: PostEnga
                           <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--popover))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                        }}
-                        formatter={(value: any, name: any, props: any) => [
-                          `${value}% (${props.payload.posts} posts, ${props.payload.reads} leituras)`,
-                          'Taxa de Leitura'
-                        ]}
-                      />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--popover))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))',
+                }}
+                labelStyle={{
+                  color: 'hsl(var(--foreground))',
+                }}
+                itemStyle={{
+                  color: 'hsl(var(--foreground))',
+                }}
+                formatter={(value: any, name: any, props: any) => [
+                  `${value}% (${props.payload.posts} posts, ${props.payload.reads} leituras)`,
+                  'Taxa de Leitura'
+                ]}
+              />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
