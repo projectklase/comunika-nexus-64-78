@@ -292,9 +292,6 @@ export default function AdminAnalyticsPage() {
               <h3 className="font-bold text-lg mb-1">Performance por Turma</h3>
               <p className="text-xs text-muted-foreground">Comparativo de classes</p>
             </div>
-            <div className="text-2xl font-bold text-warning truncate max-w-full">
-              {isLoading ? '...' : analytics?.worst_class_name || 'N/A'}
-            </div>
           </div>
         </button>
 
