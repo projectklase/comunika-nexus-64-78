@@ -1386,4 +1386,17 @@
   .rdp-day_selected.rdp-day_holiday .rdp-button_element {
     @apply text-primary-foreground bg-primary;
   }
+
+  /* Glassmorphism Effect */
+  .glassmorphism {
+    backdrop-filter: blur(16px);
+    background: hsl(var(--card) / 0.5);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .glassmorphism:hover {
+    background: hsl(var(--card) / 0.7);
+    border-color: hsl(var(--border) / 0.8);
+  }
 }
