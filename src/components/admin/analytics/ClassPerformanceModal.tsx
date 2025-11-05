@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useClasses } from '@/hooks/useClasses';
-import { useClassPerformance } from '@/hooks/useClassPerformance';
+import { useAllClassesPerformance } from '@/hooks/useAllClassesPerformance';
 import { MetricCard } from './MetricCard';
 import { TrendingUp, Clock, CheckCircle, AlertCircle, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,13 +31,24 @@ export function ClassPerformanceModal({ open, onOpenChange, daysFilter }: ClassP
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [compareMode, setCompareMode] = useState(false);
 
-  // Buscar performance de todas as turmas
-  const classesWithPerformance = activeClasses.map(cls => {
-    const { data, isLoading } = useClassPerformance(cls.id, daysFilter);
-    return { ...cls, performance: data, isLoading };
-  });
+  // Buscar IDs das turmas ativas
+  const classIds = useMemo(() => activeClasses.map(c => c.id), [activeClasses]);
+  
+  // Buscar performance de todas as turmas de uma vez
+  const { data: performanceData = [], isLoading: isLoadingPerformance } = useAllClassesPerformance(
+    classIds,
+    daysFilter
+  );
 
-  const isLoading = isLoadingClasses || classesWithPerformance.some(c => c.isLoading);
+  // Combinar classes com seus dados de performance
+  const classesWithPerformance = useMemo(() => {
+    return activeClasses.map(cls => {
+      const performance = performanceData.find(p => p.class_id === cls.id);
+      return { ...cls, performance };
+    });
+  }, [activeClasses, performanceData]);
+
+  const isLoading = isLoadingClasses || isLoadingPerformance;
 
   // Calcular médias gerais
   const overallMetrics = useMemo(() => {
