@@ -12,9 +12,9 @@ import { AlertTriangle, TrendingUp, Users, AlertCircle, BookOpen, Activity, Buil
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ActivityTrendChart } from '@/components/admin/ActivityTrendChart';
+import { ClassPerformanceSection } from '@/components/admin/ClassPerformanceSection';
+import { PostReadAnalytics } from '@/components/admin/PostReadAnalytics';
 import { PredictiveInsightsDashboard } from '@/components/admin/PredictiveInsightsDashboard';
-import { ClassPerformanceDashboard } from '@/components/admin/analytics/ClassPerformanceDashboard';
-import { PostEngagementDashboard } from '@/components/admin/analytics/PostEngagementDashboard';
 import { ExportReportButton } from '@/components/admin/analytics/ExportReportButton';
 import { HeatmapModal } from '@/components/admin/analytics/HeatmapModal';
 import { RetentionModal } from '@/components/admin/analytics/RetentionModal';
@@ -22,6 +22,7 @@ import { OperationalModal } from '@/components/admin/analytics/OperationalModal'
 import { PulseScoreModal } from '@/components/admin/analytics/PulseScoreModal';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 export default function AdminAnalyticsPage() {
   const [daysFilter, setDaysFilter] = useState<number>(30);
@@ -453,19 +454,67 @@ export default function AdminAnalyticsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal 3: Performance por Turma - Dashboard Executivo */}
-      <Dialog open={openModal === 'class-performance'} onOpenChange={() => setOpenModal(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto backdrop-blur-xl bg-background/95 border border-white/10">
-          <ClassPerformanceDashboard daysFilter={daysFilter} />
-        </DialogContent>
-      </Dialog>
+      {/* Drawer 3: Performance por Turma */}
+      <Sheet open={openModal === 'class-performance'} onOpenChange={() => setOpenModal(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto backdrop-blur-xl bg-background/95 border-l border-white/10">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2 text-2xl">
+              <Users className="h-6 w-6 text-warning" />
+              Performance por Turma
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-md">
+                    <p className="text-xs">
+                      Análise completa de métricas por turma: taxa de entrega, tempo médio, aprovações e devoluções. Selecione uma turma para ver detalhes e identificar necessidades de suporte.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </SheetTitle>
+            <SheetDescription>
+              Análise detalhada de desempenho de cada turma
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="mt-6">
+            <ClassPerformanceSection daysFilter={daysFilter} />
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      {/* Modal 4: Análise de Engajamento - Dashboard Executivo */}
-      <Dialog open={openModal === 'post-engagement'} onOpenChange={() => setOpenModal(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto backdrop-blur-xl bg-background/95 border border-white/10">
-          <PostEngagementDashboard daysFilter={daysFilter} />
-        </DialogContent>
-      </Dialog>
+      {/* Drawer 4: Análise de Engajamento */}
+      <Sheet open={openModal === 'post-engagement'} onOpenChange={() => setOpenModal(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-5xl overflow-y-auto backdrop-blur-xl bg-background/95 border-l border-white/10">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2 text-2xl">
+              <BookOpen className="h-6 w-6 text-success" />
+              Análise de Engajamento
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-md">
+                    <p className="text-xs">
+                      Métricas detalhadas sobre leitura de posts: quais posts têm mais engajamento, quais tipos geram mais interesse, e quais alunos são mais engajados. Use para otimizar comunicação.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </SheetTitle>
+            <SheetDescription>
+              Métricas detalhadas de leituras e engajamento dos alunos com posts
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="mt-6">
+            <PostReadAnalytics daysFilter={daysFilter} />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Novos Modais Estratégicos */}
       <HeatmapModal 
