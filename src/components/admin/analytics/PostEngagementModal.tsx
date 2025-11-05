@@ -132,7 +132,33 @@ export function PostEngagementModal({ open, onOpenChange, daysFilter }: PostEnga
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, value }) => `${name}: ${value}%`}
+                        label={(props: any) => {
+                          const RADIAN = Math.PI / 180;
+                          const { cx, cy, midAngle, outerRadius, percent, name, index } = props;
+                          
+                          const radius = outerRadius + 35;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          let y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          
+                          // Ajuste para evitar sobreposição (alternando posições)
+                          if (chartData.length > 4) {
+                            const offset = (index % 2 === 0) ? -10 : 10;
+                            y += offset;
+                          }
+                          
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="hsl(var(--foreground))"
+                              textAnchor={x > cx ? 'start' : 'end'}
+                              dominantBaseline="central"
+                              className="text-sm font-semibold"
+                            >
+                              {`${name}: ${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}
                         outerRadius={120}
                         fill="#8884d8"
                         dataKey="value"
@@ -159,7 +185,13 @@ export function PostEngagementModal({ open, onOpenChange, daysFilter }: PostEnga
                   'Taxa de Leitura'
                 ]}
               />
-                      <Legend />
+                      <Legend 
+                        formatter={(value: string) => (
+                          <span style={{ color: 'hsl(var(--foreground))' }}>
+                            {value}
+                          </span>
+                        )}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>

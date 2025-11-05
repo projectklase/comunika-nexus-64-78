@@ -18,7 +18,8 @@ export function usePostReadAnalytics(daysFilter: number = 30) {
       
       return data as unknown as PostReadAnalytics;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchInterval: 5 * 60 * 1000, // Atualiza a cada 5 min
+    staleTime: 30 * 1000, // 30 segundos (atualização mais rápida)
+    refetchInterval: 60 * 1000, // Atualiza a cada 1 minuto
+    refetchOnWindowFocus: true, // Atualiza quando usuário volta para a aba
   });
 }
