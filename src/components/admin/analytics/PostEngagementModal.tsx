@@ -132,7 +132,46 @@ export function PostEngagementModal({ open, onOpenChange, daysFilter }: PostEnga
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, value }) => `${name}: ${value}%`}
+                        label={(props: any) => {
+                          const RADIAN = Math.PI / 180;
+                          const { cx, cy, midAngle, outerRadius, percent, name, index } = props;
+                          
+                          // Posição base do label fora da pizza
+                          const radius = outerRadius + 35;
+                          let x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          let y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          
+                          // Ajuste para evitar sobreposição quando valores são próximos
+                          const allData = chartData || [];
+                          const currentAngle = -midAngle;
+                          
+                          // Encontra labels com ângulos similares (dentro de 15 graus)
+                          const nearbyLabels = allData.filter((item: any, i: number) => {
+                            if (i === index) return false;
+                            const itemMidAngle = props.startAngle + ((props.endAngle - props.startAngle) / 2);
+                            const angleDiff = Math.abs(currentAngle - (-itemMidAngle));
+                            return angleDiff < 15;
+                          });
+                          
+                          // Se há labels próximos, ajusta a posição Y
+                          if (nearbyLabels.length > 0) {
+                            const offset = (index % 2 === 0) ? -15 : 15;
+                            y += offset;
+                          }
+                          
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="hsl(var(--foreground))"
+                              textAnchor={x > cx ? 'start' : 'end'}
+                              dominantBaseline="central"
+                              className="text-sm font-semibold"
+                            >
+                              {`${name}: ${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}
                         outerRadius={120}
                         fill="#8884d8"
                         dataKey="value"
