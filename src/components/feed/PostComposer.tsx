@@ -1048,148 +1048,142 @@ return (
                   <div className="space-y-2 p-4 bg-purple-500/5 rounded-lg border border-purple-500/20">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="allow-invitations"
+                        id="allowInvitations"
                         checked={allowInvitations}
-                        onCheckedChange={(checked) => setAllowInvitations(checked as boolean)}
+                        onCheckedChange={(checked) => setAllowInvitations(checked === true)}
                       />
-                      <Label
-                        htmlFor="allow-invitations"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Permitir convidar amigos?
+                      <Label htmlFor="allowInvitations" className="cursor-pointer font-medium">
+                        Permitir que alunos convidem amigos
                       </Label>
                     </div>
-                    <p className="text-xs text-muted-foreground ml-6">
-                      Quando ativado, os alunos poderão convidar amigos para este evento através de um formulário.
-                    </p>
                   </div>
-
-                {/* Event Capacity Section */}
-                {allowInvitations && (
-                  <div className="space-y-4 p-4 border border-border/50 rounded-lg glass-card animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label className="text-base font-semibold flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          Limitar Participantes
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Defina limites para controlar a capacidade do evento
-                        </p>
-                      </div>
-                      <Switch
-                        checked={eventCapacityEnabled}
-                        onCheckedChange={setEventCapacityEnabled}
-                      />
-                    </div>
-
-                    {eventCapacityEnabled && (
-                      <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2">
-                        {/* Tipo de Limite */}
-                        <div className="space-y-2">
-                          <Label>Tipo de Limite</Label>
-                          <RadioGroup 
-                            value={eventCapacityType} 
-                            onValueChange={(value: 'GLOBAL' | 'PER_STUDENT') => {
-                              setEventCapacityType(value);
-                              // Resetar campo numérico ao trocar tipo
-                              setEventMaxParticipants(null);
-                              setEventMaxGuestsPerStudent(null);
-                            }}
-                          >
-                            <div className="flex items-center space-x-2 p-3 rounded-md border border-border/50 hover:bg-accent/30 transition-colors cursor-pointer">
-                              <RadioGroupItem value="GLOBAL" id="global" />
-                              <Label htmlFor="global" className="flex-1 cursor-pointer">
-                                <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4 text-blue-400" />
-                                  <div>
-                                    <div className="font-medium">Limite Global</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Número máximo total de participantes (alunos + convidados)
-                                    </div>
-                                  </div>
-                                </div>
-                              </Label>
-                            </div>
-                            
-                            <div className="flex items-center space-x-2 p-3 rounded-md border border-border/50 hover:bg-accent/30 transition-colors cursor-pointer">
-                              <RadioGroupItem value="PER_STUDENT" id="per-student" />
-                              <Label htmlFor="per-student" className="flex-1 cursor-pointer">
-                                <div className="flex items-center gap-2">
-                                  <UserPlus className="h-4 w-4 text-purple-400" />
-                                  <div>
-                                    <div className="font-medium">Limite por Aluno</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Cada aluno pode trazer até X convidados
-                                    </div>
-                                  </div>
-                                </div>
-                              </Label>
-                            </div>
-                          </RadioGroup>
+                  
+                  {/* Event Capacity Section */}
+                  {allowInvitations && (
+                    <div className="space-y-4 p-4 border border-border/50 rounded-lg glass-card animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="text-base font-semibold flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Limitar Participantes
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Defina limites para controlar a capacidade do evento
+                          </p>
                         </div>
-
-                        {/* Campo numérico - GLOBAL */}
-                        {eventCapacityType === 'GLOBAL' && (
-                          <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                            <Label htmlFor="max-participants">
-                              Capacidade Máxima Total
-                            </Label>
-                            <Input
-                              id="max-participants"
-                              type="number"
-                              min="1"
-                              placeholder="Ex: 100"
-                              value={eventMaxParticipants || ''}
-                              onChange={(e) => setEventMaxParticipants(parseInt(e.target.value) || null)}
-                              className="bg-background/50 border-border/50"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Total de pessoas que podem participar (confirmações + convidados)
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Campo numérico - PER_STUDENT */}
-                        {eventCapacityType === 'PER_STUDENT' && (
-                          <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                            <Label htmlFor="max-guests">
-                              Máximo de Convidados por Aluno
-                            </Label>
-                            <Input
-                              id="max-guests"
-                              type="number"
-                              min="1"
-                              placeholder="Ex: 2"
-                              value={eventMaxGuestsPerStudent || ''}
-                              onChange={(e) => setEventMaxGuestsPerStudent(parseInt(e.target.value) || null)}
-                              className="bg-background/50 border-border/50"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Quantos amigos cada aluno pode convidar
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Preview do Limite */}
-                        <Alert className="bg-blue-500/10 border-blue-500/30">
-                          <Info className="h-4 w-4 text-blue-400" />
-                          <AlertDescription className="text-sm">
-                            {eventCapacityType === 'GLOBAL' && eventMaxParticipants && (
-                              <>Evento limitado a <strong>{eventMaxParticipants} participantes</strong> no total</>
-                            )}
-                            {eventCapacityType === 'PER_STUDENT' && eventMaxGuestsPerStudent && (
-                              <>Cada aluno poderá trazer até <strong>{eventMaxGuestsPerStudent} convidado(s)</strong></>
-                            )}
-                            {(!eventMaxParticipants && !eventMaxGuestsPerStudent) && (
-                              <span className="text-muted-foreground">Configure o limite acima para ver o resumo</span>
-                            )}
-                          </AlertDescription>
-                        </Alert>
+                        <Switch
+                          checked={eventCapacityEnabled}
+                          onCheckedChange={setEventCapacityEnabled}
+                        />
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      {eventCapacityEnabled && (
+                        <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2">
+                          {/* Tipo de Limite */}
+                          <div className="space-y-2">
+                            <Label>Tipo de Limite</Label>
+                            <RadioGroup 
+                              value={eventCapacityType} 
+                              onValueChange={(value: 'GLOBAL' | 'PER_STUDENT') => {
+                                setEventCapacityType(value);
+                                setEventMaxParticipants(null);
+                                setEventMaxGuestsPerStudent(null);
+                              }}
+                            >
+                              <div className="flex items-center space-x-2 p-3 rounded-md border border-border/50 hover:bg-accent/30 transition-colors cursor-pointer">
+                                <RadioGroupItem value="GLOBAL" id="global" />
+                                <Label htmlFor="global" className="flex-1 cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-blue-400" />
+                                    <div>
+                                      <div className="font-medium">Limite Global</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Número máximo total de participantes (alunos + convidados)
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 p-3 rounded-md border border-border/50 hover:bg-accent/30 transition-colors cursor-pointer">
+                                <RadioGroupItem value="PER_STUDENT" id="per-student" />
+                                <Label htmlFor="per-student" className="flex-1 cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <UserPlus className="h-4 w-4 text-purple-400" />
+                                    <div>
+                                      <div className="font-medium">Limite por Aluno</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Cada aluno pode trazer até X convidados
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+
+                          {/* Campo numérico - GLOBAL */}
+                          {eventCapacityType === 'GLOBAL' && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                              <Label htmlFor="max-participants">
+                                Capacidade Máxima Total
+                              </Label>
+                              <Input
+                                id="max-participants"
+                                type="number"
+                                min="1"
+                                placeholder="Ex: 100"
+                                value={eventMaxParticipants || ''}
+                                onChange={(e) => setEventMaxParticipants(parseInt(e.target.value) || null)}
+                                className="bg-background/50 border-border/50"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Total de pessoas que podem participar (confirmações + convidados)
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Campo numérico - PER_STUDENT */}
+                          {eventCapacityType === 'PER_STUDENT' && (
+                            <div className="space-y-2 animate-in fade-in-from-top-2">
+                              <Label htmlFor="max-guests">
+                                Máximo de Convidados por Aluno
+                              </Label>
+                              <Input
+                                id="max-guests"
+                                type="number"
+                                min="1"
+                                placeholder="Ex: 2"
+                                value={eventMaxGuestsPerStudent || ''}
+                                onChange={(e) => setEventMaxGuestsPerStudent(parseInt(e.target.value) || null)}
+                                className="bg-background/50 border-border/50"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Quantos amigos cada aluno pode convidar
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Preview do Limite */}
+                          <Alert className="bg-blue-500/10 border-blue-500/30">
+                            <Info className="h-4 w-4 text-blue-400" />
+                            <AlertDescription className="text-sm">
+                              {eventCapacityType === 'GLOBAL' && eventMaxParticipants && (
+                                <>Evento limitado a <strong>{eventMaxParticipants} participantes</strong> no total</>
+                              )}
+                              {eventCapacityType === 'PER_STUDENT' && eventMaxGuestsPerStudent && (
+                                <>Cada aluno poderá trazer até <strong>{eventMaxGuestsPerStudent} convidado(s)</strong></>
+                              )}
+                              {(!eventMaxParticipants && !eventMaxGuestsPerStudent) && (
+                                <span className="text-muted-foreground">Configure o limite acima para ver o resumo</span>
+                              )}
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Campos específicos para ATIVIDADE */}

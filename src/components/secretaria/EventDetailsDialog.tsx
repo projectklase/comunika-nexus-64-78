@@ -1,7 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { EventInvitationsTab } from '@/components/secretaria/EventInvitationsTab';
 import { Post } from '@/types/post';
 import { Info, Users, UserPlus, MapPin, Calendar, Clock } from 'lucide-react';
@@ -28,6 +29,10 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
   const eventClasses = event.classIds?.map(classId => 
     classes?.find(c => c.id === classId)
   ).filter(Boolean);
+  
+  const currentParticipants = event.eventCapacityType === 'GLOBAL' 
+    ? (metrics?.confirmationsCount || 0) + (metrics?.invitationsCount || 0)
+    : metrics?.invitationsCount || 0;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,11 +149,11 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
             </TabsContent>
             
             <TabsContent value="confirmations" className="mt-0">
-              <EventInvitationsTab eventId={event.id} eventTitle={event.title} tab="confirmations" />
+              <EventInvitationsTab eventId={event.id} eventTitle={event.title} />
             </TabsContent>
             
             <TabsContent value="invitations" className="mt-0">
-              <EventInvitationsTab eventId={event.id} eventTitle={event.title} tab="invitations" />
+              <EventInvitationsTab eventId={event.id} eventTitle={event.title} />
             </TabsContent>
             
             <TabsContent value="stats" className="mt-0">
@@ -158,7 +163,7 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
                     <CardTitle className="text-sm">Confirmações</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold gradient-text">{confirmations?.length || 0}</div>
+                    <div className="text-3xl font-bold gradient-text">{metrics?.confirmationsCount || 0}</div>
                   </CardContent>
                 </Card>
                 
@@ -167,7 +172,7 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
                     <CardTitle className="text-sm">Convites de Amigos</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold gradient-text">{invitations?.length || 0}</div>
+                    <div className="text-3xl font-bold gradient-text">{metrics?.invitationsCount || 0}</div>
                   </CardContent>
                 </Card>
 
@@ -224,7 +229,7 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
                             {event.eventMaxGuestsPerStudent} convidado(s)
                           </div>
                           <p className="text-xs text-muted-foreground mt-2">
-                            Total de convites: <strong>{invitations?.length || 0}</strong>
+                            Total de convites: <strong>{metrics?.invitationsCount || 0}</strong>
                           </p>
                         </div>
                       )}
@@ -233,11 +238,9 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
                 )}
               </div>
             </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return null;
+          </div>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
 }

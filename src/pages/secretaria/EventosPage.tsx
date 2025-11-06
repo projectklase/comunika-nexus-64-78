@@ -18,6 +18,18 @@ import Papa from 'papaparse';
 import { useEventMetrics } from '@/hooks/useEventMetrics';
 import { useDebounce } from '@/hooks/useDebounce';
 
+// Função helper para calcular participantes
+const calculateCurrentParticipants = (
+  event: Post,
+  metrics: { confirmationsCount: number; invitationsCount: number } | undefined
+): number => {
+  if (!metrics) return 0;
+  if (event.eventCapacityType === 'GLOBAL') {
+    return metrics.confirmationsCount + metrics.invitationsCount;
+  }
+  return metrics.invitationsCount; // PER_STUDENT só conta convites
+};
+
 export default function EventosPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
