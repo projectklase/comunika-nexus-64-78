@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSubjects } from '@/hooks/useSubjects';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -96,14 +96,17 @@ export function QuickCreateSubjectSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[400px] sm:w-[540px]">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md backdrop-blur-xl bg-background/95 border border-white/10">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
             Criar Nova Matéria
-          </SheetTitle>
-        </SheetHeader>
+          </DialogTitle>
+          <DialogDescription>
+            Adicione uma nova matéria para suas turmas
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="mt-6">
           <Form {...form}>
@@ -183,7 +186,7 @@ export function QuickCreateSubjectSheet({
             </form>
           </Form>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
