@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface Modality {
   id: string;
@@ -18,16 +19,25 @@ export interface ModalityFilters {
 }
 
 export function useModalities() {
+  const { currentSchool } = useSchool();
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const loadModalities = async () => {
+    // Bloquear se não tiver escola
+    if (!currentSchool) {
+      setModalities([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('modalities')
         .select('*')
+        .eq('school_id', currentSchool.id)  // ✅ FILTRO CRÍTICO
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -145,7 +155,7 @@ export function useModalities() {
 
   useEffect(() => {
     loadModalities();
-  }, []);
+  }, [currentSchool?.id]);  // ✅ Recarregar quando escola mudar
 
   return {
     modalities,

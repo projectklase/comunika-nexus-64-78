@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface Subject {
   id: string;
@@ -18,16 +19,25 @@ export interface SubjectFilters {
 }
 
 export function useSubjects() {
+  const { currentSchool } = useSchool();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const loadSubjects = async () => {
+    // Bloquear se não tiver escola
+    if (!currentSchool) {
+      setSubjects([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('subjects')
         .select('*')
+        .eq('school_id', currentSchool.id)  // ✅ FILTRO CRÍTICO
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -145,7 +155,7 @@ export function useSubjects() {
 
   useEffect(() => {
     loadSubjects();
-  }, []);
+  }, [currentSchool?.id]);  // ✅ Recarregar quando escola mudar
 
   return {
     subjects,

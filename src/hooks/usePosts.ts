@@ -1,20 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Post, PostFilter } from '@/types/post';
-import { supabase } from '@/integrations/supabase/client'; // Garantindo que estamos usando o caminho correto
+import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 
 // NOVO: Hook refatorado para usar Supabase, com Realtime e função de invalidação
 export function usePosts(filter?: PostFilter) {
+  const { currentSchool } = useSchool();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   // MUDANÇA: A lógica de busca agora está em uma função que podemos chamar quando quisermos
   const fetchPosts = useCallback(async () => {
+    // Bloquear se não tiver escola
+    if (!currentSchool) {
+      setPosts([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      let query = supabase.from('posts').select('*');
+      let query = (supabase as any)
+        .from('posts')
+        .select('*')
+        .eq('school_id', currentSchool.id);  // ✅ FILTRO CRÍTICO
 
       // Aplica os filtros na consulta do Supabase (muito mais eficiente)
       if (filter) {
@@ -72,7 +84,7 @@ export function usePosts(filter?: PostFilter) {
     } finally {
       setIsLoading(false);
     }
-  }, [JSON.stringify(filter)]); // Refaz a busca se os filtros mudarem
+  }, [currentSchool?.id, JSON.stringify(filter)]); // Refaz a busca se os filtros mudarem
 
   // Efeito para a busca inicial
   useEffect(() => {

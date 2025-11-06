@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface Level {
   id: string;
@@ -19,18 +20,27 @@ export interface LevelFilters {
 }
 
 export function useLevels() {
+  const { currentSchool } = useSchool();
   const [levels, setLevels] = useState<Level[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const loadLevels = async () => {
+    // Bloquear se não tiver escola
+    if (!currentSchool) {
+      setLevels([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('levels')
         .select('*')
+        .eq('school_id', currentSchool.id)  // ✅ FILTRO CRÍTICO
         .order('display_order', { ascending: true })
-        .order('name', { ascending: true });
+        .order('name', { ascending: true});
 
       if (error) throw error;
       setLevels(data || []);
@@ -147,7 +157,7 @@ export function useLevels() {
 
   useEffect(() => {
     loadLevels();
-  }, []);
+  }, [currentSchool?.id]);  // ✅ Recarregar quando escola mudar
 
   return {
     levels,

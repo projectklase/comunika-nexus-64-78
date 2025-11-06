@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useSchool } from '@/contexts/SchoolContext';
 
 // Define types locally since the database types file may not be in sync yet
 interface ClassRow {
@@ -57,10 +58,18 @@ export interface ClassWithRelations {
 }
 
 export function useClasses() {
+  const { currentSchool } = useSchool();
   const [classes, setClasses] = useState<ClassWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadClasses = async () => {
+    // Bloquear se não tiver escola
+    if (!currentSchool) {
+      setClasses([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -68,6 +77,7 @@ export function useClasses() {
       const { data: classesData, error: classesError } = await (supabase as any)
         .from('classes')
         .select('*')
+        .eq('school_id', currentSchool.id)  // ✅ FILTRO CRÍTICO
         .order('name');
 
       if (classesError) throw classesError;
@@ -149,7 +159,7 @@ export function useClasses() {
 
   useEffect(() => {
     loadClasses();
-  }, []);
+  }, [currentSchool?.id]);  // ✅ Recarregar quando escola mudar
 
   const createClass = async (data: ClassInsert, subjectIds: string[] = []) => {
     try {
