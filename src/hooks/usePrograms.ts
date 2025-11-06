@@ -2,20 +2,30 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Program, ProgramFilters } from '@/types/curriculum';
 import { toast } from 'sonner';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export function usePrograms() {
+  const { currentSchool } = useSchool();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPrograms = useCallback(async () => {
+    // Bloquear se não tiver escola
+    if (!currentSchool) {
+      setPrograms([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await (supabase as any)
         .from('programs')
         .select('*')
+        .eq('school_id', currentSchool.id)  // ✅ FILTRO CRÍTICO
         .order('created_at', { ascending: false });
 
       if (fetchError) {
@@ -166,7 +176,7 @@ export function usePrograms() {
 
   useEffect(() => {
     fetchPrograms();
-  }, [fetchPrograms]);
+  }, [fetchPrograms, currentSchool?.id]);  // ✅ Recarregar quando escola mudar
 
   return {
     programs,

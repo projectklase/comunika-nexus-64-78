@@ -134,6 +134,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
   loadItems: async () => {
     try {
+      // TODO FASE 7: Adicionar filtro .eq('school_id', currentSchoolId) quando RLS estiver implementado
       const { data, error } = await supabase
         .from('reward_items')
         .select('*')
@@ -233,6 +234,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     try {
       set({ isLoading: true });
       
+      // TODO FASE 7: Filtro por school_id será aplicado via RLS no banco de dados
       const { data, error } = await supabase
         .from('koin_transactions')
         .select(`
@@ -286,6 +288,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     }
 
     try {
+      // TODO FASE 7: Filtro por school_id será aplicado via RLS no banco de dados
       const { data, error } = await supabase
         .from('redemption_requests')
         .select(`
