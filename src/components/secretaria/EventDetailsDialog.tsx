@@ -144,25 +144,100 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
             </TabsContent>
             
             <TabsContent value="confirmations" className="mt-0">
-              <Card className="glass-card">
-                <CardContent className="pt-6">
-                  <EventInvitationsTab 
-                    eventId={event.id} 
-                    eventTitle={event.title}
-                  />
-                </CardContent>
-              </Card>
+              <EventInvitationsTab eventId={event.id} eventTitle={event.title} tab="confirmations" />
             </TabsContent>
             
             <TabsContent value="invitations" className="mt-0">
-              <EventInvitationsTab 
-                eventId={event.id} 
-                eventTitle={event.title}
-              />
+              <EventInvitationsTab eventId={event.id} eventTitle={event.title} tab="invitations" />
             </TabsContent>
-          </div>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
-  );
+            
+            <TabsContent value="stats" className="mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Confirmações</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold gradient-text">{confirmations?.length || 0}</div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Convites de Amigos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold gradient-text">{invitations?.length || 0}</div>
+                  </CardContent>
+                </Card>
+
+                {event.eventCapacityEnabled && (
+                  <Card className="glass-card col-span-full">
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Controle de Capacidade
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Tipo de Limite</div>
+                        <Badge variant="outline" className="gap-1">
+                          {event.eventCapacityType === 'GLOBAL' ? (
+                            <><Users className="h-3 w-3" /> Limite Global</>
+                          ) : (
+                            <><UserPlus className="h-3 w-3" /> Limite por Aluno</>
+                          )}
+                        </Badge>
+                      </div>
+
+                      {event.eventCapacityType === 'GLOBAL' && (
+                        <>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Ocupação</div>
+                            <div className="text-2xl font-bold gradient-text">
+                              {currentParticipants} / {event.eventMaxParticipants}
+                            </div>
+                          </div>
+                          
+                          <Progress 
+                            value={(currentParticipants / (event.eventMaxParticipants || 1)) * 100} 
+                            className="h-2"
+                          />
+                          
+                          <div className="text-xs">
+                            {(event.eventMaxParticipants || 0) - currentParticipants > 0 ? (
+                              <span className="text-muted-foreground">
+                                {(event.eventMaxParticipants || 0) - currentParticipants} vagas disponíveis
+                              </span>
+                            ) : (
+                              <span className="text-red-400 font-medium">⚠️ Evento lotado</span>
+                            )}
+                          </div>
+                        </>
+                      )}
+
+                      {event.eventCapacityType === 'PER_STUDENT' && (
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Limite por Aluno</div>
+                          <div className="text-2xl font-bold gradient-text">
+                            {event.eventMaxGuestsPerStudent} convidado(s)
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Total de convites: <strong>{invitations?.length || 0}</strong>
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return null;
 }

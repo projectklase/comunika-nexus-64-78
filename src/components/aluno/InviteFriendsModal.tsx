@@ -27,15 +27,17 @@ import { InputDate } from '@/components/ui/input-date';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types/post';
-import { Users, Loader2 } from 'lucide-react';
+import { Users, Loader2, Info } from 'lucide-react';
 import { onlyDigits } from '@/lib/validation';
 import { parseDateBR } from '@/lib/date-helpers';
 import { differenceInYears } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEventCapacityValidation, CapacityCheckResult } from '@/hooks/useEventCapacityValidation';
 
 interface InviteFriendsModalProps {
   isOpen: boolean;
@@ -157,6 +159,8 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
   const [showParentData, setShowParentData] = useState(false);
   const [isMinor, setIsMinor] = useState(false);
   const [showInviteMoreDialog, setShowInviteMoreDialog] = useState(false);
+  const [capacityCheck, setCapacityCheck] = useState<CapacityCheckResult | null>(null);
+  const { checkInvitationLimits } = useEventCapacityValidation();
 
   const {
     register,
@@ -201,10 +205,30 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
     }
   }, [friendDob, setValue]);
 
+  // Verificar limites quando modal abre
+  useEffect(() => {
+    if (isOpen && event?.id && studentId) {
+      checkInvitationLimits(event.id, studentId).then(setCapacityCheck);
+    }
+  }, [isOpen, event?.id, studentId, checkInvitationLimits]);
+
   const onSubmit = async (data: InviteFormData) => {
     setIsSubmitting(true);
 
     try {
+      // Validar limites de capacidade ANTES de inserir
+      const limitCheck = await checkInvitationLimits(event.id, studentId);
+      
+      if (!limitCheck.canInvite) {
+        toast({
+          title: 'Limite Atingido',
+          description: limitCheck.reason,
+          variant: 'destructive'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Converter data dd/mm/yyyy para YYYY-MM-DD para o banco
       const dob = parseDateBR(data.friendDob);
       if (!dob) {
@@ -446,12 +470,37 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
             </Collapsible>
           </div>
 
+          {/* Indicador de Capacidade */}
+          {capacityCheck && capacityCheck.max && (
+            <Alert className={cn(
+              "animate-in fade-in slide-in-from-top-2",
+              capacityCheck.canInvite ? "bg-blue-500/10 border-blue-500/30" : "bg-red-500/10 border-red-500/30"
+            )}>
+              <Info className={cn("h-4 w-4", capacityCheck.canInvite ? "text-blue-400" : "text-red-400")} />
+              <AlertDescription>
+                {event.eventCapacityType === 'PER_STUDENT' ? (
+                  capacityCheck.canInvite ? (
+                    <>Você pode convidar até <strong>{capacityCheck.remaining}</strong> amigo(s)</>
+                  ) : (
+                    <span className="text-red-400 font-medium">{capacityCheck.reason}</span>
+                  )
+                ) : (
+                  capacityCheck.canInvite ? (
+                    <>Vagas restantes: <strong>{capacityCheck.remaining}</strong></>
+                  ) : (
+                    <span className="text-red-400 font-medium">{capacityCheck.reason}</span>
+                  )
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="min-w-[160px]">
+            <Button type="submit" disabled={isSubmitting || (capacityCheck && !capacityCheck.canInvite)} className="min-w-[160px]">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

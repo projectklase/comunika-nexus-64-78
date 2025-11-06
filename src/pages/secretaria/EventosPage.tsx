@@ -321,6 +321,7 @@ interface EventCardProps {
 function EventCard({ event, onViewDetails, onCopyLink, onEdit }: EventCardProps) {
   const eventDate = event.eventStartAt ? parseISO(event.eventStartAt) : null;
   const { data: metrics } = useEventMetrics(event.id);
+  const currentParticipants = calculateCurrentParticipants(event, metrics);
   
   const getStatusBadge = () => {
     if (!eventDate) return { label: 'Sem data', variant: 'secondary' as const };
@@ -382,6 +383,28 @@ function EventCard({ event, onViewDetails, onCopyLink, onEdit }: EventCardProps)
             <span>{metrics?.invitationsCount || 0} convites</span>
           </div>
         </div>
+
+        {event.eventCapacityEnabled && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            {event.eventCapacityType === 'GLOBAL' && (
+              <>
+                <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30 gap-1">
+                  <Users className="h-3 w-3" />
+                  {currentParticipants}/{event.eventMaxParticipants}
+                </Badge>
+                {currentParticipants >= (event.eventMaxParticipants || 0) && (
+                  <Badge variant="destructive" className="bg-red-500/20 text-red-400">Lotado</Badge>
+                )}
+              </>
+            )}
+            {event.eventCapacityType === 'PER_STUDENT' && (
+              <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/30 gap-1">
+                <UserPlus className="h-3 w-3" />
+                Máx. {event.eventMaxGuestsPerStudent} por aluno
+              </Badge>
+            )}
+          </div>
+        )}
         
         <div className="flex gap-2 pt-2">
           <Button 

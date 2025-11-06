@@ -52,6 +52,11 @@ export interface Post {
   eventEndAt?: string;      // usado em EVENTO
   eventLocation?: string;   // usado em EVENTO
   allowInvitations?: boolean; // Permite alunos convidarem amigos (apenas EVENTO)
+  // Event capacity control fields
+  eventCapacityEnabled?: boolean;
+  eventCapacityType?: 'GLOBAL' | 'PER_STUDENT' | null;
+  eventMaxParticipants?: number | null;
+  eventMaxGuestsPerStudent?: number | null;
   audience: PostAudience;
   authorName: string;       // ex.: "Secretaria Central"
   authorId?: string;        // ID do autor para RBAC de insights
@@ -79,6 +84,11 @@ export interface PostInput {
   eventEndAt?: string;
   eventLocation?: string;
   allowInvitations?: boolean; // Permite alunos convidarem amigos (apenas EVENTO)
+  // Event capacity control fields
+  eventCapacityEnabled?: boolean;
+  eventCapacityType?: 'GLOBAL' | 'PER_STUDENT' | null;
+  eventMaxParticipants?: number | null;
+  eventMaxGuestsPerStudent?: number | null;
   audience: PostAudience;
   status?: PostStatus;
   publishAt?: string;

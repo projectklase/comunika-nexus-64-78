@@ -857,8 +857,12 @@ export type Database = {
           class_ids: string[] | null
           created_at: string
           due_at: string | null
+          event_capacity_enabled: boolean | null
+          event_capacity_type: string | null
           event_end_at: string | null
           event_location: string | null
+          event_max_guests_per_student: number | null
+          event_max_participants: number | null
           event_start_at: string | null
           id: string
           meta: Json | null
@@ -882,8 +886,12 @@ export type Database = {
           class_ids?: string[] | null
           created_at?: string
           due_at?: string | null
+          event_capacity_enabled?: boolean | null
+          event_capacity_type?: string | null
           event_end_at?: string | null
           event_location?: string | null
+          event_max_guests_per_student?: number | null
+          event_max_participants?: number | null
           event_start_at?: string | null
           id?: string
           meta?: Json | null
@@ -907,8 +915,12 @@ export type Database = {
           class_ids?: string[] | null
           created_at?: string
           due_at?: string | null
+          event_capacity_enabled?: boolean | null
+          event_capacity_type?: string | null
           event_end_at?: string | null
           event_location?: string | null
+          event_max_guests_per_student?: number | null
+          event_max_participants?: number | null
           event_start_at?: string | null
           id?: string
           meta?: Json | null
