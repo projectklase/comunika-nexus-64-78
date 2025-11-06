@@ -94,16 +94,16 @@ export function InviteFriendsSection({
         onClick={() => onInviteFriend(post)}
         disabled={limitReached}
         className={cn(
-          "w-full shadow-md hover:shadow-lg text-xs font-semibold h-9 transition-all",
+          "w-full shadow-md text-xs font-semibold h-9 transition-all",
           limitReached 
-            ? "bg-muted/50 text-muted-foreground cursor-not-allowed hover:bg-muted/50"
-            : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:shadow-purple-500/30"
+            ? "bg-gradient-to-r from-red-900/40 to-orange-900/40 text-red-200 border-2 border-red-500/50 cursor-not-allowed hover:bg-gradient-to-r hover:from-red-900/40 hover:to-orange-900/40 opacity-75"
+            : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:shadow-lg hover:shadow-purple-500/30"
         )}
         size="sm"
       >
         {limitReached ? (
           <>
-            <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
+            <AlertCircle className="h-3.5 w-3.5 mr-1.5 animate-pulse" />
             Limite de Convidados Atingido
           </>
         ) : (
