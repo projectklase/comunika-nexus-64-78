@@ -25,7 +25,7 @@ export interface User {
   avatar?: string;
   phone?: string;
   classId?: string;        // ID da turma principal para exibir nos insights
-  defaultSchoolSlug?: string;
+  currentSchoolId?: string; // UUID da escola ativa atual
   preferences: UserPreferences;
   mustChangePassword?: boolean;
   passwordHash?: string;

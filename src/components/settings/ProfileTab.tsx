@@ -23,7 +23,6 @@ export function ProfileTab() {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    defaultSchoolSlug: user?.defaultSchoolSlug || '',
     avatar: user?.avatar || '',
   });
 
@@ -66,7 +65,6 @@ export function ProfileTab() {
       updateUser({
         name: formData.name,
         phone: formData.phone,
-        defaultSchoolSlug: formData.defaultSchoolSlug,
         avatar: formData.avatar,
       });
 
@@ -90,7 +88,6 @@ export function ProfileTab() {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      defaultSchoolSlug: user?.defaultSchoolSlug || '',
       avatar: user?.avatar || '',
     });
   };
@@ -167,25 +164,6 @@ export function ProfileTab() {
             onChange={(e) => handleInputChange('phone', e.target.value)}
             placeholder="(11) 99999-9999"
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="school">Escola Padrão</Label>
-          <Select 
-            value={formData.defaultSchoolSlug}
-            onValueChange={(value) => handleInputChange('defaultSchoolSlug', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma escola" />
-            </SelectTrigger>
-            <SelectContent>
-              {mockSchools.map((school) => (
-                <SelectItem key={school.slug} value={school.slug}>
-                  {school.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

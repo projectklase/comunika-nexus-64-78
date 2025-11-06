@@ -34,7 +34,8 @@ export function useComposerAutosave(options: AutosaveOptions) {
   const lastSavedData = useRef<ComposerData | null>(null);
   const isInitialized = useRef(false);
   
-  const schoolSlug = user?.defaultSchoolSlug || 'default';
+  // Use escola 'default' para autosave local (não depende de escola ativa)
+  const schoolSlug = 'default';
   const role = user?.role || 'unknown';
 
   // Create debounced save function

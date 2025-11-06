@@ -7,7 +7,8 @@ export function useUserPreferences() {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState<UserComposerPreferences | null>(null);
   
-  const schoolSlug = user?.defaultSchoolSlug || 'default';
+  // Use escola 'default' para preferências locais (não depende de escola ativa)
+  const schoolSlug = 'default';
   const role = user?.role || 'unknown';
 
   useEffect(() => {
@@ -55,7 +56,8 @@ export function useUserTemplates() {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
   
-  const schoolSlug = user?.defaultSchoolSlug || 'default';
+  // Use escola 'default' para templates locais (não depende de escola ativa)
+  const schoolSlug = 'default';
   const role = user?.role || 'unknown';
 
   const loadTemplates = () => {

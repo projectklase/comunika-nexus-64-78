@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SchoolProvider } from "@/contexts/SchoolContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { TeacherGuard } from "@/components/TeacherGuard";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -66,12 +67,13 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <ConditionalNotificationProvider>
-          <ModalManagerProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-          <Routes>
+        <SchoolProvider>
+          <ConditionalNotificationProvider>
+            <ModalManagerProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+            <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -428,10 +430,11 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-          </ModalManagerProvider>
-        </ConditionalNotificationProvider>
+            </Routes>
+          </BrowserRouter>
+            </ModalManagerProvider>
+          </ConditionalNotificationProvider>
+        </SchoolProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

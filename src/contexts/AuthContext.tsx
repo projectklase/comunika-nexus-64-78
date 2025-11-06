@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar: profile.avatar,
         phone: profile.phone,
         classId: profile.class_id,
-        defaultSchoolSlug: profile.default_school_slug,
+        currentSchoolId: (profile as any).current_school_id,
         preferences: (profile.preferences as unknown as UserPreferences) || defaultPreferences,
         mustChangePassword: profile.must_change_password,
       };
@@ -296,17 +296,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       // Update in Supabase profiles table
+      const updateData: any = {
+        name: updates.name,
+        avatar: updates.avatar,
+        phone: updates.phone,
+        class_id: updates.classId,
+        preferences: updates.preferences as any,
+        must_change_password: updates.mustChangePassword,
+      };
+      
+      // Add current_school_id if present
+      if (updates.currentSchoolId) {
+        updateData.current_school_id = updates.currentSchoolId;
+      }
+      
       const { error } = await supabase
         .from('profiles')
-        .update({
-          name: updates.name,
-          avatar: updates.avatar,
-          phone: updates.phone,
-          class_id: updates.classId,
-          default_school_slug: updates.defaultSchoolSlug,
-          preferences: updates.preferences as any,
-          must_change_password: updates.mustChangePassword,
-        })
+        .update(updateData)
         .eq('id', user.id);
 
       if (error) {
