@@ -104,11 +104,13 @@ export function SmartLevelSelect({
                 <div className="p-2">
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-purple-500 hover:text-purple-600 hover:bg-purple-500/10"
+                    className="w-full text-left text-purple-500 hover:text-purple-600 hover:bg-purple-500/10 whitespace-normal h-auto py-2 min-h-[2.5rem]"
                     onClick={handleQuickCreate}
                   >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar nível: "{searchTerm}"
+                    <Plus className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="break-words">
+                      Criar nível: "{searchTerm}"
+                    </span>
                   </Button>
                 </div>
               ) : (

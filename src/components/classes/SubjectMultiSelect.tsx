@@ -102,14 +102,16 @@ export function SubjectMultiSelect({
                   <p className="text-sm text-center text-muted-foreground mb-3">
                     Nenhuma matéria encontrada
                   </p>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-purple-500 hover:text-purple-600 hover:bg-purple-500/10"
-                    onClick={handleQuickCreate}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
+                <Button
+                  variant="outline"
+                  className="w-full text-left text-purple-500 hover:text-purple-600 hover:bg-purple-500/10 whitespace-normal h-auto py-2 min-h-[2.5rem]"
+                  onClick={handleQuickCreate}
+                >
+                  <Plus className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="break-words">
                     Criar matéria: "{searchTerm}"
-                  </Button>
+                  </span>
+                </Button>
                 </div>
               ) : (
                 <div className="p-3 text-center text-muted-foreground">
