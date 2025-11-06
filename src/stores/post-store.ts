@@ -75,6 +75,10 @@ class PostStore {
       meta: row.meta,
       allowInvitations: row.allow_invitations,
       allow_attachments: row.allow_attachments ?? false,
+      eventCapacityEnabled: row.event_capacity_enabled ?? false,
+      eventCapacityType: row.event_capacity_type,
+      eventMaxParticipants: row.event_max_participants,
+      eventMaxGuestsPerStudent: row.event_max_guests_per_student,
     };
   }
 
@@ -175,6 +179,10 @@ class PostStore {
       meta: validation.data.meta,
       allow_invitations: validation.data.allowInvitations,
       allow_attachments: validation.data.allow_attachments ?? false,
+      event_capacity_enabled: validation.data.eventCapacityEnabled ?? false,
+      event_capacity_type: validation.data.eventCapacityType ?? null,
+      event_max_participants: validation.data.eventMaxParticipants ?? null,
+      event_max_guests_per_student: validation.data.eventMaxGuestsPerStudent ?? null,
     };
 
     const { data, error } = await supabase.from("posts").insert([insertData]).select().single();
@@ -287,6 +295,10 @@ class PostStore {
       meta: validation.data.meta,
       allow_invitations: validation.data.allowInvitations,
       allow_attachments: validation.data.allow_attachments,
+      event_capacity_enabled: validation.data.eventCapacityEnabled ?? false,
+      event_capacity_type: validation.data.eventCapacityType ?? null,
+      event_max_participants: validation.data.eventMaxParticipants ?? null,
+      event_max_guests_per_student: validation.data.eventMaxGuestsPerStudent ?? null,
     };
 
     const { data, error } = await supabase.from("posts").update(updateData).eq("id", id).select().single();
@@ -488,6 +500,10 @@ class PostStore {
       audience: post.audience,
       activityMeta: post.activityMeta ? { ...post.activityMeta } : undefined,
       allowInvitations: post.allowInvitations,
+      eventCapacityEnabled: post.eventCapacityEnabled,
+      eventCapacityType: post.eventCapacityType,
+      eventMaxParticipants: post.eventMaxParticipants,
+      eventMaxGuestsPerStudent: post.eventMaxGuestsPerStudent,
     };
   }
 

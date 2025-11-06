@@ -261,6 +261,12 @@ export const validatePostData = (data: any, allowPastOverride = false): Validati
     }
   }
 
+  // Event capacity fields passthrough
+  sanitized.eventCapacityEnabled = data.eventCapacityEnabled ?? false;
+  sanitized.eventCapacityType = data.eventCapacityType ?? null;
+  sanitized.eventMaxParticipants = data.eventMaxParticipants ?? null;
+  sanitized.eventMaxGuestsPerStudent = data.eventMaxGuestsPerStudent ?? null;
+
   return {
     isValid: errors.length === 0,
     data: sanitized,
