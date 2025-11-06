@@ -8,7 +8,7 @@ import { AttachmentGrid } from "@/components/attachments/AttachmentGrid";
 import { PostInsights } from "./PostInsights";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MoreVertical, Calendar, Clock, MapPin, Archive, Copy, Edit, Trash2, Paperclip, Users, Globe, CheckCircle, Upload, FileText, Bookmark, BookmarkCheck, CalendarPlus, Eye, Phone, Star } from "lucide-react";
+import { MoreVertical, Calendar, Clock, MapPin, Archive, Copy, Edit, Trash2, Paperclip, Users, Globe, CheckCircle, Upload, FileText, Bookmark, BookmarkCheck, CalendarPlus, Eye, Phone, Star, UserPlus } from "lucide-react";
 import { Post, PostType } from "@/types/post";
 import { useClassStore } from "@/stores/class-store";
 import { getClassDisplayInfo, resolveSubjectNames } from "@/utils/class-helpers";
@@ -340,11 +340,28 @@ export function PostCard({
                     {delivery.reviewStatus === "DEVOLVIDA" && "Devolvida"}
                     {delivery.isLate && " (Atrasada)"}
                   </Badge>}
-                {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-xs">
+                 {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-xs">
                     Atrasada
                   </Badge>}
-              </div>
-            </div>
+                 
+                 {/* Badge de Limite de Convites - Só aparece para eventos com limite */}
+                 {post.type === "EVENTO" && post.eventCapacityEnabled && (
+                   <Badge variant="outline" className="text-xs gap-1 bg-purple-500/10 text-purple-300 border-purple-500/30">
+                     {post.eventCapacityType === 'PER_STUDENT' ? (
+                       <>
+                         <UserPlus className="h-3 w-3" />
+                         Limite: {post.eventMaxGuestsPerStudent} por aluno
+                       </>
+                     ) : (
+                       <>
+                         <Users className="h-3 w-3" />
+                         Capacidade: {post.eventMaxParticipants}
+                       </>
+                     )}
+                   </Badge>
+                 )}
+               </div>
+             </div>
 
             {canEdit && <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -31,13 +31,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types/post';
-import { Users, Loader2, Info } from 'lucide-react';
+import { Users, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { onlyDigits } from '@/lib/validation';
 import { parseDateBR } from '@/lib/date-helpers';
 import { differenceInYears } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEventCapacityValidation, CapacityCheckResult } from '@/hooks/useEventCapacityValidation';
+import { useStudentInvitationsCount } from '@/hooks/useStudentInvitationsCount';
+import { Progress } from '@/components/ui/progress';
 
 interface InviteFriendsModalProps {
   isOpen: boolean;
@@ -161,6 +163,9 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
   const [showInviteMoreDialog, setShowInviteMoreDialog] = useState(false);
   const [capacityCheck, setCapacityCheck] = useState<CapacityCheckResult | null>(null);
   const { checkInvitationLimits } = useEventCapacityValidation();
+  
+  // Hook para contar convites do aluno
+  const { data: invitationsCount, refetch: refetchInvitationsCount } = useStudentInvitationsCount(event.id, studentId);
 
   const {
     register,
@@ -263,6 +268,9 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
       // ✅ Invalidar queries de desafios E métricas
       queryClient.invalidateQueries({ queryKey: ['student_challenges'] });
       queryClient.invalidateQueries({ queryKey: ['event-metrics', event.id] });
+      
+      // Atualizar contador de convites do aluno
+      await refetchInvitationsCount();
 
       // ✅ Atualizar capacityCheck imediatamente
       const updatedCheck = await checkInvitationLimits(event.id, studentId);
@@ -326,6 +334,52 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
             Preencha os dados do amigo e responsável para enviar o convite.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Contador de Convites - Só aparece se houver limite configurado */}
+        {capacityCheck && capacityCheck.max && (
+          <div className="px-6 py-4 border-b border-border/50 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                Seus convites para este evento
+              </span>
+              <Badge variant={
+                !capacityCheck.canInvite 
+                  ? "destructive" 
+                  : capacityCheck.remaining && capacityCheck.remaining <= 1 
+                    ? "secondary" 
+                    : "default"
+              }>
+                {capacityCheck.canInvite ? (
+                  <>Restam {capacityCheck.remaining}</>
+                ) : (
+                  <>Limite atingido</>
+                )}
+              </Badge>
+            </div>
+
+            {/* Barra de Progresso */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-bold text-primary text-lg">
+                  {capacityCheck.current}/{capacityCheck.max}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {event.eventCapacityType === 'PER_STUDENT' 
+                    ? 'convidados por você' 
+                    : 'vagas totais'}
+                </span>
+              </div>
+              <Progress 
+                value={(capacityCheck.current || 0) / (capacityCheck.max || 1) * 100}
+                className={cn(
+                  "h-2",
+                  !capacityCheck.canInvite && "bg-destructive/20",
+                  capacityCheck.remaining && capacityCheck.remaining <= 1 && "bg-secondary/20"
+                )}
+              />
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Nome do Amigo */}
@@ -488,55 +542,76 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
             </Collapsible>
           </div>
 
-          {/* Indicador de Capacidade */}
-          {capacityCheck && capacityCheck.max && (
+          {/* Indicador de Capacidade - Versão Melhorada */}
+          {capacityCheck && capacityCheck.max ? (
             <Alert className={cn(
-              "animate-in fade-in slide-in-from-top-2",
+              "animate-in fade-in slide-in-from-top-2 border-2",
               !capacityCheck.canInvite 
-                ? "bg-red-500/10 border-red-500/30" 
+                ? "bg-destructive/20 border-destructive/50" 
                 : capacityCheck.remaining && capacityCheck.remaining <= 1
-                  ? "bg-amber-500/10 border-amber-500/30"
+                  ? "bg-secondary/20 border-secondary/50"
                   : "bg-blue-500/10 border-blue-500/30"
             )}>
               <Info className={cn(
-                "h-4 w-4", 
+                "h-5 w-5", 
                 !capacityCheck.canInvite 
-                  ? "text-red-400" 
+                  ? "text-destructive" 
                   : capacityCheck.remaining && capacityCheck.remaining <= 1
-                    ? "text-amber-400"
+                    ? "text-secondary-foreground"
                     : "text-blue-400"
               )} />
-              <AlertDescription>
+              <AlertDescription className="text-base">
                 {event.eventCapacityType === 'PER_STUDENT' ? (
                   capacityCheck.canInvite ? (
-                    <>
-                      Você pode convidar até <strong>{capacityCheck.remaining}</strong> amigo(s)
+                    <div>
+                      <p className="font-semibold mb-1">
+                        Você pode convidar mais <strong className="text-lg text-primary">{capacityCheck.remaining}</strong> amigo(s)
+                      </p>
                       {capacityCheck.remaining === 1 && (
-                        <span className="block mt-1 text-amber-400 text-xs font-medium">
-                          ⚠️ Esta é sua última vaga!
-                        </span>
+                        <p className="text-secondary-foreground text-sm font-medium flex items-center gap-1 mt-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Este é seu último convite disponível!
+                        </p>
                       )}
-                    </>
+                    </div>
                   ) : (
-                    <span className="text-red-400 font-medium">{capacityCheck.reason}</span>
+                    <div>
+                      <p className="text-destructive font-bold text-lg mb-1">
+                        🚫 Limite Máximo Atingido
+                      </p>
+                      <p className="text-sm">
+                        Você já convidou {capacityCheck.max} amigo(s) para este evento.
+                        Este é o limite definido pela secretaria.
+                      </p>
+                    </div>
                   )
                 ) : (
                   capacityCheck.canInvite ? (
-                    <>
-                      Vagas restantes: <strong>{capacityCheck.remaining}</strong>
+                    <div>
+                      <p className="font-semibold mb-1">
+                        Vagas restantes no evento: <strong className="text-lg text-primary">{capacityCheck.remaining}</strong>
+                      </p>
                       {capacityCheck.remaining && capacityCheck.remaining <= 3 && (
-                        <span className="block mt-1 text-amber-400 text-xs font-medium">
-                          ⚠️ Poucas vagas disponíveis!
-                        </span>
+                        <p className="text-secondary-foreground text-sm font-medium flex items-center gap-1 mt-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Poucas vagas disponíveis no evento!
+                        </p>
                       )}
-                    </>
+                    </div>
                   ) : (
-                    <span className="text-red-400 font-medium">{capacityCheck.reason}</span>
+                    <div>
+                      <p className="text-destructive font-bold text-lg mb-1">
+                        🚫 Evento Lotado
+                      </p>
+                      <p className="text-sm">
+                        Este evento atingiu a capacidade máxima de {capacityCheck.max} participantes.
+                      </p>
+                    </div>
                   )
                 )}
               </AlertDescription>
             </Alert>
-          )}
+          ) : null}
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
