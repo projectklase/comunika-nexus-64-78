@@ -260,8 +260,13 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
         description: `${data.friendName} foi convidado(a) para o evento.`,
       });
 
-      // ✅ Invalidar queries de desafios para atualizar UI
+      // ✅ Invalidar queries de desafios E métricas
       queryClient.invalidateQueries({ queryKey: ['student_challenges'] });
+      queryClient.invalidateQueries({ queryKey: ['event-metrics', event.id] });
+
+      // ✅ Atualizar capacityCheck imediatamente
+      const updatedCheck = await checkInvitationLimits(event.id, studentId);
+      setCapacityCheck(updatedCheck);
 
       // Mostrar dialog para convidar mais amigos
       setShowInviteMoreDialog(true);
@@ -277,13 +282,26 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
     }
   };
 
-  const handleInviteMore = () => {
+  const handleInviteMore = async () => {
     reset();
     setCalculatedAge(null);
     setShowParentData(false);
     setIsMinor(false);
     setShowInviteMoreDialog(false);
-    // Modal permanece aberto para novo convite
+    
+    // ✅ Revalidar limites após resetar o formulário
+    const updatedCheck = await checkInvitationLimits(event.id, studentId);
+    setCapacityCheck(updatedCheck);
+    
+    // ✅ Se limite atingido, fechar modal e mostrar aviso
+    if (!updatedCheck.canInvite) {
+      toast({
+        title: 'Limite de Convites Atingido',
+        description: updatedCheck.reason,
+        variant: 'default'
+      });
+      onClose(); // Fechar modal
+    }
   };
 
   const handleFinishInviting = () => {
@@ -474,19 +492,44 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
           {capacityCheck && capacityCheck.max && (
             <Alert className={cn(
               "animate-in fade-in slide-in-from-top-2",
-              capacityCheck.canInvite ? "bg-blue-500/10 border-blue-500/30" : "bg-red-500/10 border-red-500/30"
+              !capacityCheck.canInvite 
+                ? "bg-red-500/10 border-red-500/30" 
+                : capacityCheck.remaining && capacityCheck.remaining <= 1
+                  ? "bg-amber-500/10 border-amber-500/30"
+                  : "bg-blue-500/10 border-blue-500/30"
             )}>
-              <Info className={cn("h-4 w-4", capacityCheck.canInvite ? "text-blue-400" : "text-red-400")} />
+              <Info className={cn(
+                "h-4 w-4", 
+                !capacityCheck.canInvite 
+                  ? "text-red-400" 
+                  : capacityCheck.remaining && capacityCheck.remaining <= 1
+                    ? "text-amber-400"
+                    : "text-blue-400"
+              )} />
               <AlertDescription>
                 {event.eventCapacityType === 'PER_STUDENT' ? (
                   capacityCheck.canInvite ? (
-                    <>Você pode convidar até <strong>{capacityCheck.remaining}</strong> amigo(s)</>
+                    <>
+                      Você pode convidar até <strong>{capacityCheck.remaining}</strong> amigo(s)
+                      {capacityCheck.remaining === 1 && (
+                        <span className="block mt-1 text-amber-400 text-xs font-medium">
+                          ⚠️ Esta é sua última vaga!
+                        </span>
+                      )}
+                    </>
                   ) : (
                     <span className="text-red-400 font-medium">{capacityCheck.reason}</span>
                   )
                 ) : (
                   capacityCheck.canInvite ? (
-                    <>Vagas restantes: <strong>{capacityCheck.remaining}</strong></>
+                    <>
+                      Vagas restantes: <strong>{capacityCheck.remaining}</strong>
+                      {capacityCheck.remaining && capacityCheck.remaining <= 3 && (
+                        <span className="block mt-1 text-amber-400 text-xs font-medium">
+                          ⚠️ Poucas vagas disponíveis!
+                        </span>
+                      )}
+                    </>
                   ) : (
                     <span className="text-red-400 font-medium">{capacityCheck.reason}</span>
                   )
