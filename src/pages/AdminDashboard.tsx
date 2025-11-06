@@ -151,66 +151,78 @@ export default function AdminDashboard() {
   }) => {
     const variantStyles = {
       default: {
-        border: 'border-cyan-500/30',
-        shadow: 'shadow-[0_0_15px_rgba(0,217,255,0.2)]',
-        icon: 'text-cyan-400',
-        value: 'text-cyan-400',
-        glow: 'group-hover:shadow-[0_0_25px_rgba(0,217,255,0.4)]'
+        border: 'border-purple-500/30',
+        shadow: 'shadow-lg hover:shadow-2xl hover:shadow-purple-500/20',
+        icon: 'text-purple-400',
+        value: 'text-purple-500',
+        glow: 'hover:border-purple-500/60',
+        gradient: 'bg-gradient-to-br from-purple-500/20 to-blue-500/20'
       },
       success: {
         border: 'border-green-500/30',
-        shadow: 'shadow-[0_0_15px_rgba(0,255,65,0.2)]',
+        shadow: 'shadow-lg hover:shadow-2xl hover:shadow-green-500/20',
         icon: 'text-green-400',
-        value: 'text-green-400',
-        glow: 'group-hover:shadow-[0_0_25px_rgba(0,255,65,0.4)]'
+        value: 'text-green-500',
+        glow: 'hover:border-green-500/60',
+        gradient: 'bg-gradient-to-br from-green-500/20 to-emerald-500/20'
       },
       warning: {
         border: 'border-amber-500/30',
-        shadow: 'shadow-[0_0_15px_rgba(255,165,0,0.2)]',
+        shadow: 'shadow-lg hover:shadow-2xl hover:shadow-amber-500/20',
         icon: 'text-amber-400',
-        value: 'text-amber-400',
-        glow: 'group-hover:shadow-[0_0_25px_rgba(255,165,0,0.4)]'
+        value: 'text-amber-500',
+        glow: 'hover:border-amber-500/60',
+        gradient: 'bg-gradient-to-br from-amber-500/20 to-orange-500/20'
       },
       danger: {
         border: 'border-red-500/30',
-        shadow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]',
+        shadow: 'shadow-lg hover:shadow-2xl hover:shadow-red-500/20',
         icon: 'text-red-400',
-        value: 'text-red-400',
-        glow: 'group-hover:shadow-[0_0_25px_rgba(239,68,68,0.4)]'
+        value: 'text-red-500',
+        glow: 'hover:border-red-500/60',
+        gradient: 'bg-gradient-to-br from-red-500/20 to-pink-500/20'
       }
     };
 
     const styles = variantStyles[variant];
 
   return (
-    <div className={`group relative bg-slate-950/50 backdrop-blur-sm rounded-lg border ${styles.border} ${styles.shadow} ${styles.glow} transition-all duration-300 ease-out hover:scale-110 hover:-translate-y-2 hover:z-20 cursor-pointer p-5`}>
-      {/* Background pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(0,255,65,0.05),transparent)] pointer-events-none" />
+    <div className={`group relative rounded-2xl overflow-hidden
+                     backdrop-blur-md ${styles.gradient}
+                     border-2 ${styles.border} ${styles.glow}
+                     ${styles.shadow}
+                     transition-all duration-500 hover:scale-102 hover:-translate-y-2
+                     cursor-pointer p-5`}>
+      {/* Efeito de partículas */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className={`absolute top-0 left-0 w-16 h-16 ${styles.value} opacity-20 rounded-full blur-xl animate-pulse`} />
+        <div className={`absolute bottom-0 right-0 w-20 h-20 ${styles.value} opacity-10 rounded-full blur-2xl animate-ping`} />
+      </div>
       
-      {/* Content */}
+      {/* Conteúdo */}
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-1 group-hover:text-slate-400 transition-colors">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1 group-hover:text-foreground transition-colors">
               {title}
             </p>
-            <div className={`text-4xl font-mono font-bold ${styles.value} tracking-tight group-hover:scale-105 transition-transform origin-left`}>
+            <div className={`text-4xl font-bold ${styles.value} tracking-tight group-hover:scale-105 transition-transform origin-left`}>
               {value}
             </div>
           </div>
-          <Icon className={`h-5 w-5 ${styles.icon} opacity-70 group-hover:opacity-100 group-hover:scale-125 transition-all`} strokeWidth={1.5} />
+          <Icon className={`h-5 w-5 ${styles.icon} opacity-70 group-hover:opacity-100 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300`} strokeWidth={1.5} />
         </div>
         
         {description && (
-          <p className="text-[11px] font-mono text-slate-400 border-t border-slate-800 pt-3 mt-3 group-hover:text-slate-300 transition-colors">
+          <p className="text-xs text-muted-foreground border-t border-white/10 pt-3 mt-3 group-hover:text-foreground/80 transition-colors">
             {description}
           </p>
         )}
         
         {trend && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800">
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10">
             <TrendingUp className={`h-3 w-3 ${styles.icon}`} />
-            <span className={`text-xs font-mono ${styles.icon}`}>{trend}</span>
+            <span className={`text-xs font-medium ${styles.icon}`}>{trend}</span>
           </div>
         )}
       </div>
@@ -220,14 +232,14 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black p-6 space-y-8">
+      <div className="min-h-screen bg-background p-8 space-y-8 max-w-7xl mx-auto">
         <div className="space-y-3">
-          <Skeleton className="h-10 w-96 bg-slate-900" />
-          <Skeleton className="h-4 w-64 bg-slate-900" />
+          <Skeleton className="h-12 w-96 mx-auto" />
+          <Skeleton className="h-6 w-64 mx-auto" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-32 bg-slate-900 rounded-lg" />
+            <Skeleton key={i} className="h-40 rounded-2xl" />
           ))}
         </div>
       </div>
@@ -254,32 +266,23 @@ export default function AdminDashboard() {
     : '0';
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-8 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background p-8 space-y-12 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="space-y-3 pb-4 border-b border-green-500/20">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-4xl font-mono font-bold tracking-tight text-white uppercase">
-              <span className="text-green-400">///</span> Dashboard Administrativo
-            </h1>
-            <p className="text-xs font-mono uppercase tracking-wider text-slate-500">
-              Sistema de Monitoramento
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-mono font-bold text-green-400">
-              {format(new Date(), 'HH:mm:ss')}
-            </div>
-            <p className="text-xs font-mono text-slate-500 uppercase">
-              {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
-            </p>
-          </div>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex-1 text-center">
+          <h1 className="text-4xl font-bold gradient-text">Dashboard Administrativo</h1>
+          <p className="text-muted-foreground mt-2 text-lg">
+            Sistema de monitoramento e gestão
+          </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <span className="text-green-400 uppercase">Online</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-400">Última atualização: {format(new Date(), 'HH:mm', { locale: ptBR })}</span>
+        
+        <div className="text-right">
+          <div className="text-2xl font-bold text-purple-500">
+            {format(new Date(), 'HH:mm:ss')}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
+          </p>
         </div>
       </div>
 
@@ -320,10 +323,8 @@ export default function AdminDashboard() {
 
       {/* Métricas de Entregas */}
       <div className="space-y-4">
-        <h2 className="text-xs font-mono uppercase tracking-widest text-green-400 flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-green-500/50 to-transparent" />
-          <span>Status de Entregas</span>
-          <div className="h-px flex-1 bg-gradient-to-l from-green-500/50 to-transparent" />
+        <h2 className="text-lg font-bold text-foreground">
+          Status de Entregas
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -353,12 +354,12 @@ export default function AdminDashboard() {
         </div>
         
         {/* Barra de proporção visual */}
-        <div className="bg-slate-950/50 backdrop-blur-sm rounded-lg border border-slate-800 p-4">
+        <div className="rounded-2xl backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 border-2 border-purple-500/30 p-5 shadow-lg">
           <div className="flex items-center gap-2 mb-3">
-            <Activity className="h-4 w-4 text-cyan-400" />
-            <span className="text-xs font-mono uppercase text-slate-400">Distribuição</span>
+            <Activity className="h-5 w-5 text-purple-400" />
+            <span className="text-sm font-semibold text-foreground">Distribuição</span>
           </div>
-          <div className="flex h-3 rounded-full overflow-hidden bg-slate-900">
+          <div className="flex h-4 rounded-full overflow-hidden bg-white/5 shadow-inner">
             <div 
               className="bg-green-500 transition-all" 
               style={{ width: `${metrics.totalDeliveries > 0 ? (metrics.approvedDeliveries / metrics.totalDeliveries) * 100 : 0}%` }}
@@ -372,7 +373,7 @@ export default function AdminDashboard() {
               style={{ width: `${metrics.totalDeliveries > 0 ? (metrics.rejectedDeliveries / metrics.totalDeliveries) * 100 : 0}%` }}
             />
           </div>
-          <div className="flex justify-between mt-3 text-[10px] font-mono">
+          <div className="flex justify-between mt-4 text-xs font-medium">
             <span className="text-green-400">{metrics.approvedDeliveries} aprovadas</span>
             <span className="text-amber-400">{metrics.pendingDeliveries} pendentes</span>
             <span className="text-red-400">{metrics.rejectedDeliveries} rejeitadas</span>
@@ -408,33 +409,33 @@ export default function AdminDashboard() {
       </div>
 
       {/* Atividade Recente */}
-      <div className="bg-slate-950/50 backdrop-blur-sm rounded-lg border border-slate-800 p-6">
-        <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-800">
+      <div className="rounded-2xl backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 border-2 border-purple-500/30 p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <Activity className="h-5 w-5 text-green-400" />
-            <h2 className="text-sm font-mono uppercase tracking-wider text-white">
-              System Activity Log
+            <Activity className="h-5 w-5 text-purple-400" />
+            <h2 className="text-lg font-bold text-foreground">
+              Atividades Recentes
             </h2>
           </div>
-          <Badge variant="outline" className="font-mono text-[10px] border-green-500/30 text-green-400">
+          <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
             {metrics.recentAudits.length} eventos
           </Badge>
         </div>
         
         <ScrollArea className="h-[400px]">
-          <div className="space-y-2 font-mono text-xs">
+          <div className="space-y-2 text-xs">
             {metrics.recentAudits.length === 0 ? (
-              <div className="text-center py-12 text-slate-600">
+              <div className="text-center py-12 text-muted-foreground">
                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                <p className="uppercase tracking-wider">No events logged</p>
+                <p>Nenhum evento registrado</p>
               </div>
             ) : (
               metrics.recentAudits.map((audit) => {
                 const actionColor = 
                   audit.action.includes('CREATE') ? 'text-green-400' :
-                  audit.action.includes('UPDATE') ? 'text-cyan-400' :
+                  audit.action.includes('UPDATE') ? 'text-blue-400' :
                   audit.action.includes('DELETE') ? 'text-red-400' :
-                  'text-slate-400';
+                  'text-muted-foreground';
                 
                 const actionIcon = 
                   audit.action.includes('CREATE') ? '●' :
@@ -445,21 +446,21 @@ export default function AdminDashboard() {
                 return (
             <div 
               key={audit.id}
-              className="flex items-start gap-3 p-3 mx-2 rounded border border-slate-800/50 bg-slate-900/20 hover:bg-slate-900/40 hover:scale-[1.03] hover:-translate-y-1 hover:z-10 hover:border-slate-700 transition-all duration-200 ease-out cursor-pointer group origin-center"
+              className="flex items-start gap-3 p-3 mx-2 rounded-xl border border-white/10 bg-gradient-to-r from-white/5 to-transparent hover:bg-white/10 hover:scale-[1.02] hover:-translate-y-1 hover:border-white/20 transition-all duration-300 cursor-pointer group shadow-sm"
             >
-              <span className={`${actionColor} mt-0.5`}>{actionIcon}</span>
+              <span className={`${actionColor} mt-0.5 text-lg`}>{actionIcon}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-white group-hover:text-cyan-300 transition-colors">{audit.actor_name}</span>
-                  <Badge variant="outline" className="text-[9px] border-slate-700 text-slate-400 uppercase">
+                  <span className="text-foreground group-hover:text-purple-300 transition-colors">{audit.actor_name}</span>
+                  <Badge variant="outline" className="text-[9px] border-white/20 text-muted-foreground uppercase">
                     {audit.actor_role}
                   </Badge>
                 </div>
-                <p className="text-slate-400 group-hover:text-slate-300 text-[11px] transition-colors">
+                <p className="text-muted-foreground group-hover:text-foreground/80 text-xs transition-colors">
                   {audit.action.replace(/_/g, ' ').toLowerCase()} → {audit.entity_label || audit.entity}
                 </p>
               </div>
-              <span className="text-[10px] text-slate-600 group-hover:text-slate-500 transition-colors whitespace-nowrap">
+              <span className="text-[10px] text-muted-foreground group-hover:text-foreground/60 transition-colors whitespace-nowrap">
                 {format(new Date(audit.at), 'HH:mm:ss')}
               </span>
             </div>
