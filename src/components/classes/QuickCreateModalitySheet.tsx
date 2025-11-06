@@ -37,12 +37,14 @@ interface QuickCreateModalitySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onModalityCreated?: (modalityId: string) => void;
+  initialName?: string;
 }
 
 export function QuickCreateModalitySheet({ 
   open, 
   onOpenChange,
-  onModalityCreated 
+  onModalityCreated,
+  initialName 
 }: QuickCreateModalitySheetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { createModality, modalities } = useModalities();
@@ -56,6 +58,13 @@ export function QuickCreateModalitySheet({
       description: '',
     },
   });
+
+  // Pré-preencher nome quando initialName mudar
+  React.useEffect(() => {
+    if (open && initialName) {
+      form.setValue('name', initialName);
+    }
+  }, [open, initialName, form]);
 
   const onSubmit = async (data: ModalityFormData) => {
     setIsLoading(true);

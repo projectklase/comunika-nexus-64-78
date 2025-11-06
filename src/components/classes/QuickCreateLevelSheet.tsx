@@ -38,12 +38,14 @@ interface QuickCreateLevelSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLevelCreated?: (levelId: string) => void;
+  initialName?: string;
 }
 
 export function QuickCreateLevelSheet({ 
   open, 
   onOpenChange,
-  onLevelCreated 
+  onLevelCreated,
+  initialName 
 }: QuickCreateLevelSheetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { createLevel, levels } = useLevels();
@@ -58,6 +60,13 @@ export function QuickCreateLevelSheet({
       description: '',
     },
   });
+
+  // Pré-preencher nome quando initialName mudar
+  React.useEffect(() => {
+    if (open && initialName) {
+      form.setValue('name', initialName);
+    }
+  }, [open, initialName, form]);
 
   const onSubmit = async (data: LevelFormData) => {
     setIsLoading(true);

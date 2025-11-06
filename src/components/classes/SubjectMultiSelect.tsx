@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 
 type Subject = { 
   id: string; 
@@ -15,6 +16,8 @@ import {
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { X, ChevronDown } from 'lucide-react';
+import { QuickCreateSubjectSheet } from './QuickCreateSubjectSheet';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubjectMultiSelectProps {
   subjects: Subject[];
@@ -29,6 +32,8 @@ export function SubjectMultiSelect({
 }: SubjectMultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const { toast } = useToast();
 
   const filteredSubjects = subjects.filter(subject =>
     subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -46,6 +51,21 @@ export function SubjectMultiSelect({
 
   const handleRemoveSubject = (subjectId: string) => {
     onSelectionChange(selectedIds.filter(id => id !== subjectId));
+  };
+
+  const handleQuickCreate = () => {
+    setOpen(false);
+    setShowCreateSheet(true);
+  };
+
+  const handleSubjectCreated = (subjectId: string) => {
+    onSelectionChange([...selectedIds, subjectId]);
+    setShowCreateSheet(false);
+    setSearchTerm('');
+    toast({
+      title: "Matéria criada!",
+      description: "A matéria foi criada e adicionada à seleção.",
+    });
   };
 
   return (
@@ -77,9 +97,25 @@ export function SubjectMultiSelect({
           </div>
           <div className="max-h-60 overflow-y-auto">
             {filteredSubjects.length === 0 ? (
-              <div className="p-3 text-center text-muted-foreground">
-                Nenhuma matéria encontrada
-              </div>
+              searchTerm.trim() ? (
+                <div className="p-3">
+                  <p className="text-sm text-center text-muted-foreground mb-3">
+                    Nenhuma matéria encontrada
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-purple-500 hover:text-purple-600 hover:bg-purple-500/10"
+                    onClick={handleQuickCreate}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar matéria: "{searchTerm}"
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-3 text-center text-muted-foreground">
+                  Nenhuma matéria encontrada
+                </div>
+              )
             ) : (
               filteredSubjects.map((subject) => (
                 <div 
@@ -128,6 +164,13 @@ export function SubjectMultiSelect({
           </div>
         </div>
       )}
+
+      <QuickCreateSubjectSheet
+        open={showCreateSheet}
+        onOpenChange={setShowCreateSheet}
+        onSubjectCreated={handleSubjectCreated}
+        initialName={searchTerm}
+      />
     </div>
   );
 }

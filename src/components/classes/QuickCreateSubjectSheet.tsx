@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,12 +22,14 @@ interface QuickCreateSubjectSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubjectCreated?: (subjectId: string) => void;
+  initialName?: string;
 }
 
 export function QuickCreateSubjectSheet({ 
   open, 
   onOpenChange, 
-  onSubjectCreated 
+  onSubjectCreated,
+  initialName 
 }: QuickCreateSubjectSheetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -41,6 +43,13 @@ export function QuickCreateSubjectSheet({
       description: '',
     },
   });
+
+  // Pré-preencher nome quando initialName mudar
+  React.useEffect(() => {
+    if (open && initialName) {
+      form.setValue('name', initialName);
+    }
+  }, [open, initialName, form]);
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);

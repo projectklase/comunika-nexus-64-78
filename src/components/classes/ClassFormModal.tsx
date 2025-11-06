@@ -13,6 +13,8 @@ import { CatalogEmptyState } from './CatalogEmptyState';
 import { QuickCreateLevelSheet } from './QuickCreateLevelSheet';
 import { QuickCreateModalitySheet } from './QuickCreateModalitySheet';
 import { QuickCreateSubjectSheet } from './QuickCreateSubjectSheet';
+import { SmartLevelSelect } from './SmartLevelSelect';
+import { SmartModalitySelect } from './SmartModalitySelect';
 import { TeacherCombobox } from './TeacherCombobox';
 import {
   Dialog,
@@ -418,20 +420,19 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nível *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="glass-input">
-                            <SelectValue placeholder="Selecione o nível" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="glass-card z-50 bg-background">
-                          {activeLevels.map(level => (
-                            <SelectItem key={level.id} value={level.id}>
-                              {level.name} {level.code && `(${level.code})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SmartLevelSelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          levels={activeLevels}
+                          onLevelCreated={() => {
+                            toast({
+                              title: "Nível criado!",
+                              description: "O nível foi criado e selecionado.",
+                            });
+                          }}
+                        />
+                      </FormControl>
                       <p className="text-xs text-muted-foreground mt-1">
                         Define a faixa etária ou ano escolar
                       </p>
@@ -446,20 +447,19 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Modalidade *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="glass-input">
-                            <SelectValue placeholder="Selecione a modalidade" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="glass-card z-50 bg-background">
-                          {activeModalities.map(modality => (
-                            <SelectItem key={modality.id} value={modality.id}>
-                              {modality.name} {modality.code && `(${modality.code})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SmartModalitySelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          modalities={activeModalities}
+                          onModalityCreated={() => {
+                            toast({
+                              title: "Modalidade criada!",
+                              description: "A modalidade foi criada e selecionada.",
+                            });
+                          }}
+                        />
+                      </FormControl>
                       <p className="text-xs text-muted-foreground mt-1">
                         Define a carga horária semanal
                       </p>
