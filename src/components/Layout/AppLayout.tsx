@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SchoolSwitcher } from '@/components/SchoolSwitcher';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             <div className="flex items-center gap-4">
+              <SchoolSwitcher />
               <NotificationPanel />
               
               <DropdownMenu>
