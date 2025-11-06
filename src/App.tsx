@@ -57,6 +57,7 @@ import RewardsManagement from "./pages/Secretaria/RewardsManagement";
 import ChallengesManagement from "./pages/Secretaria/ChallengesManagement";
 import SecretariasPage from "./pages/admin/SecretariasPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
+import EventosPage from "./pages/secretaria/EventosPage";
 
 const queryClient = new QueryClient();
 
@@ -410,6 +411,13 @@ const App = () => (
               <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
                 <AppLayout>
                   <ChallengesManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/secretaria/eventos" element={
+              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
+                <AppLayout>
+                  <EventosPage />
                 </AppLayout>
               </ProtectedRoute>
             } />

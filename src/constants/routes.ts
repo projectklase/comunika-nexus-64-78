@@ -21,6 +21,7 @@ export const ROUTES = {
     CLASSES: '/secretaria/turmas',
     DASHBOARD: '/dashboard',
     FEED: '/secretaria/feed',
+    EVENTOS: '/secretaria/eventos',
     HISTORICO: '/secretaria/historico',
     NOVO_POST: '/novo-post',
     NOTIFICACOES: '/secretaria/notificacoes',
