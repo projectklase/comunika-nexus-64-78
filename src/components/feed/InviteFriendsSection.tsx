@@ -6,7 +6,7 @@ import { StudentInvitationsList } from '@/components/aluno/StudentInvitationsLis
 import { useStudentInvitationsCount } from '@/hooks/useStudentInvitationsCount';
 import { useEventCapacityValidation } from '@/hooks/useEventCapacityValidation';
 import { Post } from '@/types/post';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface InviteFriendsSectionProps {
@@ -24,18 +24,31 @@ export function InviteFriendsSection({
   const { data: invitationsCount, refetch: refetchCount } = useStudentInvitationsCount(post.id, studentId);
   const { checkInvitationLimits } = useEventCapacityValidation();
   const [canInvite, setCanInvite] = useState(true);
-  const [limitReached, setLimitReached] = useState(false);
+
+  // Calcular limite de forma síncrona para PER_STUDENT
+  const limitReached = useMemo(() => {
+    if (!post.eventCapacityEnabled) return false;
+    
+    if (post.eventCapacityType === 'PER_STUDENT') {
+      const maxAllowed = post.eventMaxGuestsPerStudent || 0;
+      const currentCount = invitationsCount || 0;
+      return currentCount >= maxAllowed;
+    }
+    
+    // Para limite GLOBAL, usar o estado assíncrono
+    return !canInvite;
+  }, [post.eventCapacityEnabled, post.eventCapacityType, post.eventMaxGuestsPerStudent, invitationsCount, canInvite]);
 
   useEffect(() => {
     const checkLimits = async () => {
-      if (post.eventCapacityEnabled) {
+      // Só verifica assincronamente para limite GLOBAL
+      if (post.eventCapacityEnabled && post.eventCapacityType === 'GLOBAL') {
         const result = await checkInvitationLimits(post.id, studentId);
         setCanInvite(result.canInvite);
-        setLimitReached(!result.canInvite);
       }
     };
     checkLimits();
-  }, [post.id, studentId, post.eventCapacityEnabled, checkInvitationLimits, invitationsCount]);
+  }, [post.id, studentId, post.eventCapacityEnabled, post.eventCapacityType, checkInvitationLimits, invitationsCount]);
 
   const handleInvitationsChange = () => {
     refetchCount();
