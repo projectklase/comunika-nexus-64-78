@@ -4,6 +4,8 @@ import { TeacherFormModal } from '@/components/teachers/TeacherFormModal';
 import { TeacherCSVImportModal } from '@/components/teachers/TeacherCSVImportModal';
 import { TeacherBulkActions } from '@/components/teachers/TeacherBulkActions';
 import { useTeachers } from '@/hooks/useTeachers';
+import { useClasses } from '@/hooks/useClasses';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +26,8 @@ export default function TeachersPage() {
     fetchTeachers,
     deleteTeacher: deleteTeacherHook,
   } = useTeachers();
+  const { classes } = useClasses();
+  const { currentSchool } = useSchool();
   const { toast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,12 +54,40 @@ export default function TeachersPage() {
   const filteredTeachers = teachers;
 
   const getTeacherClasses = (teacherId: string) => {
-    // For now, return empty array since we don't have class relationships in Supabase yet
-    return [];
+    if (!classes || classes.length === 0) {
+      return [];
+    }
+    
+    // Buscar turmas onde o professor é o main_teacher
+    const teacherClasses = classes.filter(cls => 
+      cls.teachers.includes(teacherId) // teachers é um array com [main_teacher_id]
+    );
+    
+    console.log(`🏫 [TeachersPage] Professor ${teacherId}: ${teacherClasses.length} turma(s)`);
+    
+    return teacherClasses.map(cls => ({
+      id: cls.id,
+      name: cls.name,
+      code: cls.code || '',
+    }));
   };
 
   const getTeacherPhone = (teacher: any) => {
-    return teacher.phone || '-';
+    // Prioridade 1: Telefones em preferences.teacher.phones (array)
+    const phonesArray = teacher.preferences?.teacher?.phones;
+    if (phonesArray && phonesArray.length > 0) {
+      console.log(`📱 [TeachersPage] Professor ${teacher.name}: telefone de preferences:`, phonesArray[0]);
+      return phonesArray[0];
+    }
+    
+    // Prioridade 2: Campo phone direto (fallback)
+    if (teacher.phone) {
+      console.log(`📱 [TeachersPage] Professor ${teacher.name}: telefone direto:`, teacher.phone);
+      return teacher.phone;
+    }
+    
+    console.log(`📱 [TeachersPage] Professor ${teacher.name}: sem telefone`);
+    return '-';
   };
 
   const handleArchiveTeacher = async (id: string) => {
