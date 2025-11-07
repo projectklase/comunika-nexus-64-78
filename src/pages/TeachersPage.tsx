@@ -333,6 +333,7 @@ export default function TeachersPage() {
                         side="top" 
                         align="center"
                         sideOffset={8}
+                        collisionPadding={20}
                         className="w-auto min-w-[200px] p-2 backdrop-blur-xl bg-background/95 border border-white/20 shadow-2xl"
                       >
                         <div className="space-y-1">
