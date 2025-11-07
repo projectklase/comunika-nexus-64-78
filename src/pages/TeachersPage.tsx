@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users, Loader2 } from 'lucide-react';
@@ -29,6 +30,7 @@ export default function TeachersPage() {
   const { classes } = useClasses();
   const { currentSchool } = useSchool();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -318,27 +320,43 @@ export default function TeachersPage() {
                         <TableCell className="font-medium">{teacher.name}</TableCell>
                         <TableCell>{teacher.email || '-'}</TableCell>
                         <TableCell>{getTeacherPhone(teacher)}</TableCell>
-                        <TableCell>
-                          {teacherClasses.length > 0 ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="secondary" className="cursor-pointer">
-                                  <Users className="h-3 w-3 mr-1" />
-                                  {teacherClasses.length}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-1">
-                                  {teacherClasses.map((c, index) => (
-                                    <div key={index}>{c.name}</div>
-                                  ))}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
+                <TableCell>
+                  {teacherClasses.length > 0 ? (
+                    <HoverCard openDelay={200} closeDelay={100}>
+                      <HoverCardTrigger asChild>
+                        <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80 transition-colors">
+                          <Users className="h-3 w-3 mr-1" />
+                          {teacherClasses.length}
+                        </Badge>
+                      </HoverCardTrigger>
+                      <HoverCardContent 
+                        side="top" 
+                        align="center"
+                        sideOffset={8}
+                        className="w-auto min-w-[200px] p-2 backdrop-blur-xl bg-background/95 border border-white/20 shadow-2xl"
+                      >
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground mb-2 px-2">
+                            Turmas do Professor
+                          </p>
+                          {teacherClasses.map((cls) => (
+                            <button
+                              key={cls.id}
+                              onClick={() => navigate(`/secretaria/turmas/${cls.id}`)}
+                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent/50 transition-colors text-sm font-medium flex items-center gap-2 group"
+                            >
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover:scale-125 transition-transform" />
+                              <span className="flex-1">{cls.name}</span>
+                              <span className="text-xs text-muted-foreground">{cls.code}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
                         <TableCell>
                           <Badge variant="default">
                             Ativo
