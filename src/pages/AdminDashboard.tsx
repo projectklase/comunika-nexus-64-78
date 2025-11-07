@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,22 +57,51 @@ interface AuditEvent {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadDashboardMetrics();
-  }, []);
+  }, [currentSchool?.id]);
 
   const loadDashboardMetrics = async () => {
+    // Guard clause - não carregar sem escola
+    if (!currentSchool) {
+      setMetrics(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Parallel queries for performance
+      console.log('🏫 [AdminDashboard] Carregando dados da escola:', currentSchool?.name);
+      // PASSO 1: Buscar turmas desta escola para filtrar usuários
+      const { data: schoolClasses } = await supabase
+        .from('classes')
+        .select('id, main_teacher_id')
+        .eq('school_id', currentSchool.id);
+
+      const classIds = schoolClasses?.map(c => c.id) || [];
+      const teacherIds = [...new Set(schoolClasses?.map(c => c.main_teacher_id).filter(Boolean) || [])];
+
+      console.log('📊 [AdminDashboard] Total de turmas encontradas:', classIds.length);
+
+      // PASSO 2: Buscar alunos matriculados nas turmas desta escola
+      const { data: classStudents } = await supabase
+        .from('class_students')
+        .select('student_id')
+        .in('class_id', classIds);
+
+      const studentIds = [...new Set(classStudents?.map(cs => cs.student_id) || [])];
+
+      console.log('👥 [AdminDashboard] Total de alunos encontrados:', studentIds.length);
+
+      // PASSO 3: Queries paralelas COM FILTROS por escola
       const [
-        usersResult,
-        secretariasResult,
-        professoresResult,
         alunosResult,
+        professoresResult,
+        secretariasResult,
         classesResult,
         activeClassesResult,
         postsResult,
@@ -86,33 +116,89 @@ export default function AdminDashboard() {
         pendingRedemptionsResult,
         auditsResult
       ] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('user_roles').select('user_id', { count: 'exact', head: true }).eq('role', 'secretaria'),
-        supabase.from('user_roles').select('user_id', { count: 'exact', head: true }).eq('role', 'professor'),
-        supabase.from('user_roles').select('user_id', { count: 'exact', head: true }).eq('role', 'aluno'),
-        supabase.from('classes').select('id', { count: 'exact', head: true }),
-        supabase.from('classes').select('id', { count: 'exact', head: true }).eq('status', 'Ativa'),
-        supabase.from('posts').select('id', { count: 'exact', head: true }),
-        supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'PUBLISHED'),
-        supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'SCHEDULED'),
-        supabase.from('deliveries').select('id', { count: 'exact', head: true }),
-        supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('review_status', 'AGUARDANDO'),
-        supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('review_status', 'APROVADA'),
-        supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('review_status', 'REJEITADA'),
-        supabase.from('profiles').select('koins'),
-        supabase.from('redemption_requests').select('id', { count: 'exact', head: true }),
-        supabase.from('redemption_requests').select('id', { count: 'exact', head: true }).eq('status', 'PENDING'),
-        supabase.from('audit_events').select('id, action, entity, entity_label, actor_name, actor_role, at').order('at', { ascending: false }).limit(10)
+        // Alunos desta escola (via classIds)
+        studentIds.length > 0 
+          ? supabase.from('profiles').select('koins', { count: 'exact' }).in('id', studentIds)
+          : { count: 0, data: [] },
+        
+        // Professores desta escola (via teacherIds)
+        teacherIds.length > 0
+          ? supabase.from('user_roles').select('user_id', { count: 'exact', head: true })
+              .eq('role', 'professor')
+              .in('user_id', teacherIds)
+          : { count: 0 },
+        
+        // Secretaria (global ou por escola - ajustar se necessário)
+        supabase.from('user_roles').select('user_id', { count: 'exact', head: true })
+          .eq('role', 'secretaria'),
+        
+        // Turmas
+        supabase.from('classes').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id),
+        
+        supabase.from('classes').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id)
+          .eq('status', 'Ativa'),
+        
+        // Posts
+        supabase.from('posts').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id),
+        
+        supabase.from('posts').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id)
+          .eq('status', 'PUBLISHED'),
+        
+        supabase.from('posts').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id)
+          .eq('status', 'SCHEDULED'),
+        
+        // Entregas
+        supabase.from('deliveries').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id),
+        
+        supabase.from('deliveries').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id)
+          .eq('review_status', 'AGUARDANDO'),
+        
+        supabase.from('deliveries').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id)
+          .eq('review_status', 'APROVADA'),
+        
+        supabase.from('deliveries').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id)
+          .eq('review_status', 'REJEITADA'),
+        
+        // Koins (apenas dos alunos desta escola)
+        studentIds.length > 0
+          ? supabase.from('profiles').select('koins').in('id', studentIds)
+          : { data: [] },
+        
+        // Resgates
+        supabase.from('redemption_requests').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id),
+        
+        supabase.from('redemption_requests').select('id', { count: 'exact', head: true })
+          .eq('school_id', currentSchool.id)
+          .eq('status', 'PENDING'),
+        
+        // Auditoria
+        supabase.from('audit_events')
+          .select('id, action, entity, entity_label, actor_name, actor_role, at')
+          .eq('school_id', currentSchool.id)
+          .order('at', { ascending: false })
+          .limit(10)
       ]);
 
       // Calculate total koins in circulation
-      const totalKoins = koinsResult.data?.reduce((sum, profile) => sum + (profile.koins || 0), 0) || 0;
+      const totalKoins = (koinsResult.data || []).reduce((sum, profile) => {
+        return sum + (profile.koins || 0);
+      }, 0 as number);
 
       setMetrics({
-        totalUsers: usersResult.count || 0,
+        totalUsers: studentIds.length + teacherIds.length + (secretariasResult.count || 0),
         totalSecretarias: secretariasResult.count || 0,
-        totalProfessores: professoresResult.count || 0,
-        totalAlunos: alunosResult.count || 0,
+        totalProfessores: teacherIds.length,
+        totalAlunos: studentIds.length,
         totalClasses: classesResult.count || 0,
         activeClasses: activeClassesResult.count || 0,
         totalPosts: postsResult.count || 0,

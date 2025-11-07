@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface SchoolSetting {
   key: string;
@@ -10,13 +11,24 @@ export interface SchoolSetting {
 }
 
 export function useSchoolSettings() {
+  const { currentSchool } = useSchool();
   const [settings, setSettings] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const loadSettings = async () => {
+    // Guard clause - não carregar sem escola
+    if (!currentSchool) {
+      setSettings({});
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
+      
+      // Note: school_settings table stores global settings as key-value pairs
+      // If this table doesn't have school_id column, settings will be shared across schools
       const { data, error } = await supabase
         .from('school_settings')
         .select('*');
@@ -95,7 +107,7 @@ export function useSchoolSettings() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [currentSchool?.id]);
 
   return {
     settings,

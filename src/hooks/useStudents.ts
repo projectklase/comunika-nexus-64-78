@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSchool } from '@/contexts/SchoolContext';
 
 // As interfaces e a estrutura geral do hook permanecem as mesmas.
 interface Guardian {
@@ -50,31 +51,56 @@ interface StudentFilters {
 }
 
 export function useStudents() {
+  const { currentSchool } = useSchool();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStudents = useCallback(async (filters: StudentFilters = {}) => {
+    // Guard clause - não carregar sem escola
+    if (!currentSchool) {
+      setStudents([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // Primeiro, buscar IDs de estudantes
-      const { data: studentRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'aluno');
+      // PASSO 1: Buscar turmas da escola ativa
+      const { data: schoolClasses, error: classesError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('school_id', currentSchool.id);
 
-      if (rolesError) throw rolesError;
+      if (classesError) throw classesError;
 
-      const studentIds = studentRoles?.map(r => r.user_id) || [];
+      const classIds = schoolClasses?.map(c => c.id) || [];
       
-      if (studentIds.length === 0) {
+      if (classIds.length === 0) {
         setStudents([]);
+        setLoading(false);
         return;
       }
 
-      // Depois, buscar profiles desses IDs
+      // PASSO 2: Buscar alunos matriculados nessas turmas
+      const { data: classStudents, error: csError } = await supabase
+        .from('class_students')
+        .select('student_id')
+        .in('class_id', classIds);
+
+      if (csError) throw csError;
+
+      const studentIds = [...new Set(classStudents?.map(cs => cs.student_id) || [])];
+      
+      if (studentIds.length === 0) {
+        setStudents([]);
+        setLoading(false);
+        return;
+      }
+
+      // PASSO 3: Buscar perfis apenas desses alunos
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -82,11 +108,9 @@ export function useStudents() {
 
       if (profilesError) throw profilesError;
 
-      const data = profiles || [];
+      let filteredData = profiles || [];
 
-      // Aplicar filtros client-side (search e class_id)
-      let filteredData = data;
-
+      // PASSO 4: Aplicar filtros client-side (search e class_id)
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         filteredData = filteredData.filter((student: any) =>
@@ -96,13 +120,13 @@ export function useStudents() {
       }
 
       if (filters.class_id && filters.class_id !== 'all') {
-        const { data: classStudents } = await supabase
+        const { data: filteredClassStudents } = await supabase
           .from('class_students')
           .select('student_id')
           .eq('class_id', filters.class_id);
 
-        const studentIds = classStudents?.map((cs: any) => cs.student_id) || [];
-        filteredData = filteredData.filter((student: any) => studentIds.includes(student.id));
+        const filteredStudentIds = filteredClassStudents?.map((cs: any) => cs.student_id) || [];
+        filteredData = filteredData.filter((student: any) => filteredStudentIds.includes(student.id));
       }
 
       // Enrich students with related data
@@ -145,20 +169,21 @@ export function useStudents() {
           .eq('student_id', student.id)
           .order('is_primary', { ascending: false });
 
-        // Fetch classes
+        // Fetch classes (filtradas pela escola)
         const { data: classStudentsData } = await supabase
           .from('class_students')
           .select('class_id')
-          .eq('student_id', student.id);
+          .eq('student_id', student.id)
+          .in('class_id', classIds); // Filtrar apenas turmas desta escola
 
-        const classIds = classStudentsData?.map(cs => cs.class_id) || [];
+        const studentClassIds = classStudentsData?.map(cs => cs.class_id) || [];
         let classes: StudentClass[] = [];
 
-        if (classIds.length > 0) {
+        if (studentClassIds.length > 0) {
           const { data: classesData } = await supabase
             .from('classes')
             .select('id, name, code')
-            .in('id', classIds);
+            .in('id', studentClassIds);
           classes = classesData || [];
         }
 
@@ -185,7 +210,7 @@ export function useStudents() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentSchool?.id]);
 
   const createStudent = useCallback(async (studentData: {
     name: string;
