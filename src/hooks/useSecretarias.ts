@@ -4,8 +4,10 @@ import { toast } from 'sonner';
 import { Secretaria, SecretariaFormData, SecretariaFilters } from '@/types/secretaria';
 import { logAudit } from '@/stores/audit-store';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export function useSecretarias() {
+  const { currentSchool } = useSchool();
   const [secretarias, setSecretarias] = useState<Secretaria[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<SecretariaFilters>({
@@ -15,25 +17,37 @@ export function useSecretarias() {
   const { user } = useAuth();
 
   const loadSecretarias = async () => {
+    // ✅ Guard clause - não carregar sem escola
+    if (!currentSchool) {
+      console.log('🏫 [useSecretarias] Escola não selecionada, aguardando...');
+      setSecretarias([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log('🏫 [useSecretarias] Carregando secretarias da escola:', currentSchool.name);
 
-      // Get all users with 'secretaria' role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
+      // ✅ PASSO 1: Buscar secretarias vinculadas à escola via school_memberships
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('school_memberships')
         .select('user_id')
+        .eq('school_id', currentSchool.id)
         .eq('role', 'secretaria');
 
-      if (roleError) throw roleError;
+      if (membershipError) throw membershipError;
 
-      const userIds = roleData.map(r => r.user_id);
+      const userIds = membershipData?.map(m => m.user_id) || [];
+      console.log('👥 [useSecretarias] Total de secretarias encontradas:', userIds.length);
 
       if (userIds.length === 0) {
         setSecretarias([]);
+        setLoading(false);
         return;
       }
 
-      // Get profiles for these users
+      // ✅ PASSO 2: Buscar perfis apenas dessas secretarias
       let query = supabase
         .from('profiles')
         .select('*')
@@ -65,6 +79,12 @@ export function useSecretarias() {
   };
 
   const createSecretaria = async (formData: SecretariaFormData): Promise<boolean> => {
+    // ✅ Guard clause
+    if (!currentSchool) {
+      toast.error('Nenhuma escola selecionada');
+      return false;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
@@ -72,12 +92,14 @@ export function useSecretarias() {
         return false;
       }
 
+      // ✅ PASSAR school_id para a edge function
       const response = await supabase.functions.invoke('create-demo-user', {
         body: {
           email: formData.email,
           password: formData.password,
           name: formData.name,
-          role: 'secretaria'
+          role: 'secretaria',
+          school_id: currentSchool.id
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`
@@ -110,7 +132,8 @@ export function useSecretarias() {
           scope: 'GLOBAL',
           meta: {
             role: 'secretaria',
-            email: formData.email
+            email: formData.email,
+            school_id: currentSchool.id
           }
         });
       }
@@ -243,7 +266,7 @@ export function useSecretarias() {
 
   useEffect(() => {
     loadSecretarias();
-  }, [filters]);
+  }, [filters, currentSchool?.id]);
 
   return {
     secretarias,

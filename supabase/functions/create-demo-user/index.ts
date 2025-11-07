@@ -310,28 +310,42 @@ Deno.serve(async (req) => {
     // O trigger handle_new_user_role já cria a role automaticamente
     console.log('User role will be created automatically by trigger handle_new_user_role')
 
-    // ✅ NOVO: Vincular usuário à escola via school_memberships
+    // ✅ VINCULAR À ESCOLA via school_memberships (professor, secretaria, aluno)
     if (school_id) {
-      console.log(`🏫 Vinculando usuário ${data.user.id} à escola ${school_id} com role ${role}`)
+      console.log(`📝 Verificando vínculo school_membership para ${role}:`, school_id)
       
-      const { error: membershipError } = await supabaseAdmin
+      // Verificar se já existe registro para este usuário nesta escola
+      const { data: existingMembership } = await supabaseAdmin
         .from('school_memberships')
-        .insert({
-          school_id: school_id,
-          user_id: data.user.id,
-          role: role,
-          is_primary: true // Primeira escola do usuário é primária
-        })
+        .select('id')
+        .eq('user_id', data.user.id)
+        .eq('school_id', school_id)
+        .eq('role', role)
+        .single()
 
-      if (membershipError) {
-        console.error('❌ Erro ao vincular à escola:', membershipError)
-        // Não falhar completamente - o usuário foi criado
-        // mas avisar no log
+      if (!existingMembership) {
+        console.log(`📝 Criando vínculo school_membership para ${role}:`, school_id)
+        
+        const { error: membershipError } = await supabaseAdmin
+          .from('school_memberships')
+          .insert({
+            user_id: data.user.id,
+            school_id: school_id,
+            role: role,
+            is_primary: true
+          })
+
+        if (membershipError) {
+          console.error('❌ Erro ao criar school_membership:', membershipError)
+          throw new Error(`Erro ao vincular ${role} à escola: ${membershipError.message}`)
+        }
+        
+        console.log(`✅ ${role} vinculado à escola com sucesso`)
       } else {
-        console.log('✅ Usuário vinculado à escola com sucesso')
+        console.log(`ℹ️ ${role} já possui vínculo com esta escola`)
       }
     } else {
-      console.warn('⚠️ Nenhum school_id fornecido - usuário criado sem vínculo a escola')
+      console.warn(`⚠️ Nenhum school_id fornecido, ${role} criado sem vínculo de escola`)
     }
 
     return new Response(

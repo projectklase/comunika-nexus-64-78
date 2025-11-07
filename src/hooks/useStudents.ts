@@ -57,8 +57,8 @@ export function useStudents() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchStudents = useCallback(async (filters: StudentFilters = {}) => {
-    // Guard clause - não carregar sem escola
     if (!currentSchool) {
+      console.log('[useStudents] No current school, skipping fetch');
       setStudents([]);
       setLoading(false);
       return;
@@ -68,49 +68,44 @@ export function useStudents() {
     setError(null);
 
     try {
-      // PASSO 1: Buscar turmas da escola ativa
-      const { data: schoolClasses, error: classesError } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('school_id', currentSchool.id);
+      console.log('🏫 [useStudents] Carregando alunos da escola:', currentSchool.name);
 
-      if (classesError) throw classesError;
+      // ✅ NOVA ABORDAGEM: Buscar TODOS os alunos da escola via school_memberships
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('school_memberships')
+        .select('user_id')
+        .eq('school_id', currentSchool.id)
+        .eq('role', 'aluno');
 
-      const classIds = schoolClasses?.map(c => c.id) || [];
-      
-      if (classIds.length === 0) {
-        setStudents([]);
-        setLoading(false);
-        return;
+      if (membershipError) {
+        console.error('[useStudents] Error fetching memberships:', membershipError);
+        throw membershipError;
       }
 
-      // PASSO 2: Buscar alunos matriculados nessas turmas
-      const { data: classStudents, error: csError } = await supabase
-        .from('class_students')
-        .select('student_id')
-        .in('class_id', classIds);
+      const studentIds = membershipData?.map(m => m.user_id) || [];
+      console.log('👨‍🎓 [useStudents] Total de alunos da escola:', studentIds.length);
 
-      if (csError) throw csError;
-
-      const studentIds = [...new Set(classStudents?.map(cs => cs.student_id) || [])];
-      
       if (studentIds.length === 0) {
+        console.log('[useStudents] No students found for school');
         setStudents([]);
         setLoading(false);
         return;
       }
 
-      // PASSO 3: Buscar perfis apenas desses alunos
+      // Buscar perfis desses alunos
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .in('id', studentIds);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('[useStudents] Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
       let filteredData = profiles || [];
 
-      // PASSO 4: Aplicar filtros client-side (search e class_id)
+      // Aplicar filtros client-side (search)
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         filteredData = filteredData.filter((student: any) =>
@@ -119,11 +114,21 @@ export function useStudents() {
         );
       }
 
+      // Filtrar por turma se especificado
       if (filters.class_id && filters.class_id !== 'all') {
+        // Buscar turmas DA ESCOLA para garantir segurança
+        const { data: schoolClasses } = await supabase
+          .from('classes')
+          .select('id')
+          .eq('school_id', currentSchool.id);
+
+        const schoolClassIds = schoolClasses?.map(c => c.id) || [];
+
         const { data: filteredClassStudents } = await supabase
           .from('class_students')
           .select('student_id')
-          .eq('class_id', filters.class_id);
+          .eq('class_id', filters.class_id)
+          .in('class_id', schoolClassIds);
 
         const filteredStudentIds = filteredClassStudents?.map((cs: any) => cs.student_id) || [];
         filteredData = filteredData.filter((student: any) => filteredStudentIds.includes(student.id));
@@ -169,12 +174,19 @@ export function useStudents() {
           .eq('student_id', student.id)
           .order('is_primary', { ascending: false });
 
-        // Fetch classes (filtradas pela escola)
+        // Fetch classes - buscar turmas DA ESCOLA primeiro para garantir segurança
+        const { data: schoolClasses } = await supabase
+          .from('classes')
+          .select('id')
+          .eq('school_id', currentSchool.id);
+
+        const schoolClassIds = schoolClasses?.map(c => c.id) || [];
+
         const { data: classStudentsData } = await supabase
           .from('class_students')
           .select('class_id')
           .eq('student_id', student.id)
-          .in('class_id', classIds); // Filtrar apenas turmas desta escola
+          .in('class_id', schoolClassIds);
 
         const studentClassIds = classStudentsData?.map(cs => cs.class_id) || [];
         let classes: StudentClass[] = [];
@@ -221,9 +233,14 @@ export function useStudents() {
     enrollment_number?: string;
     student_notes?: string;
   }) => {
+    // ✅ Guard clause
+    if (!currentSchool) {
+      toast.error('Nenhuma escola selecionada');
+      throw new Error('Escola não selecionada');
+    }
+
     setLoading(true);
     try {
-      // Generate password if not provided
       const password = studentData.password || `Aluno${Math.floor(Math.random() * 10000)}!`;
       
       const { data, error } = await supabase.functions.invoke('create-demo-user', {
@@ -236,6 +253,7 @@ export function useStudents() {
           phone: studentData.phone,
           enrollment_number: studentData.enrollment_number,
           student_notes: studentData.student_notes,
+          school_id: currentSchool.id
         }
       });
 
@@ -262,7 +280,7 @@ export function useStudents() {
     } finally {
       setLoading(false);
     }
-  }, [fetchStudents]);
+  }, [fetchStudents, currentSchool?.id]);
 
   const updateStudent = useCallback(async (id: string, updates: Partial<Student> & { password?: string; student_notes?: string }) => {
     // A lógica de atualização de perfil está correta e será mantida.
