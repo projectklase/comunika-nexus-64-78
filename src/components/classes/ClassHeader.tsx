@@ -1,5 +1,6 @@
 import { SchoolClass } from '@/types/class';
 import { usePeopleStore } from '@/stores/people-store';
+import { useTeachers } from '@/hooks/useTeachers';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, Users, Archive, ArchiveRestore, Trash2, UserPlus } from 'lucide-react';
@@ -24,10 +25,13 @@ export function ClassHeader({
 }: ClassHeaderProps) {
   const navigate = useNavigate();
   const { getPerson } = usePeopleStore();
+  const { teachers, loading: loadingTeachers } = useTeachers();
 
-  const teacherNames = schoolClass.teachers.map(id => 
-    getPerson(id)?.name || 'Professor não encontrado'
-  );
+  const teacherNames = schoolClass.teachers.map(id => {
+    // Buscar professor no hook useTeachers ao invés de people-store
+    const teacher = teachers.find(t => t.id === id);
+    return teacher?.name || 'Professor não encontrado';
+  });
 
   return (
     <div className="glass-card p-6">
@@ -87,7 +91,11 @@ export function ClassHeader({
           <div>
             <label className="text-muted-foreground text-sm">Professores</label>
             <div className="flex flex-wrap gap-2 mt-1">
-              {teacherNames.length > 0 ? (
+              {loadingTeachers ? (
+                <span className="text-muted-foreground text-sm animate-pulse">
+                  Carregando professores...
+                </span>
+              ) : teacherNames.length > 0 ? (
                 teacherNames.map((name, index) => (
                   <Badge key={index} variant="outline">
                     {name}
