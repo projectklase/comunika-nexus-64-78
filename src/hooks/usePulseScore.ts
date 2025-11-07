@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface PulseScoreData {
   overall_score: number; // 0-100
@@ -14,9 +15,15 @@ export interface PulseScoreData {
 }
 
 export function usePulseScore(daysFilter: number = 30) {
+  const { currentSchool } = useSchool();
+
   return useQuery({
-    queryKey: ['pulse-score', daysFilter],
+    queryKey: ['pulse-score', daysFilter, currentSchool?.id],
     queryFn: async (): Promise<PulseScoreData> => {
+      if (!currentSchool) {
+        throw new Error('Escola não selecionada');
+      }
+
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       
@@ -24,12 +31,21 @@ export function usePulseScore(daysFilter: number = 30) {
       const { data: recentDeliveries } = await supabase
         .from('deliveries')
         .select('student_id')
+        .eq('school_id', currentSchool.id)
         .gte('submitted_at', sevenDaysAgo);
       
+      // Total de alunos desta escola
+      const { data: schoolClasses } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('school_id', currentSchool.id);
+      
+      const classIds = schoolClasses?.map(c => c.id) || [];
+      
       const { count: totalStudents } = await supabase
-        .from('user_roles')
+        .from('class_students')
         .select('*', { count: 'exact', head: true })
-        .eq('role', 'aluno');
+        .in('class_id', classIds);
       
       const uniqueActiveStudents = new Set(recentDeliveries?.map(d => d.student_id) || []).size;
       const engagementScore = totalStudents && totalStudents > 0 
@@ -40,6 +56,7 @@ export function usePulseScore(daysFilter: number = 30) {
       const { data: deliveries } = await supabase
         .from('deliveries')
         .select('submitted_at, reviewed_at')
+        .eq('school_id', currentSchool.id)
         .not('reviewed_at', 'is', null)
         .gte('submitted_at', thirtyDaysAgo);
       
@@ -58,7 +75,8 @@ export function usePulseScore(daysFilter: number = 30) {
       const { data: classes } = await supabase
         .from('classes')
         .select('id')
-        .eq('status', 'Ativa');
+        .eq('status', 'Ativa')
+        .eq('school_id', currentSchool.id);
       
       let totalOccupancy = 0;
       const classCount = classes?.length || 0;
@@ -79,6 +97,7 @@ export function usePulseScore(daysFilter: number = 30) {
       const { data: allDeliveries } = await supabase
         .from('deliveries')
         .select('review_status')
+        .eq('school_id', currentSchool.id)
         .not('review_status', 'is', null)
         .gte('submitted_at', thirtyDaysAgo);
       
@@ -90,6 +109,7 @@ export function usePulseScore(daysFilter: number = 30) {
       const { data: oldDeliveries } = await supabase
         .from('deliveries')
         .select('student_id')
+        .eq('school_id', currentSchool.id)
         .gte('submitted_at', thirtyDaysAgo);
       
       const retainedStudents = new Set(oldDeliveries?.map(d => d.student_id) || []).size;
@@ -128,6 +148,7 @@ export function usePulseScore(daysFilter: number = 30) {
         trend
       };
     },
+    enabled: !!currentSchool,
     staleTime: 5 * 60 * 1000,
   });
 }

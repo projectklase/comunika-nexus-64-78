@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface HeatmapDataPoint {
   day_of_week: number; // 0-6 (domingo-sábado)
@@ -59,33 +60,42 @@ function findPeakDay(data: HeatmapDataPoint[]): string {
 }
 
 export function useWeeklyHeatmap(daysFilter: number = 30) {
+  const { currentSchool } = useSchool();
+
   return useQuery({
-    queryKey: ['weekly-heatmap', daysFilter],
+    queryKey: ['weekly-heatmap', daysFilter, currentSchool?.id],
     queryFn: async (): Promise<WeeklyHeatmapData> => {
+      if (!currentSchool) {
+        throw new Error('Escola não selecionada');
+      }
+
       const startDate = new Date(Date.now() - daysFilter * 24 * 60 * 60 * 1000).toISOString();
       
-      // Query para entregas
+      // Query para entregas desta escola
       const { data: deliveriesData, error: deliveriesError } = await supabase
         .from('deliveries')
         .select('submitted_at')
+        .eq('school_id', currentSchool.id)
         .gte('submitted_at', startDate)
         .not('submitted_at', 'is', null);
       
       if (deliveriesError) throw deliveriesError;
       
-      // Query para posts
+      // Query para posts desta escola
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('created_at')
         .eq('status', 'PUBLISHED')
+        .eq('school_id', currentSchool.id)
         .gte('created_at', startDate);
       
       if (postsError) throw postsError;
 
-      // Query para correções
+      // Query para correções desta escola
       const { data: correctionsData, error: correctionsError } = await supabase
         .from('deliveries')
         .select('reviewed_at')
+        .eq('school_id', currentSchool.id)
         .not('reviewed_at', 'is', null)
         .not('reviewed_by', 'is', null)
         .gte('reviewed_at', startDate);
@@ -115,6 +125,7 @@ export function useWeeklyHeatmap(daysFilter: number = 30) {
         total_corrections: correctionsData?.length || 0
       };
     },
+    enabled: !!currentSchool,
     staleTime: 5 * 60 * 1000,
   });
 }

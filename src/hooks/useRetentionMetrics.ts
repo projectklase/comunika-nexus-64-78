@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface RetentionMetrics {
   total_enrolled: number;
@@ -10,23 +11,31 @@ export interface RetentionMetrics {
 }
 
 export function useRetentionMetrics(daysFilter: number = 30) {
+  const { currentSchool } = useSchool();
+
   return useQuery({
-    queryKey: ['retention-metrics', daysFilter],
+    queryKey: ['retention-metrics', daysFilter, currentSchool?.id],
     queryFn: async (): Promise<RetentionMetrics> => {
-      // Total de alunos matriculados
+      if (!currentSchool) {
+        throw new Error('Escola não selecionada');
+      }
+
+      // Total de alunos matriculados desta escola (via classes)
       const { data: classStudents, error: csError } = await supabase
         .from('class_students')
-        .select('student_id');
+        .select('student_id, classes!inner(school_id)')
+        .eq('classes.school_id', currentSchool.id);
       
       if (csError) throw csError;
       
       const totalEnrolled = classStudents?.length || 0;
       
-      // Alunos ativos (com entregas nos últimos 30 dias)
+      // Alunos ativos (com entregas nos últimos 30 dias) desta escola
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data: activeDeliveries, error: adError } = await supabase
         .from('deliveries')
         .select('student_id')
+        .eq('school_id', currentSchool.id)
         .gte('submitted_at', thirtyDaysAgo);
       
       if (adError) throw adError;
@@ -36,10 +45,11 @@ export function useRetentionMetrics(daysFilter: number = 30) {
       
       const retentionRate = totalEnrolled > 0 ? (activeStudents / totalEnrolled) * 100 : 0;
       
-      // Calcular tempo médio de atividade (baseado nas entregas)
+      // Calcular tempo médio de atividade (baseado nas entregas desta escola)
       const { data: studentActivity, error: saError } = await supabase
         .from('deliveries')
         .select('student_id, submitted_at')
+        .eq('school_id', currentSchool.id)
         .order('submitted_at', { ascending: true });
       
       if (saError) throw saError;
@@ -89,6 +99,7 @@ export function useRetentionMetrics(daysFilter: number = 30) {
         enrollment_trend: enrollmentTrend
       };
     },
+    enabled: !!currentSchool,
     staleTime: 5 * 60 * 1000,
   });
 }

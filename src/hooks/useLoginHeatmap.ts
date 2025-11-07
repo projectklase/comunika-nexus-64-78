@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface LoginHeatmapDataPoint {
   day_of_week: number;
@@ -75,9 +76,14 @@ function findPeakDay(data: LoginHeatmapDataPoint[]): string {
 }
 
 export function useLoginHeatmap(daysFilter: number = 30, roleFilter: LoginRoleFilter = 'all') {
+  const { currentSchool } = useSchool();
+
   return useQuery({
-    queryKey: ['login-heatmap', daysFilter, roleFilter],
+    queryKey: ['login-heatmap', daysFilter, roleFilter, currentSchool?.id],
     queryFn: async (): Promise<LoginHeatmapData> => {
+      if (!currentSchool) {
+        throw new Error('Escola não selecionada');
+      }
       const startDate = new Date(Date.now() - daysFilter * 24 * 60 * 60 * 1000).toISOString();
       
       let query = supabase
@@ -114,6 +120,7 @@ export function useLoginHeatmap(daysFilter: number = 30, roleFilter: LoginRoleFi
         total_logins: loginData?.length || 0
       };
     },
+    enabled: !!currentSchool,
     staleTime: 30 * 1000, // Refetch a cada 30 segundos
     refetchInterval: 30 * 1000, // Atualização automática
   });

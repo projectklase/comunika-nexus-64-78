@@ -73,10 +73,10 @@ interface RewardsStore {
   lastFetch: Map<string, number>;
   
   // Data loading
-  loadItems: () => Promise<void>;
+  loadItems: (schoolId?: string) => Promise<void>;
   loadTransactions: (studentId: string, forceRefresh?: boolean) => Promise<void>;
-  loadAllTransactions: (forceRefresh?: boolean) => Promise<void>;
-  loadRedemptions: (forceRefresh?: boolean) => Promise<void>;
+  loadAllTransactions: (schoolId?: string, forceRefresh?: boolean) => Promise<void>;
+  loadRedemptions: (schoolId?: string, forceRefresh?: boolean) => Promise<void>;
   
   // Filters and sorting
   getFilteredItems: () => RewardItem[];
@@ -132,14 +132,19 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
   isLoading: false,
   lastFetch: new Map(),
 
-  loadItems: async () => {
+  loadItems: async (schoolId?: string) => {
     try {
-      // TODO FASE 7: Adicionar filtro .eq('school_id', currentSchoolId) quando RLS estiver implementado
-      const { data, error } = await supabase
+      let query = supabase
         .from('reward_items')
         .select('*')
-        .eq('is_active', true)
-        .order('name', { ascending: true });
+        .eq('is_active', true);
+
+      // Filtrar por escola se fornecido
+      if (schoolId) {
+        query = query.eq('school_id', schoolId);
+      }
+
+      const { data, error } = await query.order('name', { ascending: true});
 
       if (error) throw error;
 
@@ -223,8 +228,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     }
   },
 
-  loadAllTransactions: async (forceRefresh = false) => {
-    const cacheKey = 'all-transactions';
+  loadAllTransactions: async (schoolId?: string, forceRefresh = false) => {
+    const cacheKey = schoolId ? `all-transactions-${schoolId}` : 'all-transactions';
     const lastFetch = get().lastFetch.get(cacheKey) || 0;
     
     if (!forceRefresh && Date.now() - lastFetch < CACHE_DURATION) {
@@ -234,8 +239,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     try {
       set({ isLoading: true });
       
-      // TODO FASE 7: Filtro por school_id será aplicado via RLS no banco de dados
-      const { data, error } = await supabase
+      let query = supabase
         .from('koin_transactions')
         .select(`
           *,
@@ -248,8 +252,14 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
           ),
           profiles!koin_transactions_user_id_fkey(name),
           admin:profiles!koin_transactions_processed_by_fkey(name)
-        `)
-        .order('created_at', { ascending: false });
+        `);
+
+      // Filtrar por escola se fornecido
+      if (schoolId) {
+        query = query.eq('school_id', schoolId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -279,8 +289,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     }
   },
 
-  loadRedemptions: async (forceRefresh = false) => {
-    const cacheKey = 'redemptions';
+  loadRedemptions: async (schoolId?: string, forceRefresh = false) => {
+    const cacheKey = schoolId ? `redemptions-${schoolId}` : 'redemptions';
     const lastFetch = get().lastFetch.get(cacheKey) || 0;
     
     if (!forceRefresh && Date.now() - lastFetch < CACHE_DURATION) {
@@ -288,16 +298,21 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
     }
 
     try {
-      // TODO FASE 7: Filtro por school_id será aplicado via RLS no banco de dados
-      const { data, error } = await supabase
+      let query = supabase
         .from('redemption_requests')
         .select(`
           *,
-          reward_items!inner(name, price_koins),
+          reward_items!inner(name, price_koins, school_id),
           profiles!redemption_requests_student_id_fkey(name),
           admin:profiles!redemption_requests_processed_by_fkey(name)
-        `)
-        .order('requested_at', { ascending: false });
+        `);
+
+      // Filtrar por escola via JOIN se fornecido
+      if (schoolId) {
+        query = query.eq('reward_items.school_id', schoolId);
+      }
+
+      const { data, error } = await query.order('requested_at', { ascending: false });
 
       if (error) throw error;
 
@@ -520,7 +535,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       if (error) throw error;
 
       // Reload redemptions and balance after successful request
-      await get().loadRedemptions(true);
+      await get().loadRedemptions(undefined, true);
       await get().loadStudentBalance(studentId, true);
       await get().loadTransactions(studentId, true);
 
@@ -547,8 +562,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       if (error) throw error;
       
       // Reload redemptions and transactions after approval
-      await get().loadRedemptions(true);
-      await get().loadAllTransactions(true);
+      await get().loadRedemptions(undefined, true);
+      await get().loadAllTransactions(undefined, true);
       
       // Reload student-specific data to update their balance and history
       if (studentId) {
@@ -578,8 +593,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
       if (error) throw error;
       
       // Reload redemptions and transactions after rejection
-      await get().loadRedemptions(true);
-      await get().loadAllTransactions(true);
+      await get().loadRedemptions(undefined, true);
+      await get().loadAllTransactions(undefined, true);
       
       // Reload student-specific data to update their balance (refund) and history
       if (studentId) {
@@ -770,7 +785,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
           table: 'redemption_requests'
         },
         () => {
-          get().loadRedemptions(true);
+          get().loadRedemptions(undefined, true);
           callback();
         }
       )
@@ -792,7 +807,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
           table: 'koin_transactions'
         },
         () => {
-          get().loadAllTransactions(true);
+          get().loadAllTransactions(undefined, true);
           callback();
         }
       )

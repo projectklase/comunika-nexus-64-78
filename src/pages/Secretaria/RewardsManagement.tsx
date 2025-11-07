@@ -13,6 +13,7 @@ import { AdminKoinHistoryModal } from '@/components/rewards/AdminKoinHistoryModa
 import { RewardsAnalytics } from '@/components/rewards/RewardsAnalytics';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { RewardItem } from '@/types/rewards';
+import { useSchool } from '@/contexts/SchoolContext';
 import { 
   Gift, 
   Plus, 
@@ -30,6 +31,7 @@ import { enhanceTransactionsForAdmin } from '@/utils/transaction-enhancer';
 
 export default function RewardsManagement() {
   const { toast } = useToast();
+  const { currentSchool } = useSchool();
   const { 
     items, 
     redemptions, 
@@ -44,12 +46,14 @@ export default function RewardsManagement() {
 
   const { loadAllTransactions } = useRewardsStore();
 
-  // Load data on mount
+  // Load data when school changes
   useEffect(() => {
-    loadItems();
-    loadRedemptions();
-    loadAllTransactions();
-  }, [loadItems, loadRedemptions, loadAllTransactions]);
+    if (currentSchool) {
+      loadItems(currentSchool.id);
+      loadRedemptions(currentSchool.id);
+      loadAllTransactions(currentSchool.id);
+    }
+  }, [currentSchool?.id, loadItems, loadRedemptions, loadAllTransactions]);
 
   // Enhanced transactions for admin view
   const [enhancedTransactions, setEnhancedTransactions] = useState<any[]>([]);

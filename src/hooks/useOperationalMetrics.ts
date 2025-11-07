@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface OperationalMetrics {
   occupancy_data: Array<{
@@ -22,14 +23,21 @@ export interface OperationalMetrics {
 }
 
 export function useOperationalMetrics() {
+  const { currentSchool } = useSchool();
+
   return useQuery({
-    queryKey: ['operational-metrics'],
+    queryKey: ['operational-metrics', currentSchool?.id],
     queryFn: async (): Promise<OperationalMetrics> => {
+      if (!currentSchool) {
+        throw new Error('Escola não selecionada');
+      }
+
       // Ocupação de turmas
       const { data: classes, error: classError } = await supabase
         .from('classes')
         .select('id, name, status')
-        .eq('status', 'Ativa');
+        .eq('status', 'Ativa')
+        .eq('school_id', currentSchool.id);
       
       if (classError) throw classError;
       
@@ -149,6 +157,7 @@ export function useOperationalMetrics() {
         avg_occupancy: avgOccupancy
       };
     },
+    enabled: !!currentSchool,
     staleTime: 5 * 60 * 1000,
   });
 }
