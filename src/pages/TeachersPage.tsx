@@ -322,7 +322,7 @@ export default function TeachersPage() {
                         <TableCell>{getTeacherPhone(teacher)}</TableCell>
                 <TableCell>
                   {teacherClasses.length > 0 ? (
-                    <HoverCard openDelay={200} closeDelay={100}>
+                    <HoverCard openDelay={200} closeDelay={300}>
                       <HoverCardTrigger asChild>
                         <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80 transition-colors">
                           <Users className="h-3 w-3 mr-1" />
