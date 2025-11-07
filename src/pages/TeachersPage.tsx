@@ -12,13 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users, Loader2 } from 'lucide-react';
+import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users, Loader2, Eye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function TeachersPage() {
   const { 
@@ -31,6 +32,7 @@ export default function TeachersPage() {
   const { currentSchool } = useSchool();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -40,6 +42,9 @@ export default function TeachersPage() {
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [selectedTeachers, setSelectedTeachers] = useState<any[]>([]);
+  const [classesModalOpen, setClassesModalOpen] = useState(false);
+  const [selectedTeacherClasses, setSelectedTeacherClasses] = useState<any[]>([]);
+  const [selectedTeacherName, setSelectedTeacherName] = useState('');
 
   // Apply filters when they change
   useEffect(() => {
@@ -90,6 +95,34 @@ export default function TeachersPage() {
     
     console.log(`📱 [TeachersPage] Professor ${teacher.name}: sem telefone`);
     return '-';
+  };
+
+  // Determina a rota correta baseada no role do usuário
+  const getClassRoute = (classId: string): string => {
+    if (!user) return `/secretaria/turmas/${classId}`;
+    
+    // Professor vê sua própria visualização
+    if (user.role === 'professor') {
+      return `/professor/turma/${classId}`;
+    }
+    
+    // Secretaria e Admin veem a visualização de gestão
+    return `/secretaria/turmas/${classId}`;
+  };
+
+  // Handler para abrir modal de turmas
+  const handleOpenClassesModal = (teacher: any) => {
+    const teacherClasses = getTeacherClasses(teacher.id);
+    setSelectedTeacherClasses(teacherClasses);
+    setSelectedTeacherName(teacher.name);
+    setClassesModalOpen(true);
+  };
+
+  // Handler para navegar para turma
+  const handleNavigateToClass = (classId: string) => {
+    const route = getClassRoute(classId);
+    navigate(route);
+    setClassesModalOpen(false); // Fechar modal após navegação
   };
 
   const handleArchiveTeacher = async (id: string) => {
@@ -322,40 +355,17 @@ export default function TeachersPage() {
                         <TableCell>{getTeacherPhone(teacher)}</TableCell>
                 <TableCell>
                   {teacherClasses.length > 0 ? (
-                    <HoverCard openDelay={200} closeDelay={300}>
-                      <HoverCardTrigger asChild>
-                        <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80 transition-colors">
-                          <Users className="h-3 w-3 mr-1" />
-                          {teacherClasses.length}
-                        </Badge>
-                      </HoverCardTrigger>
-                      <HoverCardContent 
-                        side="top" 
-                        align="center"
-                        sideOffset={8}
-                        collisionPadding={20}
-                        className="w-auto min-w-[200px] p-2 backdrop-blur-xl bg-background/95 border border-white/20 shadow-2xl"
-                      >
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground mb-2 px-2">
-                            Turmas do Professor
-                          </p>
-                          {teacherClasses.map((cls) => (
-                            <button
-                              key={cls.id}
-                              onClick={() => navigate(`/secretaria/turmas/${cls.id}`)}
-                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent/50 transition-colors text-sm font-medium flex items-center gap-2 group"
-                            >
-                              <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover:scale-125 transition-transform" />
-                              <span className="flex-1">{cls.name}</span>
-                              <span className="text-xs text-muted-foreground">{cls.code}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenClassesModal(teacher)}
+                      className="h-8 gap-2 hover:bg-accent"
+                    >
+                      <Eye className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">{teacherClasses.length}</span>
+                    </Button>
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-sm">-</span>
                   )}
                 </TableCell>
                         <TableCell>
@@ -434,6 +444,47 @@ export default function TeachersPage() {
           open={importModalOpen}
           onOpenChange={setImportModalOpen}
         />
+
+        {/* Modal de Turmas do Professor */}
+        <Dialog open={classesModalOpen} onOpenChange={setClassesModalOpen}>
+          <DialogContent className="sm:max-w-[500px] backdrop-blur-xl bg-background/95 border border-white/20 shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">
+                Turmas de {selectedTeacherName}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              {selectedTeacherClasses.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Nenhuma turma encontrada</p>
+                </div>
+              ) : (
+                selectedTeacherClasses.map((cls) => (
+                  <div
+                    key={cls.id}
+                    className="group flex items-center justify-between p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-accent/50 transition-all duration-200"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm truncate">{cls.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">{cls.code}</p>
+                    </div>
+                    
+                    <Button
+                      size="sm"
+                      onClick={() => handleNavigateToClass(cls.id)}
+                      className="ml-4 gap-2 shrink-0"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Ver Turma
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
