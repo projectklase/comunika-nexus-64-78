@@ -142,11 +142,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
     if (open) {
       setCurrentStep(0); // Reset step when modal opens
       if (teacher) {
-        const teacherData = teacher.teacher || {};
+        const teacherData = teacher.preferences?.teacher || {};
         form.reset({
           name: teacher.name,
           document: teacherData.document,
-          email: teacherData.email || teacher.email,
+          email: teacher.email,
           phones: teacherData.phones || [],
           photoUrl: teacherData.photoUrl,
           hiredAt: teacherData.hiredAt ? new Date(teacherData.hiredAt) : undefined,
@@ -214,7 +214,15 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         const updates: any = {
           name: data.name,
           email: data.email,
+          phone: data.phones?.[0], // Primeiro telefone como principal
+          preferences: {
+            ...(teacher.preferences || {}), // Preservar preferências existentes
+            teacher: teacherData, // Adicionar dados do professor
+          },
         };
+        
+        console.log('📝 [TeacherForm] Atualizando professor com:', updates);
+        console.log('📝 [TeacherForm] Dados completos do teacher:', teacherData);
         
         // Only include password if it was provided
         if (data.password && data.password.trim().length > 0) {

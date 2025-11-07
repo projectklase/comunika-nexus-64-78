@@ -11,7 +11,11 @@ interface Teacher {
   avatar?: string;
   phone?: string;
   class_id?: string;
-  preferences?: any;
+  preferences?: {
+    ui?: any;
+    notifications?: any;
+    teacher?: any; // Dados extras do professor
+  };
   must_change_password?: boolean;
   created_at: string;
   updated_at: string;
@@ -178,6 +182,9 @@ export function useTeachers() {
   const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string }) => {
     setLoading(true);
     try {
+      console.log('💾 [useTeachers] Recebendo updates:', updates);
+      console.log('💾 [useTeachers] Campo preferences:', updates.preferences);
+      
       // If password is being updated, use edge function
       if (updates.password) {
         const { data, error } = await supabase.functions.invoke('create-demo-user', {

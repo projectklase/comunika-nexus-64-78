@@ -100,6 +100,12 @@ export interface Person {
   mustChangePassword?: boolean;
   student?: StudentExtra; // presente quando role='ALUNO'
   teacher?: TeacherExtra; // presente quando role='PROFESSOR'
+  preferences?: { // Dados extras armazenados em preferences
+    ui?: any;
+    notifications?: any;
+    teacher?: any;
+    student?: any;
+  };
 }
 
 export interface ClassFilters {
