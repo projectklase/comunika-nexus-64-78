@@ -68,25 +68,17 @@ export function useStudents() {
     setError(null);
 
     try {
-      console.log('🏫 [useStudents] Carregando alunos da escola:', currentSchool.name);
-
-      // ✅ NOVA ABORDAGEM: Buscar TODOS os alunos da escola via school_memberships
       const { data: membershipData, error: membershipError } = await supabase
         .from('school_memberships')
         .select('user_id')
         .eq('school_id', currentSchool.id)
         .eq('role', 'aluno');
 
-      if (membershipError) {
-        console.error('[useStudents] Error fetching memberships:', membershipError);
-        throw membershipError;
-      }
+      if (membershipError) throw membershipError;
 
       const studentIds = membershipData?.map(m => m.user_id) || [];
-      console.log('👨‍🎓 [useStudents] Total de alunos da escola:', studentIds.length);
 
       if (studentIds.length === 0) {
-        console.log('[useStudents] No students found for school');
         setStudents([]);
         setLoading(false);
         return;
@@ -98,10 +90,7 @@ export function useStudents() {
         .select('*')
         .in('id', studentIds);
 
-      if (profilesError) {
-        console.error('[useStudents] Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
+      if (profilesError) throw profilesError;
 
       let filteredData = profiles || [];
 

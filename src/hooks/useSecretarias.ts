@@ -17,9 +17,7 @@ export function useSecretarias() {
   const { user } = useAuth();
 
   const loadSecretarias = async () => {
-    // ✅ Guard clause - não carregar sem escola
     if (!currentSchool) {
-      console.log('🏫 [useSecretarias] Escola não selecionada, aguardando...');
       setSecretarias([]);
       setLoading(false);
       return;
@@ -27,9 +25,6 @@ export function useSecretarias() {
 
     try {
       setLoading(true);
-      console.log('🏫 [useSecretarias] Carregando secretarias da escola:', currentSchool.name);
-
-      // ✅ PASSO 1: Buscar secretarias vinculadas à escola via school_memberships
       const { data: membershipData, error: membershipError } = await supabase
         .from('school_memberships')
         .select('user_id')
@@ -39,7 +34,6 @@ export function useSecretarias() {
       if (membershipError) throw membershipError;
 
       const userIds = membershipData?.map(m => m.user_id) || [];
-      console.log('👥 [useSecretarias] Total de secretarias encontradas:', userIds.length);
 
       if (userIds.length === 0) {
         setSecretarias([]);
@@ -71,7 +65,7 @@ export function useSecretarias() {
 
       setSecretarias(data || []);
     } catch (error: any) {
-      console.error('Error loading secretarias:', error);
+      console.error('Erro ao carregar secretarias:', error);
       toast.error('Erro ao carregar secretarias');
     } finally {
       setLoading(false);

@@ -75,7 +75,6 @@ export default function AdminDashboard() {
 
     setIsLoading(true);
     try {
-      console.log('🏫 [AdminDashboard] Carregando dados da escola:', currentSchool?.name);
       // PASSO 1: Buscar turmas desta escola para filtrar usuários
       const { data: schoolClasses } = await supabase
         .from('classes')
@@ -85,17 +84,14 @@ export default function AdminDashboard() {
       const classIds = schoolClasses?.map(c => c.id) || [];
       const teacherIds = [...new Set(schoolClasses?.map(c => c.main_teacher_id).filter(Boolean) || [])];
 
-      console.log('📊 [AdminDashboard] Total de turmas encontradas:', classIds.length);
+      // PASSO 2: Buscar alunos vinculados à escola via school_memberships
+      const { data: membershipData } = await supabase
+        .from('school_memberships')
+        .select('user_id')
+        .eq('school_id', currentSchool.id)
+        .eq('role', 'aluno');
 
-      // PASSO 2: Buscar alunos matriculados nas turmas desta escola
-      const { data: classStudents } = await supabase
-        .from('class_students')
-        .select('student_id')
-        .in('class_id', classIds);
-
-      const studentIds = [...new Set(classStudents?.map(cs => cs.student_id) || [])];
-
-      console.log('👥 [AdminDashboard] Total de alunos encontrados:', studentIds.length);
+      const studentIds = membershipData?.map(m => m.user_id) || [];
 
       // PASSO 3: Queries paralelas COM FILTROS por escola
       const [
