@@ -16,6 +16,7 @@ interface DemoUserRequest {
   student_notes?: string
   userId?: string // Para atualizar senha de usuário existente
   updatePasswordOnly?: boolean // Flag para indicar que é apenas update de senha
+  school_id?: string // ✅ NOVO: ID da escola para vincular o usuário
 }
 
 Deno.serve(async (req) => {
@@ -91,7 +92,10 @@ Deno.serve(async (req) => {
     const callerRole = userRoles.role
     console.log('Caller role:', callerRole)
 
-    const { email, password, name, role, dob, phone, enrollment_number, student_notes, userId, updatePasswordOnly }: DemoUserRequest = await req.json()
+    const { email, password, name, role, dob, phone, enrollment_number, student_notes, userId, updatePasswordOnly, school_id }: DemoUserRequest = await req.json()
+    
+    // ✅ Log do school_id recebido
+    console.log('School ID received:', school_id)
 
     // Se é apenas para atualizar senha
     if (updatePasswordOnly && userId) {
@@ -305,6 +309,30 @@ Deno.serve(async (req) => {
     // CORREÇÃO 1: Removida inserção duplicada de role
     // O trigger handle_new_user_role já cria a role automaticamente
     console.log('User role will be created automatically by trigger handle_new_user_role')
+
+    // ✅ NOVO: Vincular usuário à escola via school_memberships
+    if (school_id) {
+      console.log(`🏫 Vinculando usuário ${data.user.id} à escola ${school_id} com role ${role}`)
+      
+      const { error: membershipError } = await supabaseAdmin
+        .from('school_memberships')
+        .insert({
+          school_id: school_id,
+          user_id: data.user.id,
+          role: role,
+          is_primary: true // Primeira escola do usuário é primária
+        })
+
+      if (membershipError) {
+        console.error('❌ Erro ao vincular à escola:', membershipError)
+        // Não falhar completamente - o usuário foi criado
+        // mas avisar no log
+      } else {
+        console.log('✅ Usuário vinculado à escola com sucesso')
+      }
+    } else {
+      console.warn('⚠️ Nenhum school_id fornecido - usuário criado sem vínculo a escola')
+    }
 
     return new Response(
       JSON.stringify({ 

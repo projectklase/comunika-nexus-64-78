@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSchool } from '@/contexts/SchoolContext';
 
 interface Teacher {
   id: string;
@@ -24,24 +25,38 @@ interface TeacherFilters {
 }
 
 export function useTeachers() {
+  const { currentSchool } = useSchool();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTeachers = useCallback(async (filters: TeacherFilters = {}) => {
+    // ✅ Guard clause - não carregar sem escola
+    if (!currentSchool) {
+      console.log('🏫 [useTeachers] Nenhuma escola selecionada, lista vazia');
+      setTeachers([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // Primeiro, buscar IDs de professores
-      const { data: teacherRoles, error: rolesError } = await supabase
-        .from('user_roles')
+      console.log('🏫 [useTeachers] Buscando professores da escola:', currentSchool.name, currentSchool.id);
+
+      // ✅ NOVO: Buscar professores vinculados à escola via school_memberships
+      const { data: schoolMemberships, error: membershipsError } = await supabase
+        .from('school_memberships')
         .select('user_id')
+        .eq('school_id', currentSchool.id)
         .eq('role', 'professor');
 
-      if (rolesError) throw rolesError;
+      if (membershipsError) throw membershipsError;
 
-      const teacherIds = teacherRoles?.map(r => r.user_id) || [];
+      const teacherIds = schoolMemberships?.map(m => m.user_id) || [];
+      
+      console.log('👨‍🏫 [useTeachers] Professores encontrados na escola:', teacherIds.length);
       
       if (teacherIds.length === 0) {
         setTeachers([]);
@@ -49,7 +64,7 @@ export function useTeachers() {
         return;
       }
 
-      // Depois, buscar profiles desses IDs
+      // Buscar profiles apenas dos professores vinculados à escola
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -90,7 +105,7 @@ export function useTeachers() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentSchool]);
 
   const createTeacher = useCallback(async (teacherData: {
     name: string;
@@ -98,13 +113,21 @@ export function useTeachers() {
     password?: string;
     phone?: string;
   }) => {
+    // ✅ Guard clause
+    if (!currentSchool) {
+      toast.error('Nenhuma escola selecionada');
+      throw new Error('Nenhuma escola selecionada');
+    }
+
     setLoading(true);
     try {
-      console.log('🔵 [useTeachers] Tentando criar professor:', teacherData);
+      console.log('🔵 [useTeachers] Tentando criar professor na escola:', currentSchool.name);
+      console.log('🔵 [useTeachers] Dados do professor:', teacherData);
       
       // Generate password if not provided
       const password = teacherData.password || `Prof${Math.floor(Math.random() * 10000)}!`;
       
+      // ✅ NOVO: Passar school_id para a Edge Function
       const { data, error } = await supabase.functions.invoke('create-demo-user', {
         body: {
           email: teacherData.email,
@@ -112,6 +135,7 @@ export function useTeachers() {
           name: teacherData.name,
           role: 'professor',
           phone: teacherData.phone,
+          school_id: currentSchool.id, // ← CRÍTICO: vincular à escola
         }
       });
 
@@ -149,7 +173,7 @@ export function useTeachers() {
     } finally {
       setLoading(false);
     }
-  }, [fetchTeachers]);
+  }, [fetchTeachers, currentSchool]);
 
   const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string }) => {
     setLoading(true);
@@ -226,9 +250,10 @@ export function useTeachers() {
     }
   }, [fetchTeachers]);
 
+  // ✅ Recarregar quando escola mudar
   useEffect(() => {
     fetchTeachers();
-  }, [fetchTeachers]);
+  }, [fetchTeachers, currentSchool?.id]);
 
   return {
     teachers,
