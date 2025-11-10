@@ -109,6 +109,16 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Normalizar campos antes de validar e enviar
+    const normalizedData = {
+      ...formData,
+      name: normalizeSpaces(formData.name),
+      email: formData.email.trim(),
+      phone: formData.phone.trim()
+    };
+    
+    setFormData(normalizedData);
+    
     // Marcar todos como tocados
     setTouched({
       name: true,
@@ -120,17 +130,17 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
     // Validar todos os campos
     const fieldErrors: Record<string, string> = {};
     
-    const nameError = validateName(formData.name);
+    const nameError = validateName(normalizedData.name);
     if (nameError) fieldErrors.name = nameError;
     
-    const emailError = validateEmail(formData.email);
+    const emailError = validateEmail(normalizedData.email);
     if (emailError) fieldErrors.email = emailError;
     
-    const passwordError = validatePassword(formData.password);
+    const passwordError = validatePassword(normalizedData.password);
     if (passwordError) fieldErrors.password = passwordError;
     
-    if (formData.phone) {
-      const phoneError = validatePhone(formData.phone);
+    if (normalizedData.phone) {
+      const phoneError = validatePhone(normalizedData.phone);
       if (phoneError) fieldErrors.phone = phoneError;
     }
 
@@ -219,10 +229,14 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
                 id="name"
                 value={formData.name}
                 onChange={(e) => {
-                  const normalized = normalizeSpaces(e.target.value);
-                  handleFieldChange('name', normalized);
+                  // Permite espaços durante digitação, apenas limita tamanho
+                  handleFieldChange('name', e.target.value);
                 }}
-                onBlur={() => handleBlur('name')}
+                onBlur={() => {
+                  // Normalizar antes de validar
+                  setFormData(prev => ({ ...prev, name: normalizeSpaces(prev.name) }));
+                  handleBlur('name');
+                }}
                 placeholder="Ex: Maria Silva Santos"
                 disabled={loading}
                 maxLength={100}
@@ -241,10 +255,15 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
                 type="email"
                 value={formData.email}
                 onChange={(e) => {
-                  const email = e.target.value.toLowerCase().trim();
+                  // Apenas lowercase, sem trim
+                  const email = e.target.value.toLowerCase();
                   handleFieldChange('email', email);
                 }}
-                onBlur={() => handleBlur('email')}
+                onBlur={() => {
+                  // Trim antes de validar
+                  setFormData(prev => ({ ...prev, email: prev.email.trim() }));
+                  handleBlur('email');
+                }}
                 placeholder="Ex: maria.silva@escola.com.br"
                 disabled={loading}
                 maxLength={255}
