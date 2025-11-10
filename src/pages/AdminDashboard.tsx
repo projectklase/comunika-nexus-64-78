@@ -84,14 +84,21 @@ export default function AdminDashboard() {
       const classIds = schoolClasses?.map(c => c.id) || [];
       const teacherIds = [...new Set(schoolClasses?.map(c => c.main_teacher_id).filter(Boolean) || [])];
 
-      // PASSO 2: Buscar alunos vinculados à escola via school_memberships
-      const { data: membershipData } = await supabase
+      // PASSO 2: Buscar alunos E secretarias vinculados à escola via school_memberships
+      const { data: studentMemberships } = await supabase
         .from('school_memberships')
         .select('user_id')
         .eq('school_id', currentSchool.id)
         .eq('role', 'aluno');
 
-      const studentIds = membershipData?.map(m => m.user_id) || [];
+      const { data: secretariaMemberships } = await supabase
+        .from('school_memberships')
+        .select('user_id')
+        .eq('school_id', currentSchool.id)
+        .eq('role', 'secretaria');
+
+      const studentIds = studentMemberships?.map(m => m.user_id) || [];
+      const secretariaIds = secretariaMemberships?.map(m => m.user_id) || [];
 
       // PASSO 3: Queries paralelas COM FILTROS por escola
       const [
@@ -124,9 +131,11 @@ export default function AdminDashboard() {
               .in('user_id', teacherIds)
           : { count: 0 },
         
-        // Secretaria (global ou por escola - ajustar se necessário)
-        supabase.from('user_roles').select('user_id', { count: 'exact', head: true })
-          .eq('role', 'secretaria'),
+        // Secretarias desta escola (via secretariaIds)
+        secretariaIds.length > 0
+          ? supabase.from('profiles').select('id', { count: 'exact', head: true })
+              .in('id', secretariaIds)
+          : { count: 0 },
         
         // Turmas
         supabase.from('classes').select('id', { count: 'exact', head: true })
@@ -191,8 +200,8 @@ export default function AdminDashboard() {
       }, 0 as number);
 
       setMetrics({
-        totalUsers: studentIds.length + teacherIds.length + (secretariasResult.count || 0),
-        totalSecretarias: secretariasResult.count || 0,
+        totalUsers: studentIds.length + teacherIds.length + secretariaIds.length,
+        totalSecretarias: secretariaIds.length,
         totalProfessores: teacherIds.length,
         totalAlunos: studentIds.length,
         totalClasses: classesResult.count || 0,
