@@ -941,7 +941,7 @@ export type Database = {
           id: string
           meta: Json | null
           publish_at: string | null
-          school_id: string | null
+          school_id: string
           status: string
           title: string
           type: string
@@ -971,7 +971,7 @@ export type Database = {
           id?: string
           meta?: Json | null
           publish_at?: string | null
-          school_id?: string | null
+          school_id: string
           status?: string
           title: string
           type: string
@@ -1001,7 +1001,7 @@ export type Database = {
           id?: string
           meta?: Json | null
           publish_at?: string | null
-          school_id?: string | null
+          school_id?: string
           status?: string
           title?: string
           type?: string

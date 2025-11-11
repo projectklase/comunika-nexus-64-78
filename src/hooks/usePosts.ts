@@ -12,8 +12,9 @@ export function usePosts(filter?: PostFilter) {
 
   // MUDANÇA: A lógica de busca agora está em uma função que podemos chamar quando quisermos
   const fetchPosts = useCallback(async () => {
-    // Bloquear se não tiver escola
-    if (!currentSchool) {
+    // 🔒 GUARD DEFENSIVO: Bloquear se não tiver escola definida
+    if (!currentSchool?.id) {
+      console.error('[usePosts] ⚠️ Tentativa de buscar posts sem currentSchool definido!');
       setPosts([]);
       setIsLoading(false);
       return;
@@ -26,7 +27,8 @@ export function usePosts(filter?: PostFilter) {
       let query = (supabase as any)
         .from('posts')
         .select('*')
-        .eq('school_id', currentSchool.id);  // ✅ FILTRO CRÍTICO
+        .eq('school_id', currentSchool.id)  // ✅ FILTRO CRÍTICO
+        .not('school_id', 'is', null);  // ✅ Dupla garantia: rejeitar NULL
 
       // Aplica os filtros na consulta do Supabase (muito mais eficiente)
       if (filter) {
@@ -50,8 +52,17 @@ export function usePosts(filter?: PostFilter) {
         throw queryError;
       }
 
+      // 🔒 VALIDAÇÃO DE SEGURANÇA: Verificar se todos os posts são da escola correta
+      const invalidPosts = data?.filter(p => p.school_id !== currentSchool.id) || [];
+      if (invalidPosts.length > 0) {
+        console.error('[usePosts] 🚨 VAZAMENTO DETECTADO! Posts de outras escolas:', invalidPosts);
+      }
+
+      // Filtrar apenas posts da escola correta (camada extra de segurança)
+      const validData = (data || []).filter(p => p.school_id === currentSchool.id);
+
       // Mapeia os dados de snake_case (do banco) para camelCase (do seu app)
-      const formattedData = data.map(p => ({
+      const formattedData = validData.map(p => ({
         id: p.id,
         title: p.title,
         body: p.body,
