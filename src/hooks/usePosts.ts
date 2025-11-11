@@ -53,13 +53,19 @@ export function usePosts(filter?: PostFilter) {
       }
 
       // 🔒 VALIDAÇÃO DE SEGURANÇA: Verificar se todos os posts são da escola correta
-      const invalidPosts = data?.filter(p => p.school_id !== currentSchool.id) || [];
+      if (!data) {
+        setPosts([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const invalidPosts = data.filter(p => p.school_id !== currentSchool.id);
       if (invalidPosts.length > 0) {
         console.error('[usePosts] 🚨 VAZAMENTO DETECTADO! Posts de outras escolas:', invalidPosts);
       }
 
       // Filtrar apenas posts da escola correta (camada extra de segurança)
-      const validData = (data || []).filter(p => p.school_id === currentSchool.id);
+      const validData = data.filter(p => p.school_id === currentSchool.id);
 
       // Mapeia os dados de snake_case (do banco) para camelCase (do seu app)
       const formattedData = validData.map(p => ({

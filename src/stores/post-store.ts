@@ -158,6 +158,17 @@ class PostStore {
       throw new Error(`Dados inválidos: ${validation.errors.map((e) => e.message).join(", ")}`);
     }
 
+    // Buscar school_id do profile do autor
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('current_school_id')
+      .eq('id', authorId)
+      .single();
+
+    if (profileError || !profile?.current_school_id) {
+      throw new Error('Não foi possível determinar a escola do usuário. Por favor, faça login novamente.');
+    }
+
     const insertData = {
       type: validation.data.type,
       title: validation.data.title,
@@ -183,6 +194,7 @@ class PostStore {
       event_capacity_type: validation.data.eventCapacityType ?? null,
       event_max_participants: validation.data.eventMaxParticipants ?? null,
       event_max_guests_per_student: validation.data.eventMaxGuestsPerStudent ?? null,
+      school_id: profile.current_school_id, // ✅ CRITICAL: Associar post à escola do autor
     };
 
     const { data, error } = await supabase.from("posts").insert([insertData]).select().single();
