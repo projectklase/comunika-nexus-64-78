@@ -207,9 +207,9 @@ export default function AdminDashboard() {
       }, 0 as number);
 
       setMetrics({
-        totalUsers: studentIds.length + teacherIds.length + secretariaIds.length,
+        totalUsers: studentIds.length + professorIds.length + secretariaIds.length,
         totalSecretarias: secretariaIds.length,
-        totalProfessores: teacherIds.length,
+        totalProfessores: professorIds.length,
         totalAlunos: studentIds.length,
         totalClasses: classesResult.count || 0,
         activeClasses: activeClassesResult.count || 0,

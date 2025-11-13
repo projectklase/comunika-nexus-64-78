@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useClasses } from '@/hooks/useClasses';
-import { usePeopleStore } from '@/stores/people-store';
+import { useTeachers } from '@/hooks/useTeachers';
 import {
   Dialog,
   DialogContent,
@@ -29,14 +29,27 @@ export function AssignTeachersDialog({
 }: AssignTeachersDialogProps) {
   const { toast } = useToast();
   const { assignTeachers } = useClasses();
-  const { getTeachers } = usePeopleStore();
+  const { teachers: allTeachers, loading: teachersLoading } = useTeachers();
   
   const [search, setSearch] = useState('');
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
 
-  const teachers = getTeachers();
+  // Mapear teachers de useTeachers para o formato esperado
+  const teachers = allTeachers.map(t => ({
+    id: t.id,
+    name: t.name,
+    email: t.email,
+    role: t.role,
+    avatar: t.avatar,
+    phone: t.phone,
+    isActive: true,
+    createdAt: t.created_at,
+    updatedAt: t.updated_at
+  }));
+
   const filteredTeachers = teachers.filter(teacher =>
-    teacher.name.toLowerCase().includes(search.toLowerCase())
+    teacher.name?.toLowerCase().includes(search.toLowerCase()) ||
+    teacher.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   useEffect(() => {
@@ -116,7 +129,12 @@ export function AssignTeachersDialog({
           {/* Teacher List */}
           <div className="space-y-2 max-h-96 overflow-y-auto">
             <label className="text-sm font-medium">Professores Disponíveis</label>
-            {filteredTeachers.map(teacher => {
+            {teachersLoading && (
+              <div className="text-center py-4 text-muted-foreground">
+                Carregando professores...
+              </div>
+            )}
+            {!teachersLoading && filteredTeachers.map(teacher => {
               const isSelected = selectedTeachers.includes(teacher.id);
               const load = getTeacherLoad(teacher.id);
               
