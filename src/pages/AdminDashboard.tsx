@@ -97,8 +97,16 @@ export default function AdminDashboard() {
         .eq('school_id', currentSchool.id)
         .eq('role', 'secretaria');
 
+      // ✅ NOVO: Buscar professores via school_memberships (consistente com alunos/secretarias)
+      const { data: professorMemberships } = await supabase
+        .from('school_memberships')
+        .select('user_id')
+        .eq('school_id', currentSchool.id)
+        .eq('role', 'professor');
+
       const studentIds = studentMemberships?.map(m => m.user_id) || [];
       const secretariaIds = secretariaMemberships?.map(m => m.user_id) || [];
+      const professorIds = professorMemberships?.map(m => m.user_id) || [];
 
       // PASSO 3: Queries paralelas COM FILTROS por escola
       const [
@@ -124,11 +132,10 @@ export default function AdminDashboard() {
           ? supabase.from('profiles').select('koins', { count: 'exact' }).in('id', studentIds)
           : { count: 0, data: [] },
         
-        // Professores desta escola (via teacherIds)
-        teacherIds.length > 0
-          ? supabase.from('user_roles').select('user_id', { count: 'exact', head: true })
-              .eq('role', 'professor')
-              .in('user_id', teacherIds)
+        // Professores desta escola (via professorIds do school_memberships)
+        professorIds.length > 0
+          ? supabase.from('profiles').select('id', { count: 'exact', head: true })
+              .in('id', professorIds)
           : { count: 0 },
         
         // Secretarias desta escola (via secretariaIds)
