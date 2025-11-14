@@ -31,7 +31,7 @@ const cadastrosLinks: CadastroLink[] = [
   {
     title: "Secretárias",
     description: "Gerenciar cadastro de secretárias",
-    url: "/secretaria/cadastros/secretarias",
+    url: "/admin/gerenciar-secretarias",
     icon: UsersRound,
   },
   {
