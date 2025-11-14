@@ -64,25 +64,39 @@ export function CadastrosModal({ open, onOpenChange }: CadastrosModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass max-w-3xl border-purple-500/20">
-        <DialogHeader className="pb-6">
-          <DialogTitle className="text-3xl font-bold gradient-text text-center">Cadastros</DialogTitle>
+      <DialogContent className="backdrop-blur-2xl bg-black/80 border border-purple-500/30 max-w-3xl shadow-2xl shadow-purple-500/10">
+        <DialogHeader className="pb-8">
+          <DialogTitle className="text-4xl font-bold gradient-text text-center drop-shadow-[0_0_15px_rgba(147,51,234,0.5)]">
+            Cadastros
+          </DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
-          {cadastrosLinks.map((link) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
+          {cadastrosLinks.map((link, index) => (
             <Button
               key={link.url}
               variant="outline"
-              className="h-24 flex-col items-start justify-center gap-3 p-5 glass-soft hover:glass hover:scale-[1.02] hover:border-purple-500/40 transition-all duration-200 group"
+              className="group relative min-h-[140px] h-auto flex-col items-start justify-between gap-4 p-6 
+                         backdrop-blur-xl bg-white/5 rounded-xl border border-white/10
+                         hover:scale-[1.02] hover:bg-white/10 hover:border-primary/50
+                         hover:shadow-2xl hover:shadow-primary/20
+                         transition-all duration-300 ease-out cursor-pointer
+                         animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
               onClick={() => handleNavigate(link.url)}
             >
               <div className="flex items-center gap-3 w-full">
-                <div className="p-2 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                  <link.icon className="h-5 w-5 text-purple-400" />
+                <div className="p-2.5 rounded-full bg-primary/10 group-hover:bg-primary/20 
+                                ring-1 ring-primary/20 group-hover:ring-primary/40
+                                transition-all duration-300">
+                  <link.icon className="h-6 w-6 text-primary/80 group-hover:text-primary transition-colors" />
                 </div>
-                <span className="font-semibold text-base text-white">{link.title}</span>
+                <span className="font-bold text-lg text-white group-hover:text-primary/90 transition-colors">
+                  {link.title}
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground/80 text-left leading-relaxed">{link.description}</span>
+              <span className="text-sm text-gray-400 group-hover:text-gray-300 text-left leading-relaxed w-full transition-colors">
+                {link.description}
+              </span>
             </Button>
           ))}
         </div>
