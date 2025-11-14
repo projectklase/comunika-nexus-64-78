@@ -1,3 +1,59 @@
+import { useNavigate } from 'react-router-dom';
+import { Users, UserCog, UsersRound, Layers, BookOpen, FolderKanban, type LucideIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+interface CadastrosModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+interface CadastroLink {
+  title: string;
+  description: string;
+  url: string;
+  icon: LucideIcon;
+}
+
+const cadastrosLinks: CadastroLink[] = [
+  {
+    title: 'Alunos',
+    description: 'Gerenciar cadastro de alunos',
+    url: '/secretaria/cadastros/alunos',
+    icon: Users,
+  },
+  {
+    title: 'Professores',
+    description: 'Gerenciar cadastro de professores',
+    url: '/secretaria/cadastros/professores',
+    icon: UserCog,
+  },
+  {
+    title: 'Secretárias',
+    description: 'Gerenciar cadastro de secretárias',
+    url: '/secretaria/cadastros/secretarias',
+    icon: UsersRound,
+  },
+  {
+    title: 'Níveis',
+    description: 'Gerenciar níveis escolares',
+    url: '/secretaria/cadastros/niveis',
+    icon: Layers,
+  },
+  {
+    title: 'Modalidades',
+    description: 'Gerenciar modalidades de ensino',
+    url: '/secretaria/cadastros/modalidades',
+    icon: FolderKanban,
+  },
+  {
+    title: 'Matérias',
+    description: 'Gerenciar disciplinas e matérias',
+    url: '/secretaria/cadastros/materias',
+    icon: BookOpen,
+  },
+];
+
 export function CadastrosModal({ open, onOpenChange }: CadastrosModalProps) {
   const navigate = useNavigate();
 
