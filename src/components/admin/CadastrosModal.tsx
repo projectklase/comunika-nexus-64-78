@@ -80,21 +80,21 @@ export function CadastrosModal({ open, onOpenChange }: CadastrosModalProps) {
                          hover:scale-[1.02] hover:bg-white/10 hover:border-primary/50
                          hover:shadow-2xl hover:shadow-primary/20
                          transition-all duration-300 ease-out cursor-pointer
-                         animate-fade-in"
+                         animate-fade-in whitespace-normal overflow-visible !truncate-none"
               style={{ animationDelay: `${index * 50}ms` }}
               onClick={() => handleNavigate(link.url)}
             >
-              <div className="flex items-center gap-3 w-full">
+              <div className="flex items-center gap-3 w-full flex-shrink-0">
                 <div className="p-2.5 rounded-full bg-primary/10 group-hover:bg-primary/20 
                                 ring-1 ring-primary/20 group-hover:ring-primary/40
-                                transition-all duration-300">
+                                transition-all duration-300 flex-shrink-0">
                   <link.icon className="h-6 w-6 text-primary/80 group-hover:text-primary transition-colors" />
                 </div>
-                <span className="font-bold text-lg text-white group-hover:text-primary/90 transition-colors">
+                <span className="font-bold text-lg text-white group-hover:text-primary/90 transition-colors whitespace-normal break-words">
                   {link.title}
                 </span>
               </div>
-              <span className="text-sm text-gray-400 group-hover:text-gray-300 text-left leading-relaxed w-full transition-colors">
+              <span className="text-sm text-gray-400 group-hover:text-gray-300 text-left leading-relaxed w-full transition-colors whitespace-normal break-words block">
                 {link.description}
               </span>
             </Button>
