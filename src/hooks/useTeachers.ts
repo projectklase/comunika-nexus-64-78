@@ -234,23 +234,50 @@ export function useTeachers() {
     }
   }, [fetchTeachers]);
 
+  /**
+   * Deleta um professor tanto do sistema de autenticação quanto do perfil.
+   * Usa a Edge Function 'delete-user' que possui privilégios administrativos.
+   * É uma operação de duas etapas que precisa ser feita por um administrador.
+   */
   const deleteTeacher = useCallback(async (id: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Passo 1: Chamar Edge Function segura para deletar o usuário do sistema de autenticação (auth.users).
+      // Isso é necessário porque a exclusão de usuários exige privilégios de administrador.
+      const { error: functionError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
+
+      if (functionError) {
+        // Se a função não existir, retornar erro apropriado
+        if (functionError.message.includes('Function not found')) {
+            console.warn("Edge Function 'delete-user' não encontrada. A exclusão pode ser incompleta.");
+            throw new Error("A função de servidor para deletar usuários não foi encontrada.");
+        }
+        throw functionError;
+      }
+      
+      // Se a Edge Function funcionou, o registro em `public.profiles` deve ser apagado
+      // automaticamente pela configuração "ON DELETE CASCADE" que definimos na tabela `profiles`.
+      // A chamada abaixo é uma garantia extra caso o CASCADE não funcione.
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (profileError) {
+         // Loga um aviso, mas considera a operação um sucesso se o usuário de autenticação foi removido.
+        console.warn(`Login do professor deletado, mas ocorreu um erro ao limpar o perfil: ${profileError.message}`);
+      }
 
       toast.success('Professor removido com sucesso');
       
-      // Refresh the list
+      // Passo 2: Atualizar a lista na tela para refletir a remoção.
       await fetchTeachers();
-    } catch (err) {
+
+    } catch (err: any) {
       console.error('Error deleting teacher:', err);
-      toast.error('Erro ao remover professor');
+      toast.error(`Erro ao remover professor: ${err.message}`);
       throw err;
     } finally {
       setLoading(false);
