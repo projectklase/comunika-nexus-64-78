@@ -64,46 +64,45 @@ export function CadastrosModal({ open, onOpenChange }: CadastrosModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="backdrop-blur-2xl bg-black/80 border border-purple-500/30 max-w-4xl shadow-2xl shadow-purple-500/10 max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="pb-6">
+      <DialogContent className="backdrop-blur-2xl bg-black/80 border border-purple-500/30 max-w-5xl shadow-2xl shadow-purple-500/10 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-8">
           <DialogTitle className="text-4xl font-bold gradient-text text-center drop-shadow-[0_0_15px_rgba(147,51,234,0.5)]">
             Cadastros
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-6 px-2">
           {cadastrosLinks.map((link, index) => (
-            <Button
+            <button
               key={link.url}
-              variant="outline"
-              className="group relative h-auto min-h-[130px] flex flex-col items-start justify-start gap-3 p-5
+              className="group relative flex flex-col items-start gap-4 p-6
                          backdrop-blur-xl bg-white/5 rounded-xl border border-white/10
                          hover:scale-[1.02] hover:bg-white/10 hover:border-primary/50
                          hover:shadow-2xl hover:shadow-primary/20
                          transition-all duration-300 ease-out cursor-pointer
-                         animate-fade-in text-left"
+                         animate-fade-in text-left w-full min-h-[140px]"
               style={{ animationDelay: `${index * 50}ms` }}
               onClick={() => handleNavigate(link.url)}
             >
               {/* Ícone e Título */}
               <div className="flex items-center gap-3 w-full">
                 <div
-                  className="flex-shrink-0 p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 
+                  className="flex-shrink-0 p-2.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 
                                 ring-1 ring-primary/20 group-hover:ring-primary/40
                                 transition-all duration-300"
                 >
-                  <link.icon className="h-5 w-5 text-primary/80 group-hover:text-primary transition-colors" />
+                  <link.icon className="h-6 w-6 text-primary/80 group-hover:text-primary transition-colors" />
                 </div>
-                <h3 className="font-bold text-base text-white group-hover:text-primary/90 transition-colors leading-tight">
+                <h3 className="font-bold text-lg text-white group-hover:text-primary/90 transition-colors leading-tight">
                   {link.title}
                 </h3>
               </div>
 
               {/* Descrição */}
-              <p className="text-xs text-gray-400 group-hover:text-gray-300 leading-relaxed transition-colors w-full">
+              <p className="text-sm text-gray-400 group-hover:text-gray-300 leading-relaxed transition-colors w-full">
                 {link.description}
               </p>
-            </Button>
+            </button>
           ))}
         </div>
       </DialogContent>
