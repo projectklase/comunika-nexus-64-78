@@ -55,6 +55,12 @@ export function usePrograms() {
   }, []);
 
   const createProgram = useCallback(async (programData: Omit<Program, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Validar se há escola selecionada
+    if (!currentSchool) {
+      toast.error('Nenhuma escola selecionada');
+      throw new Error('Nenhuma escola selecionada');
+    }
+
     try {
       setError(null);
 
@@ -66,6 +72,7 @@ export function usePrograms() {
           description: programData.description,
           curriculum_mode: programData.curriculumMode,
           is_active: programData.isActive,
+          school_id: currentSchool.id,  // ✅ ADICIONAR SCHOOL_ID
         })
         .select()
         .single();
