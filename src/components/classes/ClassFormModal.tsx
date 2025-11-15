@@ -6,6 +6,7 @@ import { useClasses } from '@/hooks/useClasses';
 import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
 import { useSubjects } from '@/hooks/useSubjects';
+import { useSchool } from '@/contexts/SchoolContext';
 import { SchoolClass } from '@/types/class';
 import { useCatalogGuards } from '@/utils/catalog-guards';
 import { saveDraft, restoreDraft, clearDraft } from '@/utils/form-draft';
@@ -89,6 +90,7 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
   
   const { toast } = useToast();
   const { classes, createClass, updateClass } = useClasses();
+  const { currentSchool } = useSchool();
   // Use catalog guards hook
   const { hasCatalogs, getMissingCatalogs } = useCatalogGuards();
   
@@ -178,6 +180,16 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
 
 
   const onSubmit = async (data: FormData) => {
+    // ✅ VALIDAR ESCOLA
+    if (!currentSchool) {
+      toast({
+        title: "Erro",
+        description: "Nenhuma escola selecionada.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Validate unique name per year
       const existingClass = classes.find(c => 
@@ -225,6 +237,7 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
         series: data.grade || undefined,
         year: data.year || currentYear,
         status: data.status === 'ATIVA' ? 'Ativa' : 'Arquivada',
+        school_id: currentSchool.id,  // ✅ ADICIONAR SCHOOL_ID
       };
 
       console.log('🔵 [ClassFormModal] Dados do formulário:', data);
