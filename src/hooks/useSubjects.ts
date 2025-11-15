@@ -55,10 +55,20 @@ export function useSubjects() {
   };
 
   const createSubject = async (subjectData: Omit<Subject, 'id' | 'created_at' | 'updated_at'>) => {
+    // Validar se há escola selecionada
+    if (!currentSchool) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Nenhuma escola selecionada."
+      });
+      throw new Error('Nenhuma escola selecionada');
+    }
+
     try {
       const { data, error } = await supabase
         .from('subjects')
-        .insert([subjectData])
+        .insert([{ ...subjectData, school_id: currentSchool.id }])  // ✅ ADICIONAR SCHOOL_ID
         .select()
         .single();
 

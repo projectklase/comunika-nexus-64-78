@@ -57,10 +57,20 @@ export function useLevels() {
   };
 
   const createLevel = async (levelData: Omit<Level, 'id' | 'created_at' | 'updated_at'>) => {
+    // Validar se há escola selecionada
+    if (!currentSchool) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Nenhuma escola selecionada."
+      });
+      throw new Error('Nenhuma escola selecionada');
+    }
+
     try {
       const { data, error } = await supabase
         .from('levels')
-        .insert([levelData])
+        .insert([{ ...levelData, school_id: currentSchool.id }])  // ✅ ADICIONAR SCHOOL_ID
         .select()
         .single();
 
