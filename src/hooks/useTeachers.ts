@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSchool } from '@/contexts/SchoolContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { logAudit } from '@/stores/audit-store';
 
 interface Teacher {
   id: string;
@@ -30,6 +32,7 @@ interface TeacherFilters {
 
 export function useTeachers() {
   const { currentSchool } = useSchool();
+  const { user } = useAuth();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +245,45 @@ export function useTeachers() {
   const deleteTeacher = useCallback(async (id: string) => {
     setLoading(true);
     try {
+      // Buscar dados do professor antes de deletar para registrar no audit log
+      const teacherToDelete = teachers.find(t => t.id === id);
+      
+      if (!teacherToDelete) {
+        throw new Error('Professor não encontrado');
+      }
+
+      // Buscar dados do usuário logado para o audit log
+      if (user && currentSchool) {
+        const { data: actorProfile } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', user.id)
+          .single();
+
+        const { data: actorRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        // Registrar exclusão no histórico de auditoria
+        await logAudit({
+          action: 'DELETE',
+          entity: 'TEACHER',
+          entity_id: id,
+          entity_label: teacherToDelete.name,
+          scope: 'GLOBAL',
+          actor_id: user.id,
+          actor_name: actorProfile?.name || user.email || 'Unknown',
+          actor_email: actorProfile?.email || user.email || '',
+          actor_role: actorRole?.role || 'unknown',
+          meta: {
+            email: teacherToDelete.email,
+            phone: teacherToDelete.phone,
+          }
+        });
+      }
+
       // Passo 1: Chamar Edge Function segura para deletar o usuário do sistema de autenticação (auth.users).
       // Isso é necessário porque a exclusão de usuários exige privilégios de administrador.
       const { error: functionError } = await supabase.functions.invoke('delete-user', {

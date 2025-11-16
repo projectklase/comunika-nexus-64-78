@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSchool } from '@/contexts/SchoolContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { logAudit } from '@/stores/audit-store';
 
 // As interfaces e a estrutura geral do hook permanecem as mesmas.
 interface Guardian {
@@ -52,6 +54,7 @@ interface StudentFilters {
 
 export function useStudents() {
   const { currentSchool } = useSchool();
+  const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -322,6 +325,53 @@ export function useStudents() {
   const deleteStudent = useCallback(async (id: string) => {
     setLoading(true);
     try {
+      // Buscar dados do aluno antes de deletar para registrar no audit log
+      const studentToDelete = students.find(s => s.id === id);
+      
+      if (!studentToDelete) {
+        throw new Error('Aluno não encontrado');
+      }
+
+      // Buscar turmas do aluno
+      const { data: studentClasses } = await supabase
+        .from('class_students')
+        .select('class_id')
+        .eq('student_id', id);
+
+      const classIds = studentClasses?.map(sc => sc.class_id) || [];
+
+      // Buscar dados do usuário logado para o audit log
+      if (user && currentSchool) {
+        const { data: actorProfile } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', user.id)
+          .single();
+
+        const { data: actorRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        // Registrar exclusão no histórico de auditoria
+        await logAudit({
+          action: 'DELETE',
+          entity: 'STUDENT',
+          entity_id: id,
+          entity_label: studentToDelete.name,
+          scope: 'GLOBAL',
+          actor_id: user.id,
+          actor_name: actorProfile?.name || user.email || 'Unknown',
+          actor_email: actorProfile?.email || user.email || '',
+          actor_role: actorRole?.role || 'unknown',
+          meta: {
+            email: studentToDelete.email,
+            classes: classIds,
+          }
+        });
+      }
+
       // Passo 1: Chamar uma Edge Function segura para deletar o usuário do sistema de autenticação (auth.users).
       // Isso é necessário porque a exclusão de usuários exige privilégios de administrador.
       const { error: functionError } = await supabase.functions.invoke('delete-user', {
