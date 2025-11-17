@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2 } from 'lucide-react';
+import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2, Edit } from 'lucide-react';
 import { useSecretarias } from '@/hooks/useSecretarias';
 import { SecretariaFormModal } from '@/components/admin/SecretariaFormModal';
 import { Secretaria } from '@/types/secretaria';
@@ -43,6 +43,7 @@ export default function SecretariasPage() {
     filters,
     setFilters,
     createSecretaria,
+    updateSecretaria,
     archiveSecretaria,
     reactivateSecretaria,
     deleteSecretaria
@@ -52,6 +53,7 @@ export default function SecretariasPage() {
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedSecretaria, setSelectedSecretaria] = useState<Secretaria | null>(null);
 
   const handleArchive = async () => {
@@ -240,6 +242,15 @@ export default function SecretariasPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedSecretaria(secretaria);
+                                setEditModalOpen(true);
+                              }}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
                             {secretaria.is_active ? (
                               <DropdownMenuItem
                                 onClick={() => {
@@ -344,6 +355,22 @@ export default function SecretariasPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Edit Modal */}
+        <SecretariaFormModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          secretaria={selectedSecretaria}
+          onUpdate={async (id, updates) => {
+            const success = await updateSecretaria(id, updates);
+            if (success) {
+              setEditModalOpen(false);
+              setSelectedSecretaria(null);
+            }
+            return success;
+          }}
+          onSubmit={async () => false}
+        />
       </div>
     </AppLayout>
   );
