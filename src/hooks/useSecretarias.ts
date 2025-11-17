@@ -258,6 +258,80 @@ export function useSecretarias() {
     }
   };
 
+  const deleteSecretaria = async (id: string, name: string): Promise<boolean> => {
+    try {
+      // Buscar dados da secretária diretamente do banco
+      const { data: secretariaToDelete, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, name, email, phone')
+        .eq('id', id)
+        .single();
+
+      if (fetchError || !secretariaToDelete) {
+        throw new Error('Secretária não encontrada no banco de dados');
+      }
+
+      // Registrar exclusão no histórico de auditoria
+      if (user && currentSchool) {
+        const { data: actorProfile } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', user.id)
+          .single();
+
+        const { data: actorRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        await logAudit({
+          action: 'DELETE',
+          entity: 'USER',
+          entity_id: id,
+          entity_label: name,
+          scope: 'GLOBAL',
+          actor_id: user.id,
+          actor_name: actorProfile?.name || user.email || 'Unknown',
+          actor_email: actorProfile?.email || user.email || '',
+          actor_role: actorRole?.role || 'unknown',
+          meta: {
+            role: 'secretaria',
+            email: secretariaToDelete.email,
+            phone: secretariaToDelete.phone
+          }
+        });
+      }
+
+      // Chamar edge function para deletar usuário
+      const { error: functionError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
+
+      if (functionError) {
+        throw functionError;
+      }
+
+      // Deletar perfil (garantia, caso CASCADE não funcione)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (profileError) {
+        console.warn(`Login deletado, mas erro ao limpar perfil: ${profileError.message}`);
+      }
+
+      toast.success('Secretária removida com sucesso');
+      await loadSecretarias();
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting secretaria:', error);
+      toast.error(`Erro ao remover secretária: ${error.message}`);
+      return false;
+    }
+  };
+
   useEffect(() => {
     loadSecretarias();
   }, [filters, currentSchool?.id]);
@@ -271,6 +345,7 @@ export function useSecretarias() {
     updateSecretaria,
     archiveSecretaria,
     reactivateSecretaria,
+    deleteSecretaria,
     reload: loadSecretarias
   };
 }
