@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { InputPhone } from '@/components/ui/input-phone';
 import { Label } from '@/components/ui/label';
 import { Loader2, RefreshCw, Eye, EyeOff, Shield, Info } from 'lucide-react';
-import { SecretariaFormData } from '@/types/secretaria';
-import { 
+import { SecretariaFormData, Secretaria } from '@/types/secretaria';
+import {
   validateName, 
   validateEmail, 
   validatePassword, 
@@ -21,9 +21,18 @@ interface SecretariaFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: SecretariaFormData) => Promise<boolean>;
+  secretaria?: Secretaria | null;
+  onUpdate?: (id: string, updates: Partial<SecretariaFormData>) => Promise<boolean>;
 }
 
-export function SecretariaFormModal({ open, onOpenChange, onSubmit }: SecretariaFormModalProps) {
+export function SecretariaFormModal({ 
+  open, 
+  onOpenChange, 
+  onSubmit,
+  secretaria,
+  onUpdate
+}: SecretariaFormModalProps) {
+  const isEditing = Boolean(secretaria);
   const nameInputRef = useRef<HTMLInputElement>(null);
   
   const [loading, setLoading] = useState(false);
@@ -47,16 +56,33 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
     name: string;
   } | null>(null);
 
-  // Auto-gerar senha ao abrir modal
+  // Auto-gerar senha quando o modal abrir ou carregar dados para edição
   useEffect(() => {
     if (open) {
-      const newPassword = generateSecurePassword();
-      setFormData(prev => ({ ...prev, password: newPassword }));
+      if (secretaria) {
+        // Modo de edição: carregar dados
+        setFormData({
+          name: secretaria.name || '',
+          email: secretaria.email || '',
+          password: '',
+          phone: secretaria.phone || ''
+        });
+      } else {
+        // Modo de criação: gerar nova senha
+        const newPassword = generateSecurePassword();
+        setFormData(prev => ({ ...prev, password: newPassword }));
+      }
+      
+      // Limpar erros e touched
+      setErrors({});
+      setTouched({});
       
       // Auto-focus no primeiro campo
-      setTimeout(() => nameInputRef.current?.focus(), 100);
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
     }
-  }, [open]);
+  }, [open, secretaria]);
 
   // Regenerar senha
   const handleRegeneratePassword = () => {
@@ -205,7 +231,7 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              Nova Secretaria
+              {isEditing ? 'Editar Secretária' : 'Nova Secretaria'}
             </DialogTitle>
           </DialogHeader>
 
@@ -279,52 +305,54 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
             </div>
 
             {/* Senha */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha *</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => handleFieldChange('password', e.target.value)}
-                    onBlur={() => handleBlur('password')}
-                    className={`pr-10 font-mono ${errors.password && touched.password ? 'border-destructive' : ''}`}
-                    disabled={loading}
-                  />
+            {!isEditing && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha *</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => handleFieldChange('password', e.target.value)}
+                      onBlur={() => handleBlur('password')}
+                      className={`pr-10 font-mono ${errors.password && touched.password ? 'border-destructive' : ''}`}
+                      disabled={loading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="absolute right-0 top-0 h-full"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
+                    onClick={handleRegeneratePassword}
+                    disabled={loading}
+                    title="Gerar nova senha"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    <RefreshCw className="h-4 w-4" />
                   </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRegeneratePassword}
-                  disabled={loading}
-                  title="Gerar nova senha"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+                {errors.password && touched.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Senha gerada automaticamente. Clique em <RefreshCw className="inline h-3 w-3" /> para gerar nova.
+                </p>
               </div>
-              {errors.password && touched.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Senha gerada automaticamente. Clique em <RefreshCw className="inline h-3 w-3" /> para gerar nova.
-              </p>
-            </div>
+            )}
 
             {/* Telefone */}
             <div className="space-y-2">
@@ -359,12 +387,12 @@ export function SecretariaFormModal({ open, onOpenChange, onSubmit }: Secretaria
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando...
+                    {isEditing ? 'Salvando...' : 'Criando...'}
                   </>
                 ) : (
                   <>
                     <Shield className="mr-2 h-4 w-4" />
-                    Criar Secretaria
+                    {isEditing ? 'Salvar Alterações' : 'Criar Secretaria'}
                   </>
                 )}
               </Button>
