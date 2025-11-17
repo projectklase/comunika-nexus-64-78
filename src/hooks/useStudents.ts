@@ -325,11 +325,15 @@ export function useStudents() {
   const deleteStudent = useCallback(async (id: string) => {
     setLoading(true);
     try {
-      // Buscar dados do aluno antes de deletar para registrar no audit log
-      const studentToDelete = students.find(s => s.id === id);
+      // Buscar dados do aluno DIRETAMENTE do banco
+      const { data: studentToDelete, error: studentError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('id', id)
+        .single();
       
-      if (!studentToDelete) {
-        throw new Error('Aluno não encontrado');
+      if (studentError || !studentToDelete) {
+        throw new Error('Aluno não encontrado no banco de dados');
       }
 
       // Buscar turmas do aluno

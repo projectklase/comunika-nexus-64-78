@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield } from 'lucide-react';
+import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2 } from 'lucide-react';
 import { useSecretarias } from '@/hooks/useSecretarias';
 import { SecretariaFormModal } from '@/components/admin/SecretariaFormModal';
 import { Secretaria } from '@/types/secretaria';
@@ -44,12 +44,14 @@ export default function SecretariasPage() {
     setFilters,
     createSecretaria,
     archiveSecretaria,
-    reactivateSecretaria
+    reactivateSecretaria,
+    deleteSecretaria
   } = useSecretarias();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSecretaria, setSelectedSecretaria] = useState<Secretaria | null>(null);
 
   const handleArchive = async () => {
@@ -63,6 +65,13 @@ export default function SecretariasPage() {
     if (!selectedSecretaria) return;
     await reactivateSecretaria(selectedSecretaria.id, selectedSecretaria.name);
     setReactivateDialogOpen(false);
+    setSelectedSecretaria(null);
+  };
+
+  const handleDelete = async () => {
+    if (!selectedSecretaria) return;
+    await deleteSecretaria(selectedSecretaria.id, selectedSecretaria.name);
+    setDeleteDialogOpen(false);
     setSelectedSecretaria(null);
   };
 
@@ -252,6 +261,16 @@ export default function SecretariasPage() {
                                 Reativar
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedSecretaria(secretaria);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -300,6 +319,28 @@ export default function SecretariasPage() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={handleReactivate}>Reativar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Secretária?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir permanentemente <strong>{selectedSecretaria?.name}</strong>?
+                Esta ação não pode ser desfeita e removerá todos os dados associados.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
