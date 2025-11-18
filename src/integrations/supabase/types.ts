@@ -1303,22 +1303,33 @@ export type Database = {
         Row: {
           description: string | null
           key: string
+          school_id: string
           updated_at: string | null
           value: Json | null
         }
         Insert: {
           description?: string | null
           key: string
+          school_id: string
           updated_at?: string | null
           value?: Json | null
         }
         Update: {
           description?: string | null
           key?: string
+          school_id?: string
           updated_at?: string | null
           value?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "school_settings_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schools: {
         Row: {
@@ -1561,11 +1572,18 @@ export type Database = {
         Args: { days_filter?: number; p_class_id: string }
         Returns: Json
       }
-      get_evasion_risk_analytics: {
-        Args: { days_filter?: number }
-        Returns: Json
-      }
-      get_post_read_analytics: { Args: { days_filter?: number }; Returns: Json }
+      get_evasion_risk_analytics:
+        | {
+            Args: { days_filter?: number; school_id_param?: string }
+            Returns: Json
+          }
+        | { Args: { days_filter?: number }; Returns: Json }
+      get_post_read_analytics:
+        | {
+            Args: { days_filter?: number; school_id_param?: string }
+            Returns: Json
+          }
+        | { Args: { days_filter?: number }; Returns: Json }
       get_student_challenges_with_progress: {
         Args: { p_student_id: string }
         Returns: {
