@@ -103,15 +103,37 @@ serve(async (req) => {
       );
     }
 
+    // Obter escola atual do usuário
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('current_school_id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profileData?.current_school_id) {
+      return new Response(
+        JSON.stringify({ error: "Usuário sem escola configurada" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const schoolId = profileData.current_school_id;
+
     // Buscar dados de analytics
     const { data: evasionData, error: evasionError } = await supabase.rpc(
       "get_evasion_risk_analytics",
-      { days_filter: daysFilter }
+      { 
+        days_filter: daysFilter,
+        school_id_param: schoolId
+      }
     );
 
     const { data: postReadData, error: postReadError } = await supabase.rpc(
       "get_post_read_analytics",
-      { days_filter: daysFilter }
+      { 
+        days_filter: daysFilter,
+        school_id_param: schoolId
+      }
     );
 
     if (evasionError || postReadError) {
