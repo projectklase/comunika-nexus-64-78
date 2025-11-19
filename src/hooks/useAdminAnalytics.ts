@@ -15,7 +15,10 @@ export function useAdminAnalytics(daysFilter: number = 30) {
 
       const { data, error } = await supabase.rpc(
         'get_evasion_risk_analytics',
-        { days_filter: daysFilter }
+        { 
+          days_filter: daysFilter,
+          school_id_param: currentSchool.id
+        }
       );
       
       if (error) {
