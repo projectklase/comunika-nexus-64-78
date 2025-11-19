@@ -15,7 +15,10 @@ export function usePostReadAnalytics(daysFilter: number = 30) {
 
       const { data, error } = await supabase.rpc(
         'get_post_read_analytics',
-        { days_filter: daysFilter }
+        { 
+          days_filter: daysFilter,
+          school_id_param: currentSchool.id
+        }
       );
       
       if (error) {
