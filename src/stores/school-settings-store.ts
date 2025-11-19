@@ -108,10 +108,23 @@ export const useSchoolSettingsStore = create<SchoolSettingsStore>((set, get) => 
 
 // Async helper to load from Supabase
 async function loadSupabaseSettings(): Promise<SchoolSettings | null> {
+  // Get user's current school
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('current_school_id')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile?.current_school_id) return null;
+
   const { data, error } = await supabase
     .from('school_settings')
     .select('value')
     .eq('key', 'use_activity_weights')
+    .eq('school_id', profile.current_school_id)
     .single();
 
   if (error) {
@@ -137,12 +150,33 @@ async function loadSupabaseSettings(): Promise<SchoolSettings | null> {
 // Async helper to update Supabase
 async function updateSupabaseSettings(updates: Partial<SchoolSettings>): Promise<void> {
   if (updates.weightsEnabled !== undefined) {
+    // Get user's current school
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user');
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('current_school_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.current_school_id) {
+      console.error('No school selected');
+      return;
+    }
+
     const { error } = await supabase
       .from('school_settings')
-      .upsert(
-        { key: 'use_activity_weights', value: { enabled: updates.weightsEnabled } },
-        { onConflict: 'key' }
-      );
+      .upsert([
+        { 
+          key: 'use_activity_weights', 
+          school_id: profile.current_school_id,
+          value: { enabled: updates.weightsEnabled } 
+        }
+      ]);
 
     if (error) {
       console.error('Error updating settings in Supabase:', error);

@@ -27,11 +27,11 @@ export function useSchoolSettings() {
     try {
       setIsLoading(true);
       
-      // Note: school_settings table stores global settings as key-value pairs
-      // If this table doesn't have school_id column, settings will be shared across schools
+      // Filter settings by current school
       const { data, error } = await supabase
         .from('school_settings')
-        .select('*');
+        .select('*')
+        .eq('school_id', currentSchool.id);
 
       if (error) throw error;
       
@@ -55,15 +55,20 @@ export function useSchoolSettings() {
   };
 
   const updateSetting = async (key: string, value: any, description?: string) => {
+    if (!currentSchool?.id) {
+      throw new Error('Escola não selecionada');
+    }
+
     try {
       const { error } = await supabase
         .from('school_settings')
-        .upsert({
+        .upsert([{
           key,
+          school_id: currentSchool.id,
           value,
           description,
           updated_at: new Date().toISOString()
-        });
+        }]);
 
       if (error) throw error;
 
