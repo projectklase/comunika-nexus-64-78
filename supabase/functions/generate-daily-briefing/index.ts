@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
     console.log(`[CRON Job] 📊 Processando ${schools.length} escola(s)...`);
 
     const daysFilter = 30;
+    const currentDate = new Date().toISOString();
     const results = [];
 
     // 3. Processar cada escola individualmente
@@ -101,22 +102,62 @@ Deno.serve(async (req) => {
         };
 
         // Chamar IA Lovable
-        const systemPrompt = `Você é um assistente especializado em análise educacional e gestão escolar. Sua função é analisar dados de desempenho de alunos e engajamento para gerar insights acionáveis para administradores escolares.
+        const systemPrompt = `Você é um consultor educacional especializado em gestão escolar, retenção de alunos e estratégias de captação.
 
-Com base nos dados fornecidos, você deve:
-1. Avaliar o nível de risco de evasão e identificar padrões
-2. Analisar tendências de engajamento dos alunos
-3. Propor ações prioritárias e práticas para melhorar os indicadores
-4. Fazer previsões realistas sobre cenários futuros
+**CONTEXTO IMPORTANTE:**
+Você está auxiliando um ADMINISTRADOR ESCOLAR (não um desenvolvedor). Suas recomendações devem ser práticas e executáveis diretamente por gestores educacionais.
 
-Seja objetivo, preciso e sempre forneça recomendações acionáveis.`;
+**SUAS RESPONSABILIDADES:**
+1. Analisar dados de evasão e identificar padrões de risco
+2. Avaliar níveis de engajamento e propor melhorias pedagógicas
+3. Sugerir ações administrativas para retenção de alunos
+4. Identificar oportunidades de captação baseadas no calendário atual
+5. Propor eventos, campanhas e iniciativas para atração de novos alunos
 
-        const userPrompt = `Analise os seguintes dados educacionais e gere insights estruturados:
+**TIPOS DE RECOMENDAÇÕES PERMITIDAS:**
+✅ Entrar em contato com alunos específicos (email, telefone, WhatsApp)
+✅ Organizar eventos presenciais ou online (workshops, palestras, webinars)
+✅ Criar campanhas promocionais e ofertas especiais
+✅ Ajustar cronogramas, prazos e calendários acadêmicos
+✅ Realizar reuniões com professores, coordenadores ou turmas
+✅ Implementar programas de tutoria, mentoria ou monitoria
+✅ Promover dinâmicas de grupo e atividades extracurriculares
+✅ Desenvolver ações de marketing educacional (redes sociais, anúncios)
+✅ Criar parcerias com empresas ou instituições
+✅ Organizar dias de portas abertas, aulas experimentais ou demonstrativas
+
+**TIPOS DE RECOMENDAÇÕES PROIBIDAS:**
+❌ NUNCA sugira implementar funcionalidades técnicas no sistema
+❌ NUNCA recomende desenvolver recursos de software
+❌ NUNCA proponha criar alertas automáticos ou dashboards
+❌ NUNCA sugira modificações no código ou banco de dados
+❌ NUNCA mencione "implementar um sistema de..."
+
+**ANÁLISE DE OPORTUNIDADES SAZONAIS:**
+Sempre inclua pelo menos UMA recomendação de captação baseada na data atual, considerando:
+- Períodos promocionais (Black Friday, Cyber Monday, etc)
+- Feriados nacionais e datas comemorativas
+- Início/fim de semestres letivos
+- Férias escolares e períodos de matrícula
+- Eventos culturais relevantes para educação
+- Épocas do ano favoráveis para matrículas
+
+Seja estratégico, objetivo e focado em resultados mensuráveis.`;
+
+        const userPrompt = `DATA ATUAL: ${currentDate}
+
+Analise os seguintes dados educacionais da escola "${school.name}" e gere insights estruturados:
 
 **Dados de Analytics:**
 ${JSON.stringify(analyticsContext, null, 2)}
 
-Com base nesses dados, forneça uma análise completa usando a função generate_insights.`;
+Com base nesses dados e na data atual, forneça:
+1. Análise do risco de evasão com ações práticas de retenção
+2. Avaliação do engajamento com oportunidades de melhoria
+3. Ações prioritárias para o administrador executar
+4. Pelo menos UMA estratégia de captação de novos alunos baseada no calendário/época atual
+
+Use a função generate_insights para estruturar sua resposta.`;
 
         console.log(`[CRON Job] 🤖 Chamando IA Lovable para ${school.name}...`);
 
@@ -156,7 +197,7 @@ Com base nesses dados, forneça uma análise completa usando a função generate
                           recommendations: {
                             type: "array",
                             items: { type: "string" },
-                            description: "Lista de 3-5 recomendações prioritárias",
+                            description: "Lista de 3-5 recomendações práticas e executáveis pelo administrador (sem sugestões técnicas). Exemplos: contatar alunos inativos, agendar reuniões, criar eventos",
                           },
                         },
                         required: ["severity", "prediction", "recommendations"],
@@ -176,7 +217,7 @@ Com base nesses dados, forneça uma análise completa usando a função generate
                           opportunities: {
                             type: "array",
                             items: { type: "string" },
-                            description: "Lista de 3-5 oportunidades",
+                            description: "Lista de 3-5 oportunidades pedagógicas e administrativas. Exemplos: workshops, dinâmicas de grupo, ações de mentoria",
                           },
                         },
                         required: ["trend", "analysis", "opportunities"],
@@ -188,7 +229,7 @@ Com base nesses dados, forneça uma análise completa usando a função generate
                           properties: {
                             action: {
                               type: "string",
-                              description: "Descrição da ação",
+                              description: "Descrição da ação prática (eventos, campanhas, contatos, reuniões, ajustes pedagógicos). NUNCA sugerir desenvolvimento de funcionalidades técnicas",
                             },
                             priority: {
                               type: "string",
@@ -202,7 +243,7 @@ Com base nesses dados, forneça uma análise completa usando a função generate
                           },
                           required: ["action", "priority", "impact"],
                         },
-                        description: "Lista de 3-5 ações prioritárias",
+                        description: "Lista de 3-5 ações prioritárias. OBRIGATÓRIO: incluir pelo menos uma ação de captação de alunos baseada na data/época atual (ex: campanha Black Friday, aula demonstrativa, evento de portas abertas)",
                       },
                       predictions: {
                         type: "object",
