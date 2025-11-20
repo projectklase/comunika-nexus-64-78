@@ -162,8 +162,11 @@ export function SecretariaFormModal({
     const emailError = validateEmail(normalizedData.email);
     if (emailError) fieldErrors.email = emailError;
     
-    const passwordError = validatePassword(normalizedData.password);
-    if (passwordError) fieldErrors.password = passwordError;
+    // Apenas validar senha no modo de CRIAÇÃO (não edição)
+    if (!isEditing) {
+      const passwordError = validatePassword(normalizedData.password);
+      if (passwordError) fieldErrors.password = passwordError;
+    }
     
     if (normalizedData.phone) {
       const phoneError = validatePhone(normalizedData.phone);
@@ -179,20 +182,39 @@ export function SecretariaFormModal({
     setLoading(true);
     
     try {
-      const success = await onSubmit(formData);
-      
-      if (success) {
-        // Salvar credenciais para exibir
-        setCreatedCredentials({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
-        });
-        setShowCredentials(true);
+      if (isEditing && onUpdate && secretaria) {
+        // MODO DE EDIÇÃO: usar onUpdate
+        const updates = {
+          name: normalizedData.name,
+          email: normalizedData.email,
+          phone: normalizedData.phone
+        };
         
-        toast.success(`${formData.name} foi cadastrada no sistema`);
+        const success = await onUpdate(secretaria.id, updates);
+        
+        if (success) {
+          toast.success('Alterações salvas com sucesso');
+          handleClose();
+        } else {
+          toast.error('Erro ao atualizar secretaria');
+        }
       } else {
-        toast.error('Erro ao criar secretaria');
+        // MODO DE CRIAÇÃO: usar onSubmit
+        const success = await onSubmit(normalizedData);
+        
+        if (success) {
+          // Salvar credenciais para exibir
+          setCreatedCredentials({
+            name: normalizedData.name,
+            email: normalizedData.email,
+            password: normalizedData.password
+          });
+          setShowCredentials(true);
+          
+          toast.success(`${normalizedData.name} foi cadastrada no sistema`);
+        } else {
+          toast.error('Erro ao criar secretaria');
+        }
       }
     } catch (error: any) {
       // Tratar erros específicos
@@ -200,7 +222,7 @@ export function SecretariaFormModal({
         toast.error('Email já cadastrado no sistema');
         setErrors(prev => ({ ...prev, email: 'Email já cadastrado' }));
       } else {
-        toast.error(error?.message || 'Erro ao criar secretaria');
+        toast.error(isEditing ? 'Erro ao atualizar secretaria' : 'Erro ao criar secretaria');
       }
     } finally {
       setLoading(false);
