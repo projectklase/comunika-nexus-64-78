@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarEvent, useCalendarData } from '@/hooks/useCalendarData';
 import { EventChip } from './EventChip';
 import { EventOverflowPopover } from './EventOverflowPopover';
@@ -122,41 +122,47 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
 
   // Convert existing CalendarEvent[] to NormalizedCalendarEvent[] for unified handling
   // ✅ FILTRO DE SEGURANÇA: Apenas eventos com post válido
-  const normalizedEvents = events
-    .filter(event => event.post && event.post.title && event.post.type)
-    .map(event => ({
-      id: event.id,
-      postId: event.post.id,
-      type: event.type,
-      subtype: event.post.type,
-      status: event.post.status,
-      title: event.post?.title || 'Sem título',
-      startDate: event.startDate,
-      endDate: event.endDate,
-      clickable: ['professor', 'secretaria'].includes(user?.role || '') || event.post.status === 'PUBLISHED',
-      classId: event.post.classId || event.post.classIds?.[0],
-      classIds: event.post.classIds,
-      meta: {
+  // ⚡ OTIMIZAÇÃO: Memoizado para evitar recálculo desnecessário
+  const normalizedEvents = useMemo(() => {
+    return events
+      .filter(event => event.post && event.post.title && event.post.type)
+      .map(event => ({
+        id: event.id,
+        postId: event.post.id,
+        type: event.type,
+        subtype: event.post.type,
+        status: event.post.status,
         title: event.post?.title || 'Sem título',
-        author: event.post.authorName,
-        attachments: event.post.attachments,
-        weight: event.post.activityMeta?.peso,
-        body: event.post.body,
-        dueAt: event.post.dueAt,
-        eventStartAt: event.post.eventStartAt,
-        eventEndAt: event.post.eventEndAt,
-        eventLocation: event.post.eventLocation,
-        audience: event.post.audience,
-        activityMeta: event.post.activityMeta,
-      }
-    }));
+        startDate: event.startDate,
+        endDate: event.endDate,
+        clickable: ['professor', 'secretaria'].includes(user?.role || '') || event.post.status === 'PUBLISHED',
+        classId: event.post.classId || event.post.classIds?.[0],
+        classIds: event.post.classIds,
+        meta: {
+          title: event.post?.title || 'Sem título',
+          author: event.post.authorName,
+          attachments: event.post.attachments,
+          weight: event.post.activityMeta?.peso,
+          body: event.post.body,
+          dueAt: event.post.dueAt,
+          eventStartAt: event.post.eventStartAt,
+          eventEndAt: event.post.eventEndAt,
+          eventLocation: event.post.eventLocation,
+          audience: event.post.audience,
+          activityMeta: event.post.activityMeta,
+        }
+      }));
+  }, [events, user?.role]);
 
   // Filter events based on active filters
-  const filteredEvents = normalizedEvents.filter(event => {
-    if (event.type === 'event' && !activeFilters.events) return false;
-    if (event.type === 'deadline' && !activeFilters.deadlines) return false;
-    return true;
-  });
+  // ⚡ OTIMIZAÇÃO: Memoizado para evitar filtragem desnecessária
+  const filteredEvents = useMemo(() => {
+    return normalizedEvents.filter(event => {
+      if (event.type === 'event' && !activeFilters.events) return false;
+      if (event.type === 'deadline' && !activeFilters.deadlines) return false;
+      return true;
+    });
+  }, [normalizedEvents, activeFilters.events, activeFilters.deadlines]);
 
   const handleDayClick = (date: Date) => {
     try {
@@ -366,13 +372,14 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
   };
 
   // Centralized day items computation
-  const computeEventsForDay = (date: Date, weekIndex: number) => {
+  // ⚡ OTIMIZAÇÃO: Memoizado para função estável entre re-renders
+  const computeEventsForDay = useCallback((date: Date, weekIndex: number) => {
     const visibleLimit = getVisiblePerDay(weekIndex);
     return computeDayItems(date, filteredEvents, {
       activeFilters,
       visibleLimit
     });
-  };
+  }, [filteredEvents, activeFilters, getVisiblePerDay]);
 
   const getHolidayForDay = (date: Date): Holiday | null => {
     if (!showHolidays) return null;
