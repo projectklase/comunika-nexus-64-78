@@ -23,31 +23,41 @@ import { PulseScoreModal } from '@/components/admin/analytics/PulseScoreModal';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-
 export default function AdminAnalyticsPage() {
   const [daysFilter, setDaysFilter] = useState<number>(30);
   const [openModal, setOpenModal] = useState<'heatmap' | 'retention' | 'operational' | 'pulse' | 'students-at-risk' | 'activity-trend' | 'class-performance' | 'post-engagement' | null>(null);
-  const { data: analytics, isLoading, error } = useAdminAnalytics(daysFilter);
-  const { data: heatmapData, isLoading: loadingHeatmap } = useWeeklyHeatmap(daysFilter);
-  const { data: retentionData, isLoading: loadingRetention } = useRetentionMetrics(daysFilter);
-  const { data: operationalData, isLoading: loadingOperational } = useOperationalMetrics();
-  const { data: pulseData, isLoading: loadingPulse } = usePulseScore(daysFilter);
-
+  const {
+    data: analytics,
+    isLoading,
+    error
+  } = useAdminAnalytics(daysFilter);
+  const {
+    data: heatmapData,
+    isLoading: loadingHeatmap
+  } = useWeeklyHeatmap(daysFilter);
+  const {
+    data: retentionData,
+    isLoading: loadingRetention
+  } = useRetentionMetrics(daysFilter);
+  const {
+    data: operationalData,
+    isLoading: loadingOperational
+  } = useOperationalMetrics();
+  const {
+    data: pulseData,
+    isLoading: loadingPulse
+  } = usePulseScore(daysFilter);
   if (error) {
-    return (
-      <div className="p-8">
+    return <div className="p-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Erro ao carregar analytics: {error.message}
           </AlertDescription>
         </Alert>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="p-8 space-y-12">
+  return <div className="p-8 space-y-12">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex-1 text-center">
@@ -60,10 +70,7 @@ export default function AdminAnalyticsPage() {
         <div className="flex items-center gap-3">
           <ExportReportButton daysFilter={daysFilter} />
           
-          <Select
-            value={daysFilter.toString()}
-            onValueChange={(value) => setDaysFilter(parseInt(value))}
-          >
+          <Select value={daysFilter.toString()} onValueChange={value => setDaysFilter(parseInt(value))}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Período" />
             </SelectTrigger>
@@ -79,15 +86,12 @@ export default function AdminAnalyticsPage() {
       {/* KPIs Grid - Novos Cards Estratégicos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Card 1: Mapa de Calor Semanal */}
-        <button
-          onClick={() => setOpenModal('heatmap')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('heatmap')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-purple-500/20 to-blue-500/20
                      border-2 border-purple-500/30 hover:border-purple-500/60
                      shadow-lg hover:shadow-2xl hover:shadow-purple-500/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-purple-500/20 rounded-full blur-xl animate-pulse" />
@@ -102,26 +106,19 @@ export default function AdminAnalyticsPage() {
                     Padrões de uso e horários de pico
                   </p>
                 </div>
-            {loadingHeatmap ? (
-              <Skeleton className="h-8 w-20 mt-2" />
-            ) : (
-              <div className="text-2xl font-bold text-purple-500 mt-2">
+            {loadingHeatmap ? <Skeleton className="h-8 w-20 mt-2" /> : <div className="text-2xl font-bold text-purple-500 mt-2">
                 {heatmapData?.peak_hour || '--'}
-              </div>
-            )}
+              </div>}
           </div>
         </button>
 
         {/* Card 2: Retenção e Progressão */}
-        <button
-          onClick={() => setOpenModal('retention')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('retention')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-green-500/20 to-emerald-500/20
                      border-2 border-green-500/30 hover:border-green-500/60
                      shadow-lg hover:shadow-2xl hover:shadow-green-500/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-green-500/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl animate-ping" />
@@ -135,26 +132,19 @@ export default function AdminAnalyticsPage() {
                     Ciclo de vida dos alunos
                   </p>
                 </div>
-            {loadingRetention ? (
-              <Skeleton className="h-8 w-20 mt-2" />
-            ) : (
-              <div className="text-3xl font-bold text-green-500 mt-2">
+            {loadingRetention ? <Skeleton className="h-8 w-20 mt-2" /> : <div className="text-3xl font-bold text-green-500 mt-2">
                 {retentionData?.retention_rate.toFixed(0) || 0}%
-              </div>
-            )}
+              </div>}
           </div>
         </button>
 
         {/* Card 3: Métricas Operacionais */}
-        <button
-          onClick={() => setOpenModal('operational')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('operational')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-orange-500/20 to-amber-500/20
                      border-2 border-orange-500/30 hover:border-orange-500/60
                      shadow-lg hover:shadow-2xl hover:shadow-orange-500/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-orange-500/20 rounded-full blur-xl animate-pulse" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl animate-ping" />
@@ -163,31 +153,24 @@ export default function AdminAnalyticsPage() {
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
             <Building className="h-10 w-10 text-orange-500 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300" />
                 <div className="text-center">
-                  <h3 className="font-bold text-lg mb-1">Métricas Operacionais</h3>
+                  <h3 className="font-bold text-lg mb-1">Ecossistema Koins</h3>
                   <p className="text-xs text-muted-foreground">
                     Eficiência e capacidade
                   </p>
                 </div>
-            {loadingOperational ? (
-              <Skeleton className="h-8 w-20 mt-2" />
-            ) : (
-              <div className="text-3xl font-bold text-orange-500 mt-2">
+            {loadingOperational ? <Skeleton className="h-8 w-20 mt-2" /> : <div className="text-3xl font-bold text-orange-500 mt-2">
                 {operationalData?.avg_occupancy || 0}%
-              </div>
-            )}
+              </div>}
           </div>
         </button>
 
         {/* Card 4: Pulse Score™ */}
-        <button
-          onClick={() => setOpenModal('pulse')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('pulse')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20
                      border-2 border-purple-500/30 hover:border-purple-500/60
                      shadow-lg hover:shadow-2xl hover:shadow-purple-500/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 animate-pulse" />
           
           <div className="relative z-10 h-full flex flex-col items-center justify-center gap-2 p-6">
@@ -198,13 +181,9 @@ export default function AdminAnalyticsPage() {
                     Índice de saúde institucional
                   </p>
                 </div>
-            {loadingPulse ? (
-              <Skeleton className="h-12 w-16 mt-2" />
-            ) : (
-              <div className="text-4xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mt-2">
+            {loadingPulse ? <Skeleton className="h-12 w-16 mt-2" /> : <div className="text-4xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mt-2">
                 {pulseData?.overall_score || 0}
-              </div>
-            )}
+              </div>}
           </div>
         </button>
       </div>
@@ -212,15 +191,12 @@ export default function AdminAnalyticsPage() {
       {/* Ações Rápidas - Glassmorphism Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 my-12">
         {/* Botão 1: Alunos em Risco */}
-        <button
-          onClick={() => setOpenModal('students-at-risk')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('students-at-risk')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-destructive/30 hover:border-destructive/60
                      shadow-lg hover:shadow-2xl hover:shadow-destructive/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-destructive/20 rounded-full blur-xl animate-pulse" />
@@ -241,15 +217,12 @@ export default function AdminAnalyticsPage() {
         </button>
 
         {/* Botão 2: Tendência de Atividades */}
-        <button
-          onClick={() => setOpenModal('activity-trend')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('activity-trend')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-primary/30 hover:border-primary/60
                      shadow-lg hover:shadow-2xl hover:shadow-primary/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse" />
@@ -270,15 +243,12 @@ export default function AdminAnalyticsPage() {
         </button>
 
         {/* Botão 3: Performance por Turma */}
-        <button
-          onClick={() => setOpenModal('class-performance')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('class-performance')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-warning/30 hover:border-warning/60
                      shadow-lg hover:shadow-2xl hover:shadow-warning/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-warning/20 rounded-full blur-xl animate-pulse" />
@@ -296,15 +266,12 @@ export default function AdminAnalyticsPage() {
         </button>
 
         {/* Botão 4: Análise de Engajamento */}
-        <button
-          onClick={() => setOpenModal('post-engagement')}
-          className="group relative h-40 rounded-2xl overflow-hidden
+        <button onClick={() => setOpenModal('post-engagement')} className="group relative h-40 rounded-2xl overflow-hidden
                      backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5
                      border-2 border-success/30 hover:border-success/60
                      shadow-lg hover:shadow-2xl hover:shadow-success/20
                      transition-all duration-500 hover:scale-102 hover:-translate-y-2
-                     cursor-pointer"
-        >
+                     cursor-pointer">
           {/* Efeito de partículas */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             <div className="absolute top-0 left-0 w-16 h-16 bg-success/20 rounded-full blur-xl animate-pulse" />
@@ -357,20 +324,13 @@ export default function AdminAnalyticsPage() {
           </DialogHeader>
           
           <div className="mt-4">
-            {isLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : analytics?.students_at_risk_list.length === 0 ? (
-              <Alert>
+            {isLoading ? <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+              </div> : analytics?.students_at_risk_list.length === 0 ? <Alert>
                 <AlertDescription>
                   ✅ Ótimas notícias! Nenhum aluno identificado em risco de evasão no momento.
                 </AlertDescription>
-              </Alert>
-            ) : (
-              <Table>
+              </Alert> : <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Aluno</TableHead>
@@ -381,18 +341,13 @@ export default function AdminAnalyticsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {analytics?.students_at_risk_list.map((student) => (
-                    <TableRow key={student.student_id}>
+                  {analytics?.students_at_risk_list.map(student => <TableRow key={student.student_id}>
                       <TableCell className="font-medium">{student.student_name}</TableCell>
                       <TableCell>{student.class_name || 'Sem turma'}</TableCell>
                       <TableCell className="text-right">
-                        {student.days_since_last_login !== null ? (
-                          <span className={student.days_since_last_login > 14 ? 'text-destructive font-bold' : ''}>
+                        {student.days_since_last_login !== null ? <span className={student.days_since_last_login > 14 ? 'text-destructive font-bold' : ''}>
                             {student.days_since_last_login}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">Nunca</span>
-                        )}
+                          </span> : <span className="text-muted-foreground">Nunca</span>}
                       </TableCell>
                       <TableCell className="text-right">
                         <span className={student.pending_deliveries > 3 ? 'text-warning font-bold' : ''}>
@@ -402,11 +357,9 @@ export default function AdminAnalyticsPage() {
                       <TableCell className="text-right">
                         {student.pending_evaluations}
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)}
                 </TableBody>
-              </Table>
-            )}
+              </Table>}
           </div>
         </DialogContent>
       </Dialog>
@@ -437,61 +390,30 @@ export default function AdminAnalyticsPage() {
           </DialogHeader>
           
           <div className="mt-4">
-            {isLoading ? (
-              <Skeleton className="h-96 w-full" />
-            ) : analytics?.activity_trend && analytics.activity_trend.length > 0 ? (
-              <div className="h-96 w-full">
+            {isLoading ? <Skeleton className="h-96 w-full" /> : analytics?.activity_trend && analytics.activity_trend.length > 0 ? <div className="h-96 w-full">
                 <ActivityTrendChart data={analytics.activity_trend} />
-              </div>
-            ) : (
-              <Alert>
+              </div> : <Alert>
                 <AlertDescription>
                   Nenhum dado disponível para o período selecionado.
                 </AlertDescription>
-              </Alert>
-            )}
+              </Alert>}
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Modal 3: Performance por Turma */}
-      <ClassPerformanceModal 
-        open={openModal === 'class-performance'}
-        onOpenChange={() => setOpenModal(null)}
-        daysFilter={daysFilter}
-      />
+      <ClassPerformanceModal open={openModal === 'class-performance'} onOpenChange={() => setOpenModal(null)} daysFilter={daysFilter} />
 
       {/* Modal 4: Análise de Engajamento */}
-      <PostEngagementModal 
-        open={openModal === 'post-engagement'}
-        onOpenChange={() => setOpenModal(null)}
-        daysFilter={daysFilter}
-      />
+      <PostEngagementModal open={openModal === 'post-engagement'} onOpenChange={() => setOpenModal(null)} daysFilter={daysFilter} />
 
       {/* Novos Modais Estratégicos */}
-      <HeatmapModal 
-        isOpen={openModal === 'heatmap'} 
-        onClose={() => setOpenModal(null)}
-        data={heatmapData}
-      />
+      <HeatmapModal isOpen={openModal === 'heatmap'} onClose={() => setOpenModal(null)} data={heatmapData} />
 
-      <RetentionModal 
-        isOpen={openModal === 'retention'} 
-        onClose={() => setOpenModal(null)}
-        data={retentionData}
-      />
+      <RetentionModal isOpen={openModal === 'retention'} onClose={() => setOpenModal(null)} data={retentionData} />
 
-      <OperationalModal 
-        isOpen={openModal === 'operational'} 
-        onClose={() => setOpenModal(null)}
-        data={operationalData}
-      />
+      <OperationalModal isOpen={openModal === 'operational'} onClose={() => setOpenModal(null)} data={operationalData} />
 
-      <PulseScoreModal 
-        isOpen={openModal === 'pulse'} 
-        onClose={() => setOpenModal(null)}
-        data={pulseData}
-      />
-    </div>
-  );
+      <PulseScoreModal isOpen={openModal === 'pulse'} onClose={() => setOpenModal(null)} data={pulseData} />
+    </div>;
 }
