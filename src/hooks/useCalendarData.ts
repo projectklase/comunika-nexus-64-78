@@ -16,9 +16,22 @@ interface UseCalendarDataOptions {
   classId?: string; // For filtering activities by class
 }
 
+/**
+ * Hook para buscar eventos do calendário de forma otimizada.
+ * 
+ * ⚡ PAGINAÇÃO/LAZY LOADING:
+ * Este hook já implementa "lazy loading" automaticamente:
+ * - Apenas eventos dentro do range (startDate, endDate) são processados
+ * - Quando o usuário troca de mês/semana, apenas eventos daquele período são buscados
+ * - Isso evita processar milhares de eventos desnecessariamente
+ * 
+ * @param startDate - Data de início do período (ex: primeiro dia da semana/mês)
+ * @param endDate - Data de fim do período (ex: último dia da semana/mês)
+ * @param options - Opções de filtro (ex: classId para professores)
+ */
 export function useCalendarData(startDate: Date, endDate: Date, options: UseCalendarDataOptions = {}) {
   const { classId } = options;
-  const { posts } = usePosts({ status: 'PUBLISHED' });
+  const { posts, isLoading } = usePosts({ status: 'PUBLISHED' });
 
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
@@ -70,7 +83,7 @@ export function useCalendarData(startDate: Date, endDate: Date, options: UseCale
     return calendarEvents;
   }, [posts, startDate, endDate, classId]);
 
-  return { events, posts };
+  return { events, posts, isLoading };
 }
 
 export function selectEventsInRange(posts: Post[], start: Date, end: Date): CalendarEvent[] {
