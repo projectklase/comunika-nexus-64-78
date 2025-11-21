@@ -155,7 +155,7 @@ export default function AdminAnalyticsPage() {
                 <div className="text-center">
                   <h3 className="font-bold text-lg mb-1">Ecossistema Koins</h3>
                   <p className="text-xs text-muted-foreground">
-                    Eficiência e capacidade
+                    Indicadores de Gamificação
                   </p>
                 </div>
             {loadingOperational ? <Skeleton className="h-8 w-20 mt-2" /> : <div className="text-3xl font-bold text-orange-500 mt-2">
