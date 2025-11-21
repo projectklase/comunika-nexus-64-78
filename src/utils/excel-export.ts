@@ -359,110 +359,160 @@ function createRetentionSheet(workbook: ExcelJS.Workbook, data: ExportData) {
   sheet.getColumn(4).width = 15;
 }
 
-// Aba 4: Operacional
+// Aba 4: Ecossistema Koins
 function createOperationalSheet(workbook: ExcelJS.Workbook, data: ExportData) {
-  const sheet = workbook.addWorksheet('Operacional');
+  const sheet = workbook.addWorksheet('Ecossistema Koins');
 
-  // Título
-  sheet.mergeCells('A1:E1');
+  // Título principal
+  sheet.mergeCells('A1:F1');
   const title = sheet.getCell('A1');
-  title.value = 'MÉTRICAS OPERACIONAIS';
-  applyHeaderStyle(title, COLORS.warning);
-  sheet.getRow(1).height = 25;
+  title.value = 'DASHBOARD EXECUTIVO DE IMPACTO DOS KOINS';
+  applyHeaderStyle(title, 'FFD700'); // Dourado
+  sheet.getRow(1).height = 30;
 
-  // Ocupação média
-  sheet.getCell('A3').value = 'Taxa de Ocupação Média:';
-  sheet.getCell('B3').value = `${(data.operationalData?.avg_occupancy || 0).toFixed(1)}%`;
-  sheet.getCell('A3').font = { bold: true, size: 12 };
-  sheet.getCell('B3').font = { bold: true, size: 16, color: { argb: COLORS.primary } };
+  // Score do Ecossistema (DESTAQUE CENTRAL)
+  sheet.mergeCells('A3:F3');
+  const scoreCell = sheet.getCell('A3');
+  scoreCell.value = `SCORE DO ECOSSISTEMA: ${(data.operationalData?.koin_ecosystem_score || 0).toFixed(1)}/100`;
+  scoreCell.font = { bold: true, size: 16, color: { argb: 'FFD700' } };
+  scoreCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  scoreCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: '2C3E50' }
+  };
+  sheet.getRow(3).height = 25;
 
-  // Ocupação por turma
-  sheet.mergeCells('A5:E5');
-  const occupancyTitle = sheet.getCell('A5');
-  occupancyTitle.value = 'OCUPAÇÃO POR TURMA';
-  applyHeaderStyle(occupancyTitle, COLORS.darkGray);
+  // KPIs Principais (4 cards)
+  sheet.mergeCells('A5:F5');
+  const kpiTitle = sheet.getCell('A5');
+  kpiTitle.value = 'INDICADORES PRINCIPAIS';
+  applyHeaderStyle(kpiTitle, COLORS.darkGray);
 
-  const occupancyHeader = sheet.getRow(6);
-  occupancyHeader.values = ['Turma', 'Capacidade', 'Matriculados', 'Vagas Livres', 'Taxa (%)'];
-  occupancyHeader.eachCell(cell => applyHeaderStyle(cell));
-
-  const occupancyData = data.operationalData?.occupancy_data || [];
-  occupancyData.forEach((item: any, index: number) => {
-    const row = sheet.getRow(7 + index);
-    row.values = [
-      item.class_name,
-      item.capacity,
-      item.enrolled,
-      item.capacity - item.enrolled,
-      `${((item.enrolled / item.capacity) * 100).toFixed(1)}%`
-    ];
-    applyZebraStyle(row, index % 2 === 0);
-
-    // Formatação condicional
-    const rateCell = row.getCell(5);
-    const rate = (item.enrolled / item.capacity) * 100;
-    applyConditionalColor(rateCell, rate, { danger: 50, warning: 70, success: 85 });
-  });
-
-  // Distribuição de Koins
-  const koinsStartRow = 7 + occupancyData.length + 2;
-  sheet.mergeCells(`A${koinsStartRow}:E${koinsStartRow}`);
-  const koinsTitle = sheet.getCell(`A${koinsStartRow}`);
-  koinsTitle.value = 'DISTRIBUIÇÃO DE KOINS';
-  applyHeaderStyle(koinsTitle, COLORS.info);
-
-  const koinsData = data.operationalData?.koins_distribution || {};
-  const koinsRows = [
-    ['Total de Koins Distribuídos', koinsData.total || 0],
-    ['Média por Aluno', (koinsData.average || 0).toFixed(0)],
-    ['Aluno com Mais Koins', koinsData.max || 0],
-    ['Aluno com Menos Koins', koinsData.min || 0],
+  const kpis = [
+    ['Engajamento Geral', ''],
+    ['Total de Alunos', data.operationalData?.total_students || 0],
+    ['Alunos Ativos (com Koins)', data.operationalData?.active_students || 0],
+    ['Taxa de Participação', `${(data.operationalData?.participation_rate || 0).toFixed(1)}%`],
+    ['', ''],
+    ['Economia de Koins', ''],
+    ['Koins em Circulação', data.operationalData?.total_koins_in_circulation || 0],
+    ['Koins Distribuídos', data.operationalData?.total_koins_distributed || 0],
+    ['Velocidade de Circulação', `${(data.operationalData?.circulation_velocity || 0).toFixed(1)}%`],
+    ['', ''],
+    ['Atividade de Resgates', ''],
+    ['Total de Resgates', data.operationalData?.total_redemptions || 0],
+    ['Taxa de Conversão', `${(data.operationalData?.conversion_rate || 0).toFixed(1)}%`],
+    ['Valor Médio', `${(data.operationalData?.avg_redemption_value || 0).toFixed(0)} Koins`],
+    ['', ''],
+    ['Saúde do Sistema', ''],
+    ['Taxa de Aprovação', `${(data.operationalData?.approval_rate || 0).toFixed(1)}%`],
+    ['Tempo Médio de Processamento', `${(data.operationalData?.avg_processing_time_hours || 0).toFixed(1)}h`],
   ];
 
-  koinsRows.forEach((item, index) => {
-    const row = sheet.getRow(koinsStartRow + 2 + index);
-    row.values = [item[0], item[1]];
+  kpis.forEach((kpi, index) => {
+    const row = sheet.getRow(7 + index);
+    row.values = kpi;
+    if (kpi[0] && !kpi[1]) {
+      // É um título de seção
+      sheet.mergeCells(`A${7 + index}:B${7 + index}`);
+      row.getCell(1).font = { bold: true, size: 12, color: { argb: COLORS.primary } };
+      row.getCell(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: COLORS.gray }
+      };
+    } else if (kpi[0]) {
+      row.getCell(1).font = { bold: true };
+      row.getCell(2).font = { size: 11, color: { argb: COLORS.primary } };
+      applyZebraStyle(row, index % 2 === 0);
+    }
+  });
+
+  // Top 10 Alunos
+  const topStudentsStartRow = 30;
+  sheet.mergeCells(`A${topStudentsStartRow}:D${topStudentsStartRow}`);
+  const topStudentsTitle = sheet.getCell(`A${topStudentsStartRow}`);
+  topStudentsTitle.value = '🏆 TOP 10 ALUNOS MAIS ENGAJADOS';
+  applyHeaderStyle(topStudentsTitle, COLORS.success);
+
+  const topStudentsHeader = sheet.getRow(topStudentsStartRow + 1);
+  topStudentsHeader.values = ['Posição', 'Nome', 'Koins Acumulados', 'Koins Gastos'];
+  topStudentsHeader.eachCell(cell => applyHeaderStyle(cell));
+
+  const topStudents = data.operationalData?.top_students || [];
+  topStudents.forEach((student: any, index: number) => {
+    const row = sheet.getRow(topStudentsStartRow + 2 + index);
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+    row.values = [
+      `${medal} ${student.position}º`,
+      student.name,
+      student.total_koins,
+      student.koins_spent
+    ];
+    applyZebraStyle(row, index % 2 === 0);
+    
+    // Destacar top 3
+    if (index < 3) {
+      row.eachCell(cell => {
+        cell.font = { bold: true, size: 11 };
+      });
+    }
+  });
+
+  // Top 5 Itens Mais Resgatados
+  const topItemsStartRow = topStudentsStartRow + 14;
+  sheet.mergeCells(`A${topItemsStartRow}:D${topItemsStartRow}`);
+  const topItemsTitle = sheet.getCell(`A${topItemsStartRow}`);
+  topItemsTitle.value = '🛍️ TOP 5 ITENS MAIS RESGATADOS';
+  applyHeaderStyle(topItemsTitle, COLORS.info);
+
+  const topItemsHeader = sheet.getRow(topItemsStartRow + 1);
+  topItemsHeader.values = ['Item', 'Resgates', 'Koins Movimentados', 'Popularidade'];
+  topItemsHeader.eachCell(cell => applyHeaderStyle(cell));
+
+  const topItems = data.operationalData?.top_items || [];
+  const maxRedemptions = topItems.length > 0 ? Math.max(...topItems.map((i: any) => i.redemption_count)) : 1;
+  
+  topItems.forEach((item: any, index: number) => {
+    const row = sheet.getRow(topItemsStartRow + 2 + index);
+    const popularityPercent = ((item.redemption_count / maxRedemptions) * 100).toFixed(0);
+    row.values = [
+      item.name,
+      item.redemption_count,
+      item.total_koins_moved,
+      `${popularityPercent}%`
+    ];
+    applyZebraStyle(row, index % 2 === 0);
+  });
+
+  // Status de Resgates
+  const statusStartRow = topItemsStartRow + 9;
+  sheet.mergeCells(`A${statusStartRow}:D${statusStartRow}`);
+  const statusTitle = sheet.getCell(`A${statusStartRow}`);
+  statusTitle.value = '⚙️ STATUS DE RESGATES';
+  applyHeaderStyle(statusTitle, COLORS.warning);
+
+  const redemptionStatus = data.operationalData?.redemption_status || { pending: 0, approved: 0, rejected: 0 };
+  const statusRows = [
+    ['⏳ Pendentes', redemptionStatus.pending || 0],
+    ['✅ Aprovados', redemptionStatus.approved || 0],
+    ['❌ Rejeitados', redemptionStatus.rejected || 0],
+  ];
+
+  statusRows.forEach((status, index) => {
+    const row = sheet.getRow(statusStartRow + 2 + index);
+    row.values = status;
     row.getCell(1).font = { bold: true };
     row.getCell(2).font = { size: 12, color: { argb: COLORS.primary } };
     applyZebraStyle(row, index % 2 === 0);
   });
 
-  // ROI de Professores
-  const roiStartRow = koinsStartRow + 7;
-  sheet.mergeCells(`A${roiStartRow}:E${roiStartRow}`);
-  const roiTitle = sheet.getCell(`A${roiStartRow}`);
-  roiTitle.value = 'PERFORMANCE DOS PROFESSORES (ROI)';
-  applyHeaderStyle(roiTitle, COLORS.success);
-
-  const roiHeader = sheet.getRow(roiStartRow + 1);
-  roiHeader.values = ['Professor', 'Entregas Recebidas', 'Avaliações Feitas', 'Taxa de Correção (%)', 'Tempo Médio (h)'];
-  roiHeader.eachCell(cell => applyHeaderStyle(cell));
-
-  const teacherRoi = data.operationalData?.teacher_roi || [];
-  teacherRoi.forEach((teacher: any, index: number) => {
-    const row = sheet.getRow(roiStartRow + 2 + index);
-    const correctionRate = teacher.deliveries > 0 ? ((teacher.evaluations / teacher.deliveries) * 100).toFixed(1) : '0.0';
-    row.values = [
-      teacher.teacher_name,
-      teacher.deliveries,
-      teacher.evaluations,
-      `${correctionRate}%`,
-      teacher.avg_time ? teacher.avg_time.toFixed(1) : 'N/A'
-    ];
-    applyZebraStyle(row, index % 2 === 0);
-
-    // Formatação condicional na taxa de correção
-    const rateCell = row.getCell(4);
-    const rate = parseFloat(correctionRate);
-    applyConditionalColor(rateCell, rate, { danger: 70, warning: 85, success: 95 });
-  });
-
   // Ajustar larguras
-  sheet.getColumn(1).width = 30;
-  sheet.getColumn(2).width = 18;
-  sheet.getColumn(3).width = 18;
-  sheet.getColumn(4).width = 20;
-  sheet.getColumn(5).width = 18;
+  sheet.getColumn(1).width = 35;
+  sheet.getColumn(2).width = 20;
+  sheet.getColumn(3).width = 20;
+  sheet.getColumn(4).width = 18;
 }
 
 // Aba 5: Pulse Score

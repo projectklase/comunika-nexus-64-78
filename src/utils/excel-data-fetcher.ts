@@ -6,7 +6,7 @@ import { subDays, format } from 'date-fns';
  * Não depende dos hooks, busca diretamente do banco
  */
 
-export async function fetchCompleteAnalyticsData(daysFilter: number) {
+export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: string) {
   const startDate = format(subDays(new Date(), daysFilter), 'yyyy-MM-dd');
   
   try {
@@ -264,6 +264,9 @@ export async function fetchCompleteAnalyticsData(daysFilter: number) {
       }) || []
     );
 
+    // Buscar dados de Koins por escola
+    const koinData = await fetchKoinData(schoolId);
+
     // 6. Buscar dados de Pulse Score (calcular componentes)
     const engagement = retention_rate;
     const teacher_performance = teacher_roi.length > 0
@@ -418,6 +421,7 @@ export async function fetchCompleteAnalyticsData(daysFilter: number) {
         avg_occupancy,
         koins_distribution,
         teacher_roi,
+        ...koinData,
       },
       pulseData: {
         overall_score,
@@ -444,5 +448,181 @@ export async function fetchCompleteAnalyticsData(daysFilter: number) {
   } catch (error) {
     console.error('Erro ao buscar dados completos:', error);
     throw error;
+  }
+}
+
+// Buscar dados de Koins específicos da escola
+async function fetchKoinData(schoolId: string) {
+  try {
+    // 1. Buscar alunos da escola
+    const { data: memberships } = await supabase
+      .from('school_memberships')
+      .select('user_id')
+      .eq('school_id', schoolId)
+      .eq('role', 'aluno');
+    
+    const studentIds = memberships?.map(m => m.user_id) || [];
+    
+    // 2. Buscar perfis com Koins
+    const { data: students } = await supabase
+      .from('profiles')
+      .select('id, name, koins')
+      .in('id', studentIds);
+    
+    // 3. Buscar transações
+    const { data: allTransactions } = await supabase
+      .from('koin_transactions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    const schoolTransactions = allTransactions?.filter(
+      t => studentIds.includes(t.user_id)
+    ) || [];
+    
+    // 4. Buscar resgates
+    const { data: allRedemptions } = await supabase
+      .from('redemption_requests')
+      .select('*, reward_items(name, price_koins)')
+      .order('requested_at', { ascending: false });
+    
+    const schoolRedemptions = allRedemptions?.filter(
+      r => studentIds.includes(r.student_id)
+    ) || [];
+    
+    // 5. Calcular KPIs
+    const activeStudents = students?.filter(s => s.koins > 0).length || 0;
+    const totalStudents = studentIds.length;
+    const participationRate = totalStudents > 0 ? (activeStudents / totalStudents) * 100 : 0;
+    
+    const totalKoinsDistributed = schoolTransactions
+      .filter(t => t.type === 'EARN')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const totalKoinsSpent = schoolTransactions
+      .filter(t => t.type === 'SPEND')
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    
+    const totalKoinsInCirculation = students?.reduce((sum, s) => sum + s.koins, 0) || 0;
+    
+    const circulationVelocity = totalKoinsDistributed > 0 
+      ? (totalKoinsSpent / totalKoinsDistributed) * 100 
+      : 0;
+    
+    const totalRedemptions = schoolRedemptions.length;
+    
+    const studentsWhoRedeemed = new Set(schoolRedemptions.map(r => r.student_id)).size;
+    const conversionRate = activeStudents > 0 ? (studentsWhoRedeemed / activeStudents) * 100 : 0;
+    
+    const avgRedemptionValue = totalRedemptions > 0
+      ? schoolRedemptions.reduce((sum, r) => sum + (r.reward_items?.price_koins || 0), 0) / totalRedemptions
+      : 0;
+    
+    const approvedRedemptions = schoolRedemptions.filter(r => r.status === 'APPROVED').length;
+    const approvalRate = totalRedemptions > 0 ? (approvedRedemptions / totalRedemptions) * 100 : 0;
+    
+    // Tempo médio de processamento
+    const processedRedemptions = schoolRedemptions.filter(
+      r => r.processed_at && r.requested_at
+    );
+    const avgProcessingTimeHours = processedRedemptions.length > 0
+      ? processedRedemptions.reduce((sum, r) => {
+          const hours = (new Date(r.processed_at!).getTime() - new Date(r.requested_at!).getTime()) / (1000 * 60 * 60);
+          return sum + hours;
+        }, 0) / processedRedemptions.length
+      : 0;
+    
+    // Score do Ecossistema
+    const participationScore = participationRate * 0.30;
+    const avgKoinsPerStudent = totalStudents > 0 ? totalKoinsInCirculation / totalStudents : 0;
+    const distributionScore = Math.min((avgKoinsPerStudent / 100) * 100, 100) * 0.25;
+    const circulationScore = circulationVelocity * 0.25;
+    const approvalScore = approvalRate * 0.20;
+    const koinEcosystemScore = participationScore + distributionScore + circulationScore + approvalScore;
+    
+    // Top 10 alunos
+    const topStudents = students
+      ?.sort((a, b) => b.koins - a.koins)
+      .slice(0, 10)
+      .map((s, i) => ({
+        position: i + 1,
+        name: s.name,
+        total_koins: s.koins,
+        koins_spent: schoolTransactions
+          .filter(t => t.user_id === s.id && t.type === 'SPEND')
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+      })) || [];
+    
+    // Top 5 itens
+    const itemRedemptionMap = new Map();
+    schoolRedemptions.forEach(r => {
+      const itemName = r.reward_items?.name || 'Item Desconhecido';
+      const itemPrice = r.reward_items?.price_koins || 0;
+      if (!itemRedemptionMap.has(itemName)) {
+        itemRedemptionMap.set(itemName, { count: 0, totalKoins: 0 });
+      }
+      const item = itemRedemptionMap.get(itemName);
+      item.count++;
+      item.totalKoins += itemPrice;
+    });
+    
+    const topItems = Array.from(itemRedemptionMap.entries())
+      .map(([name, data]) => ({
+        name,
+        redemption_count: data.count,
+        total_koins_moved: data.totalKoins
+      }))
+      .sort((a, b) => b.redemption_count - a.redemption_count)
+      .slice(0, 5);
+    
+    // Evolução mensal (últimos 6 meses) - simplificado
+    const monthlyEvolution: Array<{ month: string; distributed: number; spent: number }> = [];
+    
+    // Status de resgates
+    const redemptionStatus = {
+      pending: schoolRedemptions.filter(r => r.status === 'PENDING').length,
+      approved: schoolRedemptions.filter(r => r.status === 'APPROVED').length,
+      rejected: schoolRedemptions.filter(r => r.status === 'REJECTED').length,
+    };
+    
+    return {
+      koin_ecosystem_score: koinEcosystemScore,
+      total_students: totalStudents,
+      active_students: activeStudents,
+      participation_rate: participationRate,
+      total_koins_in_circulation: totalKoinsInCirculation,
+      total_koins_distributed: totalKoinsDistributed,
+      total_koins_spent: totalKoinsSpent,
+      circulation_velocity: circulationVelocity,
+      total_redemptions: totalRedemptions,
+      conversion_rate: conversionRate,
+      avg_redemption_value: avgRedemptionValue,
+      approval_rate: approvalRate,
+      avg_processing_time_hours: avgProcessingTimeHours,
+      top_students: topStudents,
+      top_items: topItems,
+      monthly_evolution: monthlyEvolution,
+      redemption_status: redemptionStatus,
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados de Koins:', error);
+    return {
+      koin_ecosystem_score: 0,
+      total_students: 0,
+      active_students: 0,
+      participation_rate: 0,
+      total_koins_in_circulation: 0,
+      total_koins_distributed: 0,
+      total_koins_spent: 0,
+      circulation_velocity: 0,
+      total_redemptions: 0,
+      conversion_rate: 0,
+      avg_redemption_value: 0,
+      approval_rate: 0,
+      avg_processing_time_hours: 0,
+      top_students: [],
+      top_items: [],
+      monthly_evolution: [],
+      redemption_status: { pending: 0, approved: 0, rejected: 0 },
+    };
   }
 }
