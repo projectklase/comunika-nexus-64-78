@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useStudentGamification } from '@/stores/studentGamification';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -37,6 +38,7 @@ const MISSION_LABELS = {
 };
 
 export function StudentStreakWidget() {
+  const { user } = useAuth();
   const {
     streak,
     xp,
@@ -55,6 +57,15 @@ export function StudentStreakWidget() {
   useEffect(() => {
     resetIfNeeded();
   }, [resetIfNeeded]);
+
+  // Verificação de role: widget só deve renderizar para alunos
+  if (!user || user.role !== 'aluno') {
+    console.warn('[StudentStreakWidget] Bloqueado: usuário não é aluno', {
+      userId: user?.id,
+      role: user?.role
+    });
+    return null;
+  }
 
   const today = getToday();
   const gap = lastCheckIn ? diffDays(today, lastCheckIn) : 999;
