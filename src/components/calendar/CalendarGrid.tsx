@@ -109,7 +109,7 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
     ? endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 })
     : endOfWeek(currentDate, { weekStartsOn: 0 });
 
-  const { events, posts } = useCalendarData(startDate, endDate, { classId });
+  const { events, posts, isLoading: isLoadingEvents } = useCalendarData(startDate, endDate, { classId });
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   const holidays = showHolidays ? getBrHolidays(currentDate.getFullYear()) : [];
 
@@ -390,7 +390,49 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
 
   return (
     <>
-      <div className="glass-card rounded-lg p-6">
+      {isLoadingEvents ? (
+        <div className="glass-card rounded-lg p-6 relative">
+          {/* Header de dias da semana */}
+          <div className="grid grid-cols-7 gap-1 mb-4">
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+              <div 
+                key={day} 
+                className="p-3 text-center text-sm font-medium text-muted-foreground border-b border-border/30"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Skeleton Grid */}
+          <div className={cn(
+            "grid grid-cols-7 gap-1",
+            view === 'week' ? "grid-rows-1" : "grid-rows-6"
+          )}>
+            {Array.from({ length: view === 'week' ? 7 : 42 }).map((_, i) => (
+              <div 
+                key={i}
+                className="border border-border/20 rounded-lg p-2 min-h-[100px] animate-pulse"
+              >
+                <div className="h-4 w-8 bg-muted rounded mb-2" />
+                <div className="space-y-1">
+                  <div className="h-6 bg-muted/50 rounded w-full" />
+                  <div className="h-6 bg-muted/30 rounded w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mensagem centralizada */}
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm rounded-lg">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">Carregando eventos...</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-card rounded-lg p-6">
         {/* Calendar Header */}
         <div className="grid grid-cols-7 gap-1 mb-4">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
@@ -532,7 +574,8 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
           })}
         </div>
         
-      </div>
+        </div>
+      )}
 
       {/* Only show DayDrawer when ActivityDrawer is not open */}
       {!activityDrawerState.isOpen && (
