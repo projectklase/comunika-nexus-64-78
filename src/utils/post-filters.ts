@@ -1,5 +1,5 @@
 import { Post } from '@/types/post';
-import { startOfDay, isAfter, isBefore, addDays } from 'date-fns';
+import { startOfDay, isAfter, isBefore, addDays, isToday as dateIsToday } from 'date-fns';
 
 /**
  * Smart post filtering utilities
@@ -147,6 +147,13 @@ export class SmartPostFilters {
    */
   static sortByRelevance(posts: Post[]): Post[] {
     return [...posts].sort((a, b) => {
+      // PRIORIDADE MÁXIMA: Posts de HOJE
+      const aIsToday = this.isPostToday(a);
+      const bIsToday = this.isPostToday(b);
+      
+      if (aIsToday && !bIsToday) return -1;
+      if (!aIsToday && bIsToday) return 1;
+
       // Priority order: PROVA > ATIVIDADE/TRABALHO > EVENTO > AVISO/COMUNICADO
       const priorityOrder = {
         PROVA: 100,
@@ -178,6 +185,28 @@ export class SmartPostFilters {
       // Finally, sort by creation date (newer first)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
+  }
+  
+  /**
+   * Check if post is today
+   */
+  private static isPostToday(post: Post): boolean {
+    let targetDate: Date | null = null;
+    
+    switch (post.type) {
+      case 'EVENTO':
+        targetDate = post.eventStartAt ? new Date(post.eventStartAt) : null;
+        break;
+      case 'ATIVIDADE':
+      case 'TRABALHO':
+      case 'PROVA':
+        targetDate = post.dueAt ? new Date(post.dueAt) : null;
+        break;
+    }
+    
+    if (!targetDate) return false;
+    
+    return dateIsToday(targetDate);
   }
   
   /**

@@ -17,6 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { useEventMetrics } from '@/hooks/useEventMetrics';
 import { useDebounce } from '@/hooks/useDebounce';
+import { SmartPostFilters } from '@/utils/post-filters';
 
 // Função helper para calcular participantes
 const calculateCurrentParticipants = (
@@ -38,6 +39,7 @@ export default function EventosPage() {
   const [classFilter, setClassFilter] = useState<string>('all');
   const [allowInvitationsFilter, setAllowInvitationsFilter] = useState<'all' | 'yes' | 'no'>('all');
   const [selectedEvent, setSelectedEvent] = useState<Post | null>(null);
+  const [hideExpiredEvents, setHideExpiredEvents] = useState(true);
   
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   
@@ -48,7 +50,7 @@ export default function EventosPage() {
   const filteredEvents = useMemo(() => {
     if (!posts) return [];
     
-    return posts.filter((event) => {
+    let finalResults = posts.filter((event) => {
       // Busca por título
       if (debouncedSearchTerm && !event.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) {
         return false;
@@ -77,7 +79,14 @@ export default function EventosPage() {
       
       return true;
     });
-  }, [posts, debouncedSearchTerm, statusFilter, classFilter, allowInvitationsFilter]);
+
+    // Aplicar filtragem inteligente apenas quando statusFilter é 'all' e hideExpiredEvents está ativo
+    if (statusFilter === 'all' && hideExpiredEvents) {
+      finalResults = SmartPostFilters.filterRelevantPosts(finalResults);
+    }
+
+    return finalResults;
+  }, [posts, debouncedSearchTerm, statusFilter, classFilter, allowInvitationsFilter, hideExpiredEvents]);
   
   // Métricas gerais
   const metrics = useMemo(() => {
@@ -177,6 +186,13 @@ export default function EventosPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setHideExpiredEvents(!hideExpiredEvents)}
+            >
+              {hideExpiredEvents ? "Mostrar Eventos Passados" : "Ocultar Eventos Passados"}
+            </Button>
             <Button variant="outline" onClick={exportAllEvents}>
               <Download className="h-4 w-4 mr-2" />
               Exportar
