@@ -159,7 +159,7 @@ export default function AdminAnalyticsPage() {
                   </p>
                 </div>
             {loadingOperational ? <Skeleton className="h-8 w-20 mt-2" /> : <div className="text-3xl font-bold text-orange-500 mt-2">
-                {operationalData?.avg_occupancy || 0}%
+                {operationalData?.koin_ecosystem_score || 0}
               </div>}
           </div>
         </button>
