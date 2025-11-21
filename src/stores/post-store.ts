@@ -94,7 +94,29 @@ class PostStore {
 
   async listPaginated(filter?: PostFilter, page = 1, pageSize = 20): Promise<{ posts: Post[]; total: number }> {
     try {
+      // 🔒 OBTER ESCOLA ATUAL DO CONTEXTO
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('[PostStore] ⚠️ Tentativa de buscar posts sem usuário autenticado!');
+        return { posts: [], total: 0 };
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('current_school_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profile?.current_school_id) {
+        console.error('[PostStore] ⚠️ Tentativa de buscar posts sem escola definida!');
+        return { posts: [], total: 0 };
+      }
+
       let query = supabase.from("posts").select("*", { count: "exact" });
+      
+      // 🔒 FILTRO CRÍTICO DE ESCOLA (primeira linha, sempre aplicado)
+      query = query.eq('school_id', profile.current_school_id);
+      query = query.not('school_id', 'is', null);
 
       // Exclude SCHEDULED posts by default unless specifically filtering for them
       if (!filter?.status || filter.status !== "SCHEDULED") {

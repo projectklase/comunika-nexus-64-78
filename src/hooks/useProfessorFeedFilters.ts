@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
 import { PostType, Post } from "@/types/post";
 import { useProfessorMetrics } from "@/hooks/useProfessorMetrics";
-import { postStore } from "@/stores/post-store";
+import { usePosts } from "@/hooks/usePosts";
 import { format, isToday, isThisWeek, isWithinInterval, subDays } from "date-fns";
 import { SmartPostFilters } from "@/utils/post-filters";
 
@@ -42,37 +42,14 @@ export function useProfessorFeedFilters() {
 
   const [filters, setFilters] = useState<ProfessorFeedFilters>(DEFAULT_FILTERS);
   const [isCustomRangeOpen, setIsCustomRangeOpen] = useState(false);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [hideExpired, setHideExpired] = useState(true);
 
   const STORAGE_KEY = `profFeedFilters_v1_${user?.id}`;
 
-  // Load posts from Supabase with real-time updates
-  useEffect(() => {
-    const loadPosts = async () => {
-      setIsLoadingPosts(true);
-      try {
-        const allPosts = await postStore.list({ status: "PUBLISHED" });
-        setPosts(allPosts);
-      } catch (error) {
-        console.error("Error loading posts:", error);
-      } finally {
-        setIsLoadingPosts(false);
-      }
-    };
-
-    loadPosts();
-
-    // Subscribe to real-time changes
-    const subscription = postStore.subscribe(() => {
-      loadPosts();
-    });
-
-    return () => {
-      subscription();
-    };
-  }, []);
+  // ✅ USAR HOOK SEGURO COM FILTRO POR ESCOLA INTEGRADO
+  const { posts, isLoading: isLoadingPosts } = usePosts({
+    status: 'PUBLISHED'
+  });
 
   // Load filters from URL params, then localStorage, then defaults
   useEffect(() => {

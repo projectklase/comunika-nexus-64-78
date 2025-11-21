@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { FilterBar } from '@/components/feed/FilterBar';
 import { EventInvitationsTab } from '@/components/secretaria/EventInvitationsTab';
 import { PostComposer } from '@/components/feed/PostComposer';
 import { PostList } from '@/components/feed/PostList';
-import { postStore } from '@/stores/post-store';
+import { usePosts } from '@/hooks/usePosts';
 import { useSaved } from '@/hooks/useSaved';
 import { usePostActions } from '@/hooks/usePostActions';
 import { Post, PostFilter, PostInput, PostType } from '@/types/post';
@@ -39,18 +39,42 @@ export default function SecretariaFeed() {
     isLoading
   } = usePostActions();
   
-  const [posts, setPosts] = useState<Post[]>([]);
+  // ✅ USAR HOOK SEGURO COM FILTRO POR ESCOLA INTEGRADO
   const [filters, setFilters] = useState<PostFilter & { saved?: boolean; quickFilter?: string }>({});
+  const { posts: allPosts, isLoading: isLoadingPosts } = usePosts({
+    status: filters.status || 'PUBLISHED'
+  });
   const [showComposer, setShowComposer] = useState(false);
   const [editingPost, setEditingPost] = useState<(PostInput & { originalId?: string }) | null>(null);
   const [updateKey, setUpdateKey] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewingEventInvitations, setViewingEventInvitations] = useState<Post | null>(null);
   
+  // Aplicar filtros client-side nos posts já filtrados por escola
+  const posts = useMemo(() => {
+    let filteredPosts = [...allPosts];
+    
+    // Apply specific logic for secretaria quick filter
+    if (filters.quickFilter === 'secretaria') {
+      filteredPosts = filteredPosts.filter(post => {
+        const isSecretariaAuthor = !post.authorName.toLowerCase().includes('prof.');
+        const isSecretariaType = ['AVISO', 'COMUNICADO', 'EVENTO'].includes(post.type);
+        return isSecretariaAuthor && isSecretariaType;
+      });
+    }
+    
+    // Apply saved filter if needed
+    if (filters.saved) {
+      filteredPosts = filteredPosts.filter(post => savedIds.includes(post.id));
+    }
+    
+    return filteredPosts;
+  }, [allPosts, filters, savedIds]);
+  
   // Deep link navigation and focus functionality with auto-filter adjustment
   const { targetPostId, shouldFocus } = useScrollToFeedPost({
     posts,
-    isLoading,
+    isLoading: isLoadingPosts,
     onFiltersAutoAdjust: () => {
       // Auto-adjust filters to show all posts when targeting specific post
       setFilters({
@@ -82,45 +106,9 @@ export default function SecretariaFeed() {
     }
   }, [searchParams, canEdit, editingPost, getPostForEdit, setSearchParams]);
 
-  useEffect(() => {
-    loadPosts();
-  }, [filters, savedIds]);
-
-  // Don't reset filters automatically - let the auto-adjust handle it
-  // Reset filters when deep linking to show target post
-  // useEffect(() => {
-  //   if (targetPostId) {
-  //     const defaultFilters = FeedNavigation.getDefaultFilters();
-  //     setFilters(defaultFilters);
-  //   }
-  // }, [targetPostId]);
-
-  const loadPosts = async () => {
-    const { saved, quickFilter, ...baseFilters } = filters;
-    let filteredPosts = await postStore.list(baseFilters);
-    
-    // Apply specific logic for secretaria quick filter
-    if (quickFilter === 'secretaria') {
-      // Only show posts created by secretaria staff (exclude posts from professors)
-      filteredPosts = filteredPosts.filter(post => {
-        // Check if post was created by secretaria (not by professors)
-        const isSecretariaAuthor = !post.authorName.toLowerCase().includes('prof.');
-        const isSecretariaType = ['AVISO', 'COMUNICADO', 'EVENTO'].includes(post.type);
-        return isSecretariaAuthor && isSecretariaType;
-      });
-    }
-    
-    // Apply saved filter if needed
-    if (saved) {
-      filteredPosts = filteredPosts.filter(post => savedIds.includes(post.id));
-    }
-    
-    setPosts(filteredPosts);
-  };
-
   const handleUpdate = () => {
     setUpdateKey(prev => prev + 1);
-    loadPosts();
+    // Posts são atualizados automaticamente via usePosts hook com Realtime
   };
 
   const handleCreatePost = async (postInput: PostInput) => {
@@ -137,33 +125,26 @@ export default function SecretariaFeed() {
     }
     
     if (success) {
-      loadPosts();
+      // Posts são atualizados automaticamente via usePosts hook com Realtime
       setShowComposer(false);
       setEditingPost(null);
     }
   };
 
   const handleArchive = async (id: string) => {
-    const success = await archivePost(id);
-    if (success) {
-      loadPosts();
-    }
+    await archivePost(id);
+    // Posts são atualizados automaticamente via usePosts hook com Realtime
   };
 
   const handleDelete = async (id: string) => {
-    const success = await deletePost(id);
-    if (success) {
-      loadPosts();
-    }
+    await deletePost(id);
+    // Posts são atualizados automaticamente via usePosts hook com Realtime
   };
 
   const handleDuplicate = async (id: string) => {
     if (!user) return;
-    
-    const success = await duplicatePost(id, user.name);
-    if (success) {
-      loadPosts();
-    }
+    await duplicatePost(id, user.name);
+    // Posts são atualizados automaticamente via usePosts hook com Realtime
   };
 
   const handleEdit = (id: string) => {

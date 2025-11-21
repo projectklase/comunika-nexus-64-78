@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { Post, PostFilter } from '@/types/post';
 import { supabase } from '@/integrations/supabase/client';
 import { useSchool } from '@/contexts/SchoolContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // NOVO: Hook refatorado para usar Supabase, com Realtime e função de invalidação
 export function usePosts(filter?: PostFilter) {
   const { currentSchool } = useSchool();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
@@ -61,7 +63,20 @@ export function usePosts(filter?: PostFilter) {
 
       const invalidPosts = data.filter(p => p.school_id !== currentSchool.id);
       if (invalidPosts.length > 0) {
-        console.error('[usePosts] 🚨 VAZAMENTO DETECTADO! Posts de outras escolas:', invalidPosts);
+        console.error('[usePosts] 🚨 VAZAMENTO DETECTADO! Posts de outras escolas:', {
+          currentSchool: currentSchool.id,
+          currentSchoolName: currentSchool.name,
+          invalidPosts: invalidPosts.map(p => ({
+            id: p.id,
+            title: p.title,
+            school_id: p.school_id,
+            type: p.type
+          })),
+          userRole: user?.role,
+          userId: user?.id,
+          timestamp: new Date().toISOString()
+        });
+        // TODO: Enviar alerta para sistema de monitoramento
       }
 
       // Filtrar apenas posts da escola correta (camada extra de segurança)
