@@ -9,6 +9,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { useSaved } from '@/hooks/useSaved';
 import { usePostActions } from '@/hooks/usePostActions';
 import { Post, PostFilter, PostInput, PostType } from '@/types/post';
+import { SmartPostFilters } from '@/utils/post-filters';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Rss, Plus } from 'lucide-react';
@@ -67,6 +68,9 @@ export default function SecretariaFeed() {
     if (filters.saved) {
       filteredPosts = filteredPosts.filter(post => savedIds.includes(post.id));
     }
+    
+    // Ordenar posts por urgência temporal
+    filteredPosts = SmartPostFilters.sortByUrgency(filteredPosts);
     
     return filteredPosts;
   }, [allPosts, filters, savedIds]);

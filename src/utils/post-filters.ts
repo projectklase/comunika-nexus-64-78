@@ -24,7 +24,9 @@ export class SmartPostFilters {
         if (post.eventStartAt) {
           return isBefore(new Date(post.eventStartAt), now);
         }
-        break;
+        // Events without dates expire after 7 days
+        const eventAge = (now.getTime() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+        return eventAge > 7;
         
       case 'ATIVIDADE':
       case 'TRABALHO':
@@ -33,7 +35,9 @@ export class SmartPostFilters {
         if (post.dueAt) {
           return isBefore(new Date(post.dueAt), now);
         }
-        break;
+        // Activities without due date expire after 14 days
+        const activityAge = (now.getTime() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+        return activityAge > 14;
         
       case 'AVISO':
       case 'COMUNICADO':
@@ -143,7 +147,104 @@ export class SmartPostFilters {
   }
   
   /**
-   * Sort posts by relevance and urgency
+   * Sort posts by temporal urgency (prioritizes time over type)
+   * Priority order:
+   * 1. Posts happening/due TODAY
+   * 2. Posts URGENT (next 2 days)
+   * 3. Posts UPCOMING (next 7 days)
+   * 4. Posts FUTURE (by date, closest first)
+   * 5. Posts without dates (by creation date, newest first)
+   */
+  static sortByUrgency(posts: Post[]): Post[] {
+    const now = new Date();
+    const today = startOfDay(now);
+    const urgent = addDays(now, 2);
+    const upcoming = addDays(now, 7);
+    
+    return [...posts].sort((a, b) => {
+      // Get relevant dates
+      const aDate = this.getPostDate(a);
+      const bDate = this.getPostDate(b);
+      
+      // Check if posts are today
+      const aIsToday = this.isPostToday(a);
+      const bIsToday = this.isPostToday(b);
+      
+      // PRIORITY 1: Posts de HOJE (máxima prioridade)
+      if (aIsToday && !bIsToday) return -1;
+      if (!aIsToday && bIsToday) return 1;
+      
+      // Se ambos são de hoje, ordenar por tipo dentro de hoje
+      if (aIsToday && bIsToday) {
+        const priorityOrder = {
+          PROVA: 100,
+          ATIVIDADE: 80,
+          TRABALHO: 80,
+          EVENTO: 60,
+          AVISO: 40,
+          COMUNICADO: 40
+        };
+        
+        const aPriority = priorityOrder[a.type] || 0;
+        const bPriority = priorityOrder[b.type] || 0;
+        
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority;
+        }
+        
+        // Mesmo tipo e mesmo dia: ordenar por hora
+        if (aDate && bDate) {
+          return aDate.getTime() - bDate.getTime();
+        }
+      }
+      
+      // PRIORITY 2: Posts URGENTES (próximos 2 dias)
+      const aIsUrgent = aDate && isAfter(aDate, now) && isBefore(aDate, urgent);
+      const bIsUrgent = bDate && isAfter(bDate, now) && isBefore(bDate, urgent);
+      
+      if (aIsUrgent && !bIsUrgent) return -1;
+      if (!aIsUrgent && bIsUrgent) return 1;
+      
+      // Se ambos são urgentes, ordenar por data mais próxima
+      if (aIsUrgent && bIsUrgent && aDate && bDate) {
+        return aDate.getTime() - bDate.getTime();
+      }
+      
+      // PRIORITY 3: Posts PRÓXIMOS (próximos 7 dias)
+      const aIsUpcoming = aDate && isAfter(aDate, urgent) && isBefore(aDate, upcoming);
+      const bIsUpcoming = bDate && isAfter(bDate, urgent) && isBefore(bDate, upcoming);
+      
+      if (aIsUpcoming && !bIsUpcoming) return -1;
+      if (!aIsUpcoming && bIsUpcoming) return 1;
+      
+      // Se ambos são próximos, ordenar por tipo e depois data
+      if (aIsUpcoming && bIsUpcoming) {
+        // Provas têm prioridade mesmo dentro da janela de 7 dias
+        if (a.type === 'PROVA' && b.type !== 'PROVA') return -1;
+        if (a.type !== 'PROVA' && b.type === 'PROVA') return 1;
+        
+        // Ordenar por data
+        if (aDate && bDate) {
+          return aDate.getTime() - bDate.getTime();
+        }
+      }
+      
+      // PRIORITY 4: Posts FUTUROS (com data, mas não urgentes)
+      if (aDate && bDate) {
+        return aDate.getTime() - bDate.getTime();
+      }
+      
+      // Um tem data, outro não: com data vem primeiro
+      if (aDate && !bDate) return -1;
+      if (!aDate && bDate) return 1;
+      
+      // PRIORITY 5: Posts SEM DATA - ordenar por criação (mais recente primeiro)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }
+
+  /**
+   * Sort posts by relevance and urgency (legacy method)
    */
   static sortByRelevance(posts: Post[]): Post[] {
     return [...posts].sort((a, b) => {

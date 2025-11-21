@@ -91,6 +91,9 @@ export default function AlunoFeed() {
     // Apply sorting
     if (preferences.sortBy === 'recent') {
       posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (preferences.sortBy === 'urgency') {
+      // New: Ordenação por urgência temporal
+      posts = SmartPostFilters.sortByUrgency(posts);
     } else {
       // 'relevant' sorting - use smart relevance sorting
       posts = SmartPostFilters.sortByRelevance(posts);
