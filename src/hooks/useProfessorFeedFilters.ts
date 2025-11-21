@@ -190,11 +190,15 @@ export function useProfessorFeedFilters() {
       filteredResults = SmartPostFilters.filterRelevantPosts(filteredResults);
     }
 
-    // Se não houver filtro de período específico, priorizar posts por relevância
-    if (filters.period === 'semana') {
+    // Aplicar ordenação inteligente por urgência
+    if (filters.period === 'semana' || filters.period === 'mes') {
+      // Para visualizações semanais/mensais, usar ordenação por urgência
+      filteredResults = SmartPostFilters.sortByUrgency(filteredResults);
+    } else if (filters.period === 'hoje') {
+      // Para "hoje", ordenar por tipo e hora
       filteredResults = SmartPostFilters.sortByRelevance(filteredResults);
     } else {
-      // Sort by date (most recent first)
+      // Para períodos customizados, ordenar por data
       filteredResults = filteredResults.sort((a, b) => {
         const dateA = a.dueAt || a.eventStartAt || a.createdAt;
         const dateB = b.dueAt || b.eventStartAt || b.createdAt;

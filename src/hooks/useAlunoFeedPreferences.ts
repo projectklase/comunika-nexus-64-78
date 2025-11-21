@@ -7,7 +7,7 @@ export type QuickFilter = 'all' | 'secretaria' | 'professor' | 'pending' | 'save
 export interface AlunoFeedPreferences {
   hideRead: boolean;
   hideExpired?: boolean;
-  sortBy: 'relevant' | 'recent';
+  sortBy: 'relevant' | 'recent' | 'urgency';
   pageSize: number;
 }
 
@@ -24,7 +24,7 @@ const FILTERS_KEY = 'aluno_feed_filters';
 const defaultPreferences: AlunoFeedPreferences = {
   hideRead: false,
   hideExpired: true,
-  sortBy: 'relevant',
+  sortBy: 'urgency',
   pageSize: 10
 };
 
