@@ -20,6 +20,7 @@ export interface OperationalMetrics {
     delivery_rate: number; // %
   }>;
   avg_occupancy: number;
+  koin_ecosystem_score: number;
 }
 
 export function useOperationalMetrics() {
@@ -146,6 +147,81 @@ export function useOperationalMetrics() {
         delivery_rate: data.count > 0 ? data.rate / data.count : 0
       }));
       
+      // Calcular Koin Ecosystem Score
+      // Buscar alunos da escola via school_memberships
+      const { data: schoolStudentIds } = await supabase
+        .from('school_memberships')
+        .select('user_id')
+        .eq('school_id', currentSchool.id)
+        .eq('role', 'aluno');
+      
+      const studentIds = schoolStudentIds?.map(sm => sm.user_id) || [];
+      
+      // Buscar perfis dos alunos
+      const { data: studentProfiles } = await supabase
+        .from('profiles')
+        .select('id, koins')
+        .in('id', studentIds);
+      
+      // Buscar transações da escola
+      const { data: transactions } = await supabase
+        .from('koin_transactions')
+        .select('*')
+        .eq('school_id', currentSchool.id);
+      
+      // Buscar resgates da escola
+      const { data: redemptions } = await supabase
+        .from('redemption_requests')
+        .select('status, requested_at, processed_at')
+        .eq('school_id', currentSchool.id);
+      
+      // Cálculo do score (0-100)
+      let score = 0;
+      let totalFactors = 0;
+      
+      // Fator 1: Taxa de Participação (30 pontos)
+      if (studentProfiles && studentProfiles.length > 0) {
+        const activeStudents = studentProfiles.filter(s => (s.koins || 0) > 0).length;
+        const participationRate = (activeStudents / studentProfiles.length) * 100;
+        score += (participationRate / 100) * 30;
+        totalFactors++;
+      }
+      
+      // Fator 2: Distribuição Média de Koins (25 pontos)
+      // Quanto mais koins em circulação, melhor (normalizado até 1000 koins)
+      if (avgKoins > 0) {
+        const normalizedAvg = Math.min(avgKoins / 1000, 1);
+        score += normalizedAvg * 25;
+        totalFactors++;
+      }
+      
+      // Fator 3: Velocidade de Circulação (25 pontos)
+      if (transactions && transactions.length > 0) {
+        const totalDistributed = transactions
+          .filter(t => t.amount > 0)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const totalSpent = transactions
+          .filter(t => t.amount < 0)
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+        
+        if (totalDistributed > 0) {
+          const circulationVelocity = Math.min(totalSpent / totalDistributed, 1);
+          score += circulationVelocity * 25;
+          totalFactors++;
+        }
+      }
+      
+      // Fator 4: Taxa de Aprovação de Resgates (20 pontos)
+      if (redemptions && redemptions.length > 0) {
+        const approved = redemptions.filter(r => r.status === 'APROVADO').length;
+        const approvalRate = approved / redemptions.length;
+        score += approvalRate * 20;
+        totalFactors++;
+      }
+      
+      // Score final arredondado
+      const koinEcosystemScore = totalFactors > 0 ? Math.round(score) : 0;
+      
       return {
         occupancy_data: occupancyData,
         koins_distribution: {
@@ -154,7 +230,8 @@ export function useOperationalMetrics() {
           total_students: totalStudents
         },
         teacher_roi: teacherRoiFinal,
-        avg_occupancy: avgOccupancy
+        avg_occupancy: avgOccupancy,
+        koin_ecosystem_score: koinEcosystemScore
       };
     },
     enabled: !!currentSchool,
