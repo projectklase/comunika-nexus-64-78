@@ -101,17 +101,6 @@ export function EventChip({ event, onClick, isDraggable = false, className, useU
   const Icon = typeIcons[post.type as keyof typeof typeIcons] || AlertCircle;
   const chipStyle = typeStyles[post.type as keyof typeof typeStyles] || typeStyles.AVISO;
 
-  // Log detalhado em modo de desenvolvimento para rastreamento
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[EventChip] Rendering event:', {
-      postId: post.id,
-      type: post.type,
-      title: post.title,
-      hasIcon: !!Icon,
-      hasStyle: !!chipStyle
-    });
-  }
-
   // Safe date formatting with fallback
   const formatSafeTime = (date: Date | null | undefined): string => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
