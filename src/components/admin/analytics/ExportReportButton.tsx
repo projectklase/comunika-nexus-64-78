@@ -4,6 +4,7 @@ import { FileDown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateAnalyticsReport } from '@/utils/excel-export';
 import { fetchCompleteAnalyticsData } from '@/utils/excel-data-fetcher';
+import { useSchool } from '@/contexts/SchoolContext';
 
 interface ExportReportButtonProps {
   daysFilter: number;
@@ -12,6 +13,7 @@ interface ExportReportButtonProps {
 export function ExportReportButton({ daysFilter }: ExportReportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+  const { currentSchool } = useSchool();
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -24,7 +26,7 @@ export function ExportReportButton({ daysFilter }: ExportReportButtonProps) {
       });
 
       // Buscar dados completos diretamente das tabelas
-      const completeData = await fetchCompleteAnalyticsData(daysFilter);
+      const completeData = await fetchCompleteAnalyticsData(daysFilter, currentSchool.id);
 
       toast({
         title: 'Gerando relatório...',
