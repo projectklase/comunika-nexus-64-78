@@ -87,7 +87,7 @@ serve(async (req) => {
         title: 'Bonificação Recebida!',
         message: `Você recebeu ${koinAmount} Koins pelo evento '${eventName}'!`,
         role_target: 'ALUNO',
-        link: '/aluno/recompensas',
+        link: '/aluno/loja-recompensas?tab=history',
         is_read: false,
         meta: { 
           koinAmount: koinAmount, 
