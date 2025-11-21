@@ -29,20 +29,24 @@ export function TodaySection({ posts, onOpenPost, onGoToCalendar }: TodaySection
     if (user) {
       recordPostView(post.id, user, 'dashboard', user.classId);
     }
-    // Trigger gamification mission completion for "openDayFocus" when opening an item
-    try {
-      const { dailyMission, completeDailyMission } = useStudentGamification.getState();
-      if (dailyMission.id === 'openDayFocus' && !dailyMission.done) {
-        const xpGained = completeDailyMission();
-        if (xpGained > 0) {
-          toast({
-            title: `Missão completa! +${xpGained} XP ⭐`,
-            description: 'Você abriu um item da sua agenda!'
-          });
+    
+    // Verificação de role: gamificação só para alunos
+    if (user && user.role === 'aluno') {
+      // Trigger gamification mission completion for "openDayFocus" when opening an item
+      try {
+        const { dailyMission, completeDailyMission } = useStudentGamification.getState();
+        if (dailyMission.id === 'openDayFocus' && !dailyMission.done) {
+          const xpGained = completeDailyMission();
+          if (xpGained > 0) {
+            toast({
+              title: `Missão completa! +${xpGained} XP ⭐`,
+              description: 'Você abriu um item da sua agenda!'
+            });
+          }
         }
+      } catch (error) {
+        console.error('Error completing daily mission:', error);
       }
-    } catch (error) {
-      console.error('Error completing daily mission:', error);
     }
     
     onOpenPost(post);
