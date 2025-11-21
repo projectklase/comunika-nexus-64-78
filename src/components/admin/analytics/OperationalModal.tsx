@@ -333,7 +333,7 @@ export function OperationalModal({
               <Card className="glass-card border-accent/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <ShoppingBag className="h-4 w-4 text-accent" />
+                    <ShoppingBag className="h-4 w-4 text-stone-50" />
                     Atividade de Resgates
                   </CardTitle>
                 </CardHeader>
