@@ -7,43 +7,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRewardsStore } from "@/stores/rewards-store";
 import { useSchool } from "@/contexts/SchoolContext";
-import { 
-  calculateMonthlyDistribution,
-  calculateTopItems,
-  calculateKoinCirculation,
-  calculateApprovalRates 
-} from "@/utils/rewards-analytics";
-import { 
-  TrendingUp, 
-  Coins, 
-  ShoppingBag, 
-  Trophy, 
-  CheckCircle, 
-  XCircle, 
-  Clock,
-  Users,
-  Activity,
-  Loader2,
-  Info
-} from "lucide-react";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  ResponsiveContainer, 
-  Tooltip, 
-  Legend,
-  CartesianGrid
-} from "recharts";
+import { calculateMonthlyDistribution, calculateTopItems, calculateKoinCirculation, calculateApprovalRates } from "@/utils/rewards-analytics";
+import { TrendingUp, Coins, ShoppingBag, Trophy, CheckCircle, XCircle, Clock, Users, Activity, Loader2, Info } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, CartesianGrid } from "recharts";
 import type { OperationalMetrics } from "@/hooks/useOperationalMetrics";
-
 interface OperationalModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: OperationalMetrics | undefined;
 }
-
 interface StudentRanking {
   id: string;
   name: string;
@@ -51,7 +23,6 @@ interface StudentRanking {
   spentKoins: number;
   position: number;
 }
-
 interface DashboardData {
   // KPIs
   totalStudents: number;
@@ -66,51 +37,60 @@ interface DashboardData {
   avgRedemptionValue: number;
   approvalRate: number;
   avgProcessingTime: number;
-  
+
   // Rankings
   topStudents: StudentRanking[];
-  topItems: Array<{ itemName: string; redemptionCount: number; totalKoins: number }>;
-  
+  topItems: Array<{
+    itemName: string;
+    redemptionCount: number;
+    totalKoins: number;
+  }>;
+
   // Timeline
-  monthlyData: Array<{ month: string; earned: number; spent: number }>;
-  
+  monthlyData: Array<{
+    month: string;
+    earned: number;
+    spent: number;
+  }>;
+
   // Status
   pendingRedemptions: number;
   approvedRedemptions: number;
   rejectedRedemptions: number;
 }
-
-export function OperationalModal({ isOpen, onClose, data }: OperationalModalProps) {
-  const { currentSchool } = useSchool();
-  const { transactions, loadAllTransactions } = useRewardsStore();
+export function OperationalModal({
+  isOpen,
+  onClose,
+  data
+}: OperationalModalProps) {
+  const {
+    currentSchool
+  } = useSchool();
+  const {
+    transactions,
+    loadAllTransactions
+  } = useRewardsStore();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
   useEffect(() => {
     if (isOpen && currentSchool) {
       loadDashboardData();
     }
   }, [isOpen, currentSchool]);
-
   const loadDashboardData = async () => {
     if (!currentSchool) return;
-    
     setIsLoading(true);
     try {
       // Carregar transações da escola
       await loadAllTransactions();
-      
+
       // Buscar todos os alunos da escola via school_memberships
-      const { data: memberships, error: membershipsError } = await supabase
-        .from('school_memberships')
-        .select('user_id')
-        .eq('school_id', currentSchool.id)
-        .eq('role', 'aluno');
-
+      const {
+        data: memberships,
+        error: membershipsError
+      } = await supabase.from('school_memberships').select('user_id').eq('school_id', currentSchool.id).eq('role', 'aluno');
       if (membershipsError) throw membershipsError;
-
       const studentIds = memberships?.map(m => m.user_id) || [];
-
       if (studentIds.length === 0) {
         setDashboardData({
           totalStudents: 0,
@@ -130,18 +110,17 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
           monthlyData: [],
           pendingRedemptions: 0,
           approvedRedemptions: 0,
-          rejectedRedemptions: 0,
+          rejectedRedemptions: 0
         });
         setIsLoading(false);
         return;
       }
 
       // Buscar perfis dos alunos
-      const { data: students, error: studentsError } = await supabase
-        .from('profiles')
-        .select('id, name, koins')
-        .in('id', studentIds);
-
+      const {
+        data: students,
+        error: studentsError
+      } = await supabase.from('profiles').select('id, name, koins').in('id', studentIds);
       if (studentsError) throw studentsError;
 
       // Filtrar transações da escola (via studentIds)
@@ -149,7 +128,6 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
 
       // Calcular métricas
       const metrics = calculateDashboardMetrics(students || [], schoolTransactions);
-      
       setDashboardData(metrics);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
@@ -157,59 +135,59 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
       setIsLoading(false);
     }
   };
-
   const calculateDashboardMetrics = (students: any[], schoolTransactions: any[]): DashboardData => {
     const totalStudents = students.length;
     const activeStudents = students.filter(s => s.koins > 0).length;
-    const participationRate = totalStudents > 0 ? (activeStudents / totalStudents) * 100 : 0;
+    const participationRate = totalStudents > 0 ? activeStudents / totalStudents * 100 : 0;
 
     // Economia de Koins
-    const { totalDistributed, totalSpent, inCirculation } = calculateKoinCirculation(schoolTransactions);
-    const circulationVelocity = totalDistributed > 0 ? (totalSpent / totalDistributed) * 100 : 0;
+    const {
+      totalDistributed,
+      totalSpent,
+      inCirculation
+    } = calculateKoinCirculation(schoolTransactions);
+    const circulationVelocity = totalDistributed > 0 ? totalSpent / totalDistributed * 100 : 0;
 
     // Resgates
     const redemptions = schoolTransactions.filter(t => t.type === 'REDEMPTION' || t.type === 'SPEND');
     const totalRedemptions = redemptions.length;
     const studentsWhoRedeemed = new Set(redemptions.map(t => t.studentId)).size;
-    const conversionRate = activeStudents > 0 ? (studentsWhoRedeemed / activeStudents) * 100 : 0;
+    const conversionRate = activeStudents > 0 ? studentsWhoRedeemed / activeStudents * 100 : 0;
     const avgRedemptionValue = totalRedemptions > 0 ? totalSpent / totalRedemptions : 0;
 
     // Saúde do Sistema
-    const { approvalRate, approved, rejected, pending } = calculateApprovalRates(schoolTransactions);
-    
+    const {
+      approvalRate,
+      approved,
+      rejected,
+      pending
+    } = calculateApprovalRates(schoolTransactions);
+
     // Tempo médio de processamento (em horas)
     const processedRedemptions = redemptions.filter(r => r.redemptionStatus !== 'PENDING' && r.processedAt);
-    const avgProcessingTime = processedRedemptions.length > 0
-      ? processedRedemptions.reduce((sum, r) => {
-          const requested = new Date(r.timestamp).getTime();
-          const processed = new Date(r.processedAt!).getTime();
-          return sum + (processed - requested) / (1000 * 60 * 60); // horas
-        }, 0) / processedRedemptions.length
-      : 0;
+    const avgProcessingTime = processedRedemptions.length > 0 ? processedRedemptions.reduce((sum, r) => {
+      const requested = new Date(r.timestamp).getTime();
+      const processed = new Date(r.processedAt!).getTime();
+      return sum + (processed - requested) / (1000 * 60 * 60); // horas
+    }, 0) / processedRedemptions.length : 0;
 
     // Top 10 Alunos
-    const topStudents: StudentRanking[] = students
-      .map(s => ({
-        id: s.id,
-        name: s.name,
-        totalKoins: schoolTransactions
-          .filter(t => t.studentId === s.id && (t.type === 'EARN' || t.type === 'BONUS'))
-          .reduce((sum, t) => sum + t.amount, 0),
-        spentKoins: Math.abs(schoolTransactions
-          .filter(t => t.studentId === s.id && (t.type === 'SPEND' || t.type === 'REDEMPTION'))
-          .reduce((sum, t) => sum + t.amount, 0)),
-        position: 0
-      }))
-      .sort((a, b) => b.totalKoins - a.totalKoins)
-      .slice(0, 10)
-      .map((s, i) => ({ ...s, position: i + 1 }));
+    const topStudents: StudentRanking[] = students.map(s => ({
+      id: s.id,
+      name: s.name,
+      totalKoins: schoolTransactions.filter(t => t.studentId === s.id && (t.type === 'EARN' || t.type === 'BONUS')).reduce((sum, t) => sum + t.amount, 0),
+      spentKoins: Math.abs(schoolTransactions.filter(t => t.studentId === s.id && (t.type === 'SPEND' || t.type === 'REDEMPTION')).reduce((sum, t) => sum + t.amount, 0)),
+      position: 0
+    })).sort((a, b) => b.totalKoins - a.totalKoins).slice(0, 10).map((s, i) => ({
+      ...s,
+      position: i + 1
+    }));
 
     // Top 5 Itens
     const topItems = calculateTopItems(schoolTransactions, 5);
 
     // Linha do Tempo
     const monthlyData = calculateMonthlyDistribution(schoolTransactions, 6);
-
     return {
       totalStudents,
       activeStudents,
@@ -228,13 +206,11 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
       monthlyData,
       pendingRedemptions: pending,
       approvedRedemptions: approved,
-      rejectedRedemptions: rejected,
+      rejectedRedemptions: rejected
     };
   };
-
   const generateInsights = (): string[] => {
     if (!dashboardData) return [];
-    
     const insights: string[] = [];
 
     // Insight de engajamento
@@ -268,19 +244,15 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
     if (dashboardData.approvalRate > 90) {
       insights.push(`✅ Taxa de aprovação de ${dashboardData.approvalRate.toFixed(0)}% indica alta satisfação com os resgates.`);
     }
-
     return insights.slice(0, 4); // Limitar a 4 insights
   };
-
   const getMedalEmoji = (position: number): string => {
     if (position === 1) return '🥇';
     if (position === 2) return '🥈';
     if (position === 3) return '🥉';
     return '';
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
@@ -292,18 +264,13 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
+        {isLoading ? <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="text-muted-foreground">Carregando dashboard executivo...</p>
-          </div>
-        ) : !dashboardData ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
+          </div> : !dashboardData ? <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Activity className="h-12 w-12 text-muted-foreground" />
             <p className="text-muted-foreground">Nenhum dado disponível para esta escola.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
+          </div> : <div className="space-y-6">
             {/* FASE 3: 4 KPIs Principais */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* KPI 1: Engajamento Geral */}
@@ -323,10 +290,9 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                   </p>
                   <div className="mt-3 flex items-center gap-2">
                     <div className="flex-1 bg-muted rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${dashboardData.participationRate}%` }}
-                      />
+                      <div className="bg-primary h-2 rounded-full transition-all" style={{
+                    width: `${dashboardData.participationRate}%`
+                  }} />
                     </div>
                     <span className="text-sm font-semibold text-primary">
                       {dashboardData.participationRate.toFixed(0)}%
@@ -372,7 +338,7 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-accent">
+                  <div className="text-3xl font-bold text-stone-50">
                     {dashboardData.totalRedemptions}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -423,8 +389,7 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
             </div>
 
             {/* FASE 4: Linha do Tempo */}
-            {dashboardData.monthlyData.length > 0 && (
-              <>
+            {dashboardData.monthlyData.length > 0 && <>
                 <Separator />
                 <Card className="glass-card">
                   <CardHeader>
@@ -440,51 +405,34 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                     <ResponsiveContainer width="100%" height={250}>
                       <LineChart data={dashboardData.monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis 
-                          dataKey="month" 
-                          className="text-xs"
-                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                        />
-                        <YAxis 
-                          className="text-xs"
-                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                        />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'hsl(var(--background))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px'
-                          }}
-                        />
+                        <XAxis dataKey="month" className="text-xs" tick={{
+                    fill: 'hsl(var(--muted-foreground))'
+                  }} />
+                        <YAxis className="text-xs" tick={{
+                    fill: 'hsl(var(--muted-foreground))'
+                  }} />
+                        <Tooltip contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }} />
                         <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="earned" 
-                          stroke="hsl(var(--primary))" 
-                          strokeWidth={2}
-                          name="Distribuídos"
-                          dot={{ fill: 'hsl(var(--primary))' }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="spent" 
-                          stroke="hsl(var(--secondary))" 
-                          strokeWidth={2}
-                          name="Gastos"
-                          dot={{ fill: 'hsl(var(--secondary))' }}
-                        />
+                        <Line type="monotone" dataKey="earned" stroke="hsl(var(--primary))" strokeWidth={2} name="Distribuídos" dot={{
+                    fill: 'hsl(var(--primary))'
+                  }} />
+                        <Line type="monotone" dataKey="spent" stroke="hsl(var(--secondary))" strokeWidth={2} name="Gastos" dot={{
+                    fill: 'hsl(var(--secondary))'
+                  }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-              </>
-            )}
+              </>}
 
             {/* FASE 5: Rankings */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top 10 Alunos */}
-              {dashboardData.topStudents.length > 0 && (
-                <Card className="glass-card">
+              {dashboardData.topStudents.length > 0 && <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Trophy className="h-5 w-5 text-primary" />
@@ -504,19 +452,16 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {dashboardData.topStudents.map((student) => (
-                          <TableRow key={student.id}>
+                        {dashboardData.topStudents.map(student => <TableRow key={student.id}>
                             <TableCell className="font-medium text-lg">
                               {getMedalEmoji(student.position) || student.position}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{student.name}</span>
-                                {student.totalKoins > 500 && (
-                                  <Badge variant="secondary" className="text-xs">
+                                {student.totalKoins > 500 && <Badge variant="secondary" className="text-xs">
                                     Super
-                                  </Badge>
-                                )}
+                                  </Badge>}
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
@@ -524,24 +469,19 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                                 <div className="font-bold text-primary">
                                   {student.totalKoins.toLocaleString()}
                                 </div>
-                                {student.spentKoins > 0 && (
-                                  <div className="text-xs text-muted-foreground">
+                                {student.spentKoins > 0 && <div className="text-xs text-muted-foreground">
                                     {student.spentKoins.toLocaleString()} gastos
-                                  </div>
-                                )}
+                                  </div>}
                               </div>
                             </TableCell>
-                          </TableRow>
-                        ))}
+                          </TableRow>)}
                       </TableBody>
                     </Table>
                   </CardContent>
-                </Card>
-              )}
+                </Card>}
 
               {/* Top 5 Itens */}
-              {dashboardData.topItems.length > 0 && (
-                <Card className="glass-card">
+              {dashboardData.topItems.length > 0 && <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <ShoppingBag className="h-5 w-5 text-secondary" />
@@ -553,19 +493,15 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {dashboardData.topItems.map((item, index) => {
-                      const maxRedemptions = dashboardData.topItems[0].redemptionCount;
-                      const popularity = (item.redemptionCount / maxRedemptions) * 100;
-                      
-                      return (
-                        <div key={index} className="space-y-2">
+                const maxRedemptions = dashboardData.topItems[0].redemptionCount;
+                const popularity = item.redemptionCount / maxRedemptions * 100;
+                return <div key={index} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{item.itemName}</span>
-                              {index === 0 && (
-                                <Badge variant="default" className="text-xs">
+                              {index === 0 && <Badge variant="default" className="text-xs">
                                   Mais Popular
-                                </Badge>
-                              )}
+                                </Badge>}
                             </div>
                             <span className="text-sm font-bold text-secondary">
                               {item.redemptionCount}x
@@ -573,21 +509,18 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="flex-1 bg-muted rounded-full h-2">
-                              <div 
-                                className="bg-secondary h-2 rounded-full transition-all"
-                                style={{ width: `${popularity}%` }}
-                              />
+                              <div className="bg-secondary h-2 rounded-full transition-all" style={{
+                        width: `${popularity}%`
+                      }} />
                             </div>
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {item.totalKoins.toLocaleString()} K
                             </span>
                           </div>
-                        </div>
-                      );
-                    })}
+                        </div>;
+              })}
                   </CardContent>
-                </Card>
-              )}
+                </Card>}
             </div>
 
             {/* FASE 6: Status de Resgates */}
@@ -643,8 +576,7 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
             </div>
 
             {/* FASE 7: Insights Automáticos */}
-            {generateInsights().length > 0 && (
-              <>
+            {generateInsights().length > 0 && <>
                 <Separator />
                 <Card className="glass-card bg-primary/5 border-primary/20">
                   <CardHeader>
@@ -658,24 +590,16 @@ export function OperationalModal({ isOpen, onClose, data }: OperationalModalProp
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {generateInsights().map((insight, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50"
-                        >
+                      {generateInsights().map((insight, index) => <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
                           <div className="flex-1 text-sm leading-relaxed">
                             {insight}
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                   </CardContent>
                 </Card>
-              </>
-            )}
-          </div>
-        )}
+              </>}
+          </div>}
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
