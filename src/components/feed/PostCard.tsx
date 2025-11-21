@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -125,6 +125,20 @@ export function PostCard({
     isPostSaved,
     isOverdue
   } = memoizedData;
+
+  // Check if post is today
+  const isPostToday = useMemo(() => {
+    switch (post.type) {
+      case 'EVENTO':
+        return post.eventStartAt ? isToday(parseISO(post.eventStartAt)) : false;
+      case 'ATIVIDADE':
+      case 'TRABALHO':
+      case 'PROVA':
+        return post.dueAt ? isToday(parseISO(post.dueAt)) : false;
+      default:
+        return false;
+    }
+  }, [post.type, post.eventStartAt, post.dueAt]);
   const getTypeColor = (type: PostType) => {
     switch (type) {
       case "AVISO":
@@ -314,7 +328,26 @@ export function PostCard({
   // Check if post is marked as important
   const isImportant = post.meta?.important === true;
   return <>
-      <Card className={cn("glass-card border-border/50 hover:border-primary/30 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10", isNewPost && "ring-2 ring-primary/50", isImportant && ["relative overflow-hidden", "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5", "shadow-[var(--golden-silhouette)]", "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]", "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none"])} role="article" aria-labelledby={`post-title-${post.id}`} tabIndex={0} data-post-id={post.id} id={`post-${post.id}`} data-important={isImportant}>
+      <Card className={cn(
+        "glass-card overflow-hidden hover:shadow-xl transition-all duration-300 border",
+        isNewPost && "border-l-4 border-l-primary",
+        isPostToday && "border-2 border-yellow-500/50 bg-yellow-500/5 shadow-yellow-500/20 shadow-lg",
+        "border-border/50",
+        isImportant && [
+          "relative overflow-hidden",
+          "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
+          "shadow-[var(--golden-silhouette)]",
+          "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
+          "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none"
+        ]
+      )} 
+      role="article" 
+      aria-labelledby={`post-title-${post.id}`} 
+      tabIndex={0} 
+      data-post-id={post.id} 
+      id={`post-${post.id}`} 
+      data-important={isImportant}
+      data-today={isPostToday}>
         <CardHeader className="pb-3" role="banner">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3 flex-1">
@@ -327,6 +360,12 @@ export function PostCard({
                   {getStatusLabel(post.status)}
                 </Badge>
                 {isNewPost && <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">Novo</Badge>}
+                {isPostToday && (
+                  <Badge className="bg-yellow-500 text-black border-0 shadow-lg shadow-yellow-500/50 animate-pulse">
+                    <Star className="h-3 w-3 mr-1" />
+                    HOJE
+                  </Badge>
+                )}
                 {isImportant && <Badge className="bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60 text-xs font-medium shadow-[var(--golden-glow)] backdrop-blur-sm">
                     <Star className="h-3 w-3 mr-1 fill-[hsl(var(--golden-light))]" />
                     Importante

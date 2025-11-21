@@ -5,6 +5,7 @@ import { PostType, Post } from "@/types/post";
 import { useProfessorMetrics } from "@/hooks/useProfessorMetrics";
 import { postStore } from "@/stores/post-store";
 import { format, isToday, isThisWeek, isWithinInterval, subDays } from "date-fns";
+import { SmartPostFilters } from "@/utils/post-filters";
 
 export type ProfessorQuickFilter = "all" | "atividade" | "trabalho" | "prova" | "eventos" | "agendados";
 export type ProfessorPeriodFilter = "hoje" | "semana" | "mes" | "custom";
@@ -43,6 +44,7 @@ export function useProfessorFeedFilters() {
   const [isCustomRangeOpen, setIsCustomRangeOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [hideExpired, setHideExpired] = useState(true);
 
   const STORAGE_KEY = `profFeedFilters_v1_${user?.id}`;
 
@@ -206,13 +208,25 @@ export function useProfessorFeedFilters() {
       });
     }
 
-    // Sort by date (most recent first)
-    return filteredResults.sort((a, b) => {
-      const dateA = a.dueAt || a.eventStartAt || a.createdAt;
-      const dateB = b.dueAt || b.eventStartAt || b.createdAt;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
-  }, [user, metrics, posts, filters, isLoadingPosts]);
+    // Aplicar filtragem inteligente para remover posts expirados
+    if (hideExpired) {
+      filteredResults = SmartPostFilters.filterRelevantPosts(filteredResults);
+    }
+
+    // Se não houver filtro de período específico, priorizar posts por relevância
+    if (filters.period === 'semana') {
+      filteredResults = SmartPostFilters.sortByRelevance(filteredResults);
+    } else {
+      // Sort by date (most recent first)
+      filteredResults = filteredResults.sort((a, b) => {
+        const dateA = a.dueAt || a.eventStartAt || a.createdAt;
+        const dateB = b.dueAt || b.eventStartAt || b.createdAt;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+    }
+    
+    return filteredResults;
+  }, [user, metrics, posts, filters, isLoadingPosts, hideExpired]);
 
   // Calculate metrics based on current posts
   const filterMetrics: ProfessorFeedMetrics = useMemo(() => {
@@ -345,5 +359,8 @@ export function useProfessorFeedFilters() {
     applyCustomRange,
     professorClasses: metrics?.professorClasses || [],
     isLoading: isLoadingPosts,
+    hideExpired,
+    setHideExpired,
+    totalPosts: posts.length,
   };
 }
