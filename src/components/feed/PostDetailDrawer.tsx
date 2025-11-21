@@ -36,7 +36,8 @@ import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useReads } from '@/hooks/useReads';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PostDetailDrawerProps {
   isOpen: boolean;
@@ -56,6 +57,26 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
   const { subjects } = useSubjects();
   const { markAsRead, isRead } = useReads();
 
+  // Check for active READ_POST challenges
+  const { data: activeChallenges = [] } = useQuery({
+    queryKey: ['active-challenges', 'READ_POST'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('challenges')
+        .select('id, action_target, is_active')
+        .eq('is_active', true)
+        .eq('action_target', 'READ_POST');
+      
+      if (error) {
+        console.error('Erro ao buscar desafios ativos:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+  });
+
   // Record post view and mark as read when drawer opens
   useEffect(() => {
     if (!isOpen || !post || !user) return;
@@ -71,8 +92,10 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
       // Automatically mark as read when drawer opens
       markAsRead(post.id);
       
-      // Show toast only if it was new AND user is a student (prevent spam and non-student toasts)
-      if (!wasAlreadyRead && user.role === 'aluno') {
+      // Show toast only if it was new AND user is a student AND there are active READ_POST challenges
+      const hasReadPostChallenges = activeChallenges.length > 0;
+
+      if (!wasAlreadyRead && user.role === 'aluno' && hasReadPostChallenges) {
         toast({
           title: "📖 Post lido!",
           description: "Progresso dos desafios atualizado. Continue lendo para ganhar mais Koins! 🪙",
@@ -81,7 +104,7 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [isOpen, post, user, recordPostView, markAsRead, isRead]);
+  }, [isOpen, post, user, recordPostView, markAsRead, isRead, activeChallenges, toast]);
 
   if (!post) return null;
   
