@@ -71,8 +71,8 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
       // Automatically mark as read when drawer opens
       markAsRead(post.id);
       
-      // Show toast only if it was new (prevent spam)
-      if (!wasAlreadyRead) {
+      // Show toast only if it was new AND user is a student (prevent spam and non-student toasts)
+      if (!wasAlreadyRead && user.role === 'aluno') {
         toast({
           title: "📖 Post lido!",
           description: "Progresso dos desafios atualizado. Continue lendo para ganhar mais Koins! 🪙",
