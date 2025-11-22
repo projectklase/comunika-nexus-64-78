@@ -233,37 +233,42 @@ export function SecretariaFormModal({
         }
       } else {
         // MODO DE CRIAÇÃO: usar onSubmit
-        const success = await onSubmit(normalizedData);
-        
-        if (success) {
-          // Salvar credenciais para exibir
-          setCreatedCredentials({
-            name: normalizedData.name,
-            email: normalizedData.email,
-            password: normalizedData.password
-          });
-          setShowCredentials(true);
+        try {
+          const success = await onSubmit(normalizedData);
           
-          toast.success(`${normalizedData.name} foi cadastrada no sistema`);
-        } else {
-          toast.error('Erro ao criar secretaria');
+          if (success) {
+            // Salvar credenciais para exibir
+            setCreatedCredentials({
+              name: normalizedData.name,
+              email: normalizedData.email,
+              password: normalizedData.password
+            });
+            setShowCredentials(true);
+            
+            toast.success(`${normalizedData.name} foi cadastrada no sistema`);
+          }
+        } catch (error: any) {
+          // Capturar erro do hook e tratá-lo aqui
+          throw error;
         }
       }
     } catch (error: any) {
-      console.error('Erro ao criar secretaria:', error);
+      console.error('Erro ao processar formulário:', error);
       
-      // Detectar erro de email duplicado
-      if (error.message?.includes('duplicate') || 
-          error.message?.includes('já cadastrado') ||
-          error.message?.includes('already exists')) {
+      // Detectar erro de email duplicado (da edge function ou do hook)
+      const errorMsg = error.message || '';
+      
+      if (errorMsg.includes('Este email já está cadastrado') || 
+          errorMsg.includes('Email já cadastrado') ||
+          errorMsg.includes('já está cadastrado no sistema') ||
+          errorMsg.includes('duplicate') ||
+          errorMsg.includes('already exists') ||
+          errorMsg.includes('User already registered')) {
         toast.error('Este email já está cadastrado no sistema. Use outro email.');
         setErrors(prev => ({ ...prev, email: 'Email já cadastrado' }));
-      } else if (error.message?.includes('User already registered')) {
-        toast.error('Este email já está em uso. Escolha outro email.');
-        setErrors(prev => ({ ...prev, email: 'Email já está em uso' }));
-      } else if (error?.message?.includes('email')) {
-        toast.error('Email já cadastrado no sistema');
-        setErrors(prev => ({ ...prev, email: 'Email já cadastrado' }));
+      } else if (errorMsg.includes('email')) {
+        toast.error('Erro relacionado ao email. Verifique o campo.');
+        setErrors(prev => ({ ...prev, email: 'Erro ao validar email' }));
       } else {
         toast.error(isEditing ? 'Erro ao atualizar secretaria' : 'Erro ao criar secretaria');
       }
