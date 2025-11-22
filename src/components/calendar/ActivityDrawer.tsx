@@ -731,7 +731,9 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
                   variant="secondary"
                   onClick={() => {
                     onClose();
-                    navigate(`/professor/turma/${classId}/atividade/${post.id}?tab=entregas`);
+                    setTimeout(() => {
+                      navigate(`/professor/turma/${classId}/atividade/${post.id}?tab=entregas`);
+                    }, 100);
                   }}
                   className="glass-card border-border/50 bg-card/80 hover:bg-card/90 hover:border-primary/20 backdrop-blur-sm rounded-xl min-h-[44px] text-white"
                 >
