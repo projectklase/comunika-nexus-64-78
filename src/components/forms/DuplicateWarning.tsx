@@ -128,13 +128,22 @@ export function DuplicateWarning({
                 </Button>
               </>
             ) : (
-              <Button
-                variant="secondary"
-                onClick={onConfirm}
-                className="w-full"
-              >
-                Entendi, Continuar
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={onCancel}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={onConfirm}
+                  className="flex-1"
+                >
+                  Entendi, Continuar
+                </Button>
+              </div>
             )}
           </div>
         )}

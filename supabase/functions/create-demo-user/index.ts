@@ -319,18 +319,21 @@ Deno.serve(async (req) => {
     })
 
     if (error) {
-      // If user already exists, that's fine - return success
-      if (error.message?.includes('already') || error.message?.includes('exists') || error.message?.includes('User already registered')) {
-        console.log('User already exists, returning success')
+      // Detectar erro de email duplicado com mensagem clara
+      if (error.message?.includes('already') || 
+          error.message?.includes('exists') || 
+          error.message?.includes('User already registered') ||
+          error.message?.includes('duplicate key value')) {
+        console.error('Duplicate email detected:', email)
         return new Response(
           JSON.stringify({ 
-            success: true, 
-            user: { email },
-            message: 'User already exists'
+            success: false, 
+            error: 'Este email já está cadastrado no sistema. Use outro email.',
+            field: 'email'
           }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200 
+            status: 409 
           }
         )
       }

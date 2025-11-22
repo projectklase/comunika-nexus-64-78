@@ -20,7 +20,7 @@ interface ExistingUser {
 }
 
 interface BlockingIssue {
-  field: 'cpf' | 'enrollment_number';
+  field: 'cpf' | 'enrollment_number' | 'email' | 'phone';
   message: string;
   existingUser: ExistingUser;
 }
@@ -259,11 +259,11 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
       }
     }
 
-    // 7. VERIFICAR EMAIL DUPLICADO (ALERTA MÉDIO)
+    // 7. VERIFICAR EMAIL DUPLICADO - BLOQUEANTE
     if (data.email) {
       const { data: emailDuplicates, error: emailError } = await supabase
         .from('profiles')
-        .select('id, name, email')
+        .select('id, name, email, dob')
         .eq('email', data.email)
         .eq('current_school_id', currentSchoolId)
         .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
@@ -271,17 +271,17 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
       if (emailError) {
         console.error('Erro ao verificar email:', emailError);
       } else if (emailDuplicates && emailDuplicates.length > 0) {
-        result.similarities.push({
-          type: 'email',
-          severity: 'medium',
-          message: `Este email já está cadastrado para outro usuário`,
-          existingUsers: emailDuplicates.map(u => ({
-            id: u.id,
-            name: u.name,
-            email: u.email,
-          })),
+        result.blockingIssues.push({
+          field: 'email',
+          message: '🚫 Email já cadastrado',
+          existingUser: {
+            id: emailDuplicates[0].id,
+            name: emailDuplicates[0].name,
+            email: emailDuplicates[0].email,
+            dob: emailDuplicates[0].dob || undefined,
+          },
         });
-        result.hasSimilarities = true;
+        result.hasBlocking = true;
       }
     }
     } catch (error) {
