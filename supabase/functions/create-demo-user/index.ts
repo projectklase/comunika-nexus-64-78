@@ -356,6 +356,7 @@ Deno.serve(async (req) => {
       email: email,
       name: name,
       is_active: true,
+      current_school_id: school_id || null
     }
 
     // Adicionar campos opcionais se fornecidos

@@ -16,6 +16,9 @@ import {
 } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
 import { toast } from 'sonner';
+import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
+import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
+import { useSchool } from '@/contexts/SchoolContext';
 
 interface SecretariaFormModalProps {
   open: boolean;
@@ -55,6 +58,12 @@ export function SecretariaFormModal({
     password: string;
     name: string;
   } | null>(null);
+  
+  const { currentSchool } = useSchool();
+  const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
+  const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
 
   // Auto-gerar senha quando o modal abrir ou carregar dados para edição
   useEffect(() => {
@@ -180,6 +189,30 @@ export function SecretariaFormModal({
     }
 
     setLoading(true);
+
+    // Validação final de duplicatas antes de submeter
+    if (!isEditing && !userConfirmedDuplicates) {
+      const result = await checkDuplicates({
+        name: normalizedData.name,
+        email: normalizedData.email,
+        phone: normalizedData.phone
+      }, secretaria?.id);
+      
+      if (result.hasBlocking) {
+        toast.error('Existem duplicatas que impedem o cadastro. Revise os dados.');
+        setDuplicateCheck(result);
+        setShowDuplicateModal(true);
+        setLoading(false);
+        return;
+      }
+      
+      if (result.hasSimilarities) {
+        setDuplicateCheck(result);
+        setShowDuplicateModal(true);
+        setLoading(false);
+        return;
+      }
+    }
     
     try {
       if (isEditing && onUpdate && secretaria) {
@@ -280,10 +313,23 @@ export function SecretariaFormModal({
                   // Permite espaços durante digitação, apenas limita tamanho
                   handleFieldChange('name', e.target.value);
                 }}
-                onBlur={() => {
+                onBlur={async () => {
                   // Normalizar antes de validar
                   setFormData(prev => ({ ...prev, name: normalizeSpaces(prev.name) }));
                   handleBlur('name');
+                  
+                  // Verificar duplicatas por nome
+                  if (!isEditing && formData.name.length >= 3) {
+                    const result = await checkDuplicates(
+                      { name: formData.name },
+                      secretaria?.id
+                    );
+                    
+                    if (result.hasSimilarities || result.hasBlocking) {
+                      setDuplicateCheck(result);
+                      setShowDuplicateModal(true);
+                    }
+                  }
                 }}
                 placeholder="Ex: Maria Silva Santos"
                 disabled={loading}
@@ -307,10 +353,22 @@ export function SecretariaFormModal({
                   const email = e.target.value.toLowerCase();
                   handleFieldChange('email', email);
                 }}
-                onBlur={() => {
+                onBlur={async () => {
                   // Trim antes de validar
                   setFormData(prev => ({ ...prev, email: prev.email.trim() }));
                   handleBlur('email');
+                  
+                  // Verificar duplicatas por email (alerta apenas)
+                  if (!isEditing && formData.email.includes('@')) {
+                    const result = await checkDuplicates(
+                      { email: formData.email },
+                      secretaria?.id
+                    );
+                    
+                    if (result.hasSimilarities) {
+                      toast.warning('Este email pode já estar cadastrado. Verifique antes de continuar.');
+                    }
+                  }
                 }}
                 placeholder="Ex: maria.silva@escola.com.br"
                 disabled={loading}
@@ -432,6 +490,55 @@ export function SecretariaFormModal({
         password={createdCredentials?.password || ''}
         role="secretaria"
       />
+
+      {/* Modal de Alertas de Duplicatas */}
+      {showDuplicateModal && duplicateCheck && (
+        <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <div className="space-y-4">
+              {/* Exibir bloqueantes */}
+              {duplicateCheck.blockingIssues?.map((issue: any, idx: number) => (
+                <DuplicateWarning
+                  key={idx}
+                  type="blocking"
+                  title={issue.message}
+                  message="Esta secretária já existe no sistema."
+                  existingUsers={[issue.existingUser]}
+                  onCancel={() => setShowDuplicateModal(false)}
+                  showActions={true}
+                />
+              ))}
+              
+              {/* Exibir similaridades */}
+              {duplicateCheck.similarities?.map((similarity: any, idx: number) => (
+                <DuplicateWarning
+                  key={idx}
+                  type={similarity.severity === 'high' ? 'critical' : 'info'}
+                  title={similarity.message}
+                  message="Verifique se não é uma duplicata antes de continuar."
+                  existingUsers={similarity.existingUsers}
+                  onConfirm={() => {
+                    setUserConfirmedDuplicates(true);
+                    setShowDuplicateModal(false);
+                    // Resubmeter automaticamente após confirmação
+                    setTimeout(() => {
+                      const form = document.querySelector('form');
+                      if (form) {
+                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                      }
+                    }, 100);
+                  }}
+                  onCancel={() => {
+                    setShowDuplicateModal(false);
+                    setUserConfirmedDuplicates(false);
+                  }}
+                  showActions={true}
+                />
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
