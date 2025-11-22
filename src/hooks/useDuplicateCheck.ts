@@ -26,7 +26,7 @@ interface BlockingIssue {
 }
 
 interface Similarity {
-  type: 'name' | 'name_dob' | 'phone' | 'address';
+  type: 'name' | 'name_dob' | 'phone' | 'address' | 'email';
   severity: 'low' | 'medium' | 'high';
   message: string;
   existingUsers: ExistingUser[];
@@ -46,6 +46,7 @@ interface CheckData {
   dob?: string;
   phone?: string;
   address?: Address;
+  email?: string;
 }
 
 export function useDuplicateCheck(currentSchoolId: string | null) {
@@ -255,8 +256,34 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
             });
             result.hasSimilarities = true;
           }
-        }
       }
+    }
+
+    // 7. VERIFICAR EMAIL DUPLICADO (ALERTA MÉDIO)
+    if (data.email) {
+      const { data: emailDuplicates, error: emailError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('email', data.email)
+        .eq('current_school_id', currentSchoolId)
+        .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
+
+      if (emailError) {
+        console.error('Erro ao verificar email:', emailError);
+      } else if (emailDuplicates && emailDuplicates.length > 0) {
+        result.similarities.push({
+          type: 'email',
+          severity: 'medium',
+          message: `Este email já está cadastrado para outro usuário`,
+          existingUsers: emailDuplicates.map(u => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+          })),
+        });
+        result.hasSimilarities = true;
+      }
+    }
     } catch (error) {
       console.error('Erro ao verificar duplicatas:', error);
     } finally {
