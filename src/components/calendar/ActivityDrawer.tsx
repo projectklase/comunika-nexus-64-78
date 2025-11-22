@@ -730,10 +730,13 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
                 <Button
                   variant="secondary"
                   onClick={() => {
+                    const effectiveClassId = classId || post?.classIds?.[0] || post?.classId;
+                    if (!effectiveClassId) {
+                      console.error('[ActivityDrawer] Cannot navigate: no valid classId');
+                      return;
+                    }
                     onClose();
-                    setTimeout(() => {
-                      navigate(`/professor/turma/${classId}/atividade/${post.id}?tab=entregas`);
-                    }, 100);
+                    navigate(`/professor/turma/${effectiveClassId}/atividade/${post.id}?tab=entregas`);
                   }}
                   className="glass-card border-border/50 bg-card/80 hover:bg-card/90 hover:border-primary/20 backdrop-blur-sm rounded-xl min-h-[44px] text-white"
                 >
