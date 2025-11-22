@@ -250,8 +250,18 @@ export function SecretariaFormModal({
         }
       }
     } catch (error: any) {
-      // Tratar erros específicos
-      if (error?.message?.includes('email')) {
+      console.error('Erro ao criar secretaria:', error);
+      
+      // Detectar erro de email duplicado
+      if (error.message?.includes('duplicate') || 
+          error.message?.includes('já cadastrado') ||
+          error.message?.includes('already exists')) {
+        toast.error('Este email já está cadastrado no sistema. Use outro email.');
+        setErrors(prev => ({ ...prev, email: 'Email já cadastrado' }));
+      } else if (error.message?.includes('User already registered')) {
+        toast.error('Este email já está em uso. Escolha outro email.');
+        setErrors(prev => ({ ...prev, email: 'Email já está em uso' }));
+      } else if (error?.message?.includes('email')) {
         toast.error('Email já cadastrado no sistema');
         setErrors(prev => ({ ...prev, email: 'Email já cadastrado' }));
       } else {
@@ -513,7 +523,13 @@ export function SecretariaFormModal({
               {duplicateCheck.similarities?.map((similarity: any, idx: number) => (
                 <DuplicateWarning
                   key={idx}
-                  type={similarity.severity === 'high' ? 'critical' : 'info'}
+              type={
+                similarity.severity === 'high' 
+                  ? 'critical' 
+                  : similarity.severity === 'medium' 
+                    ? 'critical'
+                    : 'info'
+              }
                   title={similarity.message}
                   message="Verifique se não é uma duplicata antes de continuar."
                   existingUsers={similarity.existingUsers}
