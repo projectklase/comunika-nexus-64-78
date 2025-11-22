@@ -24,6 +24,11 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { 
+  getActionLabel, 
+  getEntityLabel, 
+  getRoleLabel 
+} from '@/utils/audit-helpers';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -550,12 +555,12 @@ export default function AdminDashboard() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="text-foreground group-hover:text-purple-300 transition-colors">{audit.actor_name}</span>
-                  <Badge variant="outline" className="text-[9px] border-white/20 text-muted-foreground uppercase">
-                    {audit.actor_role}
+                  <Badge variant="outline" className="text-[9px] border-white/20 text-muted-foreground">
+                    {getRoleLabel(audit.actor_role)}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground group-hover:text-foreground/80 text-xs transition-colors">
-                  {audit.action.replace(/_/g, ' ').toLowerCase()} → {audit.entity_label || audit.entity}
+                  {getActionLabel(audit.action as any)} → {audit.entity_label || getEntityLabel(audit.entity as any)}
                 </p>
               </div>
               <span className="text-[10px] text-muted-foreground group-hover:text-foreground/60 transition-colors whitespace-nowrap">
