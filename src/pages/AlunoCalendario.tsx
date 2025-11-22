@@ -119,7 +119,7 @@ export default function AlunoCalendario() {
     if (classFilter.value !== newClassId) {
       classFilter.setValue(newClassId);
     }
-  }, [searchParams.toString(), location.pathname]);
+  }, [searchParams.get('d'), searchParams.get('v'), searchParams.get('classId'), searchParams.get('postId'), location.pathname]);
 
   // Cleanup: mark component as unmounting
   useEffect(() => {

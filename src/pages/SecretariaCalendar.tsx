@@ -97,7 +97,7 @@ export default function SecretariaCalendar() {
     if (newView !== view) {
       setView(newView);
     }
-  }, [searchParams]); // Only depend on searchParams
+  }, [searchParams.get('d'), searchParams.get('v')]);
   
   // Memoize calendar data to prevent unnecessary re-renders
   const calendarData = useAdvancedCalendarData({
