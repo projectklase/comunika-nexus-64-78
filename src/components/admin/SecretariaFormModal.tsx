@@ -506,90 +506,64 @@ export function SecretariaFormModal({
         role="secretaria"
       />
 
-      {/* Modal de Alertas de Duplicatas */}
+      {/* Modal de Alertas de Duplicatas Consolidado */}
       {showDuplicateModal && duplicateCheck && (
         <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
-          <DialogContent className="sm:max-w-[600px]">
-            <div className="space-y-4">
-              {/* Exibir bloqueantes */}
-              {duplicateCheck.blockingIssues?.map((issue: any, idx: number) => (
-                <DuplicateWarning
-                  key={idx}
-                  type="blocking"
-                  title={
-                    issue.field === 'email' 
-                      ? 'Email já está em uso' 
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DuplicateWarning
+              issues={[
+                // Blocking issues primeiro
+                ...(duplicateCheck.blockingIssues || []).map((issue: any) => {
+                  const issueType: 'blocking' = 'blocking';
+                  return {
+                    type: issueType,
+                    field: issue.field as 'email' | 'phone' | 'enrollment',
+                    message: issue.field === 'email' 
+                      ? '🚫 Este email já pertence a outra pessoa no sistema. Use um email diferente.'
                       : issue.field === 'phone'
-                      ? 'Telefone já cadastrado'
+                      ? '🚫 Este telefone já está cadastrado para outro usuário. Verifique o número.'
                       : issue.field === 'enrollment'
-                      ? 'Matrícula já existe'
-                      : 'Dados duplicados encontrados'
+                      ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
+                      : '🚫 Estes dados já pertencem a outra pessoa no sistema.',
+                    existingUsers: [issue.existingUser]
+                  };
+                }),
+                // Similarities depois
+                ...(duplicateCheck.similarities || []).map((sim: any) => {
+                  const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
+                  return {
+                    type: simType,
+                    field: sim.field as 'name' | 'phone',
+                    message: sim.field === 'name' && sim.severity === 'high'
+                      ? '⚠️ Nome idêntico ou muito similar encontrado. Confirme se não é duplicata.'
+                      : sim.field === 'phone'
+                      ? '⚠️ Telefone similar detectado. Pode ser caso de irmãos ou família.'
+                      : 'ℹ️ Informações similares encontradas no sistema.',
+                    existingUsers: sim.existingUsers
+                  };
+                })
+              ]}
+              hasBlocking={duplicateCheck.hasBlocking || false}
+              onCancel={() => {
+                setShowDuplicateModal(false);
+                setUserConfirmedDuplicates(false);
+              }}
+              onConfirm={duplicateCheck.hasBlocking ? undefined : () => {
+                setUserConfirmedDuplicates(true);
+                setShowDuplicateModal(false);
+                // Resubmeter automaticamente após confirmação
+                setTimeout(() => {
+                  const form = document.querySelector('form');
+                  if (form) {
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                   }
-                  message={
-                    issue.field === 'email'
-                      ? 'Este email pertence a outra pessoa no sistema. Use um email diferente para continuar.'
-                      : issue.field === 'phone'
-                      ? 'Este telefone já está cadastrado para outra pessoa. Verifique o número informado.'
-                      : issue.field === 'enrollment'
-                      ? 'Esta matrícula já está em uso. Use um número de matrícula único.'
-                      : 'Os dados informados já pertencem a outra pessoa no sistema.'
-                  }
-                  fieldType={issue.field}
-                  existingUsers={[issue.existingUser]}
-                  onCancel={() => setShowDuplicateModal(false)}
-                  showActions={true}
-                />
-              ))}
-              
-              {/* Exibir similaridades */}
-              {duplicateCheck.similarities?.map((similarity: any, idx: number) => (
-                <DuplicateWarning
-                  key={idx}
-                  type={
-                    similarity.severity === 'high' 
-                      ? 'critical' 
-                      : similarity.severity === 'medium' 
-                        ? 'critical'
-                        : 'info'
-                  }
-                  title={
-                    similarity.field === 'name'
-                      ? 'Nome muito similar encontrado'
-                      : similarity.field === 'phone'
-                      ? 'Telefone similar detectado'
-                      : 'Usuário similar encontrado'
-                  }
-                  message={
-                    similarity.severity === 'high'
-                      ? 'Encontramos uma pessoa com dados muito parecidos. Confirme se não é duplicata antes de prosseguir.'
-                      : similarity.severity === 'medium'
-                      ? 'Dados similares detectados. Verifique se realmente deseja continuar com o cadastro.'
-                      : 'Usuário com informações parecidas. Confirme se não é a mesma pessoa.'
-                  }
-                  fieldType={similarity.field}
-                  existingUsers={similarity.existingUsers}
-                  onConfirm={() => {
-                    setUserConfirmedDuplicates(true);
-                    setShowDuplicateModal(false);
-                    // Resubmeter automaticamente após confirmação
-                    setTimeout(() => {
-                      const form = document.querySelector('form');
-                      if (form) {
-                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                      }
-                    }, 100);
-                  }}
-                  onCancel={() => {
-                    setShowDuplicateModal(false);
-                    setUserConfirmedDuplicates(false);
-                  }}
-                  showActions={true}
-                />
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
-  );
-}
+                }, 100);
+               }}
+               showActions={true}
+             />
+           </DialogContent>
+         </Dialog>
+       )}
+     </>
+   );
+ }

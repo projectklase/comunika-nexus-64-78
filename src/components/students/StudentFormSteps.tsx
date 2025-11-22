@@ -1723,50 +1723,48 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Mostrar alertas bloqueantes */}
-          {duplicateCheck?.blockingIssues.map((issue, index) => (
-            <DuplicateWarning
-              key={`blocking-${index}`}
-              type="blocking"
-              title={issue.message}
-              message={`${issue.field === 'cpf' ? 'CPF' : 'Matrícula'} já está cadastrado para:`}
-              existingUsers={[issue.existingUser]}
-              onCancel={() => setShowDuplicateModal(false)}
-              showActions={true}
-            />
-          ))}
-          
-          {/* Mostrar alertas de similaridades (críticos e informativos) */}
-          {!duplicateCheck?.hasBlocking && duplicateCheck?.similarities.map((similarity, index) => {
-            const type = similarity.severity === 'high' ? 'critical' : 'info';
-            return (
-              <DuplicateWarning
-                key={`similarity-${index}`}
-                type={type}
-                title={similarity.message}
-                message={
-                  similarity.type === 'name_dob' 
-                    ? 'Encontramos aluno(s) com nome e data de nascimento idênticos. Isto pode indicar uma duplicata.'
-                    : similarity.type === 'name'
-                    ? 'Pode ser um homônimo ou erro de digitação.'
-                    : similarity.type === 'phone'
-                    ? 'Pode indicar irmãos ou responsáveis compartilhados.'
-                    : 'Pode indicar irmãos morando no mesmo endereço.'
-                }
-                existingUsers={similarity.existingUsers}
-                onConfirm={() => {
-                  setUserConfirmedDuplicates(true);
-                  setShowDuplicateModal(false);
-                  // Após confirmação, tenta submit novamente
-                  if (type === 'critical') {
-                    setTimeout(() => handleSubmit(), 100);
-                  }
-                }}
-                onCancel={() => setShowDuplicateModal(false)}
-                showActions={true}
-              />
-            );
-          })}
+          <DuplicateWarning
+            issues={[
+              // Blocking issues primeiro
+              ...(duplicateCheck?.blockingIssues || []).map((issue: any) => {
+                const issueType: 'blocking' = 'blocking';
+                return {
+                  type: issueType,
+                  field: issue.field as 'document' | 'enrollment',
+                  message: issue.field === 'cpf' 
+                    ? '🚫 Este CPF já está cadastrado no sistema. Use um documento válido.'
+                    : issue.field === 'enrollment'
+                    ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
+                    : '🚫 Estes dados já pertencem a outro aluno no sistema.',
+                  existingUsers: [issue.existingUser]
+                };
+              }),
+              // Similarities depois
+              ...(duplicateCheck?.similarities || []).map((sim: any) => {
+                const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
+                return {
+                  type: simType,
+                  field: sim.field as 'name' | 'phone',
+                  message: sim.type === 'name_dob'
+                    ? '⚠️ Nome e data de nascimento idênticos. Isto pode indicar uma duplicata.'
+                    : sim.type === 'name'
+                    ? '⚠️ Nome muito similar encontrado. Pode ser homônimo ou erro de digitação.'
+                    : sim.type === 'phone'
+                    ? 'ℹ️ Telefone similar detectado. Pode indicar irmãos ou responsáveis compartilhados.'
+                    : 'ℹ️ Informações similares encontradas. Pode indicar irmãos morando no mesmo endereço.',
+                  existingUsers: sim.existingUsers
+                };
+              })
+            ]}
+            hasBlocking={duplicateCheck?.hasBlocking || false}
+            onCancel={() => setShowDuplicateModal(false)}
+            onConfirm={duplicateCheck?.hasBlocking ? undefined : () => {
+              setUserConfirmedDuplicates(true);
+              setShowDuplicateModal(false);
+              setTimeout(() => handleSubmit(), 100);
+            }}
+            showActions={true}
+          />
         </div>
       </DialogContent>
     </Dialog>
