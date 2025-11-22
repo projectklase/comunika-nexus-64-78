@@ -1,10 +1,11 @@
 export type AuditAction = 
   | 'CREATE' | 'UPDATE' | 'DELETE' | 'ARCHIVE' | 'PUBLISH' | 'SCHEDULE' 
-  | 'DELIVER' | 'ASSIGN' | 'REMOVE' | 'IMPORT' | 'EXPORT' | 'READ';
+  | 'DELIVER' | 'ASSIGN' | 'REMOVE' | 'IMPORT' | 'EXPORT' | 'READ'
+  | 'REQUEST_REDEMPTION' | 'APPROVE_REDEMPTION' | 'REJECT_REDEMPTION';
 
 export type AuditEntity = 
   | 'POST' | 'CLASS' | 'STUDENT' | 'TEACHER' | 'USER' | 'MEMBERSHIP' 
-  | 'SUBJECT' | 'LEVEL' | 'MODALIDADE' | 'PROGRAM' | 'ATTACHMENT';
+  | 'SUBJECT' | 'LEVEL' | 'MODALIDADE' | 'PROGRAM' | 'ATTACHMENT' | 'REDEMPTION';
 
 export type AuditScope = 'GLOBAL' | `CLASS:${string}`;
 
