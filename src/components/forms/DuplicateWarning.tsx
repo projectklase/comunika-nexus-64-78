@@ -24,28 +24,29 @@ interface ExistingUser {
   enrollmentNumber?: string;
 }
 
-interface DuplicateWarningProps {
+interface DuplicateIssue {
   type: 'blocking' | 'critical' | 'info';
-  title: string;
+  field: 'email' | 'name' | 'phone' | 'document' | 'enrollment';
   message: string;
   existingUsers: ExistingUser[];
-  fieldType?: 'email' | 'name' | 'phone' | 'document' | 'enrollment';
+}
+
+interface DuplicateWarningProps {
+  issues: DuplicateIssue[];
+  hasBlocking: boolean;
+  onCancel: () => void;
   onConfirm?: () => void;
-  onCancel?: () => void;
   showActions?: boolean;
 }
 
 export function DuplicateWarning({
-  type,
-  title,
-  message,
-  existingUsers,
-  fieldType,
-  onConfirm,
+  issues,
+  hasBlocking,
   onCancel,
+  onConfirm,
   showActions = true,
 }: DuplicateWarningProps) {
-  const getIconAndColors = () => {
+  const getIconAndColors = (type: 'blocking' | 'critical' | 'info') => {
     switch (type) {
       case 'blocking':
         return {
@@ -77,9 +78,7 @@ export function DuplicateWarning({
     }
   };
 
-  const getFieldBadge = () => {
-    if (!fieldType) return null;
-    
+  const getFieldBadge = (fieldType: 'email' | 'name' | 'phone' | 'document' | 'enrollment') => {
     const badges = {
       email: { icon: Mail, label: 'EMAIL', color: 'bg-red-500/10 text-red-500 border-red-500/30' },
       name: { icon: User, label: 'NOME', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' },
@@ -91,8 +90,8 @@ export function DuplicateWarning({
     return badges[fieldType];
   };
 
-  const { icon: Icon, gradient, borderColor, iconColor, iconBg, shadow } = getIconAndColors();
-  const fieldBadge = getFieldBadge();
+  const mainType = hasBlocking ? 'blocking' : issues[0]?.type || 'info';
+  const { icon: MainIcon, gradient, borderColor, iconColor, iconBg, shadow } = getIconAndColors(mainType);
   
   const getInitials = (name: string) => {
     return name
@@ -121,79 +120,108 @@ export function DuplicateWarning({
               'p-2.5 rounded-xl',
               iconBg
             )}>
-              <Icon className={cn('h-6 w-6', iconColor)} />
+              <MainIcon className={cn('h-6 w-6', iconColor)} />
             </div>
             <AlertTitle className="text-lg font-bold text-foreground m-0">
-              {title}
+              {hasBlocking ? 'Problemas Bloqueantes Detectados' : 'Avisos de Duplicatas'}
             </AlertTitle>
           </div>
-          
-          {fieldBadge && (
-            <Badge 
-              variant="outline" 
-              className={cn(
-                'gap-1.5 px-2.5 py-1 text-xs font-semibold border',
-                fieldBadge.color
-              )}
-            >
-              <fieldBadge.icon className="h-3.5 w-3.5" />
-              {fieldBadge.label}
-            </Badge>
-          )}
         </div>
 
-        <AlertDescription className="space-y-4">
-          {/* Message */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {message}
-          </p>
-          
-          {/* Existing Users */}
-          {existingUsers.length > 0 && (
-            <div className="space-y-2">
-              {existingUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-background/60 border border-border/50 backdrop-blur-sm transition-all hover:bg-background/80"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-foreground truncate">
-                      {user.name}
+        <AlertDescription className="space-y-6">
+          {/* Issues List */}
+          {issues.map((issue, idx) => {
+            const issueColors = getIconAndColors(issue.type);
+            const IssueBadge = getFieldBadge(issue.field);
+            const IssueIcon = issueColors.icon;
+            
+            return (
+              <div key={idx} className="space-y-3">
+                {/* Issue Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <IssueIcon className={cn('h-5 w-5', issueColors.iconColor)} />
+                    <p className={cn(
+                      'text-sm font-semibold',
+                      issue.type === 'blocking' ? 'text-red-500' : 
+                      issue.type === 'critical' ? 'text-yellow-600' : 'text-blue-500'
+                    )}>
+                      {issue.type === 'blocking' ? '🚫 BLOQUEANTE' : 
+                       issue.type === 'critical' ? '⚠️ AVISO CRÍTICO' : 'ℹ️ AVISO'}
                     </p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {user.email}
-                    </p>
-                    
-                    {(user.enrollmentNumber || user.dob) && (
-                      <div className="flex gap-2 flex-wrap mt-1.5">
-                        {user.enrollmentNumber && (
-                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                            {user.enrollmentNumber}
-                          </Badge>
-                        )}
-                        {user.dob && (
-                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                            {new Date(user.dob).toLocaleDateString('pt-BR')}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
                   </div>
+                  
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      'gap-1.5 px-2.5 py-1 text-xs font-semibold border',
+                      IssueBadge.color
+                    )}
+                  >
+                    <IssueBadge.icon className="h-3.5 w-3.5" />
+                    {IssueBadge.label}
+                  </Badge>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Issue Message */}
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {issue.message}
+                </p>
+                
+                {/* Existing Users */}
+                {issue.existingUsers.length > 0 && (
+                  <div className="space-y-2">
+                    {issue.existingUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-background/60 border border-border/50 backdrop-blur-sm transition-all hover:bg-background/80"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {getInitials(user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-semibold text-foreground truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {user.email}
+                          </p>
+                          
+                          {(user.enrollmentNumber || user.dob) && (
+                            <div className="flex gap-2 flex-wrap mt-1.5">
+                              {user.enrollmentNumber && (
+                                <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                                  {user.enrollmentNumber}
+                                </Badge>
+                              )}
+                              {user.dob && (
+                                <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                                  {new Date(user.dob).toLocaleDateString('pt-BR')}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Divider between issues */}
+                {idx < issues.length - 1 && (
+                  <div className="border-t border-border/30 pt-4 mt-4" />
+                )}
+              </div>
+            );
+          })}
 
           {/* Actions */}
           {showActions && (
-            <div className="flex gap-2 pt-2">
-              {type === 'blocking' ? (
+            <div className="flex gap-2 pt-4">
+              {hasBlocking ? (
                 <Button
                   variant="destructive"
                   onClick={onCancel}
@@ -201,9 +229,9 @@ export function DuplicateWarning({
                   size="lg"
                 >
                   <Edit3 className="h-4 w-4" />
-                  Corrigir
+                  🔙 Voltar e Corrigir
                 </Button>
-              ) : type === 'critical' ? (
+              ) : (
                 <>
                   <Button
                     variant="outline"
@@ -217,25 +245,7 @@ export function DuplicateWarning({
                     className="flex-1 gap-2 bg-yellow-500 hover:bg-yellow-600 text-white"
                   >
                     <Check className="h-4 w-4" />
-                    Continuar Mesmo Assim
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={onCancel}
-                    className="flex-1"
-                  >
-                    Voltar
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={onConfirm}
-                    className="flex-1 gap-2"
-                  >
-                    <Check className="h-4 w-4" />
-                    Prosseguir
+                    Confirmar Mesmo Assim
                   </Button>
                 </>
               )}
