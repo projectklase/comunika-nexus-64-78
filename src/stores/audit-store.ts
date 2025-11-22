@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditEvent, AuditFilters, CreateAuditEventParams } from '@/types/audit';
+import { getActionLabel, getEntityLabel, getRoleLabel } from '@/utils/audit-helpers';
 
 // Mascarar dados sensíveis
 const sanitizeDiff = (diff: Record<string, any>): Record<string, any> => {
@@ -121,14 +122,14 @@ export const useAuditStore = create<AuditStore>((set, get) => ({
   },
 
   exportEvents: (events: AuditEvent[]) => {
-    const csvHeader = ['Data/Hora', 'Usuário', 'Email', 'Role', 'Ação', 'Entidade', 'Alvo', 'Escopo'].join(';');
+    const csvHeader = ['Data/Hora', 'Usuário', 'Email', 'Função', 'Ação', 'Entidade', 'Alvo', 'Escopo'].join(';');
     const csvRows = events.map(event => [
       new Date(event.at).toLocaleString('pt-BR'),
       event.actor_name,
       event.actor_email,
-      event.actor_role,
-      event.action,
-      event.entity,
+      getRoleLabel(event.actor_role),
+      getActionLabel(event.action),
+      getEntityLabel(event.entity),
       event.entity_label,
       event.scope,
     ].join(';'));

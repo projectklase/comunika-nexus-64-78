@@ -32,7 +32,8 @@ import {
   getEntityChipClass,
   formatRelativeTime,
   formatDisplayValue,
-  getFieldLabel
+  getFieldLabel,
+  getRoleLabel
 } from '@/utils/audit-helpers';
 
 export default function HistoricoPage() {
@@ -356,7 +357,7 @@ function TimelineView({ events }: { events: AuditEvent[] }) {
                   <div className="flex items-center space-x-2">
                     <span className="font-medium">{event.actor_name}</span>
                     <Badge variant="outline" className="text-xs">
-                      {event.actor_role}
+                      {getRoleLabel(event.actor_role)}
                     </Badge>
                   </div>
                   
@@ -439,7 +440,7 @@ function TableView({ events }: { events: AuditEvent[] }) {
                     </Avatar>
                     <div>
                       <div className="text-sm font-medium">{event.actor_name || 'Usuário desconhecido'}</div>
-                      <div className="text-xs text-muted-foreground">{event.actor_role || 'N/A'}</div>
+                      <div className="text-xs text-muted-foreground">{getRoleLabel(event.actor_role)}</div>
                     </div>
                   </div>
                 </td>
@@ -511,7 +512,7 @@ function EventDetailsDrawer({ event }: { event: AuditEvent }) {
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Role</label>
-              <p>{event.actor_role || 'N/A'}</p>
+              <p className="text-sm text-muted-foreground">{getRoleLabel(event.actor_role)}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Escopo</label>

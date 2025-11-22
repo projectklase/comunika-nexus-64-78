@@ -15,6 +15,9 @@ export const getActionLabel = (action: AuditAction): string => {
     IMPORT: 'Importou',
     EXPORT: 'Exportou',
     READ: 'Visualizou',
+    REQUEST_REDEMPTION: 'Solicitou Resgate',
+    APPROVE_REDEMPTION: 'Aprovou Resgate',
+    REJECT_REDEMPTION: 'Rejeitou Resgate',
   };
   return labels[action] || action;
 };
@@ -33,6 +36,7 @@ export const getEntityLabel = (entity: AuditEntity): string => {
     MODALIDADE: 'Modalidade',
     PROGRAM: 'Programa',
     ATTACHMENT: 'Anexo',
+    REDEMPTION: 'Resgate',
   };
   return labels[entity] || entity;
 };
@@ -52,6 +56,9 @@ export const getActionChipClass = (action: AuditAction): string => {
     IMPORT: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
     EXPORT: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     READ: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+    REQUEST_REDEMPTION: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    APPROVE_REDEMPTION: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    REJECT_REDEMPTION: 'bg-red-500/20 text-red-400 border-red-500/30',
   };
   return classes[action] || 'bg-muted text-muted-foreground border-border';
 };
@@ -70,6 +77,7 @@ export const getEntityChipClass = (entity: AuditEntity): string => {
     MODALIDADE: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
     PROGRAM: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
     ATTACHMENT: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    REDEMPTION: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   };
   return classes[entity] || 'bg-muted text-muted-foreground border-border';
 };
@@ -246,4 +254,29 @@ export const formatDisplayValue = (value: any): string => {
   }
   
   return String(value);
+};
+
+/**
+ * Traduz roles de usuário para labels amigáveis
+ */
+export const getRoleLabel = (role: string): string => {
+  const roleLabels: Record<string, string> = {
+    'administrador': 'Administrador',
+    'secretaria': 'Secretaria',
+    'professor': 'Professor',
+    'aluno': 'Aluno',
+    'unknown': 'Desconhecido',
+    'N/A': 'Sem Role',
+    '': 'Sem Role'
+  };
+  
+  // Primeiro tenta busca direta (case-sensitive)
+  if (roleLabels[role]) return roleLabels[role];
+  
+  // Fallback: busca case-insensitive
+  const roleLower = role?.toLowerCase() || '';
+  if (roleLabels[roleLower]) return roleLabels[roleLower];
+  
+  // Se não encontrou, capitaliza a primeira letra
+  return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Sem Role';
 };
