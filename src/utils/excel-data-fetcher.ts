@@ -10,7 +10,21 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
   const startDate = format(subDays(new Date(), daysFilter), 'yyyy-MM-dd');
   
   try {
-    // 1. Buscar alunos em risco
+    // === BUSCAR IDs DE USUÁRIOS DA ESCOLA (FILTRO GLOBAL) ===
+    const { data: schoolMemberships } = await supabase
+      .from('school_memberships')
+      .select('user_id, role')
+      .eq('school_id', schoolId);
+
+    const schoolUserIds = schoolMemberships?.map(m => m.user_id) || [];
+    const studentIds = schoolMemberships?.filter(m => m.role === 'aluno').map(m => m.user_id) || [];
+    const teacherIds = schoolMemberships?.filter(m => m.role === 'professor').map(m => m.user_id) || [];
+
+    if (schoolUserIds.length === 0) {
+      console.warn('Nenhum usuário encontrado para a escola:', schoolId);
+    }
+
+    // 1. Buscar alunos em risco (FILTRADO POR ESCOLA)
     const { data: studentsAtRisk, error: studentsError } = await supabase
       .from('profiles')
       .select(`
@@ -19,29 +33,34 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
         class_id,
         created_at
       `)
+      .in('id', studentIds)
       .eq('is_active', true);
 
     if (studentsError) throw studentsError;
 
-    // Buscar último login de cada aluno
+    // Buscar último login de cada aluno (FILTRADO POR ESCOLA)
     const { data: loginHistory } = await supabase
       .from('login_history')
       .select('user_id, logged_at')
+      .in('user_id', schoolUserIds)
       .order('logged_at', { ascending: false });
 
-    // Buscar entregas pendentes por aluno
+    // Buscar entregas pendentes por aluno (FILTRADO POR ESCOLA)
     const { data: deliveries } = await supabase
       .from('deliveries')
-      .select('student_id, review_status, created_at');
+      .select('student_id, review_status, created_at')
+      .eq('school_id', schoolId);
 
-    // Buscar turmas dos alunos
+    // Buscar turmas dos alunos (FILTRADO POR ESCOLA)
     const { data: classStudents } = await supabase
       .from('class_students')
-      .select('student_id, class_id');
+      .select('student_id, class_id')
+      .in('student_id', studentIds);
 
     const { data: classes } = await supabase
       .from('classes')
-      .select('id, name');
+      .select('id, name')
+      .eq('school_id', schoolId);
 
     // Processar dados de alunos em risco
     const studentsAtRiskProcessed = studentsAtRisk?.map(student => {
@@ -73,16 +92,18 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
       };
     }).filter(s => s.days_since_last_login > 7 || s.pending_deliveries > 2) || [];
 
-    // 2. Buscar tendência de atividades
+    // 2. Buscar tendência de atividades (FILTRADO POR ESCOLA)
     const { data: posts } = await supabase
       .from('posts')
       .select('created_at, type')
+      .eq('school_id', schoolId)
       .gte('created_at', startDate)
       .eq('status', 'PUBLISHED');
 
     const { data: allDeliveries } = await supabase
       .from('deliveries')
       .select('submitted_at, student_id')
+      .eq('school_id', schoolId)
       .gte('submitted_at', startDate);
 
     // Agrupar por dia
@@ -108,21 +129,24 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
       a.date.localeCompare(b.date)
     );
 
-    // 3. Buscar dados de heatmap
+    // 3. Buscar dados de heatmap (FILTRADO POR ESCOLA)
     const { data: heatmapDeliveries } = await supabase
       .from('deliveries')
       .select('submitted_at')
+      .eq('school_id', schoolId)
       .gte('submitted_at', startDate);
 
     const { data: heatmapPosts } = await supabase
       .from('posts')
       .select('created_at')
+      .eq('school_id', schoolId)
       .gte('created_at', startDate)
       .eq('status', 'PUBLISHED');
 
     const { data: heatmapLogins } = await supabase
       .from('login_history')
       .select('logged_at')
+      .in('user_id', schoolUserIds)
       .gte('logged_at', startDate);
 
     // Processar heatmap
@@ -146,17 +170,19 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
     const posts_heatmap = processHeatmap(heatmapPosts || [], 'created_at');
     const logins_heatmap = processHeatmap(heatmapLogins || [], 'logged_at');
 
-    // 4. Buscar dados de retenção
+    // 4. Buscar dados de retenção (FILTRADO POR ESCOLA)
     const { data: allClassStudents } = await supabase
       .from('class_students')
-      .select('student_id');
+      .select('student_id')
+      .in('student_id', studentIds);
 
     const total_enrolled = allClassStudents?.length || 0;
 
-    // Alunos com pelo menos uma entrega nos últimos N dias
+    // Alunos com pelo menos uma entrega nos últimos N dias (FILTRADO POR ESCOLA)
     const { data: recentDeliveries } = await supabase
       .from('deliveries')
       .select('student_id')
+      .eq('school_id', schoolId)
       .gte('submitted_at', startDate);
 
     const activeStudentIds = new Set(recentDeliveries?.map(d => d.student_id));
@@ -184,7 +210,7 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
       ? totalDaysActive / studentFirstLastDates.size 
       : 0;
 
-    // 5. Buscar dados operacionais
+    // 5. Buscar dados operacionais (FILTRADO POR ESCOLA)
     const { data: allClasses } = await supabase
       .from('classes')
       .select(`
@@ -192,6 +218,7 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
         name,
         status
       `)
+      .eq('school_id', schoolId)
       .eq('status', 'Ativa');
 
     const occupancy_data = await Promise.all(
@@ -216,10 +243,11 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
       ? occupancy_data.reduce((sum, cls) => sum + (cls.enrolled / cls.capacity) * 100, 0) / occupancy_data.length
       : 0;
 
-    // Distribuição de Koins
+    // Distribuição de Koins (FILTRADO POR ESCOLA)
     const { data: profiles } = await supabase
       .from('profiles')
       .select('koins')
+      .in('id', studentIds)
       .gt('koins', 0);
 
     const koinsArray = profiles?.map(p => p.koins) || [];
@@ -230,28 +258,24 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
       min: koinsArray.length > 0 ? Math.min(...koinsArray) : 0,
     };
 
-    // ROI de professores
+    // ROI de professores (FILTRADO POR ESCOLA)
     const { data: teachers } = await supabase
       .from('profiles')
-      .select('id, name');
-
-    const { data: teacherRoles } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'professor');
-
-    const teacherIds = teacherRoles?.map(r => r.user_id) || [];
+      .select('id, name')
+      .in('id', teacherIds);
 
     const teacher_roi = await Promise.all(
-      teachers?.filter(t => teacherIds.includes(t.id)).map(async (teacher) => {
+      (teachers || []).map(async (teacher) => {
         const { count: deliveriesCount } = await supabase
           .from('deliveries')
           .select('*', { count: 'exact', head: true })
+          .eq('school_id', schoolId)
           .gte('submitted_at', startDate);
 
         const { count: evaluationsCount } = await supabase
           .from('deliveries')
           .select('*', { count: 'exact', head: true })
+          .eq('school_id', schoolId)
           .eq('reviewed_by', teacher.id)
           .gte('reviewed_at', startDate);
 
@@ -261,7 +285,7 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
           evaluations: evaluationsCount || 0,
           avg_time: null, // Não temos esse dado facilmente
         };
-      }) || []
+      })
     );
 
     // Buscar dados de Koins por escola
@@ -277,6 +301,7 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
     const { data: allReviews } = await supabase
       .from('deliveries')
       .select('review_status')
+      .eq('school_id', schoolId)
       .gte('submitted_at', startDate)
       .neq('review_status', 'AGUARDANDO');
 
@@ -291,15 +316,17 @@ export async function fetchCompleteAnalyticsData(daysFilter: number, schoolId: s
       retention_rate * 0.10
     );
 
-    // 7. Buscar dados de engajamento de posts
+    // 7. Buscar dados de engajamento de posts (FILTRADO POR ESCOLA)
     const { data: postReads } = await supabase
       .from('post_reads')
       .select('post_id, user_id, read_at')
+      .in('user_id', schoolUserIds)
       .gte('read_at', startDate);
 
     const { data: publishedPosts } = await supabase
       .from('posts')
       .select('id, title, type, created_at')
+      .eq('school_id', schoolId)
       .eq('status', 'PUBLISHED')
       .gte('created_at', startDate);
 
