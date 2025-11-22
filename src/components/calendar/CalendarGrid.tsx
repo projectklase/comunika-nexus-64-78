@@ -11,7 +11,7 @@ import { getBrHolidays, Holiday, isHoliday } from '@/utils/br-holidays';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCalendarLayout, LAYOUT_TOKENS } from '@/hooks/useCalendarLayout';
 import { sortCalendarEvents } from '@/utils/calendar-sorting';
-import { computeDayItems, getOverflowText, getOverflowAriaLabel } from '@/utils/calendar-day-items';
+import { computeDayItems, getOverflowText, getOverflowAriaLabel, ComputedDayItems } from '@/utils/calendar-day-items';
 import { countDayActivities, getDayActivitiesForStudent } from '@/utils/day-activity-counter';
 import { postStore } from '@/stores/post-store';
 import { useActivityDrawerState, useDayDrawerState } from '@/hooks/useActivityDrawerState';
@@ -110,7 +110,13 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
     : endOfWeek(currentDate, { weekStartsOn: 0 });
 
   const { events, posts, isLoading: isLoadingEvents } = useCalendarData(startDate, endDate, { classId });
-  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  
+  // ⚡ OTIMIZAÇÃO: Memoizar array de dias
+  const days = useMemo(() => 
+    eachDayOfInterval({ start: startDate, end: endDate }),
+    [startDate, endDate]
+  );
+  
   const holidays = showHolidays ? getBrHolidays(currentDate.getFullYear()) : [];
 
   // Helper function to get week index for a day
@@ -164,6 +170,23 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
     });
   }, [normalizedEvents, activeFilters.events, activeFilters.deadlines]);
 
+  // ⚡ OTIMIZAÇÃO: Memoizar mapa de eventos por dia
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, ComputedDayItems>();
+    
+    days.forEach(day => {
+      const dayKey = format(day, 'yyyy-MM-dd');
+      const weekIndex = getWeekIndex(day);
+      const dayEvents = computeDayItems(day, filteredEvents, {
+        activeFilters,
+        visibleLimit: getVisiblePerDay(weekIndex)
+      });
+      map.set(dayKey, dayEvents);
+    });
+    
+    return map;
+  }, [days, filteredEvents, activeFilters, getVisiblePerDay]);
+
   const handleDayClick = (date: Date) => {
     try {
       // Close activity drawer when day is clicked
@@ -210,7 +233,7 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
     return false;
   };
 
-  const handleEventDrop = (e: React.DragEvent<HTMLDivElement>, targetDate: Date) => {
+  const handleEventDrop = useCallback((e: React.DragEvent<HTMLDivElement>, targetDate: Date) => {
     try {
       e.preventDefault();
       
@@ -369,17 +392,27 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
         description: 'Ocorreu um erro ao mover o item.',
       });
     }
-  };
+  }, [events, user]);
 
-  // Centralized day items computation
-  // ⚡ OTIMIZAÇÃO: Memoizado para função estável entre re-renders
-  const computeEventsForDay = useCallback((date: Date, weekIndex: number) => {
-    const visibleLimit = getVisiblePerDay(weekIndex);
-    return computeDayItems(date, filteredEvents, {
-      activeFilters,
-      visibleLimit
-    });
-  }, [filteredEvents, activeFilters, getVisiblePerDay]);
+  // ⚡ OTIMIZAÇÃO: Memoizar drag handlers
+  const createDragHandlers = useCallback((day: Date) => {
+    if (user?.role === 'aluno') return {};
+    
+    return {
+      onDragOver: (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        e.currentTarget.classList.add('ring-2', 'ring-primary/50', 'bg-primary/5');
+      },
+      onDragLeave: (e: React.DragEvent) => {
+        e.currentTarget.classList.remove('ring-2', 'ring-primary/50', 'bg-primary/5');
+      },
+      onDrop: (e: React.DragEvent) => {
+        e.currentTarget.classList.remove('ring-2', 'ring-primary/50', 'bg-primary/5');
+        handleEventDrop(e as React.DragEvent<HTMLDivElement>, day);
+      }
+    };
+  }, [user?.role, handleEventDrop]);
 
   const getHolidayForDay = (date: Date): Holiday | null => {
     if (!showHolidays) return null;
@@ -457,8 +490,15 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
             const weekIndex = getWeekIndex(day);
             const isLastDayOfWeek = dayIndex % 7 === 6;
             
-            // Compute day items using centralized logic
-            const dayItemsData = computeEventsForDay(day, weekIndex);
+            // ⚡ OTIMIZAÇÃO: Usar mapa pré-computado
+            const dayKey = format(day, 'yyyy-MM-dd');
+            const dayItemsData = eventsByDay.get(dayKey) || { 
+              allItems: [], 
+              visibleItems: [], 
+              overflowItems: [], 
+              overflowCount: 0, 
+              hasOverflow: false 
+            };
             
             return (
               <div key={day.toISOString()} className="relative">

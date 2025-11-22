@@ -93,19 +93,19 @@ export default function ProfessorCalendar() {
     }
   });
 
-  // Restore class filter from localStorage and URL on mount
+  // Restore class filter from URL on mount ONCE
   useEffect(() => {
-    // Check URL first, then localStorage
     const urlClassId = searchParams.get('classId');
-    if (urlClassId) {
+    if (urlClassId && urlClassId !== classFilter.value) {
       classFilter.setValue(urlClassId);
-      return;
+    } else if (!urlClassId) {
+      const stored = localStorage.getItem(`cal:professor:${user.id}:selectedClassId`);
+      const restored = safeRestoreSelectValue(stored, DEFAULT_SELECT_TOKENS.ALL_CLASSES);
+      if (restored !== classFilter.value) {
+        classFilter.setValue(restored);
+      }
     }
-    
-    const stored = localStorage.getItem(`cal:professor:${user.id}:selectedClassId`);
-    const restored = safeRestoreSelectValue(stored, DEFAULT_SELECT_TOKENS.ALL_CLASSES);
-    classFilter.setValue(restored);
-  }, [user?.id, classFilter]);
+  }, [searchParams.get('classId')]);
 
   // Get data for counts
   const startDate = view === 'month' 
