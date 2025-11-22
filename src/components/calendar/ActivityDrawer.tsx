@@ -729,13 +729,14 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
                 <>
                 <Button
                   variant="secondary"
-                  asChild
+                  onClick={() => {
+                    onClose();
+                    navigate(`/professor/turma/${classId}/atividade/${post.id}?tab=entregas`);
+                  }}
                   className="glass-card border-border/50 bg-card/80 hover:bg-card/90 hover:border-primary/20 backdrop-blur-sm rounded-xl min-h-[44px] text-white"
                 >
-                  <Link to={`/professor/turma/${classId}/atividade/${post.id}?tab=entregas`}>
-                    <Eye className="h-4 w-4 mr-2 text-white" />
-                    Ver Entregas
-                  </Link>
+                  <Eye className="h-4 w-4 mr-2 text-white" />
+                  Ver Entregas
                 </Button>
                 </>
               )}
