@@ -516,8 +516,25 @@ export function SecretariaFormModal({
                 <DuplicateWarning
                   key={idx}
                   type="blocking"
-                  title={issue.message}
-                  message="Esta secretária já existe no sistema."
+                  title={
+                    issue.field === 'email' 
+                      ? 'Email já está em uso' 
+                      : issue.field === 'phone'
+                      ? 'Telefone já cadastrado'
+                      : issue.field === 'enrollment'
+                      ? 'Matrícula já existe'
+                      : 'Dados duplicados encontrados'
+                  }
+                  message={
+                    issue.field === 'email'
+                      ? 'Este email pertence a outra pessoa no sistema. Use um email diferente para continuar.'
+                      : issue.field === 'phone'
+                      ? 'Este telefone já está cadastrado para outra pessoa. Verifique o número informado.'
+                      : issue.field === 'enrollment'
+                      ? 'Esta matrícula já está em uso. Use um número de matrícula único.'
+                      : 'Os dados informados já pertencem a outra pessoa no sistema.'
+                  }
+                  fieldType={issue.field}
                   existingUsers={[issue.existingUser]}
                   onCancel={() => setShowDuplicateModal(false)}
                   showActions={true}
@@ -528,15 +545,28 @@ export function SecretariaFormModal({
               {duplicateCheck.similarities?.map((similarity: any, idx: number) => (
                 <DuplicateWarning
                   key={idx}
-              type={
-                similarity.severity === 'high' 
-                  ? 'critical' 
-                  : similarity.severity === 'medium' 
-                    ? 'critical'
-                    : 'info'
-              }
-                  title={similarity.message}
-                  message="Verifique se não é uma duplicata antes de continuar."
+                  type={
+                    similarity.severity === 'high' 
+                      ? 'critical' 
+                      : similarity.severity === 'medium' 
+                        ? 'critical'
+                        : 'info'
+                  }
+                  title={
+                    similarity.field === 'name'
+                      ? 'Nome muito similar encontrado'
+                      : similarity.field === 'phone'
+                      ? 'Telefone similar detectado'
+                      : 'Usuário similar encontrado'
+                  }
+                  message={
+                    similarity.severity === 'high'
+                      ? 'Encontramos uma pessoa com dados muito parecidos. Confirme se não é duplicata antes de prosseguir.'
+                      : similarity.severity === 'medium'
+                      ? 'Dados similares detectados. Verifique se realmente deseja continuar com o cadastro.'
+                      : 'Usuário com informações parecidas. Confirme se não é a mesma pessoa.'
+                  }
+                  fieldType={similarity.field}
                   existingUsers={similarity.existingUsers}
                   onConfirm={() => {
                     setUserConfirmedDuplicates(true);
