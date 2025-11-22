@@ -205,6 +205,75 @@ Deno.serve(async (req) => {
       )
     }
 
+    // ✅ VALIDAÇÃO: Verificar CPF duplicado (se fornecido)
+    if (student_notes) {
+      try {
+        const notesData = JSON.parse(student_notes);
+        if (notesData.document) {
+          const { data: existingCPF } = await supabaseAdmin
+            .from('profiles')
+            .select('id, name, email, student_notes')
+            .eq('current_school_id', school_id)
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+
+          if (existingCPF) {
+            // Buscar manualmente por CPF no student_notes
+            const cpfDuplicate = existingCPF.find(p => {
+              if (!p.student_notes) return false;
+              try {
+                const notes = typeof p.student_notes === 'string' 
+                  ? JSON.parse(p.student_notes) 
+                  : p.student_notes;
+                return notes?.document === notesData.document;
+              } catch {
+                return false;
+              }
+            });
+
+            if (cpfDuplicate) {
+              console.error('Duplicate CPF found:', notesData.document);
+              return new Response(
+                JSON.stringify({ 
+                  success: false, 
+                  error: `CPF já cadastrado para ${cpfDuplicate.name} (${cpfDuplicate.email})` 
+                }),
+                { 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  status: 409 
+                }
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing student_notes:', error);
+      }
+    }
+
+    // ✅ VALIDAÇÃO: Verificar matrícula duplicada (se fornecida)
+    if (enrollment_number && role === 'aluno' && school_id) {
+      const { data: existingEnrollment } = await supabaseAdmin
+        .from('profiles')
+        .select('id, name, email')
+        .eq('enrollment_number', enrollment_number)
+        .eq('current_school_id', school_id)
+        .maybeSingle();
+
+      if (existingEnrollment) {
+        console.error('Duplicate enrollment number:', enrollment_number);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Matrícula ${enrollment_number} já cadastrada para ${existingEnrollment.name} (${existingEnrollment.email})` 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 409 
+          }
+        );
+      }
+    }
+
     // Validar role
     const validRoles = ['secretaria', 'professor', 'aluno']
     if (!validRoles.includes(role)) {

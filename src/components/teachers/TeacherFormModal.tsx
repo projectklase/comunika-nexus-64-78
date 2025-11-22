@@ -26,6 +26,9 @@ import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
+import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
+import { useSchool } from '@/contexts/SchoolContext';
+import { onlyDigits } from '@/lib/validation';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -122,6 +125,8 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const { classes, updateClass } = useClassStore();
   const { subjects } = useSubjects();
   const { toast } = useToast();
+  const { currentSchool } = useSchool();
+  const { checkDuplicates } = useDuplicateCheck(currentSchool?.id || null);
 
   const form = useForm<TeacherFormData>({
     resolver: zodResolver(teacherSchema),
@@ -403,7 +408,23 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           <FormItem>
             <FormLabel>Documento</FormLabel>
             <FormControl>
-              <Input placeholder="CPF, RG ou outro documento" {...field} />
+              <Input 
+                placeholder="CPF, RG ou outro documento" 
+                {...field}
+                onBlur={async () => {
+                  const doc = onlyDigits(field.value || '');
+                  if (doc && doc.length === 11) {
+                    const result = await checkDuplicates({ cpf: doc }, teacher?.id);
+                    if (result.hasBlocking) {
+                      toast({
+                        title: "CPF Duplicado",
+                        description: result.blockingIssues[0]?.message,
+                        variant: "destructive"
+                      });
+                    }
+                  }
+                }}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
