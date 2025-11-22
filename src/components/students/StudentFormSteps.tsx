@@ -110,6 +110,19 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
 
+  // Helper para mapear campos do backend para o DuplicateWarning
+  const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
+    const fieldMap: Record<string, 'email' | 'name' | 'phone' | 'document' | 'enrollment'> = {
+      'cpf': 'document',
+      'enrollment_number': 'enrollment',
+      'email': 'email',
+      'phone': 'phone',
+      'name': 'name'
+    };
+    
+    return fieldMap[field] || 'document';
+  };
+
   const { classes } = useClasses();
   const { programs } = usePrograms();
   const { levels } = useLevels();
@@ -1726,25 +1739,22 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           <DuplicateWarning
             issues={[
               // Blocking issues primeiro
-              ...(duplicateCheck?.blockingIssues || []).map((issue: any) => {
-                const issueType: 'blocking' = 'blocking';
-                return {
-                  type: issueType,
-                  field: issue.field as 'document' | 'enrollment',
-                  message: issue.field === 'cpf' 
-                    ? '🚫 Este CPF já está cadastrado no sistema. Use um documento válido.'
-                    : issue.field === 'enrollment'
-                    ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
-                    : '🚫 Estes dados já pertencem a outro aluno no sistema.',
-                  existingUsers: [issue.existingUser]
-                };
-              }),
+              ...(duplicateCheck?.blockingIssues || []).map((issue: any) => ({
+                type: 'blocking' as const,
+                field: mapFieldType(issue.field),
+                message: issue.field === 'cpf' 
+                  ? '🚫 Este CPF já está cadastrado no sistema. Use um documento válido.'
+                  : issue.field === 'enrollment_number'
+                  ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
+                  : '🚫 Estes dados já pertencem a outro aluno no sistema.',
+                existingUsers: [issue.existingUser]
+              })),
               // Similarities depois
               ...(duplicateCheck?.similarities || []).map((sim: any) => {
                 const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
                 return {
                   type: simType,
-                  field: sim.field as 'name' | 'phone',
+                  field: mapFieldType(sim.field),
                   message: sim.type === 'name_dob'
                     ? '⚠️ Nome e data de nascimento idênticos. Isto pode indicar uma duplicata.'
                     : sim.type === 'name'

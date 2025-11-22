@@ -87,7 +87,8 @@ export function DuplicateWarning({
       enrollment: { icon: Hash, label: 'MATRÍCULA', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30' },
     };
     
-    return badges[fieldType];
+    // Retornar badge padrão se não encontrar
+    return badges[fieldType] || badges.document;
   };
 
   const mainType = hasBlocking ? 'blocking' : issues[0]?.type || 'info';
