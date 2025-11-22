@@ -65,6 +65,19 @@ export function SecretariaFormModal({
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
 
+  // Helper para mapear campos do backend para o DuplicateWarning
+  const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
+    const fieldMap: Record<string, 'email' | 'name' | 'phone' | 'document' | 'enrollment'> = {
+      'cpf': 'document',
+      'enrollment_number': 'enrollment',
+      'email': 'email',
+      'phone': 'phone',
+      'name': 'name'
+    };
+    
+    return fieldMap[field] || 'document';
+  };
+
   // Auto-gerar senha quando o modal abrir ou carregar dados para edição
   useEffect(() => {
     if (open) {
@@ -513,27 +526,26 @@ export function SecretariaFormModal({
             <DuplicateWarning
               issues={[
                 // Blocking issues primeiro
-                ...(duplicateCheck.blockingIssues || []).map((issue: any) => {
-                  const issueType: 'blocking' = 'blocking';
-                  return {
-                    type: issueType,
-                    field: issue.field as 'email' | 'phone' | 'enrollment',
-                    message: issue.field === 'email' 
-                      ? '🚫 Este email já pertence a outra pessoa no sistema. Use um email diferente.'
-                      : issue.field === 'phone'
-                      ? '🚫 Este telefone já está cadastrado para outro usuário. Verifique o número.'
-                      : issue.field === 'enrollment'
-                      ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
-                      : '🚫 Estes dados já pertencem a outra pessoa no sistema.',
-                    existingUsers: [issue.existingUser]
-                  };
-                }),
+                ...(duplicateCheck.blockingIssues || []).map((issue: any) => ({
+                  type: 'blocking' as const,
+                  field: mapFieldType(issue.field),
+                  message: issue.field === 'email' 
+                    ? '🚫 Este email já pertence a outra pessoa no sistema. Use um email diferente.'
+                    : issue.field === 'phone'
+                    ? '🚫 Este telefone já está cadastrado para outro usuário. Verifique o número.'
+                    : issue.field === 'cpf'
+                    ? '🚫 Este CPF já está cadastrado no sistema.'
+                    : issue.field === 'enrollment_number'
+                    ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
+                    : '🚫 Estes dados já pertencem a outra pessoa no sistema.',
+                  existingUsers: [issue.existingUser]
+                })),
                 // Similarities depois
                 ...(duplicateCheck.similarities || []).map((sim: any) => {
                   const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
                   return {
                     type: simType,
-                    field: sim.field as 'name' | 'phone',
+                    field: mapFieldType(sim.field),
                     message: sim.field === 'name' && sim.severity === 'high'
                       ? '⚠️ Nome idêntico ou muito similar encontrado. Confirme se não é duplicata.'
                       : sim.field === 'phone'
