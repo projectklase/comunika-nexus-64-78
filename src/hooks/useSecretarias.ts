@@ -100,8 +100,22 @@ export function useSecretarias() {
         }
       });
 
+      // Tratar resposta de erro da edge function
       if (response.error) {
-        throw new Error(response.error.message);
+        // Se a edge function retornou um erro estruturado (409 com JSON)
+        const errorData = response.error as any;
+        
+        // Tentar extrair a mensagem de erro do body ou do próprio objeto
+        const errorMessage = errorData.message || 
+                            errorData.error || 
+                            'Erro ao criar secretaria';
+        
+        throw new Error(errorMessage);
+      }
+      
+      // Se o status não é success, também é um erro
+      if (!response.data?.success && response.data?.error) {
+        throw new Error(response.data.error);
       }
 
       // Update phone if provided
@@ -137,8 +151,9 @@ export function useSecretarias() {
       return true;
     } catch (error: any) {
       console.error('Error creating secretaria:', error);
-      toast.error(error.message || 'Erro ao criar secretaria');
-      return false;
+      // Não mostrar toast aqui - deixar o modal tratar
+      // Re-lançar o erro para que o modal possa tratá-lo adequadamente
+      throw error;
     }
   };
 
