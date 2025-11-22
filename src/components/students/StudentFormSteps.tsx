@@ -64,6 +64,9 @@ import { useLevels } from '@/hooks/useLevels';
 import { useStudents } from '@/hooks/useStudents';
 import { supabase } from '@/integrations/supabase/client';
 import { CredentialsDialog } from './CredentialsDialog';
+import { useDuplicateCheck, DuplicateCheckResult } from '@/hooks/useDuplicateCheck';
+import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
+import { useSchool } from '@/contexts/SchoolContext';
 
 interface StudentFormStepsProps {
   open: boolean;
@@ -103,11 +106,16 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [dobInput, setDobInput] = useState<string>('');
+  const [duplicateCheck, setDuplicateCheck] = useState<DuplicateCheckResult | null>(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
 
   const { classes } = useClasses();
   const { programs } = usePrograms();
   const { levels } = useLevels();
   const { createStudent, updateStudent } = useStudents();
+  const { currentSchool } = useSchool();
+  const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
 
   useEffect(() => {
     if (open) {
@@ -485,6 +493,31 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       return;
     }
 
+    // VALIDAÇÃO DE DUPLICATAS antes do submit
+    const result = await checkDuplicates({
+      cpf: formData.student?.document,
+      enrollmentNumber: formData.student?.enrollmentNumber,
+      name: formData.name,
+      dob: formData.student?.dob,
+      phone: formData.student?.phones?.[0],
+      address: formData.student?.address
+    }, student?.id);
+
+    // Se houver bloqueantes, impede submit
+    if (result.hasBlocking) {
+      toast.error('Existem duplicatas que impedem o cadastro. Revise os dados.');
+      setDuplicateCheck(result);
+      setShowDuplicateModal(true);
+      return;
+    }
+
+    // Se houver similaridades e usuário não confirmou, exibe alerta
+    if (result.hasSimilarities && !userConfirmedDuplicates) {
+      setDuplicateCheck(result);
+      setShowDuplicateModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const studentEmail = formData.student?.email;
@@ -751,10 +784,35 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   updateFormData({ 
                     student: { document: formatted }
                   });
+                  
+                  // Limpa erro ao digitar
+                  if (errors.cpf) {
+                    setErrors(prev => {
+                      const { cpf, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
+                onBlur={async () => {
+                  const cpf = onlyDigits(formData.student?.document || '');
+                  if (cpf && cpf.length === 11) {
+                    const result = await checkDuplicates({ cpf }, student?.id);
+                    if (result.hasBlocking) {
+                      const issue = result.blockingIssues.find(i => i.field === 'cpf');
+                      if (issue) {
+                        setErrors(prev => ({ ...prev, cpf: issue.message }));
+                        toast.error(issue.message);
+                      }
+                    }
+                  }
                 }}
                 placeholder="000.000.000-00"
                 maxLength={14}
+                className={errors.cpf ? 'border-destructive' : ''}
               />
+              {errors.cpf && (
+                <p className="text-sm text-destructive">{errors.cpf}</p>
+              )}
             </div>
           </div>
         );
@@ -1002,12 +1060,39 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               <Label>Número de Matrícula</Label>
               <Input
                 value={formData.student?.enrollmentNumber || ''}
-                onChange={(e) => updateFormData({ 
-                  student: { enrollmentNumber: sanitizeString(e.target.value, 50) }
-                })}
+                onChange={(e) => {
+                  updateFormData({ 
+                    student: { enrollmentNumber: sanitizeString(e.target.value, 50) }
+                  });
+                  
+                  // Limpa erro ao digitar
+                  if (errors.enrollment) {
+                    setErrors(prev => {
+                      const { enrollment, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
+                onBlur={async () => {
+                  const enrollment = formData.student?.enrollmentNumber;
+                  if (enrollment) {
+                    const result = await checkDuplicates({ enrollmentNumber: enrollment }, student?.id);
+                    if (result.hasBlocking) {
+                      const issue = result.blockingIssues.find(i => i.field === 'enrollment_number');
+                      if (issue) {
+                        setErrors(prev => ({ ...prev, enrollment: issue.message }));
+                        toast.error(issue.message);
+                      }
+                    }
+                  }
+                }}
                 placeholder="Ex: 2024001"
                 maxLength={50}
+                className={errors.enrollment ? 'border-destructive' : ''}
               />
+              {errors.enrollment && (
+                <p className="text-sm text-destructive">{errors.enrollment}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -1627,6 +1712,64 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         role="aluno"
       />
     )}
+    
+    {/* Modal de Alertas de Duplicatas */}
+    <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {duplicateCheck?.hasBlocking ? 'Dados Duplicados' : 'Possíveis Duplicatas Detectadas'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* Mostrar alertas bloqueantes */}
+          {duplicateCheck?.blockingIssues.map((issue, index) => (
+            <DuplicateWarning
+              key={`blocking-${index}`}
+              type="blocking"
+              title={issue.message}
+              message={`${issue.field === 'cpf' ? 'CPF' : 'Matrícula'} já está cadastrado para:`}
+              existingUsers={[issue.existingUser]}
+              onCancel={() => setShowDuplicateModal(false)}
+              showActions={true}
+            />
+          ))}
+          
+          {/* Mostrar alertas de similaridades (críticos e informativos) */}
+          {!duplicateCheck?.hasBlocking && duplicateCheck?.similarities.map((similarity, index) => {
+            const type = similarity.severity === 'high' ? 'critical' : 'info';
+            return (
+              <DuplicateWarning
+                key={`similarity-${index}`}
+                type={type}
+                title={similarity.message}
+                message={
+                  similarity.type === 'name_dob' 
+                    ? 'Encontramos aluno(s) com nome e data de nascimento idênticos. Isto pode indicar uma duplicata.'
+                    : similarity.type === 'name'
+                    ? 'Pode ser um homônimo ou erro de digitação.'
+                    : similarity.type === 'phone'
+                    ? 'Pode indicar irmãos ou responsáveis compartilhados.'
+                    : 'Pode indicar irmãos morando no mesmo endereço.'
+                }
+                existingUsers={similarity.existingUsers}
+                onConfirm={() => {
+                  setUserConfirmedDuplicates(true);
+                  setShowDuplicateModal(false);
+                  // Após confirmação, tenta submit novamente
+                  if (type === 'critical') {
+                    setTimeout(() => handleSubmit(), 100);
+                  }
+                }}
+                onCancel={() => setShowDuplicateModal(false)}
+                showActions={true}
+              />
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
