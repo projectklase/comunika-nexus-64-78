@@ -22,7 +22,7 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { Person, TeacherExtra } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
@@ -130,7 +130,66 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const { subjects } = useSubjects();
   const { toast } = useToast();
   const { currentSchool } = useSchool();
-  const { checkDuplicates } = useDuplicateCheck(currentSchool?.id || null);
+  const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
+
+  // Função de validação preventiva por etapa
+  const validateDuplicatesForStep = async (step: number): Promise<boolean> => {
+    let checkData: any = {};
+    
+    switch (step) {
+      case 0: // Dados Básicos - Valida CPF e Email
+        const data = form.getValues();
+        
+        if (data.document) {
+          const cpf = onlyDigits(data.document);
+          if (cpf && cpf.length === 11) {
+            checkData.cpf = cpf;
+          }
+        }
+        
+        if (data.email) {
+          checkData.email = data.email;
+        }
+        break;
+        
+      case 1: // Acadêmico - Sem validações de duplicata
+      case 2: // Disponibilidade - Sem validações de duplicata
+        return true;
+        
+      default:
+        return true;
+    }
+    
+    // Se não há dados sensíveis preenchidos, libera navegação
+    if (Object.keys(checkData).length === 0) {
+      return true;
+    }
+    
+    // Verifica duplicatas
+    const result = await checkDuplicates(checkData, teacher?.id);
+    
+    // Se houver bloqueantes, impede navegação e mostra modal
+    if (result.hasBlocking) {
+      setDuplicateCheck(result);
+      setShowDuplicateModal(true);
+      
+      // Monta mensagem específica
+      const blockedFields = result.blockingIssues.map(issue => {
+        if (issue.field === 'cpf') return 'CPF';
+        if (issue.field === 'email') return 'Email';
+        return issue.field;
+      }).join(', ');
+      
+      toast({
+        title: "Dados Duplicados",
+        description: `${blockedFields} já cadastrado(s). Corrija antes de prosseguir.`,
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
+  };
 
   const form = useForm<TeacherFormData>({
     resolver: zodResolver(teacherSchema),
@@ -331,10 +390,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
     }
   };
 
-  const handleNext = (e: React.MouseEvent) => {
+  const handleNext = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
+    // 1. Validar campos obrigatórios primeiro
     if (currentStep === 0) {
       if (!form.getValues('name')?.trim()) {
         form.setError('name', { type: 'required', message: 'Nome é obrigatório' });
@@ -346,6 +406,15 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       }
     }
     
+    // 2. Validar duplicatas bloqueantes ANTES de avançar
+    const canProceed = await validateDuplicatesForStep(currentStep);
+    
+    if (!canProceed) {
+      // Modal de duplicata já foi exibido pela função validateDuplicatesForStep
+      return;
+    }
+    
+    // 3. Se passou em ambas validações, avança
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     }
@@ -471,7 +540,32 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           <FormItem>
             <FormLabel>E-mail *</FormLabel>
             <FormControl>
-              <Input type="email" placeholder="email@exemplo.com" {...field} required />
+              <Input 
+                type="email" 
+                placeholder="email@exemplo.com" 
+                {...field} 
+                required 
+                onBlur={async () => {
+                  const email = field.value;
+                  if (email && email.includes('@') && !teacher) {
+                    const result = await checkDuplicates({ email }, teacher?.id);
+                    if (result.hasBlocking) {
+                      const issue = result.blockingIssues.find(i => i.field === 'email');
+                      if (issue) {
+                        form.setError('email', { 
+                          type: 'manual', 
+                          message: issue.message 
+                        });
+                        toast({
+                          title: "Email Duplicado",
+                          description: issue.message,
+                          variant: "destructive"
+                        });
+                      }
+                    }
+                  }
+                }}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -1022,9 +1116,18 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
                 </Button>
 
                 {currentStep < 2 ? (
-                  <Button type="button" onClick={handleNext} disabled={isLoading}>
-                    Próximo
-                    <ChevronRight className="h-4 w-4 ml-2" />
+                  <Button type="button" onClick={handleNext} disabled={isLoading || isChecking}>
+                    {isChecking ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      <>
+                        Próximo
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
                   </Button>
                 ) : (
                   <Button type="submit" disabled={isLoading}>
