@@ -2264,6 +2264,10 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       open={showSiblingSuggestion}
       onOpenChange={setShowSiblingSuggestion}
       similarStudents={siblingCandidates}
+      currentStudentGuardians={(formData.student?.guardians || []).map(g => ({
+        ...g,
+        isPrimary: g.isPrimary || false
+      }))}
       onCopyGuardians={handleCopyGuardians}
     />
     </>
