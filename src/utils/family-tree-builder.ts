@@ -202,7 +202,7 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
           id: `relationship-${student1Id}-${student2Id}`,
           source: `student-${student1Id}`,
           target: `student-${student2Id}`,
-          type: 'straight',
+          type: 'smoothstep',
           style: edgeStyles.style,
           data: {
             relationshipType,
