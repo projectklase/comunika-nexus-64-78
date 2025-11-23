@@ -561,7 +561,7 @@ export function SecretariaFormModal({
                     : issue.field === 'enrollment_number'
                     ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
                     : '🚫 Estes dados já pertencem a outra pessoa no sistema.',
-                  existingUsers: [issue.existingUser]
+                  existingUsers: issue.existingUser ? [issue.existingUser] : []
                 })),
                 // Similarities depois (filtrando emails)
                 ...(duplicateCheck.similarities || [])
