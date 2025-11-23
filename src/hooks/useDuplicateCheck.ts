@@ -26,7 +26,7 @@ interface BlockingIssue {
 }
 
 interface Similarity {
-  type: 'name' | 'name_dob' | 'phone' | 'address' | 'email';
+  type: 'name' | 'name_dob' | 'phone' | 'address';
   severity: 'low' | 'medium' | 'high';
   message: string;
   existingUsers: ExistingUser[];

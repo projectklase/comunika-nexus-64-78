@@ -114,6 +114,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
     const fieldMap: Record<string, 'email' | 'name' | 'phone' | 'document' | 'enrollment'> = {
       'cpf': 'document',
+      'document': 'document',
       'enrollment_number': 'enrollment',
       'email': 'email',
       'phone': 'phone',
@@ -1749,22 +1750,24 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   : '🚫 Estes dados já pertencem a outro aluno no sistema.',
                 existingUsers: [issue.existingUser]
               })),
-              // Similarities depois
-              ...(duplicateCheck?.similarities || []).map((sim: any) => {
-                const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
-                return {
-                  type: simType,
-                  field: mapFieldType(sim.field),
-                  message: sim.type === 'name_dob'
-                    ? '⚠️ Nome e data de nascimento idênticos. Isto pode indicar uma duplicata.'
-                    : sim.type === 'name'
-                    ? '⚠️ Nome muito similar encontrado. Pode ser homônimo ou erro de digitação.'
-                    : sim.type === 'phone'
-                    ? 'ℹ️ Telefone similar detectado. Pode indicar irmãos ou responsáveis compartilhados.'
-                    : 'ℹ️ Informações similares encontradas. Pode indicar irmãos morando no mesmo endereço.',
-                  existingUsers: sim.existingUsers
-                };
-              })
+              // Similarities depois (filtrando emails)
+              ...(duplicateCheck?.similarities || [])
+                .filter((sim: any) => sim.type !== 'email')
+                .map((sim: any) => {
+                  const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
+                  return {
+                    type: simType,
+                    field: mapFieldType(sim.type),
+                    message: sim.type === 'name_dob'
+                      ? '⚠️ Nome e data de nascimento idênticos. Isto pode indicar uma duplicata.'
+                      : sim.type === 'name'
+                      ? '⚠️ Nome muito similar encontrado. Pode ser homônimo ou erro de digitação.'
+                      : sim.type === 'phone'
+                      ? 'ℹ️ Telefone similar detectado. Pode indicar irmãos ou responsáveis compartilhados.'
+                      : 'ℹ️ Informações similares encontradas. Pode indicar irmãos morando no mesmo endereço.',
+                    existingUsers: sim.existingUsers
+                  };
+                })
             ]}
             hasBlocking={duplicateCheck?.hasBlocking || false}
             onCancel={() => setShowDuplicateModal(false)}
