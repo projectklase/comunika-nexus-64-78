@@ -13,6 +13,8 @@ import { GuardianNode } from './GuardianNode';
 import { StudentNode } from './StudentNode';
 import { buildFamilyTree } from '@/utils/family-tree-builder';
 import { FamilyGroup } from '@/types/family-metrics';
+import { useFamilyTreeFilters } from '@/hooks/useFamilyTreeFilters';
+import { FamilyTreeFilters } from './FamilyTreeFilters';
 
 interface FamilyTreeVisualizationProps {
   families: FamilyGroup[];
@@ -24,9 +26,17 @@ const nodeTypes = {
 };
 
 export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationProps) {
+  const {
+    filters,
+    setFilters,
+    filteredFamilies,
+    totalFamilies,
+    filteredCount,
+  } = useFamilyTreeFilters(families);
+
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
-    () => buildFamilyTree(families),
-    [families]
+    () => buildFamilyTree(filteredFamilies),
+    [filteredFamilies]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -38,8 +48,18 @@ export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationPro
   );
 
   return (
-    <div className="h-[800px] w-full rounded-xl border border-border overflow-hidden bg-gradient-to-br from-background to-muted">
-      <ReactFlow
+    <div className="space-y-4">
+      {/* Painel de Filtros */}
+      <FamilyTreeFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        totalFamilies={totalFamilies}
+        filteredCount={filteredCount}
+      />
+      
+      {/* Árvore */}
+      <div className="h-[800px] w-full rounded-xl border border-border overflow-hidden bg-gradient-to-br from-background to-muted">
+        <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -93,6 +113,7 @@ export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationPro
           </div>
         </Panel>
       </ReactFlow>
+      </div>
     </div>
   );
 }
