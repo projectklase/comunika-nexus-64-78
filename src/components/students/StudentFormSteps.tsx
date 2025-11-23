@@ -452,12 +452,82 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     return Object.keys(newErrors).length === 0;
   };
 
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 6));
-    } else {
-      toast.error('Preencha os campos obrigatórios corretamente');
+  // FASE 1: Validação preventiva de duplicatas por etapa
+  const validateDuplicatesForStep = async (step: number): Promise<boolean> => {
+    let checkData: any = {};
+    
+    switch (step) {
+      case 1: // Dados Pessoais - Valida CPF
+        if (formData.student?.document) {
+          const cpf = onlyDigits(formData.student.document);
+          if (cpf && cpf.length === 11) {
+            checkData.cpf = cpf;
+          }
+        }
+        break;
+        
+      case 2: // Contato & Endereço - Valida Email
+        if (formData.student?.email) {
+          checkData.email = formData.student.email;
+        }
+        break;
+        
+      case 3: // Acadêmico - Valida Matrícula
+        if (formData.student?.enrollmentNumber) {
+          checkData.enrollmentNumber = formData.student.enrollmentNumber;
+        }
+        break;
+        
+      default:
+        return true; // Outras etapas não têm validação de duplicata
     }
+    
+    // Se não há dados sensíveis preenchidos, libera navegação
+    if (Object.keys(checkData).length === 0) {
+      return true;
+    }
+    
+    // Verifica duplicatas
+    const result = await checkDuplicates(checkData, student?.id);
+    
+    // Se houver bloqueantes, impede navegação e mostra modal
+    if (result.hasBlocking) {
+      setDuplicateCheck(result);
+      setShowDuplicateModal(true);
+      
+      // Monta mensagem específica
+      const blockedFields = result.blockingIssues.map(issue => {
+        if (issue.field === 'cpf') return 'CPF';
+        if (issue.field === 'email') return 'Email';
+        if (issue.field === 'enrollment_number') return 'Matrícula';
+        return issue.field;
+      }).join(', ');
+      
+      toast.error(`${blockedFields} já cadastrado(s). Corrija antes de prosseguir.`);
+      return false;
+    }
+    
+    return true;
+  };
+
+  // FASE 2: nextStep com validação de duplicatas
+  const nextStep = async () => {
+    // 1. Valida campos obrigatórios primeiro (lógica existente)
+    if (!validateStep(currentStep)) {
+      toast.error('Preencha os campos obrigatórios corretamente');
+      return;
+    }
+    
+    // 2. Valida duplicatas bloqueantes ANTES de avançar
+    const canProceed = await validateDuplicatesForStep(currentStep);
+    
+    if (!canProceed) {
+      // Modal de duplicata já foi exibido pela função validateDuplicatesForStep
+      return;
+    }
+    
+    // 3. Se passou em ambas validações, avança
+    setCurrentStep(prev => Math.min(prev + 1, 6));
   };
 
   const prevStep = () => {
@@ -943,6 +1013,27 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   updateFormData({ 
                     student: { email: sanitized }
                   });
+                  
+                  // Limpa erro ao digitar
+                  if (errors.studentEmail || errors.email) {
+                    setErrors(prev => {
+                      const { studentEmail, email, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
+                onBlur={async () => {
+                  const email = formData.student?.email;
+                  if (email && !validateEmail(email)) {
+                    const result = await checkDuplicates({ email }, student?.id);
+                    if (result.hasBlocking) {
+                      const issue = result.blockingIssues.find(i => i.field === 'email');
+                      if (issue) {
+                        setErrors(prev => ({ ...prev, email: issue.message }));
+                        toast.error(issue.message);
+                      }
+                    }
+                  }
                 }}
                 placeholder="aluno@email.com"
                 maxLength={255}
@@ -1727,10 +1818,20 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               <Button
                 type="button"
                 onClick={nextStep}
+                disabled={isChecking || loading}
                 className="gap-2"
               >
-                Próximo
-                <ChevronRight className="h-4 w-4" />
+                {isChecking ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    Próximo
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             ) : (
               <Button
