@@ -25,7 +25,8 @@ import {
   Network,
   TreePine,
   UserCircle2,
-  ExternalLink
+  ExternalLink,
+  Pencil
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ import { RELATIONSHIP_LABELS, type RelationshipType, type FamilyGroup } from '@/
 import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
 import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisualization';
 import { useFamilyRelationsState } from '@/hooks/useFamilyRelationsState';
+import { StudentFormSteps } from '@/components/students/StudentFormSteps';
 
 
 export default function FamilyRelationsPage() {
@@ -42,6 +44,10 @@ export default function FamilyRelationsPage() {
   const [families, setFamilies] = useState<FamilyGroup[]>([]);
   const [loadingFamilies, setLoadingFamilies] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Estados para modal de edição de aluno
+  const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   // ✅ Estado global compartilhado (Fase 4)
   const {
@@ -491,22 +497,44 @@ export default function FamilyRelationsPage() {
                             {family.students.map((student) => (
                               <div
                                 key={student.id}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
+                                className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors group"
                               >
-                                {student.avatar ? (
-                                  <img
-                                    src={student.avatar}
-                                    alt={student.name}
-                                    className="h-6 w-6 rounded-full"
-                                  />
-                                ) : (
-                                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
-                                    {student.name.charAt(0)}
-                                  </div>
-                                )}
-                                <span className="text-sm font-medium text-foreground">
-                                  {student.name}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  {student.avatar ? (
+                                    <img
+                                      src={student.avatar}
+                                      alt={student.name}
+                                      className="h-6 w-6 rounded-full"
+                                    />
+                                  ) : (
+                                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
+                                      {student.name.charAt(0)}
+                                    </div>
+                                  )}
+                                  <span className="text-sm font-medium text-foreground">
+                                    {student.name}
+                                  </span>
+                                </div>
+                                
+                                {/* Botão de Edição */}
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    const { data } = await supabase
+                                      .from('profiles')
+                                      .select('*')
+                                      .eq('id', student.id)
+                                      .single();
+                                    
+                                    setSelectedStudent(data);
+                                    setIsEditStudentModalOpen(true);
+                                  }}
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-pink-500/10 hover:text-pink-400"
+                                  title="Editar aluno"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
                             ))}
                           </div>
@@ -611,6 +639,22 @@ export default function FamilyRelationsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Edição de Aluno */}
+      <StudentFormSteps
+        open={isEditStudentModalOpen}
+        onOpenChange={(open) => {
+          setIsEditStudentModalOpen(open);
+          if (!open) {
+            setSelectedStudent(null);
+          }
+        }}
+        student={selectedStudent}
+        onSave={() => {
+          loadFamilyDetails();
+          toast.success('Aluno atualizado com sucesso!');
+        }}
+      />
     </div>
   );
 }
