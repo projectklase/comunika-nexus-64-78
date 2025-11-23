@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -22,6 +22,9 @@ import { FamilyTreeFilters } from './FamilyTreeFilters';
 import { useFamilyTreeSelection } from '@/hooks/useFamilyTreeSelection';
 import { FamilyDetailsSidebar } from './FamilyDetailsSidebar';
 import { FamilyBreadcrumb } from './FamilyBreadcrumb';
+import { ExportTreeButton } from './ExportTreeButton';
+import { useTreeExport } from '@/hooks/useTreeExport';
+import { useSchool } from '@/contexts/SchoolContext';
 
 interface FamilyTreeVisualizationProps {
   families: FamilyGroup[];
@@ -41,6 +44,9 @@ function FamilyTreeVisualizationInner({
   selectedFamilyKey,
   onFamilySelect,
 }: FamilyTreeVisualizationProps) {
+  const { currentSchool } = useSchool();
+  const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
+  
   const {
     filters,
     setFilters,
@@ -52,7 +58,13 @@ function FamilyTreeVisualizationInner({
   const [isBuilding, setIsBuilding] = useState(true);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [isLegendOpen, setIsLegendOpen] = useState(true); // ✅ Estado para legenda retrátil (Fase 4.2)
+  const [isLegendOpen, setIsLegendOpen] = useState(true);
+  
+  // ✅ Hook de exportação (Fase 4.3)
+  const { isExporting, exportToPNG, exportToPDF } = useTreeExport(
+    reactFlowWrapperRef,
+    currentSchool?.name || 'Escola'
+  );
 
   // ✅ Hook de seleção de família (Fase 3)
   const {
@@ -156,7 +168,10 @@ function FamilyTreeVisualizationInner({
       />
       
       {/* Árvore + Sidebar */}
-      <div className="h-[800px] w-full rounded-xl border border-border overflow-hidden bg-gradient-to-br from-background to-muted relative">
+      <div 
+        ref={reactFlowWrapperRef}
+        className="h-[800px] w-full rounded-xl border border-border overflow-hidden bg-gradient-to-br from-background to-muted relative"
+      >
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -189,6 +204,15 @@ function FamilyTreeVisualizationInner({
           className="!bg-background/90 !border-border backdrop-blur-sm"
           maskColor="rgba(0,0,0,0.2)"
         />
+        
+        {/* ✅ Botão de exportação (Fase 4.3) */}
+        <Panel position="top-left">
+          <ExportTreeButton
+            onExportPNG={exportToPNG}
+            onExportPDF={exportToPDF}
+            isExporting={isExporting}
+          />
+        </Panel>
         
         {/* ✅ Legenda retrátil (Fase 4.2) */}
         <Panel position="top-right" className="!bg-background/90 backdrop-blur-sm rounded-lg border border-border">

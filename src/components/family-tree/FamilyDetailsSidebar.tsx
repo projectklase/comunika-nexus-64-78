@@ -62,6 +62,7 @@ export function FamilyDetailsSidebar({
       
       {/* Sidebar */}
       <div 
+        data-family-sidebar
         className="absolute right-0 top-0 bottom-0 w-80 bg-background/95 backdrop-blur-xl border-l border-border shadow-2xl z-50 animate-slide-in-right overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
