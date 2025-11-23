@@ -706,7 +706,19 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     setShowSiblingSuggestion(true);
   };
 
-  // Copiar guardians de um irmão com registro de relacionamento familiar
+  // ✨ Helper: Retorna o tipo de relacionamento recíproco
+  const getReciprocalType = (type: string): string => {
+    const reciprocal: Record<string, string> = {
+      'SIBLING': 'SIBLING',           // Irmão ↔ Irmão
+      'COUSIN': 'COUSIN',             // Primo ↔ Primo
+      'UNCLE_NEPHEW': 'UNCLE_NEPHEW', // Tio-Sobrinho ↔ Sobrinho-Tio (mesmo tipo)
+      'GODPARENT_GODCHILD': 'GODPARENT_GODCHILD', // Será validado na Fase 4
+      'OTHER': 'OTHER',
+    };
+    return reciprocal[type] || type;
+  };
+
+  // Copiar guardians de um irmão com registro de relacionamento familiar BIDIRECIONAL
   const handleCopyGuardians = (
     guardians: any[], 
     relatedStudentId: string,
@@ -727,7 +739,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       }
     });
     
-    // 2. ✨ NOVO: Registrar o relacionamento familiar
+    // 2. ✨ NOVO: Registrar o relacionamento familiar BIDIRECIONAL
     const relationshipRecord = {
       relatedStudentId,
       relatedStudentName,
@@ -736,7 +748,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       createdAt: new Date().toISOString(),
     };
     
-    // Atualizar formData para incluir o relacionamento
+    // Atualizar formData para incluir o relacionamento A→B
     setFormData(prev => ({
       ...prev,
       student: {
@@ -750,9 +762,34 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         }
       }
     }));
+
+    // 3. ✨ NOVO: Preparar relacionamento recíproco B→A para salvar no handleSubmit
+    // Será salvo quando o aluno for criado/atualizado
+    const reciprocalRelationship = {
+      targetStudentId: relatedStudentId,
+      relationship: {
+        relatedStudentId: '', // Será preenchido com o ID do aluno atual no handleSubmit
+        relatedStudentName: formData.name || '',
+        relationshipType: getReciprocalType(relationshipData.type) as 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'GODPARENT_GODCHILD' | 'OTHER',
+        customRelationship: relationshipData.customLabel,
+        createdAt: new Date().toISOString(),
+      }
+    };
+
+    // Guardar o relacionamento recíproco no state para processar depois
+    setFormData(prev => ({
+      ...prev,
+      student: {
+        ...prev.student,
+        pendingReciprocalRelationships: [
+          ...(prev.student?.pendingReciprocalRelationships || []),
+          reciprocalRelationship
+        ]
+      }
+    }));
     
     const relationLabel = getRelationshipLabel(relationshipData);
-    toast.success(`Responsáveis copiados e relação "${relationLabel}" registrada!`);
+    toast.success(`Responsáveis copiados e relação "${relationLabel}" registrada (bidirecional)!`);
     setShowSiblingSuggestion(false);
   };
 
@@ -931,6 +968,60 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           await supabase
             .from('guardians')
             .insert(validGuardians);
+        }
+      }
+
+      // ✨ FASE 1: Criar relacionamentos recíprocos (B→A) nos alunos relacionados
+      if (formData.student?.pendingReciprocalRelationships && formData.student.pendingReciprocalRelationships.length > 0) {
+        console.log('🔄 Criando relacionamentos recíprocos...');
+        
+        for (const pending of formData.student.pendingReciprocalRelationships) {
+          try {
+            // Buscar student_notes do aluno relacionado
+            const { data: relatedStudent, error: fetchError } = await supabase
+              .from('profiles')
+              .select('student_notes')
+              .eq('id', pending.targetStudentId)
+              .single();
+
+            if (fetchError) {
+              console.error(`Erro ao buscar aluno relacionado ${pending.targetStudentId}:`, fetchError);
+              continue;
+            }
+
+            // Parse dos student_notes existentes
+            const existingNotes = relatedStudent?.student_notes 
+              ? JSON.parse(relatedStudent.student_notes) 
+              : {};
+
+            // Adicionar relacionamento recíproco com o ID correto do aluno atual
+            const reciprocalRel = {
+              ...pending.relationship,
+              relatedStudentId: studentId, // ID do aluno que acabamos de criar/atualizar
+            };
+
+            const updatedNotes = {
+              ...existingNotes,
+              familyRelationships: [
+                ...(existingNotes.familyRelationships || []),
+                reciprocalRel
+              ]
+            };
+
+            // Atualizar o aluno relacionado
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ student_notes: JSON.stringify(updatedNotes) })
+              .eq('id', pending.targetStudentId);
+
+            if (updateError) {
+              console.error(`Erro ao atualizar relacionamento recíproco para ${pending.targetStudentId}:`, updateError);
+            } else {
+              console.log(`✅ Relacionamento recíproco criado: ${pending.targetStudentId} → ${studentId}`);
+            }
+          } catch (err) {
+            console.error('Erro ao processar relacionamento recíproco:', err);
+          }
         }
       }
 

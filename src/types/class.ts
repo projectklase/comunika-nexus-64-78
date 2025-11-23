@@ -95,6 +95,16 @@ export interface StudentExtra {
       createdAt: string;
     }>;
   };
+  pendingReciprocalRelationships?: Array<{  // ✨ FASE 1: Para processar relacionamentos bidirecionais
+    targetStudentId: string;
+    relationship: {
+      relatedStudentId: string;
+      relatedStudentName: string;
+      relationshipType: 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'GODPARENT_GODCHILD' | 'OTHER';
+      customRelationship?: string;
+      createdAt: string;
+    };
+  }>;
 }
 
 export interface Person { 
