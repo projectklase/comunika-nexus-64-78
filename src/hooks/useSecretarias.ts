@@ -86,86 +86,48 @@ export function useSecretarias() {
         return false;
       }
 
-      // ✅ PASSAR school_id para a edge function
-      const response = await supabase.functions.invoke('create-demo-user', {
-        body: {
+      // 🔄 FASE 4: Fetch manual para controle total da resposta
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/create-demo-user`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
           email: formData.email,
           password: formData.password,
           name: formData.name,
           role: 'secretaria',
           school_id: currentSchool.id
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
+        })
       });
 
-      // 🔍 FASE 1: Log ULTRA detalhado da resposta com stringify
-      console.log('🔍 Full response (stringify):', JSON.stringify({
-        hasError: !!response.error,
-        hasData: !!response.data,
-        data: response.data,
-        errorType: response.error?.constructor?.name,
-        errorMessage: response.error?.message,
-        errorContext: (response.error as any)?.context,
-        errorDetails: (response.error as any)?.details,
-        errorStack: response.error?.stack
-      }, null, 2));
+      // ✅ Ler o JSON independentemente do status
+      const responseData = await response.json();
 
-      // ✅ PRIORIDADE 1: Verificar response.data primeiro (contém o body JSON mesmo com erro HTTP)
-      if (response.data && !response.data.success && response.data.error) {
-        console.error('✅ Edge function returned error in data:', response.data);
-        throw new Error(response.data.error);
-      }
-      
-      // 🔍 FASE 3: Ler o body JSON do Response.context
-      if (response.error) {
-        const errorData = response.error as any;
-        
-        // Se context é um Response, tentar ler o body JSON
-        if (errorData.context instanceof Response) {
-          try {
-            console.log('🔍 Attempting to read Response.context body...');
-            
-            // Clone para evitar consumir o original
-            const clonedResponse = errorData.context.clone();
-            const errorBody = await clonedResponse.json();
-            
-            console.log('✅ Error body successfully read:', errorBody);
-            
-            // Se o body contém uma mensagem de erro, usar ela
-            if (errorBody && errorBody.error) {
-              throw new Error(errorBody.error);
-            }
-          } catch (readError) {
-            console.warn('⚠️ Could not read Response body:', readError);
-            // Continue para o fallback abaixo
-          }
-        }
-        
-        // Fallback: tentar extrair mensagem de outras propriedades
-        const errorMessage = 
-          errorData.message || 
-          'Erro ao criar secretaria';
-        
-        console.error('❌ Using fallback error message:', errorMessage);
-        throw new Error(errorMessage);
+      // ✅ Se não for sucesso, lançar erro com a mensagem específica
+      if (!response.ok || !responseData.success) {
+        throw new Error(responseData.error || 'Erro ao criar secretaria');
       }
 
       // Update phone if provided
-      if (formData.phone && response.data?.user?.id) {
+      if (formData.phone && responseData?.user?.id) {
         await supabase
           .from('profiles')
           .update({ phone: formData.phone })
-          .eq('id', response.data.user.id);
+          .eq('id', responseData.user.id);
       }
 
       // Audit log
-      if (user && response.data?.user?.id) {
+      if (user && responseData?.user?.id) {
         await logAudit({
           action: 'CREATE',
           entity: 'USER',
-          entity_id: response.data.user.id,
+          entity_id: responseData.user.id,
           entity_label: formData.name,
           actor_id: user.id,
           actor_name: user.name,
