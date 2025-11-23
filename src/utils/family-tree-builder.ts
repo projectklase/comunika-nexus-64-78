@@ -221,6 +221,69 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
     yOffset += FAMILY_SPACING;
   });
   
+  // 5. ✨ CONECTAR RELACIONAMENTOS ENTRE FAMÍLIAS DIFERENTES (primos, tios, padrinhos, etc.)
+  console.log('🌳 [Family Tree Debug] Criando edges cross-family...');
+  
+  // Criar Set de edges já criadas para evitar duplicatas
+  const existingEdges = new Set(edges.map(e => e.id));
+  
+  // Criar Map de student ID → node info para acesso rápido
+  const studentNodeMap = new Map<string, { nodeId: string, familyIndex: number }>();
+  families.forEach((family, familyIndex) => {
+    family.students.forEach(student => {
+      studentNodeMap.set(student.id, {
+        nodeId: `student-${student.id}`,
+        familyIndex,
+      });
+    });
+  });
+  
+  // Iterar sobre TODOS os relacionamentos encontrados
+  realRelationships.forEach(rel => {
+    const student1Info = studentNodeMap.get(rel.studentId);
+    const student2Info = studentNodeMap.get(rel.relatedStudentId);
+    
+    if (!student1Info || !student2Info) return; // Alunos não estão na árvore
+    
+    // Verificar se é um relacionamento ENTRE famílias diferentes
+    const isCrossFamily = student1Info.familyIndex !== student2Info.familyIndex;
+    
+    if (!isCrossFamily) return; // Já foi criado no loop principal
+    
+    // Criar ID da edge (normalizado para evitar duplicatas A-B vs B-A)
+    const edgeId = `relationship-${[rel.studentId, rel.relatedStudentId].sort().join('-')}`;
+    
+    if (existingEdges.has(edgeId)) return; // Já existe
+    
+    // Obter estilo baseado no tipo de relacionamento
+    const edgeStyles = getEdgeStyleByRelationship(rel.relationshipType);
+    
+    // Handles inteligentes para relacionamentos cross-family
+    // Usar handles verticais (bottom → top) para conexões entre famílias
+    // Isso evita sobreposições com conexões laterais (irmãos)
+    const sourceHandle = 'bottom'; // Sai pela parte inferior
+    const targetHandle = 'top';    // Chega pela parte superior
+    
+    console.log(`  ├─ Cross-family: ${rel.studentId.slice(0,8)} ↔ ${rel.relatedStudentId.slice(0,8)}`);
+    console.log(`  │  └─ Tipo: ${rel.relationshipType} (${RELATIONSHIP_LABELS[rel.relationshipType]})`);
+    
+    edges.push({
+      id: edgeId,
+      source: student1Info.nodeId,
+      target: student2Info.nodeId,
+      sourceHandle,
+      targetHandle,
+      type: 'smoothstep',
+      style: edgeStyles.style,
+      data: {
+        relationshipType: rel.relationshipType,
+        relationshipLabel: RELATIONSHIP_LABELS[rel.relationshipType],
+      },
+    });
+    
+    existingEdges.add(edgeId);
+  });
+  
   console.log(`🌳 [Family Tree Debug] Árvore construída:`);
   console.log(`  ├─ ${nodes.length} nós criados`);
   console.log(`  └─ ${edges.length} conexões criadas`);
