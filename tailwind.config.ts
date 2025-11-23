@@ -72,6 +72,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				chart: {
+					'1': 'hsl(var(--chart-1))',
+					'2': 'hsl(var(--chart-2))',
+					'3': 'hsl(var(--chart-3))',
+					'4': 'hsl(var(--chart-4))',
+					'5': 'hsl(var(--chart-5))'
 				}
 			},
 			backgroundImage: {
@@ -148,6 +155,16 @@ export default {
 						transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)',
 						opacity: '1'
 					}
+				},
+				'slide-in-right': {
+					'0%': {
+						transform: 'translateX(100%)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'translateX(0)',
+						opacity: '1'
+					}
 				}
 			},
 			animation: {
@@ -156,7 +173,8 @@ export default {
 				'fade-in': 'fade-in 0.3s ease-out',
 				'slide-in': 'slide-in 0.3s ease-out',
 				'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
-				'tilt-in': 'tilt-in 0.4s ease-out'
+				'tilt-in': 'tilt-in 0.4s ease-out',
+				'slide-in-right': 'slide-in-right 0.3s ease-out'
 			},
 			spacing: {
 				'safe': 'env(safe-area-inset-bottom)'
