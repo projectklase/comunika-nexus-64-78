@@ -195,16 +195,11 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
         // Estilos por tipo de relacionamento
         const edgeStyles = getEdgeStyleByRelationship(relationshipType);
         
-        // ✅ Handles inteligentes: lateral apenas para SIBLING, vertical para outros
-        const isLateralConnection = relationshipType === 'SIBLING';
-        
-        const sourceHandle = isLateralConnection 
-          ? (i < j ? 'right' : 'left')  // Irmãos: lateral
-          : 'bottom';                    // Outros: vertical (bottom → top)
-        
-        const targetHandle = isLateralConnection
-          ? (i < j ? 'left' : 'right')   // Irmãos: lateral
-          : 'top';                       // Outros: vertical
+        // ✅ TODOS os alunos estão no mesmo nível hierárquico
+        // Usar handles laterais independente do tipo de relacionamento
+        // A distinção visual vem da COR e do TRAÇADO, não da direção
+        const sourceHandle = i < j ? 'right' : 'left';
+        const targetHandle = i < j ? 'left' : 'right';
         
         console.log(`  ├─ Edge: ${family.students[i].name} ↔ ${family.students[j].name}`);
         console.log(`  │  └─ Tipo: ${relationshipType} (${RELATIONSHIP_LABELS[relationshipType]})`);
