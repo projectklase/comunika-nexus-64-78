@@ -66,6 +66,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CredentialsDialog } from './CredentialsDialog';
 import { useDuplicateCheck, DuplicateCheckResult } from '@/hooks/useDuplicateCheck';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
+import { SiblingGuardianSuggestion } from './SiblingGuardianSuggestion';
 import { useSchool } from '@/contexts/SchoolContext';
 
 interface StudentFormStepsProps {
@@ -109,6 +110,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const [duplicateCheck, setDuplicateCheck] = useState<DuplicateCheckResult | null>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
+  const [showSiblingSuggestion, setShowSiblingSuggestion] = useState(false);
+  const [siblingCandidates, setSiblingCandidates] = useState<any[]>([]);
 
   // Helper para mapear campos do backend para o DuplicateWarning
   const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
@@ -527,7 +530,13 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     }
     
     // 3. Se passou em ambas validações, avança
+    const nextStepNumber = currentStep + 1;
     setCurrentStep(prev => Math.min(prev + 1, 6));
+
+    // 4. Detectar irmãos ao avançar para Step 4 (Responsável)
+    if (nextStepNumber === 4 && !student) {
+      await detectSiblings();
+    }
   };
 
   const prevStep = () => {
@@ -563,6 +572,56 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     const guardians = [...(formData.student?.guardians || [])];
     guardians[index] = { ...guardians[index], ...updates };
     updateFormData({ student: { guardians } });
+  };
+
+  // Detectar possíveis irmãos
+  const detectSiblings = async () => {
+    const phone = formData.student?.phones?.[0];
+    const address = formData.student?.address;
+
+    if (!phone && !address) {
+      return;
+    }
+
+    const result = await checkDuplicates({
+      phone,
+      address,
+    }, student?.id);
+
+    // Filtrar similaridades de telefone/endereço que tenham guardians
+    const phoneSimilar = result.similarities.find(s => s.type === 'phone');
+    const addressSimilar = result.similarities.find(s => s.type === 'address');
+
+    const candidates = [
+      ...(phoneSimilar?.existingUsers || []),
+      ...(addressSimilar?.existingUsers || []),
+    ].filter((user, index, self) => 
+      // Remove duplicatas e filtra apenas quem tem guardians
+      self.findIndex(u => u.id === user.id) === index &&
+      user.guardians && user.guardians.length > 0
+    );
+
+    if (candidates.length > 0) {
+      setSiblingCandidates(candidates);
+      setShowSiblingSuggestion(true);
+    }
+  };
+
+  // Copiar guardians de um irmão
+  const handleCopyGuardians = (guardians: any[]) => {
+    updateFormData({
+      student: {
+        guardians: guardians.map(g => ({
+          id: crypto.randomUUID(), // Novo ID sempre
+          name: g.name,
+          relation: g.relation,
+          phone: g.phone || '',
+          email: g.email || '',
+          isPrimary: g.isPrimary || false,
+        }))
+      }
+    });
+    toast.success('Responsáveis copiados com sucesso!');
   };
 
   const handleResetPassword = () => {
@@ -1914,6 +1973,14 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de Sugestão de Responsáveis de Irmãos */}
+    <SiblingGuardianSuggestion
+      open={showSiblingSuggestion}
+      onOpenChange={setShowSiblingSuggestion}
+      similarStudents={siblingCandidates}
+      onCopyGuardians={handleCopyGuardians}
+    />
     </>
   );
 }
