@@ -187,19 +187,28 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
       for (let j = i + 1; j < family.students.length; j++) {
         const student1Id = family.students[i].id;
         const student2Id = family.students[j].id;
-        // ✨ PRIORIDADE: Se estão na mesma família, são IRMÃOS (override do banco)
-        // Não importa o que está registrado no banco, alunos da mesma família = irmãos
-        const relationshipType = 'SIBLING';
+        
+        // ✅ Buscar relacionamento REAL do banco
+        const key = [student1Id, student2Id].sort().join('-');
+        const relationshipType = relationshipMap.get(key) || 'SIBLING'; // Default SIBLING se não cadastrado
         
         // Estilos por tipo de relacionamento
         const edgeStyles = getEdgeStyleByRelationship(relationshipType);
         
-        // Determinar handles laterais baseado na posição relativa
-        const sourceHandle = i < j ? 'right' : 'left';
-        const targetHandle = i < j ? 'left' : 'right';
+        // ✅ Handles inteligentes: lateral apenas para SIBLING, vertical para outros
+        const isLateralConnection = relationshipType === 'SIBLING';
+        
+        const sourceHandle = isLateralConnection 
+          ? (i < j ? 'right' : 'left')  // Irmãos: lateral
+          : 'bottom';                    // Outros: vertical (bottom → top)
+        
+        const targetHandle = isLateralConnection
+          ? (i < j ? 'left' : 'right')   // Irmãos: lateral
+          : 'top';                       // Outros: vertical
         
         console.log(`  ├─ Edge: ${family.students[i].name} ↔ ${family.students[j].name}`);
         console.log(`  │  └─ Tipo: ${relationshipType} (${RELATIONSHIP_LABELS[relationshipType]})`);
+        console.log(`  │  └─ Handles: ${sourceHandle} → ${targetHandle}`);
         console.log(`  │  └─ Estilo:`, edgeStyles.style);
         
         edges.push({
