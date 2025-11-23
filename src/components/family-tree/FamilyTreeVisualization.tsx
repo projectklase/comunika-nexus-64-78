@@ -236,7 +236,10 @@ function FamilyTreeVisualizationInner({
         {/* ✅ Sidebar de detalhes da família (Fase 3) */}
         <FamilyDetailsSidebar
           selectedFamily={selectedFamily}
-          onClose={resetSelection}
+          onClose={() => {
+            resetSelection();
+            if (onFamilySelect) onFamilySelect(null);
+          }}
           onNext={selectNextFamily}
           onPrevious={selectPreviousFamily}
           totalFamilies={filteredCount}
