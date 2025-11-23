@@ -192,6 +192,12 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
         const key = [student1Id, student2Id].sort().join('-');
         const relationshipType = relationshipMap.get(key) || 'SIBLING'; // Default SIBLING se não cadastrado
         
+        // 🚫 Ignorar GODPARENT_GODCHILD entre alunos (só faz sentido entre responsável → aluno)
+        if (relationshipType === 'GODPARENT_GODCHILD') {
+          console.log(`  ⚠️  Ignorando GODPARENT_GODCHILD inválido entre alunos: ${family.students[i].name} ↔ ${family.students[j].name}`);
+          continue;
+        }
+        
         // Estilos por tipo de relacionamento
         const edgeStyles = getEdgeStyleByRelationship(relationshipType);
         
@@ -253,6 +259,12 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
     const isCrossFamily = student1Info.familyIndex !== student2Info.familyIndex;
     
     if (!isCrossFamily) return; // Já foi criado no loop principal
+    
+    // 🚫 Ignorar GODPARENT_GODCHILD entre alunos (só faz sentido entre responsável → aluno)
+    if (rel.relationshipType === 'GODPARENT_GODCHILD') {
+      console.log(`  ⚠️  Ignorando GODPARENT_GODCHILD inválido entre alunos cross-family`);
+      return;
+    }
     
     // Criar ID da edge (normalizado para evitar duplicatas A-B vs B-A)
     const edgeId = `relationship-${[rel.studentId, rel.relatedStudentId].sort().join('-')}`;
