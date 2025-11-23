@@ -26,7 +26,8 @@ import {
   TreePine,
   UserCircle2,
   ExternalLink,
-  Pencil
+  Pencil,
+  Wrench
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
 import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisualization';
 import { useFamilyRelationsState } from '@/hooks/useFamilyRelationsState';
 import { StudentFormSteps } from '@/components/students/StudentFormSteps';
+import { cleanInvalidRelationships } from '@/utils/fix-family-relationships';
 
 
 export default function FamilyRelationsPage() {
@@ -48,6 +50,7 @@ export default function FamilyRelationsPage() {
   // Estados para modal de edição de aluno
   const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [isCleaningRelationships, setIsCleaningRelationships] = useState(false);
 
   // ✅ Estado global compartilhado (Fase 4)
   const {
@@ -174,6 +177,37 @@ export default function FamilyRelationsPage() {
     }
   };
 
+  const handleCleanInvalidRelationships = async () => {
+    if (!currentSchool?.id) {
+      toast.error('Escola não identificada');
+      return;
+    }
+
+    setIsCleaningRelationships(true);
+    try {
+      const fixes = await cleanInvalidRelationships(currentSchool.id);
+      
+      if (fixes.length === 0) {
+        toast.success('✅ Nenhum relacionamento inválido encontrado!');
+      } else {
+        toast.success(
+          `🔧 ${fixes.length} relacionamento${fixes.length > 1 ? 's' : ''} inválido${fixes.length > 1 ? 's' : ''} removido${fixes.length > 1 ? 's' : ''}!`,
+          {
+            description: 'GODPARENT_GODCHILD foi removido de familyRelationships (exclusivo para Guardian→Student)'
+          }
+        );
+        
+        // Recarregar dados após limpeza
+        loadFamilyDetails();
+      }
+    } catch (error) {
+      console.error('Erro ao limpar relacionamentos:', error);
+      toast.error('Falha ao limpar relacionamentos inválidos');
+    } finally {
+      setIsCleaningRelationships(false);
+    }
+  };
+
   // ✅ Filtro de famílias usando busca global (Fase 4)
   const filteredFamilies = families.filter(family =>
     family.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -215,23 +249,45 @@ export default function FamilyRelationsPage() {
           </div>
         </div>
         
-        <Button
-          onClick={handleExport}
-          disabled={isExporting || !metrics}
-          className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
-        >
-          {isExporting ? (
-            <>
-              <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              Exportando...
-            </>
-          ) : (
-            <>
-              <FileSpreadsheet className="h-4 w-4" />
-              Exportar Excel
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleCleanInvalidRelationships}
+            disabled={isCleaningRelationships}
+            variant="destructive"
+            className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 gap-2"
+            title="Remove relacionamentos GODPARENT_GODCHILD inválidos de familyRelationships"
+          >
+            {isCleaningRelationships ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                Limpando...
+              </>
+            ) : (
+              <>
+                <Wrench className="h-4 w-4" />
+                Limpar Inválidos
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={handleExport}
+            disabled={isExporting || !metrics}
+            className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
+          >
+            {isExporting ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                Exportando...
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="h-4 w-4" />
+                Exportar Excel
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Métricas Resumidas */}
