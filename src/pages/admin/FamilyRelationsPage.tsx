@@ -3,6 +3,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -327,15 +328,30 @@ export default function FamilyRelationsPage() {
         </Card>
       )}
 
-      {/* ✅ Busca Global (Fase 4) */}
+      {/* ✅ Busca Global com botão limpar (Fase 4 + 4.2) */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar responsável, aluno ou email..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-12 h-12 text-base bg-background/50 backdrop-blur-sm border-border"
-              />
+        
+        <Input
+          placeholder="Buscar responsável, aluno ou email..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="pl-12 pr-32 h-12 text-base bg-background/50 backdrop-blur-sm border-border"
+        />
+        
+        {/* ✅ Botão X para limpar busca (Fase 4.2) */}
+        {searchInput.length > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchInput('')}
+            className="absolute right-24 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted/50"
+            title="Limpar busca"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        )}
+        
         {filteredFamilies.length > 0 && families.length > 0 && (
           <Badge 
             variant="secondary" 

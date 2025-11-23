@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { useModalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface SelectedFamily {
   guardianId: string;
@@ -32,10 +33,38 @@ export function FamilyDetailsSidebar({
   onPrevious,
   totalFamilies,
 }: FamilyDetailsSidebarProps) {
+  // ✅ Atalhos de teclado (Fase 4.2): ESC fecha, ← e → navegam
+  useModalKeyboardShortcuts(!!selectedFamily, onClose, [
+    {
+      key: 'ArrowLeft',
+      action: onPrevious,
+      description: 'Família Anterior (←)',
+      disabled: false
+    },
+    {
+      key: 'ArrowRight',
+      action: onNext,
+      description: 'Próxima Família (→)',
+      disabled: false
+    }
+  ]);
+
   if (!selectedFamily) return null;
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-80 bg-background/95 backdrop-blur-xl border-l border-border shadow-2xl z-50 animate-slide-in-right overflow-y-auto">
+    <>
+      {/* ✅ Overlay para fechar ao clicar fora (Fase 4.2) */}
+      <div 
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm z-40 animate-in fade-in duration-300"
+        onClick={onClose}
+        aria-label="Fechar sidebar"
+      />
+      
+      {/* Sidebar */}
+      <div 
+        className="absolute right-0 top-0 bottom-0 w-80 bg-background/95 backdrop-blur-xl border-l border-border shadow-2xl z-50 animate-slide-in-right overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
       {/* Header com controles */}
       <div className="sticky top-0 bg-gradient-to-br from-primary/10 to-background border-b border-border p-4">
         <div className="flex items-center justify-between mb-3">
@@ -183,6 +212,7 @@ export function FamilyDetailsSidebar({
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
