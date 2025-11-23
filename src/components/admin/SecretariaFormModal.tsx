@@ -409,14 +409,26 @@ export function SecretariaFormModal({
                   setFormData(prev => ({ ...prev, email: prev.email.trim() }));
                   handleBlur('email');
                   
-                  // Verificar duplicatas por email (alerta apenas)
+                  // Verificar duplicatas por email
                   if (!isEditing && formData.email.includes('@')) {
                     const result = await checkDuplicates(
                       { email: formData.email },
                       secretaria?.id
                     );
                     
-                    if (result.hasSimilarities) {
+                    // Priorizar bloqueios (email duplicado)
+                    if (result.hasBlocking) {
+                      const issue = result.blockingIssues.find(i => i.field === 'email');
+                      if (issue) {
+                        setErrors(prev => ({ ...prev, email: issue.message }));
+                        setTouched(prev => ({ ...prev, email: true }));
+                        toast.error(issue.message);
+                        setDuplicateCheck(result);
+                        setShowDuplicateModal(true);
+                      }
+                    } 
+                    // Avisos de similaridade (mantém comportamento atual)
+                    else if (result.hasSimilarities) {
                       toast.warning('Este email pode já estar cadastrado. Verifique antes de continuar.');
                     }
                   }
