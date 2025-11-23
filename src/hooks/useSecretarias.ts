@@ -100,13 +100,17 @@ export function useSecretarias() {
         }
       });
 
-      // 🔍 DEBUG: Log completo da resposta
-      console.log('🔍 Full response:', { 
-        hasError: !!response.error, 
+      // 🔍 FASE 1: Log ULTRA detalhado da resposta com stringify
+      console.log('🔍 Full response (stringify):', JSON.stringify({
+        hasError: !!response.error,
         hasData: !!response.data,
         data: response.data,
-        error: response.error 
-      });
+        errorType: response.error?.constructor?.name,
+        errorMessage: response.error?.message,
+        errorContext: (response.error as any)?.context,
+        errorDetails: (response.error as any)?.details,
+        errorStack: response.error?.stack
+      }, null, 2));
 
       // ✅ PRIORIDADE 1: Verificar response.data primeiro (contém o body JSON mesmo com erro HTTP)
       if (response.data && !response.data.success && response.data.error) {
@@ -114,15 +118,30 @@ export function useSecretarias() {
         throw new Error(response.data.error);
       }
       
-      // ✅ PRIORIDADE 2: Verificar response.error como fallback
+      // 🔍 FASE 2: Verificar TODAS as propriedades ocultas do erro
       if (response.error) {
         const errorData = response.error as any;
+        
+        // Log de TODAS as propriedades do objeto de erro
+        console.log('🔍 Error object keys:', Object.keys(errorData));
+        console.log('🔍 Error object (full):', errorData);
+        console.log('🔍 Error context:', errorData.context);
+        console.log('🔍 Error details:', errorData.details);
+        console.log('🔍 Error body:', errorData.body);
+        console.log('🔍 Error response:', errorData.response);
+        
+        // Tentar extrair mensagem de TODAS as possíveis localizações
         const errorMessage = 
-          errorData.message || 
-          (typeof errorData === 'string' ? errorData : null) || 
+          errorData.context?.error ||           // Pode estar no context.error
+          errorData.context?.message ||         // Ou no context.message
+          errorData.details?.error ||           // Ou no details.error
+          errorData.details?.message ||         // Ou no details.message
+          errorData.body?.error ||              // Ou no body.error
+          errorData.response?.error ||          // Ou no response.error
+          errorData.message ||                  // Ou diretamente no message
           'Erro ao criar secretaria';
         
-        console.error('❌ Edge function error object (fallback):', errorData);
+        console.error('❌ Final extracted error message:', errorMessage);
         throw new Error(errorMessage);
       }
 
