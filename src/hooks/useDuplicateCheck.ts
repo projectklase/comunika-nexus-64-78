@@ -11,12 +11,22 @@ export interface Address {
   zip?: string;
 }
 
+export interface Guardian {
+  id?: string;
+  name: string;
+  relation: string;
+  phone?: string;
+  email?: string;
+  isPrimary: boolean;
+}
+
 interface ExistingUser {
   id: string;
   name: string;
   email: string;
   dob?: string;
   enrollmentNumber?: string;
+  guardians?: Guardian[];
 }
 
 interface BlockingIssue {
@@ -193,7 +203,7 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
         }
       }
 
-      // 5. VERIFICAR TELEFONE PRINCIPAL (ALERTA MÉDIO)
+      // 5. VERIFICAR TELEFONE PRINCIPAL (ALERTA MÉDIO + BUSCAR GUARDIANS)
       if (data.phone) {
         const cleanPhone = data.phone.replace(/\D/g, '');
         
@@ -207,21 +217,40 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
         if (phoneError) {
           console.error('Erro ao verificar telefone:', phoneError);
         } else if (phoneDuplicates && phoneDuplicates.length > 0) {
+          // Buscar guardians dos alunos similares
+          const { data: guardiansData } = await supabase
+            .from('guardians')
+            .select('*')
+            .in('student_id', phoneDuplicates.map(u => u.id));
+
+          const usersWithGuardians = phoneDuplicates.map(u => {
+            const userGuardians = guardiansData?.filter(g => g.student_id === u.id) || [];
+            return {
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              guardians: userGuardians.map(g => ({
+                id: g.id,
+                name: g.name,
+                relation: g.relation,
+                phone: g.phone || undefined,
+                email: g.email || undefined,
+                isPrimary: g.is_primary || false,
+              })),
+            };
+          });
+
           result.similarities.push({
             type: 'phone',
             severity: 'medium',
             message: `Encontramos ${phoneDuplicates.length} aluno(s) com o mesmo telefone`,
-            existingUsers: phoneDuplicates.map(u => ({
-              id: u.id,
-              name: u.name,
-              email: u.email,
-            })),
+            existingUsers: usersWithGuardians,
           });
           result.hasSimilarities = true;
         }
       }
 
-      // 6. VERIFICAR ENDEREÇO COMPLETO (ALERTA MÉDIO)
+      // 6. VERIFICAR ENDEREÇO COMPLETO (ALERTA MÉDIO + BUSCAR GUARDIANS)
       if (data.address?.street && data.address?.number && data.address?.city) {
         const { data: allProfiles, error: addressError } = await supabase
           .from('profiles')
@@ -245,15 +274,34 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
           });
 
           if (addressDuplicates.length > 0) {
+            // Buscar guardians dos alunos similares
+            const { data: guardiansData } = await supabase
+              .from('guardians')
+              .select('*')
+              .in('student_id', addressDuplicates.map(u => u.id));
+
+            const usersWithGuardians = addressDuplicates.map(u => {
+              const userGuardians = guardiansData?.filter(g => g.student_id === u.id) || [];
+              return {
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                guardians: userGuardians.map(g => ({
+                  id: g.id,
+                  name: g.name,
+                  relation: g.relation,
+                  phone: g.phone || undefined,
+                  email: g.email || undefined,
+                  isPrimary: g.is_primary || false,
+                })),
+              };
+            });
+
             result.similarities.push({
               type: 'address',
               severity: 'medium',
               message: `Encontramos ${addressDuplicates.length} aluno(s) com o mesmo endereço`,
-              existingUsers: addressDuplicates.map(u => ({
-                id: u.id,
-                name: u.name,
-                email: u.email,
-              })),
+              existingUsers: usersWithGuardians,
             });
             result.hasSimilarities = true;
           }
