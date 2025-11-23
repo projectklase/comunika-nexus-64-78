@@ -10,6 +10,16 @@ interface StudentRelationship {
   customRelationship?: string;
 }
 
+// ✨ FASE 3: Interface para relacionamentos Guardian → Student
+interface GuardianRelationship {
+  guardianId: string;
+  guardianName: string;
+  guardianOf: string; // ID do aluno que tem esse guardian
+  relationshipType: 'GODPARENT' | 'EXTENDED_FAMILY' | 'OTHER';
+  studentId: string; // ID do aluno afilhado/relacionado
+  customRelationship?: string;
+}
+
 /**
  * Buscar relacionamentos reais cadastrados em student_notes
  */
@@ -45,6 +55,42 @@ async function fetchStudentRelationships(
 }
 
 /**
+ * ✨ FASE 3: Buscar relacionamentos Guardian → Student
+ */
+async function fetchGuardianRelationships(
+  studentIds: string[]
+): Promise<GuardianRelationship[]> {
+  if (studentIds.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, student_notes')
+    .in('id', studentIds);
+
+  if (!profiles) return [];
+
+  const guardianRelationships: GuardianRelationship[] = [];
+
+  for (const profile of profiles) {
+    const notes = parseStudentNotes(profile.student_notes);
+    if (!notes?.guardianRelationships) continue;
+
+    for (const rel of notes.guardianRelationships) {
+      guardianRelationships.push({
+        guardianId: rel.guardianId,
+        guardianName: rel.guardianName,
+        guardianOf: rel.guardianOf,
+        relationshipType: rel.relationshipType as 'GODPARENT' | 'EXTENDED_FAMILY' | 'OTHER',
+        studentId: profile.id, // Aluno que tem este guardian relationship
+        customRelationship: rel.customRelationship,
+      });
+    }
+  }
+
+  return guardianRelationships;
+}
+
+/**
  * Retorna estilo de edge baseado no tipo de relacionamento
  */
 function getEdgeStyleByRelationship(type: RelationshipType) {
@@ -70,13 +116,6 @@ function getEdgeStyleByRelationship(type: RelationshipType) {
         strokeDasharray: '3,3',
       },
     },
-    GODPARENT_GODCHILD: {
-      style: {
-        stroke: 'hsl(var(--chart-5))', // Azul para padrinho-afilhado
-        strokeWidth: 1.5,
-        strokeDasharray: '8,4,2,4',
-      },
-    },
     OTHER: {
       style: {
         stroke: 'hsl(var(--muted-foreground))',
@@ -93,7 +132,7 @@ function getEdgeStyleByRelationship(type: RelationshipType) {
     },
   };
 
-  return styles[type] || styles.SIBLING;
+  return styles[type] || styles.OTHER;
 }
 
 export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTreeData> {
@@ -103,10 +142,14 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
   // Coletar todos os IDs de alunos
   const allStudentIds = families.flatMap(f => f.students.map(s => s.id));
   
-  // ✅ Buscar relacionamentos reais
+  // ✅ Buscar relacionamentos reais (Student ↔ Student)
   const realRelationships = await fetchStudentRelationships(allStudentIds);
   
-  console.log('🌳 [Family Tree Debug] Relacionamentos encontrados:', realRelationships.length);
+  // ✨ FASE 3: Buscar relacionamentos Guardian → Student
+  const guardianRelationships = await fetchGuardianRelationships(allStudentIds);
+  
+  console.log('🌳 [Family Tree Debug] Relacionamentos Student ↔ Student:', realRelationships.length);
+  console.log('🌳 [Family Tree Debug] Relacionamentos Guardian → Student:', guardianRelationships.length);
   
   // Criar um Map para acesso rápido
   const relationshipMap = new Map<string, RelationshipType>();
@@ -198,12 +241,6 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
           continue;
         }
         
-        // 🚫 Ignorar GODPARENT_GODCHILD entre alunos (só faz sentido entre responsável → aluno)
-        if (relationshipType === 'GODPARENT_GODCHILD') {
-          console.warn(`  ⚠️  ERRO DE CADASTRO: ${family.students[i].name} ↔ ${family.students[j].name} está como PADRINHO-AFILHADO, mas isso só é válido entre RESPONSÁVEL → ALUNO. Corrija o cadastro para refletir o responsável correto!`);
-          continue;
-        }
-        
         // Estilos por tipo de relacionamento
         const edgeStyles = getEdgeStyleByRelationship(relationshipType);
         
@@ -237,7 +274,54 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
     yOffset += FAMILY_SPACING;
   });
   
-  // 5. ✨ CONECTAR RELACIONAMENTOS ENTRE FAMÍLIAS DIFERENTES (primos, tios, padrinhos, etc.)
+  // 5. ✨ FASE 3: CONECTAR RELACIONAMENTOS Guardian → Student (padrinhos/madrinhas)
+  console.log('🌳 [Family Tree Debug] Criando edges Guardian → Student...');
+  
+  guardianRelationships.forEach(gRel => {
+    const guardianNodeId = `guardian-${families.find(f => 
+      f.students.some(s => s.id === gRel.guardianOf)
+    )?.family_key}`;
+    const studentNodeId = `student-${gRel.studentId}`;
+    
+    // Verificar se ambos os nós existem
+    const guardianExists = nodes.some(n => n.id === guardianNodeId);
+    const studentExists = nodes.some(n => n.id === studentNodeId);
+    
+    if (!guardianExists || !studentExists) {
+      console.warn(`  ⚠️  Nós não encontrados para Guardian → Student: ${guardianNodeId} → ${studentNodeId}`);
+      return;
+    }
+    
+    const relationshipLabel = gRel.relationshipType === 'GODPARENT' 
+      ? 'Padrinho/Madrinha' 
+      : gRel.relationshipType === 'EXTENDED_FAMILY'
+      ? 'Família Estendida'
+      : gRel.customRelationship || 'Outro';
+    
+    console.log(`  ├─ Guardian → Student: ${gRel.guardianName} → ${studentNodeId}`);
+    console.log(`  │  └─ Tipo: ${gRel.relationshipType} (${relationshipLabel})`);
+    
+    edges.push({
+      id: `godparent-${gRel.guardianId}-${gRel.studentId}`,
+      source: guardianNodeId,
+      target: studentNodeId,
+      sourceHandle: 'bottom',
+      targetHandle: 'top',
+      type: 'smoothstep',
+      animated: true,
+      style: {
+        stroke: 'hsl(var(--chart-5))', // Azul para padrinhos
+        strokeWidth: 3,
+        strokeDasharray: '8,4',
+      },
+      data: {
+        relationshipType: gRel.relationshipType,
+        relationshipLabel,
+      },
+    });
+  });
+  
+  // 6. ✨ CONECTAR RELACIONAMENTOS ENTRE FAMÍLIAS DIFERENTES (primos, tios, etc.)
   console.log('🌳 [Family Tree Debug] Criando edges cross-family...');
   
   // Criar Set de edges já criadas para evitar duplicatas
@@ -265,12 +349,6 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
     const isCrossFamily = student1Info.familyIndex !== student2Info.familyIndex;
     
     if (!isCrossFamily) return; // Já foi criado no loop principal
-    
-    // 🚫 Ignorar GODPARENT_GODCHILD entre alunos (só faz sentido entre responsável → aluno)
-    if (rel.relationshipType === 'GODPARENT_GODCHILD') {
-      console.warn(`  ⚠️  ERRO DE CADASTRO: Relacionamento PADRINHO-AFILHADO detectado entre alunos (cross-family). Isso só é válido entre RESPONSÁVEL → ALUNO. Corrija o cadastro!`);
-      return;
-    }
     
     // Criar ID da edge (normalizado para evitar duplicatas A-B vs B-A)
     const edgeId = `relationship-${[rel.studentId, rel.relatedStudentId].sort().join('-')}`;
@@ -308,7 +386,9 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
   
   console.log(`🌳 [Family Tree Debug] Árvore construída:`);
   console.log(`  ├─ ${nodes.length} nós criados`);
-  console.log(`  └─ ${edges.length} conexões criadas`);
+  console.log(`  ├─ ${edges.filter(e => e.data?.relationshipType).length} edges de relacionamento Student ↔ Student`);
+  console.log(`  ├─ ${edges.filter(e => e.id.startsWith('godparent-')).length} edges Guardian → Student`);
+  console.log(`  └─ ${edges.length} conexões totais`);
   
   return { nodes, edges };
 }

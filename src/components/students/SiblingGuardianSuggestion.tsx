@@ -104,11 +104,18 @@ function inferRelationshipsFromGuardians(
   return null;
 }
 
+// ✅ FASE 4: Removido GODPARENT_GODCHILD (agora só via guardianRelationships)
 const RELATIONSHIP_OPTIONS = [
   { value: 'SIBLING', label: '👨‍👩‍👧‍👦 Irmão/Irmã', description: 'Compartilham os mesmos pais' },
   { value: 'COUSIN', label: '👥 Primo/Prima', description: 'Filhos de irmãos dos pais' },
   { value: 'UNCLE_NEPHEW', label: '👨‍👦 Tio-Sobrinho', description: 'Relação tio/tia com sobrinho' },
-  { value: 'GODPARENT_GODCHILD', label: '🕊️ Padrinho-Afilhado', description: 'Relação de compadrio' },
+  { value: 'OTHER', label: '✏️ Outro', description: 'Digite a relação específica' },
+];
+
+// ✨ FASE 3: Opções de relacionamento Guardian → Student
+const GUARDIAN_RELATIONSHIP_OPTIONS = [
+  { value: 'GODPARENT', label: '🕊️ Padrinho/Madrinha', description: 'Relação de compadrio' },
+  { value: 'EXTENDED_FAMILY', label: '👨‍👩‍👧 Família Estendida', description: 'Avós, tios, primos adultos' },
   { value: 'OTHER', label: '✏️ Outro', description: 'Digite a relação específica' },
 ];
 
@@ -123,6 +130,10 @@ export function SiblingGuardianSuggestion({
   const [customRelationship, setCustomRelationship] = useState<string>('');
   const [showRelationshipSelector, setShowRelationshipSelector] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<ExistingStudent | null>(null);
+  
+  // ✨ FASE 3: Estado para relacionamentos Guardian → Student
+  const [showGuardianRelationship, setShowGuardianRelationship] = useState(false);
+  const [selectedGuardianForRelationship, setSelectedGuardianForRelationship] = useState<Guardian | null>(null);
 
   const studentsWithGuardians = similarStudents.filter(s => s.guardians && s.guardians.length > 0);
 
@@ -270,7 +281,7 @@ export function SiblingGuardianSuggestion({
                 {student.guardians?.map((guardian, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3 p-3 rounded-md bg-background/50 border border-border/30"
+                    className="flex items-start gap-3 p-3 rounded-md bg-background/50 border border-border/30 group"
                   >
                     <Avatar className="h-8 w-8 mt-0.5">
                       <AvatarFallback className="bg-muted text-xs">
@@ -278,7 +289,7 @@ export function SiblingGuardianSuggestion({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-sm text-foreground">{guardian.name}</p>
                         <Badge variant="secondary" className="text-xs">
                           {guardian.relation}
@@ -288,6 +299,19 @@ export function SiblingGuardianSuggestion({
                             Principal
                           </Badge>
                         )}
+                        {/* ✨ FASE 3: Botão para registrar relacionamento Guardian → Student */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            setSelectedGuardianForRelationship(guardian);
+                            setShowGuardianRelationship(true);
+                          }}
+                        >
+                          <Users className="w-3 h-3 mr-1" />
+                          É padrinho/madrinha?
+                        </Button>
                       </div>
                       <div className="flex flex-col gap-1 mt-1">
                         {guardian.phone && (
@@ -422,6 +446,18 @@ export function SiblingGuardianSuggestion({
             </p>
           </div>
         </div>
+
+        {/* ✨ FASE 3: Informação sobre padrinhos/madrinhas */}
+        <Alert className="mt-4 bg-blue-500/10 border-blue-500/20">
+          <Sparkles className="h-4 w-4 text-blue-500" />
+          <AlertDescription className="text-sm">
+            <span className="font-semibold text-blue-700">Dica:</span>{' '}
+            <span className="text-blue-600">
+              Para registrar padrinhos/madrinhas, passe o mouse sobre o responsável e clique em "É padrinho/madrinha?".
+              Isso criará um relacionamento especial entre o responsável e o aluno.
+            </span>
+          </AlertDescription>
+        </Alert>
 
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
