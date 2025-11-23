@@ -151,9 +151,22 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
   console.log('🌳 [Family Tree Debug] Relacionamentos Student ↔ Student:', realRelationships.length);
   console.log('🌳 [Family Tree Debug] Relacionamentos Guardian → Student:', guardianRelationships.length);
   
-  // Criar um Map para acesso rápido
+  // Criar um Map para acesso rápido, validando os tipos de relacionamento
   const relationshipMap = new Map<string, RelationshipType>();
+  const validTypes: RelationshipType[] = ['SIBLING', 'COUSIN', 'UNCLE_NEPHEW', 'OTHER'];
+  
   realRelationships.forEach(rel => {
+    // ⚠️ FASE 4 VALIDAÇÃO: Filtrar relacionamentos inválidos
+    if (!validTypes.includes(rel.relationshipType)) {
+      console.error(
+        `❌ FASE 4 VALIDAÇÃO: Relacionamento inválido detectado!\n` +
+        `   Tipo: ${rel.relationshipType}\n` +
+        `   Entre: ${rel.studentId} ↔ ${rel.relatedStudentId}\n` +
+        `   ⚠️ Este relacionamento será ignorado.`
+      );
+      return; // Ignora relacionamento inválido
+    }
+    
     const key = [rel.studentId, rel.relatedStudentId].sort().join('-');
     relationshipMap.set(key, rel.relationshipType);
     console.log(`  ├─ ${key} → ${rel.relationshipType}`);

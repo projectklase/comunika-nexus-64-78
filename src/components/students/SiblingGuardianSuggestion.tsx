@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Copy, Users, Phone, Mail, AlertTriangle, CheckCircle, X, Sparkles } from 'lucide-react';
 import { Guardian } from '@/hooks/useDuplicateCheck';
+import { toast } from 'sonner';
 
 interface ExistingStudent {
   id: string;
@@ -186,6 +187,14 @@ export function SiblingGuardianSuggestion({
 
   const handleConfirmAndCopy = () => {
     if (!selectedStudent) return;
+
+    // ⚠️ FASE 4 VALIDAÇÃO: Prevenir relacionamentos inválidos
+    const validTypes = ['SIBLING', 'COUSIN', 'UNCLE_NEPHEW', 'OTHER'];
+    if (!validTypes.includes(selectedRelationship)) {
+      console.error('❌ FASE 4 VALIDAÇÃO: Tipo de relacionamento inválido:', selectedRelationship);
+      toast.error('Tipo de relacionamento inválido entre alunos');
+      return;
+    }
 
     // Remove IDs para criar novos registros
     const newGuardians = (selectedStudent.guardians || []).map(g => ({
