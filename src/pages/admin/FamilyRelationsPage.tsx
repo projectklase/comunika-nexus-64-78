@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFamilyMetrics } from '@/hooks/useFamilyMetrics';
 import { useSchool } from '@/contexts/SchoolContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,25 +19,15 @@ import {
   ArrowLeft,
   TrendingUp,
   BarChart3,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Network
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { RELATIONSHIP_LABELS, type RelationshipType } from '@/types/family-metrics';
+import { RELATIONSHIP_LABELS, type RelationshipType, type FamilyGroup } from '@/types/family-metrics';
 import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
+import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisualization';
 
-interface FamilyGroup {
-  family_key: string;
-  guardian_name: string;
-  guardian_email: string | null;
-  guardian_phone: string | null;
-  students: Array<{
-    id: string;
-    name: string;
-    avatar?: string;
-  }>;
-  student_count: number;
-}
 
 export default function FamilyRelationsPage() {
   const navigate = useNavigate();
@@ -100,6 +91,7 @@ export default function FamilyRelationsPage() {
             guardian_phone: guardian.phone,
             students: [],
             student_count: 0,
+            registered_relationships: 0,
           });
         }
 
@@ -297,143 +289,205 @@ export default function FamilyRelationsPage() {
         </Card>
       )}
 
-      {/* Lista de Famílias */}
-      <Card className="glass-card">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-pink-400" />
-                Famílias com Múltiplos Alunos
-              </CardTitle>
-              <CardDescription>
-                Visualize e gerencie responsáveis compartilhados
-              </CardDescription>
-            </div>
-            <Button
-              onClick={loadFamilyDetails}
-              disabled={loadingFamilies}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              {loadingFamilies ? (
-                <>
-                  <div className="h-3 w-3 border-2 border-current/20 border-t-current rounded-full animate-spin" />
-                  Carregando...
-                </>
-              ) : (
-                <>
-                  <Download className="h-3 w-3" />
-                  Carregar Detalhes
-                </>
+      {/* Visualização: Lista ou Árvore */}
+      <Tabs defaultValue="list" className="space-y-6">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsTrigger value="list" className="gap-2">
+            <Users className="h-4 w-4" />
+            Lista
+          </TabsTrigger>
+          <TabsTrigger value="tree" className="gap-2">
+            <Network className="h-4 w-4" />
+            Árvore Genealógica
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* TAB 1: Lista */}
+        <TabsContent value="list">
+          <Card className="glass-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-pink-400" />
+                    Famílias com Múltiplos Alunos
+                  </CardTitle>
+                  <CardDescription>
+                    Visualize e gerencie responsáveis compartilhados
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={loadFamilyDetails}
+                  disabled={loadingFamilies}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  {loadingFamilies ? (
+                    <>
+                      <div className="h-3 w-3 border-2 border-current/20 border-t-current rounded-full animate-spin" />
+                      Carregando...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-3 w-3" />
+                      Carregar Detalhes
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {families.length > 0 && (
+                <div className="relative mb-6">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por responsável ou aluno..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               )}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search */}
-          {families.length > 0 && (
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por responsável ou aluno..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          )}
 
-          {/* Family List */}
-          <ScrollArea className="h-[600px] pr-4">
-            {loadingFamilies ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-32 rounded-xl" />
-                ))}
-              </div>
-            ) : families.length === 0 ? (
-              <div className="text-center py-12">
-                <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-                <p className="text-muted-foreground">
-                  Clique em "Carregar Detalhes" para visualizar as famílias
-                </p>
-              </div>
-            ) : filteredFamilies.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-                <p className="text-muted-foreground">
-                  Nenhuma família encontrada com esse critério
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredFamilies.map((family) => (
-                  <div
-                    key={family.family_key}
-                    className="p-5 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-pink-500/30 transition-all duration-300"
-                  >
-                    {/* Guardian Info */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Heart className="h-4 w-4 text-pink-400" />
-                          <h3 className="font-semibold text-lg text-foreground">
-                            {family.guardian_name}
-                          </h3>
+              <ScrollArea className="h-[600px] pr-4">
+                {loadingFamilies ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-32 rounded-xl" />
+                    ))}
+                  </div>
+                ) : families.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                    <p className="text-muted-foreground">
+                      Clique em "Carregar Detalhes" para visualizar as famílias
+                    </p>
+                  </div>
+                ) : filteredFamilies.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                    <p className="text-muted-foreground">
+                      Nenhuma família encontrada com esse critério
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredFamilies.map((family) => (
+                      <div
+                        key={family.family_key}
+                        className="p-5 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-pink-500/30 transition-all duration-300"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Heart className="h-4 w-4 text-pink-400" />
+                              <h3 className="font-semibold text-lg text-foreground">
+                                {family.guardian_name}
+                              </h3>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                              {family.guardian_email && (
+                                <div className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {family.guardian_email}
+                                </div>
+                              )}
+                              {family.guardian_phone && (
+                                <div className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {family.guardian_phone}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30">
+                            {family.student_count} alunos
+                          </Badge>
                         </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          {family.guardian_email && (
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {family.guardian_email}
+
+                        <div className="flex flex-wrap gap-2">
+                          {family.students.map((student) => (
+                            <div
+                              key={student.id}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
+                            >
+                              {student.avatar ? (
+                                <img
+                                  src={student.avatar}
+                                  alt={student.name}
+                                  className="h-6 w-6 rounded-full"
+                                />
+                              ) : (
+                                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
+                                  {student.name.charAt(0)}
+                                </div>
+                              )}
+                              <span className="text-sm font-medium text-foreground">
+                                {student.name}
+                              </span>
                             </div>
-                          )}
-                          {family.guardian_phone && (
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {family.guardian_phone}
-                            </div>
-                          )}
+                          ))}
                         </div>
                       </div>
-                      <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30">
-                        {family.student_count} alunos
-                      </Badge>
-                    </div>
-
-                    {/* Students */}
-                    <div className="flex flex-wrap gap-2">
-                      {family.students.map((student) => (
-                        <div
-                          key={student.id}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
-                        >
-                          {student.avatar ? (
-                            <img
-                              src={student.avatar}
-                              alt={student.name}
-                              className="h-6 w-6 rounded-full"
-                            />
-                          ) : (
-                            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
-                              {student.name.charAt(0)}
-                            </div>
-                          )}
-                          <span className="text-sm font-medium text-foreground">
-                            {student.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* TAB 2: Árvore Genealógica */}
+        <TabsContent value="tree">
+          <Card className="glass-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Network className="h-5 w-5 text-pink-400" />
+                    Visualização em Grafo
+                  </CardTitle>
+                  <CardDescription>
+                    Explore as conexões familiares de forma interativa
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={loadFamilyDetails}
+                  disabled={loadingFamilies}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  {loadingFamilies ? (
+                    <>
+                      <div className="h-3 w-3 border-2 border-current/20 border-t-current rounded-full animate-spin" />
+                      Carregando...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-3 w-3" />
+                      Carregar Dados
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              {families.length === 0 ? (
+                <div className="text-center py-12">
+                  <Network className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                  <p className="text-muted-foreground">
+                    Clique em "Carregar Dados" para visualizar o grafo de famílias
+                  </p>
+                </div>
+              ) : (
+                <FamilyTreeVisualization families={families} />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

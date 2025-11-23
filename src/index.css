@@ -504,6 +504,54 @@
     -webkit-line-clamp: 3;
   }
 
+  /* ============================================
+     React Flow - Family Tree Customization
+     ============================================ */
+
+  .family-tree-flow .react-flow__node {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .family-tree-flow .react-flow__node:hover {
+    transform: scale(1.05);
+  }
+
+  .family-tree-flow .react-flow__edge-path {
+    stroke-width: 2;
+    transition: stroke-width 0.2s ease;
+  }
+
+  .family-tree-flow .react-flow__edge:hover .react-flow__edge-path {
+    stroke-width: 3;
+  }
+
+  .family-tree-flow .react-flow__controls {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+  }
+
+  .family-tree-flow .react-flow__minimap {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+  }
+
+  .family-tree-flow .react-flow__attribution {
+    opacity: 0.3;
+    font-size: 10px;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
   /* Performance optimizations */
   .will-change-transform {
     will-change: transform;
