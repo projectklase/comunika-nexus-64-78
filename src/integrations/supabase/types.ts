@@ -1576,6 +1576,7 @@ export type Database = {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
       }
+      get_family_metrics: { Args: { school_id_param?: string }; Returns: Json }
       get_post_read_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
