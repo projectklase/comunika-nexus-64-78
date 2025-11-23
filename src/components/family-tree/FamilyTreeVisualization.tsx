@@ -31,6 +31,7 @@ interface FamilyTreeVisualizationProps {
   searchTerm?: string;
   selectedFamilyKey?: string | null;
   onFamilySelect?: (familyKey: string | null) => void;
+  onEditStudent?: (studentId: string) => void;
 }
 
 const nodeTypes = {
@@ -43,6 +44,7 @@ function FamilyTreeVisualizationInner({
   searchTerm,
   selectedFamilyKey,
   onFamilySelect,
+  onEditStudent,
 }: FamilyTreeVisualizationProps) {
   const { currentSchool } = useSchool();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
@@ -287,6 +289,7 @@ function FamilyTreeVisualizationInner({
           onNext={selectNextFamily}
           onPrevious={selectPreviousFamily}
           totalFamilies={filteredCount}
+          onEditStudent={onEditStudent || (() => {})}
         />
       </div>
     </div>
@@ -299,6 +302,7 @@ export function FamilyTreeVisualization({
   searchTerm,
   selectedFamilyKey,
   onFamilySelect,
+  onEditStudent,
 }: FamilyTreeVisualizationProps) {
   return (
     <ReactFlowProvider>
@@ -307,6 +311,7 @@ export function FamilyTreeVisualization({
         searchTerm={searchTerm}
         selectedFamilyKey={selectedFamilyKey}
         onFamilySelect={onFamilySelect}
+        onEditStudent={onEditStudent}
       />
     </ReactFlowProvider>
   );

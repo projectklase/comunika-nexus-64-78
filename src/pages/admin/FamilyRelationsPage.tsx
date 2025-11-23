@@ -633,6 +633,16 @@ export default function FamilyRelationsPage() {
                   searchTerm={searchTerm}
                   selectedFamilyKey={selectedFamilyKey}
                   onFamilySelect={setSelectedFamilyKey}
+                  onEditStudent={async (studentId) => {
+                    const { data } = await supabase
+                      .from('profiles')
+                      .select('*')
+                      .eq('id', studentId)
+                      .single();
+                    
+                    setSelectedStudent(data);
+                    setIsEditStudentModalOpen(true);
+                  }}
                 />
               )}
             </CardContent>
