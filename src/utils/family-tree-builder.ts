@@ -194,6 +194,10 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
         // Estilos por tipo de relacionamento
         const edgeStyles = getEdgeStyleByRelationship(relationshipType);
         
+        // Determinar handles laterais baseado na posição relativa
+        const sourceHandle = i < j ? 'right' : 'left';
+        const targetHandle = i < j ? 'left' : 'right';
+        
         console.log(`  ├─ Edge: ${family.students[i].name} ↔ ${family.students[j].name}`);
         console.log(`  │  └─ Tipo: ${relationshipType} (${RELATIONSHIP_LABELS[relationshipType]})`);
         console.log(`  │  └─ Estilo:`, edgeStyles.style);
@@ -202,6 +206,8 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
           id: `relationship-${student1Id}-${student2Id}`,
           source: `student-${student1Id}`,
           target: `student-${student2Id}`,
+          sourceHandle,
+          targetHandle,
           type: 'smoothstep',
           style: edgeStyles.style,
           data: {
