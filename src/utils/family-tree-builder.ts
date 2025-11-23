@@ -190,11 +190,17 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
         
         // ✅ Buscar relacionamento REAL do banco
         const key = [student1Id, student2Id].sort().join('-');
-        const relationshipType = relationshipMap.get(key) || 'SIBLING'; // Default SIBLING se não cadastrado
+        const relationshipType = relationshipMap.get(key);
+        
+        // Se não houver relacionamento cadastrado, pular este par de alunos
+        if (!relationshipType) {
+          console.log(`  ⚠️  Sem relacionamento cadastrado entre ${family.students[i].name} ↔ ${family.students[j].name} - pulando edge`);
+          continue;
+        }
         
         // 🚫 Ignorar GODPARENT_GODCHILD entre alunos (só faz sentido entre responsável → aluno)
         if (relationshipType === 'GODPARENT_GODCHILD') {
-          console.log(`  ⚠️  Ignorando GODPARENT_GODCHILD inválido entre alunos: ${family.students[i].name} ↔ ${family.students[j].name}`);
+          console.warn(`  ⚠️  ERRO DE CADASTRO: ${family.students[i].name} ↔ ${family.students[j].name} está como PADRINHO-AFILHADO, mas isso só é válido entre RESPONSÁVEL → ALUNO. Corrija o cadastro para refletir o responsável correto!`);
           continue;
         }
         
@@ -262,7 +268,7 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
     
     // 🚫 Ignorar GODPARENT_GODCHILD entre alunos (só faz sentido entre responsável → aluno)
     if (rel.relationshipType === 'GODPARENT_GODCHILD') {
-      console.log(`  ⚠️  Ignorando GODPARENT_GODCHILD inválido entre alunos cross-family`);
+      console.warn(`  ⚠️  ERRO DE CADASTRO: Relacionamento PADRINHO-AFILHADO detectado entre alunos (cross-family). Isso só é válido entre RESPONSÁVEL → ALUNO. Corrija o cadastro!`);
       return;
     }
     
