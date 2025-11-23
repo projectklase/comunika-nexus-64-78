@@ -134,28 +134,37 @@ export function useTeachers() {
       // Generate password if not provided
       const password = teacherData.password || `Prof${Math.floor(Math.random() * 10000)}!`;
       
-      // ✅ NOVO: Passar school_id para a Edge Function
-      const { data, error } = await supabase.functions.invoke('create-demo-user', {
-        body: {
-          email: teacherData.email,
-          password: password,
-          name: teacherData.name,
-          role: 'professor',
-          phone: teacherData.phone,
-          school_id: currentSchool.id, // ← CRÍTICO: vincular à escola
+      // Obter sessão para token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão não encontrada');
+
+      // Fetch manual com controle total sobre erro 409
+      const response = await fetch(
+        `https://yanspolqarficibgovia.supabase.co/functions/v1/create-demo-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhbnNwb2xxYXJmaWNpYmdvdmlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTczMjUsImV4cCI6MjA3NDQzMzMyNX0.QMU9Bxjl9NzyrSgUKeHE0HgcSsBUeFQefjQIoEczRYM'
+          },
+          body: JSON.stringify({
+            email: teacherData.email,
+            password: password,
+            name: teacherData.name,
+            role: 'professor',
+            phone: teacherData.phone,
+            school_id: currentSchool.id
+          })
         }
-      });
+      );
 
-      console.log('🔵 [useTeachers] Resposta da Edge Function:', { data, error });
+      const responseData = await response.json();
 
-      if (error) {
-        console.error('🔴 [useTeachers] Erro na Edge Function:', error);
-        throw error;
-      }
+      console.log('🔵 [useTeachers] Resposta da Edge Function:', { responseData, status: response.status });
 
-      if (data && !data.success) {
-        console.error('🔴 [useTeachers] Edge Function retornou erro:', data.error);
-        throw new Error(data.error || 'Erro ao criar usuário');
+      if (!response.ok || !responseData.success) {
+        throw new Error(responseData.error || 'Erro ao criar professor');
       }
 
       console.log('✅ [useTeachers] Professor criado com sucesso');
@@ -172,7 +181,7 @@ export function useTeachers() {
       await fetchTeachers();
       
       // Return data with password for display
-      return { ...data, password };
+      return { ...responseData, password };
     } catch (err) {
       console.error('🔴 [useTeachers] Erro ao criar professor:', err);
       toast.error(err instanceof Error ? err.message : 'Erro ao criar professor');

@@ -235,23 +235,38 @@ export function useStudents() {
     try {
       const password = studentData.password || `Aluno${Math.floor(Math.random() * 10000)}!`;
       
-      const { data, error } = await supabase.functions.invoke('create-demo-user', {
-        body: {
-          email: studentData.email,
-          password: password,
-          name: studentData.name,
-          role: 'aluno',
-          dob: studentData.dob,
-          phone: studentData.phone,
-          enrollment_number: studentData.enrollment_number,
-          student_notes: studentData.student_notes,
-          school_id: currentSchool.id
-        }
-      });
+      // Obter sessão para token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão não encontrada');
 
-      if (error) throw error;
-      if (data && !data.success) {
-        throw new Error(data.error || 'Erro ao criar usuário');
+      // Fetch manual com controle total sobre erro 409
+      const response = await fetch(
+        `https://yanspolqarficibgovia.supabase.co/functions/v1/create-demo-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhbnNwb2xxYXJmaWNpYmdvdmlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTczMjUsImV4cCI6MjA3NDQzMzMyNX0.QMU9Bxjl9NzyrSgUKeHE0HgcSsBUeFQefjQIoEczRYM'
+          },
+          body: JSON.stringify({
+            email: studentData.email,
+            password: password,
+            name: studentData.name,
+            role: 'aluno',
+            dob: studentData.dob,
+            phone: studentData.phone,
+            enrollment_number: studentData.enrollment_number,
+            student_notes: studentData.student_notes,
+            school_id: currentSchool.id
+          })
+        }
+      );
+
+      const responseData = await response.json();
+
+      if (!response.ok || !responseData.success) {
+        throw new Error(responseData.error || 'Erro ao criar aluno');
       }
 
       // CORREÇÃO 4: Melhor feedback para o usuário
@@ -264,7 +279,7 @@ export function useStudents() {
       await new Promise(resolve => setTimeout(resolve, 5000));
       
       await fetchStudents();
-      return { ...data, password };
+      return { ...responseData, password };
     } catch (err) {
       console.error('Error creating student:', err);
       toast.error(err instanceof Error ? err.message : 'Erro ao criar aluno');

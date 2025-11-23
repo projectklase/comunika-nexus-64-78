@@ -664,7 +664,37 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       onOpenChange(false);
     } catch (error: any) {
       console.error('Erro ao salvar aluno:', error);
-      toast.error(error.message || 'Erro ao salvar aluno');
+      
+      const errorMsg = error.message || String(error);
+      
+      // ✅ Detectar email duplicado e abrir modal específico
+      if (errorMsg.includes('Este email já está cadastrado') ||
+          errorMsg.includes('Email já cadastrado') ||
+          errorMsg.includes('já está cadastrado no sistema') ||
+          errorMsg.includes('duplicate') ||
+          errorMsg.includes('already exists') ||
+          errorMsg.includes('User already registered')) {
+
+        // Construir objeto de duplicata bloqueante e abrir modal
+        const duplicateResult = {
+          hasBlocking: true,
+          blockingIssues: [{
+            field: 'email' as const,
+            value: formData.student?.email || '',
+            message: 'Este email já está cadastrado no sistema. Use outro email.',
+            existingUser: null
+          }],
+          hasSimilarities: false,
+          similarities: []
+        };
+
+        setDuplicateCheck(duplicateResult);
+        setShowDuplicateModal(true);
+        setErrors(prev => ({ ...prev, email: 'Email já cadastrado' }));
+      } else {
+        // Erro genérico
+        toast.error(errorMsg || 'Erro ao salvar aluno');
+      }
     } finally {
       setLoading(false);
     }
@@ -1748,7 +1778,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   : issue.field === 'enrollment_number'
                   ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
                   : '🚫 Estes dados já pertencem a outro aluno no sistema.',
-                existingUsers: [issue.existingUser]
+                existingUsers: issue.existingUser ? [issue.existingUser] : []
               })),
               // Similarities depois (filtrando emails)
               ...(duplicateCheck?.similarities || [])
