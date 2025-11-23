@@ -29,6 +29,7 @@ import { CredentialsDialog } from '@/components/students/CredentialsDialog';
 import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
 import { useSchool } from '@/contexts/SchoolContext';
 import { onlyDigits } from '@/lib/validation';
+import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -120,6 +121,9 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [isLoading, setIsLoading] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState({ name: '', email: '', password: '' });
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
+  const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
@@ -288,13 +292,42 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       setIsLoading(false);
       onOpenChange(false);
       setCurrentStep(0);
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar o professor. Tente novamente.",
-        variant: "destructive",
-      });
+      
+      const errorMsg = error.message || String(error);
+      
+      // ✅ Detectar email duplicado e abrir modal específico
+      if (errorMsg.includes('Este email já está cadastrado') ||
+          errorMsg.includes('Email já cadastrado') ||
+          errorMsg.includes('já está cadastrado no sistema') ||
+          errorMsg.includes('duplicate') ||
+          errorMsg.includes('already exists') ||
+          errorMsg.includes('User already registered')) {
+
+        // Construir objeto de duplicata bloqueante e abrir modal
+        const duplicateResult = {
+          hasBlocking: true,
+          blockingIssues: [{
+            field: 'email' as const,
+            value: form.getValues('email'),
+            message: 'Este email já está cadastrado no sistema. Use outro email.',
+            existingUser: null
+          }],
+          hasSimilarities: false,
+          similarities: []
+        };
+
+        setDuplicateCheck(duplicateResult);
+        setShowDuplicateModal(true);
+      } else {
+        // Erro genérico
+        toast({
+          title: "Erro",
+          description: errorMsg || "Não foi possível salvar o professor. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -1013,6 +1046,40 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       password={credentials.password}
       role="professor"
     />
+
+    {/* Modal de Aviso de Duplicatas */}
+    {showDuplicateModal && duplicateCheck && (
+      <DuplicateWarning
+        issues={[
+          // Blocking issues primeiro
+          ...(duplicateCheck.blockingIssues || []).map((issue: any) => ({
+            type: 'blocking' as const,
+            field: issue.field,
+            message: issue.field === 'email'
+              ? '🚫 Este email já está cadastrado no sistema. Use outro email.'
+              : '🚫 Estes dados já pertencem a outra pessoa no sistema.',
+            existingUsers: issue.existingUser ? [issue.existingUser] : []
+          })),
+          // Similarities depois
+          ...(duplicateCheck.similarities || []).map((sim: any) => ({
+            type: sim.severity === 'high' ? 'critical' as const : 'info' as const,
+            field: sim.field,
+            message: sim.message,
+            existingUsers: sim.existingUsers || []
+          }))
+        ]}
+        hasBlocking={duplicateCheck.hasBlocking}
+        onCancel={() => {
+          setShowDuplicateModal(false);
+          setUserConfirmedDuplicates(false);
+        }}
+        onConfirm={() => {
+          setShowDuplicateModal(false);
+          setUserConfirmedDuplicates(true);
+        }}
+        showActions={!duplicateCheck.hasBlocking}
+      />
+    )}
     </>
   );
 }
