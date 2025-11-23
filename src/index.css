@@ -156,6 +156,13 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Chart colors for data visualizations */
+    --chart-1: 340 75% 60%; /* Rosa para família/responsável */
+    --chart-2: 264 89% 58%; /* Violeta (primary) para irmãos */
+    --chart-3: 25 95% 53%;  /* Laranja para primos */
+    --chart-4: 142 76% 45%; /* Verde para tio-sobrinho */
+    --chart-5: 217 91% 60%; /* Azul para padrinho-afilhado */
   }
 
   /* Sidebar specific styling */
