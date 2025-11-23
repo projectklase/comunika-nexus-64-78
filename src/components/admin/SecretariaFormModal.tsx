@@ -69,6 +69,7 @@ export function SecretariaFormModal({
   const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
     const fieldMap: Record<string, 'email' | 'name' | 'phone' | 'document' | 'enrollment'> = {
       'cpf': 'document',
+      'document': 'document',
       'enrollment_number': 'enrollment',
       'email': 'email',
       'phone': 'phone',
@@ -210,6 +211,13 @@ export function SecretariaFormModal({
         email: normalizedData.email,
         phone: normalizedData.phone
       }, secretaria?.id);
+      
+      console.log('🔍 Resultado da verificação de duplicatas:', {
+        hasBlocking: result.hasBlocking,
+        blockingIssues: result.blockingIssues,
+        hasSimilarities: result.hasSimilarities,
+        similarities: result.similarities
+      });
       
       if (result.hasBlocking) {
         toast.error('Existem duplicatas que impedem o cadastro. Revise os dados.');
@@ -540,20 +548,22 @@ export function SecretariaFormModal({
                     : '🚫 Estes dados já pertencem a outra pessoa no sistema.',
                   existingUsers: [issue.existingUser]
                 })),
-                // Similarities depois
-                ...(duplicateCheck.similarities || []).map((sim: any) => {
-                  const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
-                  return {
-                    type: simType,
-                    field: mapFieldType(sim.field),
-                    message: sim.field === 'name' && sim.severity === 'high'
-                      ? '⚠️ Nome idêntico ou muito similar encontrado. Confirme se não é duplicata.'
-                      : sim.field === 'phone'
-                      ? '⚠️ Telefone similar detectado. Pode ser caso de irmãos ou família.'
-                      : 'ℹ️ Informações similares encontradas no sistema.',
-                    existingUsers: sim.existingUsers
-                  };
-                })
+                // Similarities depois (filtrando emails)
+                ...(duplicateCheck.similarities || [])
+                  .filter((sim: any) => sim.type !== 'email')
+                  .map((sim: any) => {
+                    const simType: 'critical' | 'info' = sim.severity === 'high' ? 'critical' : 'info';
+                    return {
+                      type: simType,
+                      field: mapFieldType(sim.type),
+                      message: sim.type === 'name' && sim.severity === 'high'
+                        ? '⚠️ Nome idêntico ou muito similar encontrado. Confirme se não é duplicata.'
+                        : sim.type === 'phone'
+                        ? '⚠️ Telefone similar detectado. Pode ser caso de irmãos ou família.'
+                        : 'ℹ️ Informações similares encontradas no sistema.',
+                      existingUsers: sim.existingUsers
+                    };
+                  })
               ]}
               hasBlocking={duplicateCheck.hasBlocking || false}
               onCancel={() => {
