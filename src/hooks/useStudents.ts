@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useSchool } from '@/contexts/SchoolContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { logAudit } from '@/stores/audit-store';
+import { validateAndCleanStudentNotes } from '@/utils/validate-family-relationships';
 
 // As interfaces e a estrutura geral do hook permanecem as mesmas.
 interface Guardian {
@@ -311,10 +312,24 @@ export function useStudents() {
 
       // Atualiza o perfil (remove password do objeto updates antes de salvar no perfil)
       const { password, ...profileUpdates } = updates;
+
+      // ⚠️ FASE 4 VALIDAÇÃO: Limpar relacionamentos inválidos se houver student_notes
+      let finalUpdates = { ...profileUpdates };
+      if (finalUpdates.student_notes) {
+        const validation = validateAndCleanStudentNotes(finalUpdates.student_notes, 'Aluno');
+        if (validation.warnings.length > 0) {
+          console.warn('⚠️ FASE 4: Avisos de validação ao atualizar aluno:', validation.warnings);
+        }
+        if (validation.cleanedNotes) {
+          const { stringifyStudentNotes } = await import('@/utils/student-notes-helpers');
+          finalUpdates.student_notes = stringifyStudentNotes(validation.cleanedNotes);
+          toast.info('Relacionamentos inválidos foram removidos automaticamente');
+        }
+      }
       
       const { error } = await supabase
         .from('profiles')
-        .update(profileUpdates)
+        .update(finalUpdates)
         .eq('id', id);
 
       if (error) throw error;
