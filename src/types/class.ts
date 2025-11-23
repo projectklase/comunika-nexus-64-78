@@ -86,6 +86,15 @@ export interface StudentExtra {
     whatsapp?: boolean; 
   };
   guardians?: Guardian[]; // obrigatório se menor
+  notes?: {               // Dados adicionais em JSONB
+    familyRelationships?: Array<{
+      relatedStudentId: string;
+      relatedStudentName: string;
+      relationshipType: 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'GODPARENT_GODCHILD' | 'OTHER';
+      customRelationship?: string;
+      createdAt: string;
+    }>;
+  };
 }
 
 export interface Person { 

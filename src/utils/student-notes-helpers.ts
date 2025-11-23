@@ -11,6 +11,21 @@ export const StudentNotesSchema = z.object({
   address: z.any().optional(), // Endereço completo
   healthNotes: z.string().optional(), // Observações de saúde
   consents: z.any().optional(), // Consentimentos
+  
+  // ✨ Registro de relacionamentos familiares
+  familyRelationships: z.array(z.object({
+    relatedStudentId: z.string().uuid(),
+    relatedStudentName: z.string(),
+    relationshipType: z.enum([
+      'SIBLING',           // Irmão/Irmã
+      'COUSIN',            // Primo/Prima
+      'UNCLE_NEPHEW',      // Tio-Sobrinho
+      'GODPARENT_GODCHILD', // Padrinho-Afilhado
+      'OTHER'              // Outro (com descrição customizada)
+    ]),
+    customRelationship: z.string().optional(), // Para quando escolher "Outro"
+    createdAt: z.string(), // ISO timestamp
+  })).optional(),
 }).passthrough(); // Permite campos adicionais
 
 export type StudentNotes = z.infer<typeof StudentNotesSchema>;

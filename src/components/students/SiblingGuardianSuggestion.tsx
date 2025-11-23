@@ -1,8 +1,18 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Users, Phone, Mail, AlertTriangle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Copy, Users, Phone, Mail, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { Guardian } from '@/hooks/useDuplicateCheck';
 
 interface ExistingStudent {
@@ -16,8 +26,24 @@ interface SiblingGuardianSuggestionProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   similarStudents: ExistingStudent[];
-  onCopyGuardians: (guardians: Guardian[]) => void;
+  onCopyGuardians: (
+    guardians: Guardian[], 
+    relatedStudentId: string,
+    relatedStudentName: string,
+    relationshipData: {
+      type: string;
+      customLabel?: string;
+    }
+  ) => void;
 }
+
+const RELATIONSHIP_OPTIONS = [
+  { value: 'SIBLING', label: '👨‍👩‍👧‍👦 Irmão/Irmã', description: 'Compartilham os mesmos pais' },
+  { value: 'COUSIN', label: '👥 Primo/Prima', description: 'Filhos de irmãos dos pais' },
+  { value: 'UNCLE_NEPHEW', label: '👨‍👦 Tio-Sobrinho', description: 'Relação tio/tia com sobrinho' },
+  { value: 'GODPARENT_GODCHILD', label: '🕊️ Padrinho-Afilhado', description: 'Relação de compadrio' },
+  { value: 'OTHER', label: '✏️ Outro', description: 'Digite a relação específica' },
+];
 
 export function SiblingGuardianSuggestion({
   open,
@@ -25,20 +51,50 @@ export function SiblingGuardianSuggestion({
   similarStudents,
   onCopyGuardians,
 }: SiblingGuardianSuggestionProps) {
+  const [selectedRelationship, setSelectedRelationship] = useState<string>('SIBLING');
+  const [customRelationship, setCustomRelationship] = useState<string>('');
+  const [showRelationshipSelector, setShowRelationshipSelector] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<ExistingStudent | null>(null);
+
   const studentsWithGuardians = similarStudents.filter(s => s.guardians && s.guardians.length > 0);
 
   if (studentsWithGuardians.length === 0) {
     return null;
   }
 
-  const handleCopyGuardians = (guardians: Guardian[]) => {
+  const handleCopyClick = (student: ExistingStudent) => {
+    setSelectedStudent(student);
+    setShowRelationshipSelector(true);
+  };
+
+  const handleCancelRelationship = () => {
+    setShowRelationshipSelector(false);
+    setSelectedStudent(null);
+    setSelectedRelationship('SIBLING');
+    setCustomRelationship('');
+  };
+
+  const handleConfirmAndCopy = () => {
+    if (!selectedStudent) return;
+
     // Remove IDs para criar novos registros
-    const newGuardians = guardians.map(g => ({
+    const newGuardians = (selectedStudent.guardians || []).map(g => ({
       ...g,
       id: undefined,
     }));
-    onCopyGuardians(newGuardians);
+
+    onCopyGuardians(
+      newGuardians,
+      selectedStudent.id,
+      selectedStudent.name,
+      {
+        type: selectedRelationship,
+        customLabel: selectedRelationship === 'OTHER' ? customRelationship : undefined
+      }
+    );
+    
     onOpenChange(false);
+    handleCancelRelationship();
   };
 
   return (
@@ -50,7 +106,7 @@ export function SiblingGuardianSuggestion({
               <Users className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <DialogTitle className="text-xl">Possível Irmão Detectado</DialogTitle>
+              <DialogTitle className="text-xl">Possível Parente Detectado</DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Encontramos aluno(s) com telefone/endereço similar. Deseja copiar os responsáveis?
               </p>
@@ -76,7 +132,7 @@ export function SiblingGuardianSuggestion({
                   <p className="text-xs text-muted-foreground">{student.email}</p>
                 </div>
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-                  Possível Irmão
+                  Possível Parente
                 </Badge>
               </div>
 
@@ -126,15 +182,74 @@ export function SiblingGuardianSuggestion({
                 ))}
               </div>
 
-              {/* Botão de Ação */}
-              <Button
-                onClick={() => handleCopyGuardians(student.guardians || [])}
-                className="w-full mt-3"
-                variant="default"
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Copiar Responsáveis
-              </Button>
+              {/* Botão de Ação ou Seletor de Parentesco */}
+              {(!showRelationshipSelector || selectedStudent?.id !== student.id) ? (
+                <Button
+                  onClick={() => handleCopyClick(student)}
+                  className="w-full mt-3"
+                  variant="default"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar Responsáveis
+                </Button>
+              ) : (
+                <div className="mt-4 p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
+                  <Label className="text-sm font-semibold mb-2 block">
+                    Qual a relação entre os alunos?
+                  </Label>
+                  
+                  <Select
+                    value={selectedRelationship}
+                    onValueChange={(value) => {
+                      setSelectedRelationship(value);
+                      if (value !== 'OTHER') setCustomRelationship('');
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RELATIONSHIP_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div>
+                            <div className="font-medium">{opt.label}</div>
+                            <div className="text-xs text-muted-foreground">{opt.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Campo customizado quando escolher "Outro" */}
+                  {selectedRelationship === 'OTHER' && (
+                    <Input
+                      placeholder="Ex: Primo de segundo grau, Vizinho responsável, etc."
+                      value={customRelationship}
+                      onChange={(e) => setCustomRelationship(e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
+                  
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelRelationship}
+                      className="flex-1"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleConfirmAndCopy}
+                      disabled={selectedRelationship === 'OTHER' && !customRelationship.trim()}
+                      className="flex-1"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Confirmar e Copiar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

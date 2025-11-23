@@ -607,8 +607,14 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     }
   };
 
-  // Copiar guardians de um irmão
-  const handleCopyGuardians = (guardians: any[]) => {
+  // Copiar guardians de um irmão com registro de relacionamento familiar
+  const handleCopyGuardians = (
+    guardians: any[], 
+    relatedStudentId: string,
+    relatedStudentName: string,
+    relationshipData: { type: string; customLabel?: string }
+  ) => {
+    // 1. Copiar os responsáveis (lógica existente mantida)
     updateFormData({
       student: {
         guardians: guardians.map(g => ({
@@ -621,7 +627,46 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         }))
       }
     });
-    toast.success('Responsáveis copiados com sucesso!');
+    
+    // 2. ✨ NOVO: Registrar o relacionamento familiar
+    const relationshipRecord = {
+      relatedStudentId,
+      relatedStudentName,
+      relationshipType: relationshipData.type as 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'GODPARENT_GODCHILD' | 'OTHER',
+      customRelationship: relationshipData.customLabel,
+      createdAt: new Date().toISOString(),
+    };
+    
+    // Atualizar formData para incluir o relacionamento
+    setFormData(prev => ({
+      ...prev,
+      student: {
+        ...prev.student,
+        notes: {
+          ...prev.student?.notes,
+          familyRelationships: [
+            ...(prev.student?.notes?.familyRelationships || []),
+            relationshipRecord
+          ]
+        }
+      }
+    }));
+    
+    const relationLabel = getRelationshipLabel(relationshipData);
+    toast.success(`Responsáveis copiados e relação "${relationLabel}" registrada!`);
+    setShowSiblingSuggestion(false);
+  };
+
+  // Helper para exibir label amigável do relacionamento
+  const getRelationshipLabel = (data: { type: string; customLabel?: string }) => {
+    if (data.type === 'OTHER') return data.customLabel;
+    const labels: Record<string, string> = {
+      'SIBLING': 'Irmão/Irmã',
+      'COUSIN': 'Primo/Prima',
+      'UNCLE_NEPHEW': 'Tio-Sobrinho',
+      'GODPARENT_GODCHILD': 'Padrinho-Afilhado',
+    };
+    return labels[data.type] || data.type;
   };
 
   const handleResetPassword = () => {
@@ -679,7 +724,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           programId: formData.student?.programId,
           levelId: formData.student?.levelId,
           healthNotes: formData.student?.healthNotes,
-          consents: formData.student?.consents
+          consents: formData.student?.consents,
+          familyRelationships: formData.student?.notes?.familyRelationships
         };
 
         const result = await createStudent({
@@ -703,7 +749,6 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         
         studentId = result?.user?.id;
       } else {
-        // Atualizando aluno existente
         // Monta o student_notes com TODOS os dados extras
         const studentNotesData = {
           document: formData.student?.document,
@@ -711,7 +756,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           programId: formData.student?.programId,
           levelId: formData.student?.levelId,
           healthNotes: formData.student?.healthNotes,
-          consents: formData.student?.consents
+          consents: formData.student?.consents,
+          familyRelationships: formData.student?.notes?.familyRelationships
         };
 
         const updateData: any = {
