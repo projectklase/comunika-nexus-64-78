@@ -1,0 +1,439 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useFamilyMetrics } from '@/hooks/useFamilyMetrics';
+import { useSchool } from '@/contexts/SchoolContext';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Heart, 
+  Users, 
+  Download, 
+  Search,
+  Mail,
+  Phone,
+  ArrowLeft,
+  TrendingUp,
+  BarChart3,
+  FileSpreadsheet
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { RELATIONSHIP_LABELS, type RelationshipType } from '@/types/family-metrics';
+import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
+
+interface FamilyGroup {
+  family_key: string;
+  guardian_name: string;
+  guardian_email: string | null;
+  guardian_phone: string | null;
+  students: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+  }>;
+  student_count: number;
+}
+
+export default function FamilyRelationsPage() {
+  const navigate = useNavigate();
+  const { currentSchool } = useSchool();
+  const { data: metrics, isLoading: metricsLoading } = useFamilyMetrics();
+  const [search, setSearch] = useState('');
+  const [families, setFamilies] = useState<FamilyGroup[]>([]);
+  const [loadingFamilies, setLoadingFamilies] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const loadFamilyDetails = async () => {
+    if (!currentSchool) return;
+    
+    setLoadingFamilies(true);
+    try {
+      // Buscar todas as famílias com múltiplos alunos
+      const { data: guardiansData } = await supabase
+        .from('guardians')
+        .select(`
+          id,
+          name,
+          email,
+          phone,
+          student_id,
+          profiles:student_id (
+            id,
+            name,
+            avatar
+          )
+        `);
+
+      if (!guardiansData) return;
+
+      // Agrupar por email ou telefone
+      const familyMap = new Map<string, FamilyGroup>();
+
+      for (const guardian of guardiansData) {
+        const key = guardian.email || guardian.phone || '';
+        if (!key) continue;
+
+        // Verificar se estudante pertence à escola atual
+        const { data: membership } = await supabase
+          .from('school_memberships')
+          .select('user_id')
+          .eq('user_id', guardian.student_id)
+          .eq('school_id', currentSchool.id)
+          .eq('role', 'aluno')
+          .single();
+
+        if (!membership) continue;
+
+        const student = Array.isArray(guardian.profiles) 
+          ? guardian.profiles[0] 
+          : guardian.profiles;
+
+        if (!familyMap.has(key)) {
+          familyMap.set(key, {
+            family_key: key,
+            guardian_name: guardian.name,
+            guardian_email: guardian.email,
+            guardian_phone: guardian.phone,
+            students: [],
+            student_count: 0,
+          });
+        }
+
+        const family = familyMap.get(key)!;
+        
+        // Evitar duplicatas
+        if (!family.students.find(s => s.id === student.id)) {
+          family.students.push({
+            id: student.id,
+            name: student.name,
+            avatar: student.avatar,
+          });
+          family.student_count = family.students.length;
+        }
+      }
+
+      // Filtrar apenas famílias com 2+ alunos
+      const multiFamilies = Array.from(familyMap.values())
+        .filter(f => f.student_count > 1)
+        .sort((a, b) => b.student_count - a.student_count);
+
+      setFamilies(multiFamilies);
+    } catch (error) {
+      console.error('Erro ao carregar famílias:', error);
+      toast.error('Erro ao carregar detalhes das famílias');
+    } finally {
+      setLoadingFamilies(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!metrics || !currentSchool) {
+      toast.error('Dados não disponíveis para exportação');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      await exportFamilyRelationsToExcel(metrics, families, currentSchool.name);
+      toast.success('Relatório exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      toast.error('Erro ao exportar relatório');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const filteredFamilies = families.filter(family =>
+    family.guardian_name.toLowerCase().includes(search.toLowerCase()) ||
+    family.students.some(s => s.name.toLowerCase().includes(search.toLowerCase())) ||
+    family.guardian_email?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-background p-8 space-y-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/admin/dashboard')}
+            className="hover:bg-white/10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-4xl font-bold gradient-text flex items-center gap-3">
+              <Heart className="h-8 w-8 text-pink-400" />
+              Relações Familiares
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Análise de vínculos familiares e responsáveis compartilhados
+            </p>
+          </div>
+        </div>
+        
+        <Button
+          onClick={handleExport}
+          disabled={isExporting || !metrics}
+          className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
+        >
+          {isExporting ? (
+            <>
+              <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              Exportando...
+            </>
+          ) : (
+            <>
+              <FileSpreadsheet className="h-4 w-4" />
+              Exportar Excel
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Métricas Resumidas */}
+      {metricsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
+          ))}
+        </div>
+      ) : metrics && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="glass-card border-pink-500/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-muted-foreground font-medium">
+                Famílias Multi-Alunos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-4xl font-bold text-pink-400">
+                  {metrics.multi_student_families}
+                </span>
+                <Users className="h-10 w-10 text-pink-400/50" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                de {metrics.total_families} famílias totais
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-purple-500/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-muted-foreground font-medium">
+                Média Alunos/Família
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-4xl font-bold text-purple-400">
+                  {metrics.avg_students_per_family.toFixed(1)}
+                </span>
+                <TrendingUp className="h-10 w-10 text-purple-400/50" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                alunos por responsável
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-rose-500/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-muted-foreground font-medium">
+                Parentescos Registrados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-4xl font-bold text-rose-400">
+                  {metrics.relationship_distribution.reduce((sum, r) => sum + r.count, 0)}
+                </span>
+                <BarChart3 className="h-10 w-10 text-rose-400/50" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                vínculos documentados
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Distribuição de Parentescos */}
+      {metrics && metrics.relationship_distribution.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-purple-400" />
+              Distribuição de Parentescos
+            </CardTitle>
+            <CardDescription>
+              Tipos de relações familiares registradas no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {metrics.relationship_distribution.map((rel) => (
+                <div
+                  key={rel.relationship_type}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30"
+                >
+                  <span className="text-sm font-medium text-foreground">
+                    {RELATIONSHIP_LABELS[rel.relationship_type as RelationshipType] || rel.relationship_type}
+                  </span>
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                    {rel.count}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lista de Famílias */}
+      <Card className="glass-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-pink-400" />
+                Famílias com Múltiplos Alunos
+              </CardTitle>
+              <CardDescription>
+                Visualize e gerencie responsáveis compartilhados
+              </CardDescription>
+            </div>
+            <Button
+              onClick={loadFamilyDetails}
+              disabled={loadingFamilies}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              {loadingFamilies ? (
+                <>
+                  <div className="h-3 w-3 border-2 border-current/20 border-t-current rounded-full animate-spin" />
+                  Carregando...
+                </>
+              ) : (
+                <>
+                  <Download className="h-3 w-3" />
+                  Carregar Detalhes
+                </>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search */}
+          {families.length > 0 && (
+            <div className="relative mb-6">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por responsável ou aluno..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
+
+          {/* Family List */}
+          <ScrollArea className="h-[600px] pr-4">
+            {loadingFamilies ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-32 rounded-xl" />
+                ))}
+              </div>
+            ) : families.length === 0 ? (
+              <div className="text-center py-12">
+                <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground">
+                  Clique em "Carregar Detalhes" para visualizar as famílias
+                </p>
+              </div>
+            ) : filteredFamilies.length === 0 ? (
+              <div className="text-center py-12">
+                <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground">
+                  Nenhuma família encontrada com esse critério
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredFamilies.map((family) => (
+                  <div
+                    key={family.family_key}
+                    className="p-5 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-pink-500/30 transition-all duration-300"
+                  >
+                    {/* Guardian Info */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4 text-pink-400" />
+                          <h3 className="font-semibold text-lg text-foreground">
+                            {family.guardian_name}
+                          </h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {family.guardian_email && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {family.guardian_email}
+                            </div>
+                          )}
+                          {family.guardian_phone && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {family.guardian_phone}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30">
+                        {family.student_count} alunos
+                      </Badge>
+                    </div>
+
+                    {/* Students */}
+                    <div className="flex flex-wrap gap-2">
+                      {family.students.map((student) => (
+                        <div
+                          key={student.id}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
+                        >
+                          {student.avatar ? (
+                            <img
+                              src={student.avatar}
+                              alt={student.name}
+                              className="h-6 w-6 rounded-full"
+                            />
+                          ) : (
+                            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
+                              {student.name.charAt(0)}
+                            </div>
+                          )}
+                          <span className="text-sm font-medium text-foreground">
+                            {student.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

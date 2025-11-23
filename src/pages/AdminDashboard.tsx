@@ -29,6 +29,7 @@ import {
   getEntityLabel, 
   getRoleLabel 
 } from '@/utils/audit-helpers';
+import { FamilyMetricsWidget } from '@/components/admin/FamilyMetricsWidget';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -510,6 +511,9 @@ export default function AdminDashboard() {
           variant={metrics.pendingRedemptions > 5 ? 'warning' : 'default'}
         />
       </div>
+
+      {/* Vínculos Familiares Widget */}
+      <FamilyMetricsWidget />
 
       {/* Atividade Recente */}
       <div className="rounded-2xl backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 border-2 border-purple-500/30 p-6 shadow-lg">

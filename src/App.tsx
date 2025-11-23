@@ -59,6 +59,7 @@ import ChallengesManagement from "./pages/Secretaria/ChallengesManagement";
 import SecretariasPage from "./pages/admin/SecretariasPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
+import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 
 const queryClient = new QueryClient();
 
@@ -106,6 +107,15 @@ const App = () => (
               <ProtectedRoute allowedRoles={['administrador']}>
                 <AppLayout>
                   <AdminAnalyticsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin - Relações Familiares */}
+            <Route path="/admin/relacoes-familiares" element={
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <AppLayout>
+                  <FamilyRelationsPage />
                 </AppLayout>
               </ProtectedRoute>
             } />
