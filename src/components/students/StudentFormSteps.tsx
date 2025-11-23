@@ -1777,6 +1777,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   ? '🚫 Este CPF já está cadastrado no sistema. Use um documento válido.'
                   : issue.field === 'enrollment_number'
                   ? '🚫 Esta matrícula já está sendo utilizada. Use um número único.'
+                  : issue.field === 'email'
+                  ? '🚫 Este email já está cadastrado no sistema. Use outro email.'
                   : '🚫 Estes dados já pertencem a outro aluno no sistema.',
                 existingUsers: issue.existingUser ? [issue.existingUser] : []
               })),
