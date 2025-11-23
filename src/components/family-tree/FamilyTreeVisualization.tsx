@@ -11,6 +11,8 @@ import ReactFlow, {
   NodeMouseHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { GuardianNode } from './GuardianNode';
 import { StudentNode } from './StudentNode';
 import { buildFamilyTree } from '@/utils/family-tree-builder';
@@ -50,6 +52,7 @@ function FamilyTreeVisualizationInner({
   const [isBuilding, setIsBuilding] = useState(true);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [isLegendOpen, setIsLegendOpen] = useState(true); // ✅ Estado para legenda retrátil (Fase 4.2)
 
   // ✅ Hook de seleção de família (Fase 3)
   const {
@@ -187,48 +190,64 @@ function FamilyTreeVisualizationInner({
           maskColor="rgba(0,0,0,0.2)"
         />
         
-        <Panel position="top-right" className="!bg-background/90 backdrop-blur-sm rounded-lg p-3 border border-border max-h-[600px] overflow-y-auto">
-          <div className="text-sm text-foreground space-y-2">
-            <p className="font-semibold mb-2">Legenda:</p>
+        {/* ✅ Legenda retrátil (Fase 4.2) */}
+        <Panel position="top-right" className="!bg-background/90 backdrop-blur-sm rounded-lg border border-border">
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-semibold text-sm">Legenda</p>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsLegendOpen(!isLegendOpen)}
+                className="h-6 w-6"
+                title={isLegendOpen ? "Recolher legenda" : "Expandir legenda"}
+              >
+                {isLegendOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </div>
             
-            {/* Nodes */}
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full" style={{ background: 'hsl(var(--chart-1))' }}></div>
-              <span className="text-xs">Responsável</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full" style={{ background: 'hsl(var(--chart-2))' }}></div>
-              <span className="text-xs">Aluno</span>
-            </div>
-            
-            <hr className="border-border my-2" />
-            
-            {/* Edges */}
-            <p className="text-xs font-semibold text-muted-foreground mb-1">Relações:</p>
-            <div className="flex items-center gap-2">
-              <div className="h-0.5 w-6 rounded" style={{ background: 'hsl(var(--chart-1))' }}></div>
-              <span className="text-xs">Responsável</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-0.5 w-6 border-t-2 border-dashed rounded" style={{ borderColor: 'hsl(var(--chart-2))' }}></div>
-              <span className="text-xs">Irmãos</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-0.5 w-6 border-t-2 border-dashed rounded" style={{ borderColor: 'hsl(var(--chart-3))' }}></div>
-              <span className="text-xs">Primos</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-0.5 w-6 border-t-2 border-dotted rounded" style={{ borderColor: 'hsl(var(--chart-4))' }}></div>
-              <span className="text-xs">Tio-Sobrinho</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-0.5 w-6 border-t-2 border-dashed rounded" style={{ borderColor: 'hsl(var(--chart-5))' }}></div>
-              <span className="text-xs">Padrinho-Afilhado</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-0.5 w-6 border-t border-dashed rounded" style={{ borderColor: 'hsl(var(--muted-foreground))' }}></div>
-              <span className="text-xs">Outro</span>
-            </div>
+            {isLegendOpen && (
+              <div className="text-sm space-y-2 max-h-[600px] overflow-y-auto animate-in fade-in duration-300">
+                {/* Nodes */}
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full" style={{ background: 'hsl(var(--chart-1))' }}></div>
+                  <span className="text-xs">Responsável</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full" style={{ background: 'hsl(var(--chart-2))' }}></div>
+                  <span className="text-xs">Aluno</span>
+                </div>
+                
+                <hr className="border-border my-2" />
+                
+                {/* Edges */}
+                <p className="text-xs font-semibold text-muted-foreground mb-1">Relações:</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-0.5 w-6 rounded" style={{ background: 'hsl(var(--chart-1))' }}></div>
+                  <span className="text-xs">Responsável</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-0.5 w-6 border-t-2 border-dashed rounded" style={{ borderColor: 'hsl(var(--chart-2))' }}></div>
+                  <span className="text-xs">Irmãos</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-0.5 w-6 border-t-2 border-dashed rounded" style={{ borderColor: 'hsl(var(--chart-3))' }}></div>
+                  <span className="text-xs">Primos</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-0.5 w-6 border-t-2 border-dotted rounded" style={{ borderColor: 'hsl(var(--chart-4))' }}></div>
+                  <span className="text-xs">Tio-Sobrinho</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-0.5 w-6 border-t-2 border-dashed rounded" style={{ borderColor: 'hsl(var(--chart-5))' }}></div>
+                  <span className="text-xs">Padrinho-Afilhado</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-0.5 w-6 border-t border-dashed rounded" style={{ borderColor: 'hsl(var(--muted-foreground))' }}></div>
+                  <span className="text-xs">Outro</span>
+                </div>
+              </div>
+            )}
           </div>
         </Panel>
         </ReactFlow>
