@@ -86,11 +86,20 @@ const STEPS = [
 ];
 
 const RELATION_OPTIONS = [
-  { value: 'MAE', label: 'Mãe' },
-  { value: 'PAI', label: 'Pai' },
-  { value: 'RESPONSAVEL', label: 'Responsável' },
-  { value: 'TUTOR', label: 'Tutor' },
-  { value: 'OUTRO', label: 'Outro' },
+  // 👨‍👩‍👧 RESPONSÁVEIS LEGAIS (guarda/custódia)
+  { value: 'MAE', label: 'Mãe', category: 'legal' },
+  { value: 'PAI', label: 'Pai', category: 'legal' },
+  { value: 'RESPONSAVEL', label: 'Responsável Legal', category: 'legal' },
+  { value: 'TUTOR', label: 'Tutor', category: 'legal' },
+  
+  // 👪 FAMÍLIA ESTENDIDA (parentesco sem guarda)
+  { value: 'TIO', label: 'Tio/Tia', category: 'extended' },
+  { value: 'AVO', label: 'Avô/Avó', category: 'extended' },
+  { value: 'IRMAO', label: 'Irmão/Irmã', category: 'extended' },
+  { value: 'PADRINHO', label: 'Padrinho/Madrinha', category: 'extended' },
+  
+  // ❓ OUTRO
+  { value: 'OUTRO', label: 'Outro', category: 'other' },
 ] as const;
 
 export function StudentFormSteps({ open, onOpenChange, student, onSave }: StudentFormStepsProps) {
@@ -1697,7 +1706,29 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {RELATION_OPTIONS.map((option) => (
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                          👨‍👩‍👧 Responsáveis Legais
+                        </div>
+                        {RELATION_OPTIONS.filter(opt => opt.category === 'legal').map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                        
+                        <div className="border-t my-1.5" />
+                        
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                          👪 Família Estendida
+                        </div>
+                        {RELATION_OPTIONS.filter(opt => opt.category === 'extended').map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                        
+                        <div className="border-t my-1.5" />
+                        
+                        {RELATION_OPTIONS.filter(opt => opt.category === 'other').map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>

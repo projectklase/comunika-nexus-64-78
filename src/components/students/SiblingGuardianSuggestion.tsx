@@ -55,21 +55,20 @@ function inferRelationshipsFromGuardians(
     return null;
   }
 
+  const isSamePerson = (g1: Guardian, g2: Guardian): boolean => {
+    const sameEmail = g1.email && g2.email && 
+      g1.email.toLowerCase().trim() === g2.email.toLowerCase().trim();
+    const samePhone = g1.phone && g2.phone && 
+      g1.phone.replace(/\D/g, '') === g2.phone.replace(/\D/g, '');
+    return sameEmail || samePhone;
+  };
+
   // 1️⃣ Regra: MESMO PAI ou MESMA MÃE → SIBLING (irmãos) - ALTA confiança
   const sharedParent = currentStudentGuardians.find(cg => 
     (cg.relation === 'PAI' || cg.relation === 'MAE') &&
-    relatedStudentGuardians.some(rg => {
-      // Verifica se é o mesmo tipo de relação (PAI com PAI, MAE com MAE)
-      if (rg.relation !== cg.relation) return false;
-      
-      // Compara por email ou telefone
-      const sameEmail = cg.email && rg.email && 
-        cg.email.toLowerCase().trim() === rg.email.toLowerCase().trim();
-      const samePhone = cg.phone && rg.phone && 
-        cg.phone.replace(/\D/g, '') === rg.phone.replace(/\D/g, '');
-      
-      return sameEmail || samePhone;
-    })
+    relatedStudentGuardians.some(rg => 
+      rg.relation === cg.relation && isSamePerson(cg, rg)
+    )
   );
   
   if (sharedParent) {
@@ -81,17 +80,40 @@ function inferRelationshipsFromGuardians(
     };
   }
   
-  // 2️⃣ Regra: MESMO RESPONSÁVEL/TUTOR → SIBLING (sugestão) - MÉDIA confiança
+  // 2️⃣ Regra: UM tem como MÃE/PAI, OUTRO tem como TIO/TIA → COUSIN (primos) - ALTA confiança
+  const parentOfCurrent = currentStudentGuardians.find(cg => 
+    cg.relation === 'MAE' || cg.relation === 'PAI'
+  );
+  const uncleOfRelated = relatedStudentGuardians.find(rg => 
+    rg.relation === 'TIO' && parentOfCurrent && isSamePerson(parentOfCurrent, rg)
+  );
+  
+  if (parentOfCurrent && uncleOfRelated) {
+    return {
+      type: 'COUSIN',
+      confidence: 'HIGH',
+      reason: `${parentOfCurrent.name} é mãe/pai de um e tio/tia do outro`
+    };
+  }
+  
+  // Verificar inverso: current tem como TIO, related tem como MÃE/PAI
+  const uncleOfCurrent = currentStudentGuardians.find(cg => cg.relation === 'TIO');
+  const parentOfRelated = relatedStudentGuardians.find(rg => 
+    (rg.relation === 'MAE' || rg.relation === 'PAI') && uncleOfCurrent && isSamePerson(uncleOfCurrent, rg)
+  );
+  
+  if (uncleOfCurrent && parentOfRelated) {
+    return {
+      type: 'COUSIN',
+      confidence: 'HIGH',
+      reason: `${uncleOfCurrent.name} é tio/tia de um e mãe/pai do outro`
+    };
+  }
+  
+  // 3️⃣ Regra: MESMO RESPONSÁVEL/TUTOR → SIBLING (sugestão) - MÉDIA confiança
   const sharedGuardian = currentStudentGuardians.find(cg => 
     (cg.relation === 'RESPONSAVEL' || cg.relation === 'TUTOR') &&
-    relatedStudentGuardians.some(rg => {
-      const sameEmail = cg.email && rg.email && 
-        cg.email.toLowerCase().trim() === rg.email.toLowerCase().trim();
-      const samePhone = cg.phone && rg.phone && 
-        cg.phone.replace(/\D/g, '') === rg.phone.replace(/\D/g, '');
-      
-      return sameEmail || samePhone;
-    })
+    relatedStudentGuardians.some(rg => isSamePerson(cg, rg))
   );
   
   if (sharedGuardian) {
@@ -99,6 +121,20 @@ function inferRelationshipsFromGuardians(
       type: 'SIBLING',
       confidence: 'MEDIUM',
       reason: `Compartilham o mesmo responsável: ${sharedGuardian.name}`
+    };
+  }
+  
+  // 4️⃣ Regra: MESMO AVÔ/AVÓ → COUSIN (primos) - MÉDIA confiança
+  const sharedGrandparent = currentStudentGuardians.find(cg => 
+    cg.relation === 'AVO' &&
+    relatedStudentGuardians.some(rg => rg.relation === 'AVO' && isSamePerson(cg, rg))
+  );
+  
+  if (sharedGrandparent) {
+    return {
+      type: 'COUSIN',
+      confidence: 'MEDIUM',
+      reason: `Compartilham o mesmo avô/avó: ${sharedGrandparent.name}`
     };
   }
   
@@ -194,6 +230,48 @@ export function SiblingGuardianSuggestion({
       console.error('❌ FASE 4 VALIDAÇÃO: Tipo de relacionamento inválido:', selectedRelationship);
       toast.error('Tipo de relacionamento inválido entre alunos');
       return;
+    }
+
+    // 🚨 FASE 6.3 VALIDAÇÃO BLOQUEANTE: Verificar inconsistências com inferência
+    const inference = studentInferences.get(selectedStudent.id);
+    
+    if (inference && inference.confidence === 'HIGH') {
+      if (selectedRelationship !== inference.type) {
+        const relationshipLabels: Record<string, string> = {
+          'SIBLING': 'Irmãos',
+          'COUSIN': 'Primos',
+          'UNCLE_NEPHEW': 'Tio-Sobrinho',
+          'OTHER': 'Outro'
+        };
+        
+        toast.error(
+          `Impossível cadastrar como ${relationshipLabels[selectedRelationship]}!`,
+          {
+            description: `${inference.reason}. Portanto, devem ser cadastrados como ${relationshipLabels[inference.type]}.`,
+            duration: 8000,
+          }
+        );
+        return; // BLOQUEIA
+      }
+    }
+    
+    // ⚠️ ALERTA para inconsistências MEDIUM
+    if (inference && inference.confidence === 'MEDIUM') {
+      if (selectedRelationship !== inference.type) {
+        const relationshipLabels: Record<string, string> = {
+          'SIBLING': 'Irmãos',
+          'COUSIN': 'Primos',
+          'UNCLE_NEPHEW': 'Tio-Sobrinho',
+          'OTHER': 'Outro'
+        };
+        
+        const shouldContinue = window.confirm(
+          `⚠️ ATENÇÃO: A estrutura familiar sugere que são ${relationshipLabels[inference.type]}.\n\n` +
+          `Motivo: ${inference.reason}\n\n` +
+          `Você tem certeza que deseja cadastrar como ${relationshipLabels[selectedRelationship]}?`
+        );
+        if (!shouldContinue) return;
+      }
     }
 
     // Remove IDs para criar novos registros
