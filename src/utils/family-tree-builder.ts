@@ -58,21 +58,21 @@ function getEdgeStyleByRelationship(type: RelationshipType) {
     },
     COUSIN: {
       style: {
-        stroke: 'hsl(var(--chart-3))',
+        stroke: 'hsl(var(--chart-3))', // Laranja para primos
         strokeWidth: 1.5,
         strokeDasharray: '10,5',
       },
     },
     UNCLE_NEPHEW: {
       style: {
-        stroke: 'hsl(var(--chart-4))',
+        stroke: 'hsl(var(--chart-4))', // Verde para tio-sobrinho
         strokeWidth: 1.5,
         strokeDasharray: '3,3',
       },
     },
     GODPARENT_GODCHILD: {
       style: {
-        stroke: 'hsl(var(--chart-5))',
+        stroke: 'hsl(var(--chart-5))', // Azul para padrinho-afilhado
         strokeWidth: 1.5,
         strokeDasharray: '8,4,2,4',
       },
@@ -106,11 +106,14 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
   // ✅ Buscar relacionamentos reais
   const realRelationships = await fetchStudentRelationships(allStudentIds);
   
+  console.log('🌳 [Family Tree Debug] Relacionamentos encontrados:', realRelationships.length);
+  
   // Criar um Map para acesso rápido
   const relationshipMap = new Map<string, RelationshipType>();
   realRelationships.forEach(rel => {
     const key = [rel.studentId, rel.relatedStudentId].sort().join('-');
     relationshipMap.set(key, rel.relationshipType);
+    console.log(`  ├─ ${key} → ${rel.relationshipType}`);
   });
   
   let yOffset = 0;
@@ -191,6 +194,10 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
         // Estilos por tipo de relacionamento
         const edgeStyles = getEdgeStyleByRelationship(relationshipType);
         
+        console.log(`  ├─ Edge: ${family.students[i].name} ↔ ${family.students[j].name}`);
+        console.log(`  │  └─ Tipo: ${relationshipType} (${RELATIONSHIP_LABELS[relationshipType]})`);
+        console.log(`  │  └─ Estilo:`, edgeStyles.style);
+        
         edges.push({
           id: `relationship-${student1Id}-${student2Id}`,
           source: `student-${student1Id}`,
@@ -207,6 +214,10 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
     
     yOffset += FAMILY_SPACING;
   });
+  
+  console.log(`🌳 [Family Tree Debug] Árvore construída:`);
+  console.log(`  ├─ ${nodes.length} nós criados`);
+  console.log(`  └─ ${edges.length} conexões criadas`);
   
   return { nodes, edges };
 }
