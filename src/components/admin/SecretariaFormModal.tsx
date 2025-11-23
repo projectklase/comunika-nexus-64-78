@@ -285,7 +285,22 @@ export function SecretariaFormModal({
           errorMsg.includes('duplicate') ||
           errorMsg.includes('already exists') ||
           errorMsg.includes('User already registered')) {
-        toast.error('Este email já está cadastrado no sistema. Use outro email.');
+        
+        // ✅ Construir objeto de duplicata bloqueante e abrir modal
+        const duplicateResult = {
+          hasBlocking: true,
+          blockingIssues: [{
+            field: 'email' as const,
+            value: normalizedData.email,
+            message: 'Este email já está cadastrado no sistema. Use outro email.',
+            existingUser: null
+          }],
+          hasSimilarities: false,
+          similarities: []
+        };
+        
+        setDuplicateCheck(duplicateResult);
+        setShowDuplicateModal(true);
         setErrors(prev => ({ ...prev, email: 'Email já cadastrado' }));
       } else if (errorMsg.includes('email')) {
         toast.error('Erro relacionado ao email. Verifique o campo.');
