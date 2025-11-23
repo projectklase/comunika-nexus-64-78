@@ -118,30 +118,37 @@ export function useSecretarias() {
         throw new Error(response.data.error);
       }
       
-      // 🔍 FASE 2: Verificar TODAS as propriedades ocultas do erro
+      // 🔍 FASE 3: Ler o body JSON do Response.context
       if (response.error) {
         const errorData = response.error as any;
         
-        // Log de TODAS as propriedades do objeto de erro
-        console.log('🔍 Error object keys:', Object.keys(errorData));
-        console.log('🔍 Error object (full):', errorData);
-        console.log('🔍 Error context:', errorData.context);
-        console.log('🔍 Error details:', errorData.details);
-        console.log('🔍 Error body:', errorData.body);
-        console.log('🔍 Error response:', errorData.response);
+        // Se context é um Response, tentar ler o body JSON
+        if (errorData.context instanceof Response) {
+          try {
+            console.log('🔍 Attempting to read Response.context body...');
+            
+            // Clone para evitar consumir o original
+            const clonedResponse = errorData.context.clone();
+            const errorBody = await clonedResponse.json();
+            
+            console.log('✅ Error body successfully read:', errorBody);
+            
+            // Se o body contém uma mensagem de erro, usar ela
+            if (errorBody && errorBody.error) {
+              throw new Error(errorBody.error);
+            }
+          } catch (readError) {
+            console.warn('⚠️ Could not read Response body:', readError);
+            // Continue para o fallback abaixo
+          }
+        }
         
-        // Tentar extrair mensagem de TODAS as possíveis localizações
+        // Fallback: tentar extrair mensagem de outras propriedades
         const errorMessage = 
-          errorData.context?.error ||           // Pode estar no context.error
-          errorData.context?.message ||         // Ou no context.message
-          errorData.details?.error ||           // Ou no details.error
-          errorData.details?.message ||         // Ou no details.message
-          errorData.body?.error ||              // Ou no body.error
-          errorData.response?.error ||          // Ou no response.error
-          errorData.message ||                  // Ou diretamente no message
+          errorData.message || 
           'Erro ao criar secretaria';
         
-        console.error('❌ Final extracted error message:', errorMessage);
+        console.error('❌ Using fallback error message:', errorMessage);
         throw new Error(errorMessage);
       }
 
