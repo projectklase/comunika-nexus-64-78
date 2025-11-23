@@ -4,9 +4,13 @@ import { z } from 'zod';
  * Schema para validar o JSON armazenado em student_notes
  */
 export const StudentNotesSchema = z.object({
+  document: z.string().optional(), // CPF para validação de duplicatas
   programId: z.string().uuid().optional(),
   levelId: z.string().uuid().optional(),
   additionalInfo: z.string().optional(),
+  address: z.any().optional(), // Endereço completo
+  healthNotes: z.string().optional(), // Observações de saúde
+  consents: z.any().optional(), // Consentimentos
 }).passthrough(); // Permite campos adicionais
 
 export type StudentNotes = z.infer<typeof StudentNotesSchema>;
