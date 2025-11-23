@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,23 +20,40 @@ import {
   TrendingUp,
   BarChart3,
   FileSpreadsheet,
-  Network
+  Network,
+  TreePine,
+  UserCircle2,
+  ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RELATIONSHIP_LABELS, type RelationshipType, type FamilyGroup } from '@/types/family-metrics';
 import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
 import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisualization';
+import { useFamilyRelationsState } from '@/hooks/useFamilyRelationsState';
 
 
 export default function FamilyRelationsPage() {
   const navigate = useNavigate();
   const { currentSchool } = useSchool();
   const { data: metrics, isLoading: metricsLoading } = useFamilyMetrics();
-  const [search, setSearch] = useState('');
   const [families, setFamilies] = useState<FamilyGroup[]>([]);
   const [loadingFamilies, setLoadingFamilies] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // ✅ Estado global compartilhado (Fase 4)
+  const {
+    selectedFamilyKey,
+    searchTerm,
+    activeTab,
+    setSelectedFamilyKey,
+    setSearchTerm,
+    setActiveTab,
+    navigateToTree,
+  } = useFamilyRelationsState();
+
+  // ✅ Ref para scroll automático na lista
+  const familyCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const loadFamilyDetails = async () => {
     if (!currentSchool) return;
@@ -140,11 +157,22 @@ export default function FamilyRelationsPage() {
     }
   };
 
+  // ✅ Filtro de famílias usando busca global (Fase 4)
   const filteredFamilies = families.filter(family =>
-    family.guardian_name.toLowerCase().includes(search.toLowerCase()) ||
-    family.students.some(s => s.name.toLowerCase().includes(search.toLowerCase())) ||
-    family.guardian_email?.toLowerCase().includes(search.toLowerCase())
+    family.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    family.students.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    family.guardian_email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // ✅ Scroll automático para família selecionada na lista (Fase 4)
+  useEffect(() => {
+    if (selectedFamilyKey && activeTab === 'list') {
+      const cardElement = familyCardRefs.current.get(selectedFamilyKey);
+      if (cardElement) {
+        cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [selectedFamilyKey, activeTab]);
 
   return (
     <div className="min-h-screen bg-background p-8 space-y-8 max-w-7xl mx-auto">
@@ -289,8 +317,27 @@ export default function FamilyRelationsPage() {
         </Card>
       )}
 
-      {/* Visualização: Lista ou Árvore */}
-      <Tabs defaultValue="list" className="space-y-6">
+      {/* ✅ Busca Global (Fase 4) */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <Input
+          placeholder="Buscar responsável, aluno ou email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-12 h-12 text-base bg-background/50 backdrop-blur-sm border-border"
+        />
+        {filteredFamilies.length > 0 && families.length > 0 && (
+          <Badge 
+            variant="secondary" 
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary/10 text-primary border-primary/30"
+          >
+            {filteredFamilies.length} de {families.length} famílias
+          </Badge>
+        )}
+      </div>
+
+      {/* Visualização: Lista ou Árvore (Fase 4: controlado por estado global) */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'list' | 'tree')} className="space-y-6">
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
           <TabsTrigger value="list" className="gap-2">
             <Users className="h-4 w-4" />
@@ -338,18 +385,6 @@ export default function FamilyRelationsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {families.length > 0 && (
-                <div className="relative mb-6">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por responsável ou aluno..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              )}
-
               <ScrollArea className="h-[600px] pr-4">
                 {loadingFamilies ? (
                   <div className="space-y-4">
@@ -373,64 +408,121 @@ export default function FamilyRelationsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {filteredFamilies.map((family) => (
-                      <div
-                        key={family.family_key}
-                        className="p-5 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-pink-500/30 transition-all duration-300"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Heart className="h-4 w-4 text-pink-400" />
-                              <h3 className="font-semibold text-lg text-foreground">
-                                {family.guardian_name}
-                              </h3>
-                            </div>
-                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                              {family.guardian_email && (
-                                <div className="flex items-center gap-1">
-                                  <Mail className="h-3 w-3" />
-                                  {family.guardian_email}
-                                </div>
-                              )}
-                              {family.guardian_phone && (
-                                <div className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {family.guardian_phone}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30">
-                            {family.student_count} alunos
-                          </Badge>
-                        </div>
+                    {filteredFamilies.map((family) => {
+                      const isSelected = selectedFamilyKey === family.family_key;
+                      
+                      return (
+                        <div
+                          key={family.family_key}
+                          ref={(el) => {
+                            if (el) familyCardRefs.current.set(family.family_key, el);
+                            else familyCardRefs.current.delete(family.family_key);
+                          }}
+                          className={`
+                            p-5 rounded-xl transition-all duration-300
+                            ${isSelected 
+                              ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-2 border-pink-500 shadow-lg shadow-pink-500/20'
+                              : 'bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-pink-500/30'
+                            }
+                          `}
+                        >
+                          {/* Badge "EM FOCO" (Fase 4) */}
+                          {isSelected && (
+                            <Badge className="mb-3 bg-pink-500 text-white border-0 animate-pulse">
+                              EM FOCO
+                            </Badge>
+                          )}
 
-                        <div className="flex flex-wrap gap-2">
-                          {family.students.map((student) => (
-                            <div
-                              key={student.id}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
-                            >
-                              {student.avatar ? (
-                                <img
-                                  src={student.avatar}
-                                  alt={student.name}
-                                  className="h-6 w-6 rounded-full"
-                                />
-                              ) : (
-                                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
-                                  {student.name.charAt(0)}
-                                </div>
-                              )}
-                              <span className="text-sm font-medium text-foreground">
-                                {student.name}
-                              </span>
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Heart className="h-4 w-4 text-pink-400" />
+                                <h3 className="font-semibold text-lg text-foreground">
+                                  {family.guardian_name}
+                                </h3>
+                              </div>
+                              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                {family.guardian_email && (
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="h-3 w-3" />
+                                    {family.guardian_email}
+                                  </div>
+                                )}
+                                {family.guardian_phone && (
+                                  <div className="flex items-center gap-1">
+                                    <Phone className="h-3 w-3" />
+                                    {family.guardian_phone}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          ))}
+                            <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30">
+                              {family.student_count} alunos
+                            </Badge>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {family.students.map((student) => (
+                              <div
+                                key={student.id}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
+                              >
+                                {student.avatar ? (
+                                  <img
+                                    src={student.avatar}
+                                    alt={student.name}
+                                    className="h-6 w-6 rounded-full"
+                                  />
+                                ) : (
+                                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
+                                    {student.name.charAt(0)}
+                                  </div>
+                                )}
+                                <span className="text-sm font-medium text-foreground">
+                                  {student.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* ✅ Quick Actions (Fase 4) */}
+                          <div className="flex flex-wrap gap-2 pt-3 border-t border-white/10">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigateToTree(family.family_key)}
+                              className="gap-2 border-pink-500/30 hover:bg-pink-500/10 hover:border-pink-500"
+                            >
+                              <TreePine className="h-3.5 w-3.5" />
+                              Ver na Árvore
+                            </Button>
+                            {family.guardian_email && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`mailto:${family.guardian_email}`, '_blank')}
+                                className="gap-2 border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500"
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                                Enviar Email
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const studentIds = family.students.map(s => s.id).join(',');
+                                navigate(`/admin/alunos?ids=${studentIds}`);
+                              }}
+                              className="gap-2 border-blue-500/30 hover:bg-blue-500/10 hover:border-blue-500"
+                            >
+                              <UserCircle2 className="h-3.5 w-3.5" />
+                              Ver Alunos
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </ScrollArea>
@@ -473,7 +565,7 @@ export default function FamilyRelationsPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {families.length === 0 ? (
                 <div className="text-center py-12">
                   <Network className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
@@ -482,7 +574,12 @@ export default function FamilyRelationsPage() {
                   </p>
                 </div>
               ) : (
-                <FamilyTreeVisualization families={families} />
+                <FamilyTreeVisualization 
+                  families={families}
+                  searchTerm={searchTerm}
+                  selectedFamilyKey={selectedFamilyKey}
+                  onFamilySelect={setSelectedFamilyKey}
+                />
               )}
             </CardContent>
           </Card>

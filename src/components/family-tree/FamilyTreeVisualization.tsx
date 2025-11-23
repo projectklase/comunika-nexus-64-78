@@ -19,9 +19,13 @@ import { useFamilyTreeFilters } from '@/hooks/useFamilyTreeFilters';
 import { FamilyTreeFilters } from './FamilyTreeFilters';
 import { useFamilyTreeSelection } from '@/hooks/useFamilyTreeSelection';
 import { FamilyDetailsSidebar } from './FamilyDetailsSidebar';
+import { FamilyBreadcrumb } from './FamilyBreadcrumb';
 
 interface FamilyTreeVisualizationProps {
   families: FamilyGroup[];
+  searchTerm?: string;
+  selectedFamilyKey?: string | null;
+  onFamilySelect?: (familyKey: string | null) => void;
 }
 
 const nodeTypes = {
@@ -29,14 +33,19 @@ const nodeTypes = {
   studentNode: StudentNode,
 };
 
-function FamilyTreeVisualizationInner({ families }: FamilyTreeVisualizationProps) {
+function FamilyTreeVisualizationInner({ 
+  families,
+  searchTerm,
+  selectedFamilyKey,
+  onFamilySelect,
+}: FamilyTreeVisualizationProps) {
   const {
     filters,
     setFilters,
     filteredFamilies,
     totalFamilies,
     filteredCount,
-  } = useFamilyTreeFilters(families);
+  } = useFamilyTreeFilters(families, searchTerm);
 
   const [isBuilding, setIsBuilding] = useState(true);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -68,11 +77,23 @@ function FamilyTreeVisualizationInner({ families }: FamilyTreeVisualizationProps
     [setEdges]
   );
 
-  // ✅ Handler de click em nó (Fase 3)
+  // ✅ Sincronizar seleção externa (Fase 4)
+  useEffect(() => {
+    if (selectedFamilyKey && selectedFamilyKey !== selectedFamily?.guardianId.replace('guardian-', '')) {
+      selectFamily(`guardian-${selectedFamilyKey}`);
+    } else if (!selectedFamilyKey && selectedFamily) {
+      resetSelection();
+    }
+  }, [selectedFamilyKey, selectedFamily, selectFamily, resetSelection]);
+
+  // ✅ Handler de click em nó (Fase 3 + 4)
   const onNodeClick: NodeMouseHandler = useCallback((event, node) => {
+    let familyKey: string | null = null;
+    
     // Se for um nó de responsável, selecionar essa família
     if (node.type === 'guardianNode') {
       selectFamily(node.id);
+      familyKey = node.id.replace('guardian-', '');
     }
     // Se for um nó de aluno, selecionar a família do responsável
     else if (node.type === 'studentNode') {
@@ -82,9 +103,15 @@ function FamilyTreeVisualizationInner({ families }: FamilyTreeVisualizationProps
       );
       if (guardianEdge) {
         selectFamily(guardianEdge.source);
+        familyKey = guardianEdge.source.replace('guardian-', '');
       }
     }
-  }, [selectFamily, edges]);
+
+    // Notificar componente pai sobre seleção (Fase 4)
+    if (familyKey && onFamilySelect) {
+      onFamilySelect(familyKey);
+    }
+  }, [selectFamily, edges, onFamilySelect]);
 
   if (isBuilding) {
     return (
@@ -107,6 +134,16 @@ function FamilyTreeVisualizationInner({ families }: FamilyTreeVisualizationProps
 
   return (
     <div className="space-y-4">
+      {/* Breadcrumb de Navegação (Fase 4) */}
+      <FamilyBreadcrumb
+        guardianName={selectedFamily?.guardianName}
+        studentCount={selectedFamily?.students.length}
+        onReset={() => {
+          resetSelection();
+          if (onFamilySelect) onFamilySelect(null);
+        }}
+      />
+
       {/* Painel de Filtros */}
       <FamilyTreeFilters
         filters={filters}
@@ -209,11 +246,21 @@ function FamilyTreeVisualizationInner({ families }: FamilyTreeVisualizationProps
   );
 }
 
-// ✅ Wrapper com ReactFlowProvider para funcionar corretamente
-export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationProps) {
+// ✅ Wrapper com ReactFlowProvider para funcionar corretamente (Fase 4: passa props)
+export function FamilyTreeVisualization({ 
+  families,
+  searchTerm,
+  selectedFamilyKey,
+  onFamilySelect,
+}: FamilyTreeVisualizationProps) {
   return (
     <ReactFlowProvider>
-      <FamilyTreeVisualizationInner families={families} />
+      <FamilyTreeVisualizationInner 
+        families={families}
+        searchTerm={searchTerm}
+        selectedFamilyKey={selectedFamilyKey}
+        onFamilySelect={onFamilySelect}
+      />
     </ReactFlowProvider>
   );
 }
