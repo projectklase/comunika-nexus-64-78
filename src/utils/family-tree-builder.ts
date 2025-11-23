@@ -187,9 +187,9 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
       for (let j = i + 1; j < family.students.length; j++) {
         const student1Id = family.students[i].id;
         const student2Id = family.students[j].id;
-        const key = [student1Id, student2Id].sort().join('-');
-        
-        const relationshipType = relationshipMap.get(key) || 'SIBLING';
+        // ✨ PRIORIDADE: Se estão na mesma família, são IRMÃOS (override do banco)
+        // Não importa o que está registrado no banco, alunos da mesma família = irmãos
+        const relationshipType = 'SIBLING';
         
         // Estilos por tipo de relacionamento
         const edgeStyles = getEdgeStyleByRelationship(relationshipType);
