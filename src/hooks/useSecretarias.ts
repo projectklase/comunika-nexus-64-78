@@ -102,14 +102,17 @@ export function useSecretarias() {
 
       // Tratar resposta de erro da edge function
       if (response.error) {
-        // Se a edge function retornou um erro estruturado (409 com JSON)
         const errorData = response.error as any;
         
-        // Tentar extrair a mensagem de erro do body ou do próprio objeto
-        const errorMessage = errorData.message || 
-                            errorData.error || 
-                            'Erro ao criar secretaria';
+        // Tentar extrair a mensagem de múltiplas fontes possíveis
+        const errorMessage = 
+          errorData.error ||           // Campo "error" do JSON body
+          errorData.message ||          // Campo "message" padrão
+          errorData.msg ||              // Alternativa comum
+          (typeof errorData === 'string' ? errorData : null) || // String direta
+          'Erro ao criar secretaria';
         
+        console.error('Edge function error:', { errorData, errorMessage });
         throw new Error(errorMessage);
       }
       
