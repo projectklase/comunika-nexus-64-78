@@ -18,7 +18,9 @@ import { CredentialsDialog } from '@/components/students/CredentialsDialog';
 import { toast } from 'sonner';
 import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
+import { FieldAvailabilityIndicator } from '@/components/forms/FieldAvailabilityIndicator';
 import { useSchool } from '@/contexts/SchoolContext';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface SecretariaFormModalProps {
   open: boolean;
@@ -64,6 +66,15 @@ export function SecretariaFormModal({
   const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
+  
+  // Inline validation states
+  const [emailAvailability, setEmailAvailability] = useState<{ checking: boolean; available: boolean | null }>({ 
+    checking: false, 
+    available: null 
+  });
+  
+  // Debounced value for inline validation
+  const debouncedEmail = useDebounce(formData.email, 500);
 
   // Helper para mapear campos do backend para o DuplicateWarning
   const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
@@ -77,6 +88,45 @@ export function SecretariaFormModal({
     
     return fieldMap[field] || 'document';
   };
+
+  // Inline validation for email in real-time
+  useEffect(() => {
+    const validateEmailAvailability = async () => {
+      // Reset state if email is empty or too short
+      if (!debouncedEmail || debouncedEmail.length < 3 || !debouncedEmail.includes('@')) {
+        setEmailAvailability({ checking: false, available: null });
+        return;
+      }
+
+      // Skip validation if editing and email hasn't changed
+      if (isEditing && debouncedEmail === secretaria?.email) {
+        setEmailAvailability({ checking: false, available: true });
+        return;
+      }
+
+      // Skip if not in current school context
+      if (!currentSchool?.id) {
+        setEmailAvailability({ checking: false, available: null });
+        return;
+      }
+
+      setEmailAvailability({ checking: true, available: null });
+
+      try {
+        const result = await checkDuplicates({ email: debouncedEmail }, secretaria?.id);
+        const emailBlocked = result.blockingIssues?.some((issue: any) => issue.field === 'email');
+        setEmailAvailability({ 
+          checking: false, 
+          available: !emailBlocked 
+        });
+      } catch (error) {
+        console.error('Error checking email availability:', error);
+        setEmailAvailability({ checking: false, available: null });
+      }
+    };
+
+    validateEmailAvailability();
+  }, [debouncedEmail, currentSchool?.id, secretaria, isEditing, checkDuplicates]);
 
   // Auto-gerar senha quando o modal abrir ou carregar dados para edição
   useEffect(() => {
@@ -385,24 +435,17 @@ export function SecretariaFormModal({
                   // Trim antes de validar
                   setFormData(prev => ({ ...prev, email: prev.email.trim() }));
                   handleBlur('email');
-                  
-                  // Verificar duplicatas por email (alerta apenas)
-                  if (!isEditing && formData.email.includes('@')) {
-                    const result = await checkDuplicates(
-                      { email: formData.email },
-                      secretaria?.id
-                    );
-                    
-                    if (result.hasSimilarities) {
-                      toast.warning('Este email pode já estar cadastrado. Verifique antes de continuar.');
-                    }
-                  }
                 }}
                 placeholder="Ex: maria.silva@escola.com.br"
-                disabled={loading}
+                disabled={loading || isEditing}
                 maxLength={255}
                 autoComplete="off"
                 className={errors.email && touched.email ? 'border-destructive' : ''}
+              />
+              <FieldAvailabilityIndicator
+                isChecking={emailAvailability.checking}
+                isAvailable={emailAvailability.available}
+                fieldLabel="Email"
               />
               {errors.email && touched.email && (
                 <p className="text-sm text-destructive">{errors.email}</p>
