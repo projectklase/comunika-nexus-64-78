@@ -28,28 +28,87 @@ export function StudentNode({ data }: StudentNodeProps) {
     : 'border-2 border-chart-2/50';
 
   return (
-    <div className="relative cursor-pointer" style={{ opacity, transform: `scale(${scale})`, transition: 'all 0.3s ease' }}>
+    <div 
+      className="relative cursor-pointer animate-fade-in" 
+      style={{ 
+        opacity, 
+        transform: `scale(${scale})`, 
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        filter: data.isSelected ? 'drop-shadow(0 0 16px hsl(var(--primary) / 0.5))' : 'none'
+      }}
+    >
       {/* Handles verticais para conexão com responsável */}
-      <Handle type="target" position={Position.Top} id="top" />
-      <Handle type="source" position={Position.Bottom} id="bottom" />
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        id="top"
+        className="!w-2.5 !h-2.5 !bg-chart-2 !border-2 !border-background"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        id="bottom"
+        className="!w-2.5 !h-2.5 !bg-chart-2 !border-2 !border-background"
+      />
       
-      {/* Handles laterais bidirecionais - sobrepostos para aceitar source E target */}
-      <Handle type="source" position={Position.Left} id="left-source" />
-      <Handle type="target" position={Position.Left} id="left" />
-      <Handle type="source" position={Position.Right} id="right" />
-      <Handle type="target" position={Position.Right} id="right-target" />
+      {/* Handles laterais bidirecionais */}
+      <Handle 
+        type="source" 
+        position={Position.Left} 
+        id="left-source"
+        className="!w-2.5 !h-2.5 !bg-chart-2 !border-2 !border-background"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        id="left"
+        className="!w-2.5 !h-2.5 !bg-chart-2 !border-2 !border-background"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        id="right"
+        className="!w-2.5 !h-2.5 !bg-chart-2 !border-2 !border-background"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Right} 
+        id="right-target"
+        className="!w-2.5 !h-2.5 !bg-chart-2 !border-2 !border-background"
+      />
       
-      <div className={`px-4 py-3 rounded-xl bg-gradient-to-br from-chart-2 to-chart-2/80 ${borderClass} shadow-md min-w-[160px] hover:scale-105 transition-transform`}>
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8 border-2 border-background">
-            <AvatarImage src={data.avatar} alt={data.name} />
-            <AvatarFallback className="bg-background/20 text-foreground text-xs">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <p className="font-semibold text-foreground text-sm">{data.name}</p>
-            <p className="text-xs text-foreground/70">Aluno</p>
+      <div className={`
+        relative overflow-hidden
+        px-4 py-3 rounded-xl 
+        bg-gradient-to-br from-chart-2 via-chart-2/90 to-chart-2/70
+        ${borderClass}
+        shadow-[0_6px_24px_-4px_rgba(0,0,0,0.12)]
+        hover:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.18)]
+        min-w-[180px] 
+        hover:scale-[1.03] 
+        transition-all duration-300
+        before:absolute before:inset-0 before:bg-gradient-to-t before:from-background/5 before:to-transparent before:pointer-events-none
+      `}>
+        {/* Glow effect quando selecionado */}
+        {data.isSelected && (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 to-transparent animate-pulse pointer-events-none" />
+        )}
+        
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="relative">
+            <Avatar className="h-10 w-10 border-2 border-background/40 shadow-lg ring-2 ring-background/20">
+              <AvatarImage src={data.avatar} alt={data.name} />
+              <AvatarFallback className="bg-gradient-to-br from-background/30 to-background/10 text-foreground text-xs font-bold backdrop-blur-sm">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            {/* Indicador de status */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background shadow-sm" />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-foreground text-sm leading-tight truncate">{data.name}</p>
+            <p className="text-xs text-foreground/70 font-medium uppercase tracking-wide">Aluno</p>
           </div>
         </div>
       </div>
