@@ -607,6 +607,105 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     }
   };
 
+  // Verificar se o responsável já está cadastrado em outro aluno
+  const checkGuardianDuplicates = async (
+    guardianEmail?: string,
+    guardianPhone?: string
+  ) => {
+    if (!currentSchool?.id || (!guardianEmail && !guardianPhone)) {
+      return [];
+    }
+
+    try {
+      // Buscar responsáveis com email ou telefone similar
+      let query = supabase
+        .from('guardians')
+        .select('id, name, email, phone, relation, student_id');
+
+      if (guardianEmail) {
+        query = query.eq('email', guardianEmail.toLowerCase().trim());
+      } else if (guardianPhone) {
+        const cleanPhone = guardianPhone.replace(/\D/g, '');
+        query = query.eq('phone', cleanPhone);
+      }
+
+      const { data: existingGuardians } = await query;
+
+      if (!existingGuardians || existingGuardians.length === 0) {
+        return [];
+      }
+
+      // Buscar os alunos relacionados a esses responsáveis
+      const studentIds = [...new Set(existingGuardians.map(g => g.student_id))];
+      
+      const { data: studentsData } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', studentIds)
+        .eq('current_school_id', currentSchool.id);
+
+      if (!studentsData || studentsData.length === 0) {
+        return [];
+      }
+
+      // Buscar TODOS os responsáveis de cada aluno encontrado
+      const { data: allGuardiansData } = await supabase
+        .from('guardians')
+        .select('*')
+        .in('student_id', studentIds);
+
+      // Montar array de alunos com seus responsáveis
+      const candidates = studentsData.map(student => {
+        const studentGuardians = allGuardiansData?.filter(
+          g => g.student_id === student.id
+        ) || [];
+
+        return {
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          guardians: studentGuardians.map(g => ({
+            id: g.id,
+            name: g.name,
+            relation: g.relation,
+            phone: g.phone || undefined,
+            email: g.email || undefined,
+            isPrimary: g.is_primary || false,
+          })),
+        };
+      });
+
+      return candidates;
+    } catch (error) {
+      console.error('Erro ao verificar responsável duplicado:', error);
+      return [];
+    }
+  };
+
+  // Helper para mensagem contextual de responsável duplicado
+  const showGuardianDuplicateWarning = (candidates: any[]) => {
+    const guardianName = candidates[0]?.guardians?.[0]?.name || 'Este responsável';
+    const studentNames = candidates.map(c => c.name).join(', ');
+    
+    toast.warning(
+      `${guardianName} já é responsável por: ${studentNames}. Deseja vincular como parente?`,
+      { 
+        duration: 6000,
+        action: {
+          label: 'Ver',
+          onClick: () => {
+            setSiblingCandidates(candidates);
+            setShowSiblingSuggestion(true);
+          }
+        }
+      }
+    );
+    
+    // Abrir modal automaticamente
+    setSiblingCandidates(candidates);
+    setShowSiblingSuggestion(true);
+  };
+
   // Copiar guardians de um irmão com registro de relacionamento familiar
   const handleCopyGuardians = (
     guardians: any[], 
@@ -1425,6 +1524,29 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
               </Button>
             </div>
             
+            {/* Badge de detecção de responsável duplicado */}
+            {siblingCandidates.length > 0 && (
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+                <Users className="h-5 w-5 text-amber-600" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                    Possível Parente Detectado
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Encontramos alunos com o mesmo responsável
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowSiblingSuggestion(true)}
+                  className="border-amber-500/50 hover:bg-amber-500/20"
+                >
+                  Ver Sugestão
+                </Button>
+              </div>
+            )}
+            
             {isStudentMinor && (
               <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                 <p className="text-sm text-amber-800 dark:text-amber-200">
@@ -1508,6 +1630,19 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                           });
                         }
                       }}
+                      onBlur={async () => {
+                        // Verificar se telefone do responsável já existe
+                        const phone = guardian.phone?.trim();
+                        if (!phone || phone.replace(/\D/g, '').length < 10 || student?.id) {
+                          return; // Não valida telefones incompletos ou edição
+                        }
+
+                        const candidates = await checkGuardianDuplicates(undefined, phone);
+                        
+                        if (candidates.length > 0) {
+                          showGuardianDuplicateWarning(candidates);
+                        }
+                      }}
                       placeholder="(00) 00000-0000"
                       error={errors[`guardian_phone${index}`]}
                     />
@@ -1519,6 +1654,19 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                       type="email"
                       value={guardian.email}
                       onChange={(e) => updateGuardian(index, { email: sanitizeString(e.target.value.toLowerCase(), 255) })}
+                      onBlur={async () => {
+                        // Verificar se email do responsável já existe
+                        const email = guardian.email?.trim();
+                        if (!email || !email.includes('@') || student?.id) {
+                          return; // Não valida se estiver editando aluno existente
+                        }
+
+                        const candidates = await checkGuardianDuplicates(email, undefined);
+                        
+                        if (candidates.length > 0) {
+                          showGuardianDuplicateWarning(candidates);
+                        }
+                      }}
                       placeholder="email@exemplo.com"
                       maxLength={255}
                       className={errors[`guardian_email${index}`] ? 'border-destructive' : ''}
