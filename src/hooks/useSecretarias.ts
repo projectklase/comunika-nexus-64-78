@@ -100,9 +100,17 @@ export function useSecretarias() {
         }
       });
 
+      // 🔍 DEBUG: Log completo da resposta
+      console.log('🔍 Full response:', { 
+        hasError: !!response.error, 
+        hasData: !!response.data,
+        data: response.data,
+        error: response.error 
+      });
+
       // ✅ PRIORIDADE 1: Verificar response.data primeiro (contém o body JSON mesmo com erro HTTP)
       if (response.data && !response.data.success && response.data.error) {
-        console.error('Edge function returned error:', response.data);
+        console.error('✅ Edge function returned error in data:', response.data);
         throw new Error(response.data.error);
       }
       
@@ -114,7 +122,7 @@ export function useSecretarias() {
           (typeof errorData === 'string' ? errorData : null) || 
           'Erro ao criar secretaria';
         
-        console.error('Edge function error object:', errorData);
+        console.error('❌ Edge function error object (fallback):', errorData);
         throw new Error(errorMessage);
       }
 
