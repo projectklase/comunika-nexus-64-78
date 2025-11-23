@@ -87,7 +87,8 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
           // Filtrar manualmente por CPF no student_notes
           const cpfDuplicates = profilesWithCpf.filter(p => {
             const notes = parseStudentNotes(p.student_notes);
-            return notes?.document === cleanCpf;
+            const documentFromDb = notes?.document?.replace(/\D/g, ''); // Normalizar formatação
+            return documentFromDb === cleanCpf;
           });
 
           if (cpfDuplicates.length > 0) {
