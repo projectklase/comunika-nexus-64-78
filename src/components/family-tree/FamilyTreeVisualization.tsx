@@ -7,6 +7,8 @@ import ReactFlow, {
   useEdgesState,
   Panel,
   BackgroundVariant,
+  ReactFlowProvider,
+  NodeMouseHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { GuardianNode } from './GuardianNode';
@@ -15,6 +17,8 @@ import { buildFamilyTree } from '@/utils/family-tree-builder';
 import { FamilyGroup } from '@/types/family-metrics';
 import { useFamilyTreeFilters } from '@/hooks/useFamilyTreeFilters';
 import { FamilyTreeFilters } from './FamilyTreeFilters';
+import { useFamilyTreeSelection } from '@/hooks/useFamilyTreeSelection';
+import { FamilyDetailsSidebar } from './FamilyDetailsSidebar';
 
 interface FamilyTreeVisualizationProps {
   families: FamilyGroup[];
@@ -25,7 +29,7 @@ const nodeTypes = {
   studentNode: StudentNode,
 };
 
-export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationProps) {
+function FamilyTreeVisualizationInner({ families }: FamilyTreeVisualizationProps) {
   const {
     filters,
     setFilters,
@@ -37,6 +41,15 @@ export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationPro
   const [isBuilding, setIsBuilding] = useState(true);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // ✅ Hook de seleção de família (Fase 3)
+  const {
+    selectedFamily,
+    selectFamily,
+    resetSelection,
+    selectNextFamily,
+    selectPreviousFamily,
+  } = useFamilyTreeSelection(filteredFamilies);
 
   // ✅ Buscar e construir árvore de forma assíncrona
   useEffect(() => {
@@ -54,6 +67,24 @@ export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationPro
     (params: any) => setEdges((eds) => [...eds, params]),
     [setEdges]
   );
+
+  // ✅ Handler de click em nó (Fase 3)
+  const onNodeClick: NodeMouseHandler = useCallback((event, node) => {
+    // Se for um nó de responsável, selecionar essa família
+    if (node.type === 'guardianNode') {
+      selectFamily(node.id);
+    }
+    // Se for um nó de aluno, selecionar a família do responsável
+    else if (node.type === 'studentNode') {
+      // Encontrar o responsável deste aluno
+      const guardianEdge = edges.find(edge => 
+        edge.target === node.id && edge.source.startsWith('guardian-')
+      );
+      if (guardianEdge) {
+        selectFamily(guardianEdge.source);
+      }
+    }
+  }, [selectFamily, edges]);
 
   if (isBuilding) {
     return (
@@ -84,19 +115,20 @@ export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationPro
         filteredCount={filteredCount}
       />
       
-      {/* Árvore */}
-      <div className="h-[800px] w-full rounded-xl border border-border overflow-hidden bg-gradient-to-br from-background to-muted">
+      {/* Árvore + Sidebar */}
+      <div className="h-[800px] w-full rounded-xl border border-border overflow-hidden bg-gradient-to-br from-background to-muted relative">
         <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        fitView
-        attributionPosition="bottom-left"
-        className="family-tree-flow"
-      >
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          nodeTypes={nodeTypes}
+          fitView
+          attributionPosition="bottom-left"
+          className="family-tree-flow"
+        >
         <Background 
           variant={BackgroundVariant.Dots} 
           gap={20} 
@@ -162,8 +194,26 @@ export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationPro
             </div>
           </div>
         </Panel>
-      </ReactFlow>
+        </ReactFlow>
+
+        {/* ✅ Sidebar de detalhes da família (Fase 3) */}
+        <FamilyDetailsSidebar
+          selectedFamily={selectedFamily}
+          onClose={resetSelection}
+          onNext={selectNextFamily}
+          onPrevious={selectPreviousFamily}
+          totalFamilies={filteredCount}
+        />
       </div>
     </div>
+  );
+}
+
+// ✅ Wrapper com ReactFlowProvider para funcionar corretamente
+export function FamilyTreeVisualization({ families }: FamilyTreeVisualizationProps) {
+  return (
+    <ReactFlowProvider>
+      <FamilyTreeVisualizationInner families={families} />
+    </ReactFlowProvider>
   );
 }
