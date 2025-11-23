@@ -23,32 +23,21 @@ export interface RelationshipDistribution {
   count: number;
 }
 
-// ✅ FASE 4: Removido GODPARENT_GODCHILD (agora só via GuardianRelationshipType)
 export type RelationshipType = 
   | 'SIBLING' 
   | 'COUSIN' 
   | 'UNCLE_NEPHEW' 
+  | 'GODPARENT_GODCHILD' 
   | 'OTHER'
   | 'NOT_REGISTERED';
-
-// ✨ FASE 3: Tipos de relacionamento Guardian → Student
-export type GuardianRelationshipType =
-  | 'GODPARENT'
-  | 'EXTENDED_FAMILY'
-  | 'OTHER';
 
 export const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
   SIBLING: 'Irmãos',
   COUSIN: 'Primos',
   UNCLE_NEPHEW: 'Tio-Sobrinho',
+  GODPARENT_GODCHILD: 'Padrinho-Afilhado',
   OTHER: 'Outro',
   NOT_REGISTERED: 'Não Registrado',
-};
-
-export const GUARDIAN_RELATIONSHIP_LABELS: Record<GuardianRelationshipType, string> = {
-  GODPARENT: 'Padrinho/Madrinha',
-  EXTENDED_FAMILY: 'Família Estendida',
-  OTHER: 'Outro',
 };
 
 export interface FamilyGroup {

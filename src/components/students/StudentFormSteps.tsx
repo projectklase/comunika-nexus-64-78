@@ -86,20 +86,11 @@ const STEPS = [
 ];
 
 const RELATION_OPTIONS = [
-  // 👨‍👩‍👧 RESPONSÁVEIS LEGAIS (guarda/custódia)
-  { value: 'MAE', label: 'Mãe', category: 'legal' },
-  { value: 'PAI', label: 'Pai', category: 'legal' },
-  { value: 'RESPONSAVEL', label: 'Responsável Legal', category: 'legal' },
-  { value: 'TUTOR', label: 'Tutor', category: 'legal' },
-  
-  // 👪 FAMÍLIA ESTENDIDA (parentesco sem guarda)
-  { value: 'TIO', label: 'Tio/Tia', category: 'extended' },
-  { value: 'AVO', label: 'Avô/Avó', category: 'extended' },
-  { value: 'IRMAO', label: 'Irmão/Irmã', category: 'extended' },
-  { value: 'PADRINHO', label: 'Padrinho/Madrinha', category: 'extended' },
-  
-  // ❓ OUTRO
-  { value: 'OUTRO', label: 'Outro', category: 'other' },
+  { value: 'MAE', label: 'Mãe' },
+  { value: 'PAI', label: 'Pai' },
+  { value: 'RESPONSAVEL', label: 'Responsável' },
+  { value: 'TUTOR', label: 'Tutor' },
+  { value: 'OUTRO', label: 'Outro' },
 ] as const;
 
 export function StudentFormSteps({ open, onOpenChange, student, onSave }: StudentFormStepsProps) {
@@ -715,19 +706,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     setShowSiblingSuggestion(true);
   };
 
-  // ✨ Helper: Retorna o tipo de relacionamento recíproco
-  const getReciprocalType = (type: string): string => {
-    const reciprocal: Record<string, string> = {
-      'SIBLING': 'SIBLING',           // Irmão ↔ Irmão
-      'COUSIN': 'COUSIN',             // Primo ↔ Primo
-      'UNCLE_NEPHEW': 'UNCLE_NEPHEW', // Tio-Sobrinho ↔ Sobrinho-Tio (mesmo tipo)
-      'GODPARENT_GODCHILD': 'GODPARENT_GODCHILD', // Será validado na Fase 4
-      'OTHER': 'OTHER',
-    };
-    return reciprocal[type] || type;
-  };
-
-  // Copiar guardians de um irmão com registro de relacionamento familiar BIDIRECIONAL
+  // Copiar guardians de um irmão com registro de relacionamento familiar
   const handleCopyGuardians = (
     guardians: any[], 
     relatedStudentId: string,
@@ -748,7 +727,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       }
     });
     
-    // 2. ✨ NOVO: Registrar o relacionamento familiar BIDIRECIONAL
+    // 2. ✨ NOVO: Registrar o relacionamento familiar
     const relationshipRecord = {
       relatedStudentId,
       relatedStudentName,
@@ -757,7 +736,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       createdAt: new Date().toISOString(),
     };
     
-    // Atualizar formData para incluir o relacionamento A→B
+    // Atualizar formData para incluir o relacionamento
     setFormData(prev => ({
       ...prev,
       student: {
@@ -771,34 +750,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         }
       }
     }));
-
-    // 3. ✨ NOVO: Preparar relacionamento recíproco B→A para salvar no handleSubmit
-    // Será salvo quando o aluno for criado/atualizado
-    const reciprocalRelationship = {
-      targetStudentId: relatedStudentId,
-      relationship: {
-        relatedStudentId: '', // Será preenchido com o ID do aluno atual no handleSubmit
-        relatedStudentName: formData.name || '',
-        relationshipType: getReciprocalType(relationshipData.type) as 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'GODPARENT_GODCHILD' | 'OTHER',
-        customRelationship: relationshipData.customLabel,
-        createdAt: new Date().toISOString(),
-      }
-    };
-
-    // Guardar o relacionamento recíproco no state para processar depois
-    setFormData(prev => ({
-      ...prev,
-      student: {
-        ...prev.student,
-        pendingReciprocalRelationships: [
-          ...(prev.student?.pendingReciprocalRelationships || []),
-          reciprocalRelationship
-        ]
-      }
-    }));
     
     const relationLabel = getRelationshipLabel(relationshipData);
-    toast.success(`Responsáveis copiados e relação "${relationLabel}" registrada (bidirecional)!`);
+    toast.success(`Responsáveis copiados e relação "${relationLabel}" registrada!`);
     setShowSiblingSuggestion(false);
   };
 
@@ -955,110 +909,28 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           .insert(classStudents);
       }
 
-      // Salvar guardiões com validação ANTES de deletar
+      // Salvar guardiões
       if (formData.student?.guardians && formData.student.guardians.length > 0) {
-        // ✅ FASE 4.1: Validar guardians ANTES de deletar os existentes
+        await supabase
+          .from('guardians')
+          .delete()
+          .eq('student_id', studentId);
+
         const validGuardians = formData.student.guardians
-          .filter(g => g.name?.trim() && g.relation) // Nome E relação são obrigatórios
+          .filter(g => g.name.trim())
           .map(g => ({
             student_id: studentId,
-            name: g.name.trim(),
+            name: g.name,
             relation: g.relation,
-            phone: g.phone?.trim() || null,
-            email: g.email?.trim() || null,
+            phone: g.phone || null,
+            email: g.email || null,
             is_primary: g.isPrimary || false
           }));
 
-        // ✅ FASE 4.2: Verificar se aluno menor de idade tem pelo menos 1 guardião
-        const studentAge = formData.student?.dob 
-          ? Math.floor((new Date().getTime() - new Date(formData.student.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-          : null;
-        
-        const isMinor = studentAge !== null && studentAge < 18;
-
-        if (validGuardians.length === 0 && isMinor) {
-          toast.error('⚠️ Alunos menores de idade precisam de pelo menos um responsável com nome e parentesco preenchidos');
-          throw new Error('Responsável obrigatório incompleto');
-        }
-
-        // ✅ FASE 4.3: Só deleta e re-insere se houver guardians válidos
         if (validGuardians.length > 0) {
           await supabase
             .from('guardians')
-            .delete()
-            .eq('student_id', studentId);
-
-          const { error: insertError } = await supabase
-            .from('guardians')
             .insert(validGuardians);
-
-          if (insertError) {
-            console.error('Erro ao inserir guardians:', insertError);
-            toast.error('Erro ao salvar responsáveis');
-            throw insertError;
-          }
-
-          console.log(`✅ ${validGuardians.length} responsável(is) salvos com sucesso`);
-        } else if (!isMinor) {
-          // Aluno maior de idade sem guardians - limpar todos
-          await supabase
-            .from('guardians')
-            .delete()
-            .eq('student_id', studentId);
-        }
-      }
-
-      // ✨ FASE 1: Criar relacionamentos recíprocos (B→A) nos alunos relacionados
-      if (formData.student?.pendingReciprocalRelationships && formData.student.pendingReciprocalRelationships.length > 0) {
-        console.log('🔄 Criando relacionamentos recíprocos...');
-        
-        for (const pending of formData.student.pendingReciprocalRelationships) {
-          try {
-            // Buscar student_notes do aluno relacionado
-            const { data: relatedStudent, error: fetchError } = await supabase
-              .from('profiles')
-              .select('student_notes')
-              .eq('id', pending.targetStudentId)
-              .single();
-
-            if (fetchError) {
-              console.error(`Erro ao buscar aluno relacionado ${pending.targetStudentId}:`, fetchError);
-              continue;
-            }
-
-            // Parse dos student_notes existentes
-            const existingNotes = relatedStudent?.student_notes 
-              ? JSON.parse(relatedStudent.student_notes) 
-              : {};
-
-            // Adicionar relacionamento recíproco com o ID correto do aluno atual
-            const reciprocalRel = {
-              ...pending.relationship,
-              relatedStudentId: studentId, // ID do aluno que acabamos de criar/atualizar
-            };
-
-            const updatedNotes = {
-              ...existingNotes,
-              familyRelationships: [
-                ...(existingNotes.familyRelationships || []),
-                reciprocalRel
-              ]
-            };
-
-            // Atualizar o aluno relacionado
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({ student_notes: JSON.stringify(updatedNotes) })
-              .eq('id', pending.targetStudentId);
-
-            if (updateError) {
-              console.error(`Erro ao atualizar relacionamento recíproco para ${pending.targetStudentId}:`, updateError);
-            } else {
-              console.log(`✅ Relacionamento recíproco criado: ${pending.targetStudentId} → ${studentId}`);
-            }
-          } catch (err) {
-            console.error('Erro ao processar relacionamento recíproco:', err);
-          }
         }
       }
 
@@ -1734,29 +1606,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          👨‍👩‍👧 Responsáveis Legais
-                        </div>
-                        {RELATION_OPTIONS.filter(opt => opt.category === 'legal').map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                        
-                        <div className="border-t my-1.5" />
-                        
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          👪 Família Estendida
-                        </div>
-                        {RELATION_OPTIONS.filter(opt => opt.category === 'extended').map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                        
-                        <div className="border-t my-1.5" />
-                        
-                        {RELATION_OPTIONS.filter(opt => opt.category === 'other').map((option) => (
+                        {RELATION_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
@@ -2323,10 +2173,6 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       open={showSiblingSuggestion}
       onOpenChange={setShowSiblingSuggestion}
       similarStudents={siblingCandidates}
-      currentStudentGuardians={(formData.student?.guardians || []).map(g => ({
-        ...g,
-        isPrimary: g.isPrimary || false
-      }))}
       onCopyGuardians={handleCopyGuardians}
     />
     </>

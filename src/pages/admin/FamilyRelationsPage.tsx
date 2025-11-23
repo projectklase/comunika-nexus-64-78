@@ -25,10 +25,7 @@ import {
   Network,
   TreePine,
   UserCircle2,
-  ExternalLink,
-  Pencil,
-  Wrench,
-  Shield
+  ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -36,10 +33,6 @@ import { RELATIONSHIP_LABELS, type RelationshipType, type FamilyGroup } from '@/
 import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
 import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisualization';
 import { useFamilyRelationsState } from '@/hooks/useFamilyRelationsState';
-import { StudentFormSteps } from '@/components/students/StudentFormSteps';
-import { cleanInvalidRelationships } from '@/utils/fix-family-relationships';
-import { diagnoseInconsistentRelationships, type DiagnosisResult } from '@/utils/diagnose-family-relationships';
-import { DiagnosisResultsModal } from '@/components/family-tree/DiagnosisResultsModal';
 
 
 export default function FamilyRelationsPage() {
@@ -49,16 +42,6 @@ export default function FamilyRelationsPage() {
   const [families, setFamilies] = useState<FamilyGroup[]>([]);
   const [loadingFamilies, setLoadingFamilies] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  
-  // Estados para modal de edição de aluno
-  const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [isCleaningRelationships, setIsCleaningRelationships] = useState(false);
-  
-  // Estados para diagnóstico de relacionamentos
-  const [isDiagnosing, setIsDiagnosing] = useState(false);
-  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
-  const [diagnosisResults, setDiagnosisResults] = useState<DiagnosisResult | null>(null);
 
   // ✅ Estado global compartilhado (Fase 4)
   const {
@@ -185,67 +168,6 @@ export default function FamilyRelationsPage() {
     }
   };
 
-  const handleCleanInvalidRelationships = async () => {
-    if (!currentSchool?.id) {
-      toast.error('Escola não identificada');
-      return;
-    }
-
-    setIsCleaningRelationships(true);
-    try {
-      const fixes = await cleanInvalidRelationships(currentSchool.id);
-      
-      if (fixes.length === 0) {
-        toast.success('✅ Nenhum relacionamento inválido encontrado!');
-      } else {
-        toast.success(
-          `🔧 ${fixes.length} relacionamento${fixes.length > 1 ? 's' : ''} inválido${fixes.length > 1 ? 's' : ''} removido${fixes.length > 1 ? 's' : ''}!`,
-          {
-            description: 'GODPARENT_GODCHILD foi removido de familyRelationships (exclusivo para Guardian→Student)'
-          }
-        );
-        
-        // Recarregar dados após limpeza
-        loadFamilyDetails();
-      }
-    } catch (error) {
-      console.error('Erro ao limpar relacionamentos:', error);
-      toast.error('Falha ao limpar relacionamentos inválidos');
-    } finally {
-      setIsCleaningRelationships(false);
-    }
-  };
-
-  const handleDiagnoseRelationships = async () => {
-    if (!currentSchool?.id) {
-      toast.error('Escola não identificada');
-      return;
-    }
-
-    setIsDiagnosing(true);
-    try {
-      const results = await diagnoseInconsistentRelationships(currentSchool.id);
-      setDiagnosisResults(results);
-      setShowDiagnosisModal(true);
-      
-      if (results.totalIssues === 0) {
-        toast.success('✅ Nenhuma inconsistência detectada!');
-      } else {
-        toast.warning(
-          `🔍 ${results.totalIssues} inconsistência${results.totalIssues > 1 ? 's' : ''} detectada${results.totalIssues > 1 ? 's' : ''}`,
-          {
-            description: `${results.criticalIssues} críticas, ${results.highIssues} altas`
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Erro ao diagnosticar relacionamentos:', error);
-      toast.error('Falha ao diagnosticar relacionamentos');
-    } finally {
-      setIsDiagnosing(false);
-    }
-  };
-
   // ✅ Filtro de famílias usando busca global (Fase 4)
   const filteredFamilies = families.filter(family =>
     family.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -287,65 +209,23 @@ export default function FamilyRelationsPage() {
           </div>
         </div>
         
-        <div className="flex gap-2">
-          <Button
-            onClick={handleDiagnoseRelationships}
-            disabled={isDiagnosing}
-            variant="outline"
-            className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border-blue-500/30 gap-2"
-            title="Analisa inconsistências comparando relacionamentos cadastrados com guardians compartilhados"
-          >
-            {isDiagnosing ? (
-              <>
-                <div className="h-4 w-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-                Diagnosticando...
-              </>
-            ) : (
-              <>
-                <Shield className="h-4 w-4" />
-                Diagnosticar
-              </>
-            )}
-          </Button>
-
-          <Button
-            onClick={handleCleanInvalidRelationships}
-            disabled={isCleaningRelationships}
-            variant="destructive"
-            className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 gap-2"
-            title="Remove relacionamentos GODPARENT_GODCHILD inválidos de familyRelationships"
-          >
-            {isCleaningRelationships ? (
-              <>
-                <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                Limpando...
-              </>
-            ) : (
-              <>
-                <Wrench className="h-4 w-4" />
-                Limpar Inválidos
-              </>
-            )}
-          </Button>
-
-          <Button
-            onClick={handleExport}
-            disabled={isExporting || !metrics}
-            className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
-          >
-            {isExporting ? (
-              <>
-                <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                Exportando...
-              </>
-            ) : (
-              <>
-                <FileSpreadsheet className="h-4 w-4" />
-                Exportar Excel
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          onClick={handleExport}
+          disabled={isExporting || !metrics}
+          className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
+        >
+          {isExporting ? (
+            <>
+              <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              Exportando...
+            </>
+          ) : (
+            <>
+              <FileSpreadsheet className="h-4 w-4" />
+              Exportar Excel
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Métricas Resumidas */}
@@ -611,44 +491,22 @@ export default function FamilyRelationsPage() {
                             {family.students.map((student) => (
                               <div
                                 key={student.id}
-                                className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors group"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors"
                               >
-                                <div className="flex items-center gap-2">
-                                  {student.avatar ? (
-                                    <img
-                                      src={student.avatar}
-                                      alt={student.name}
-                                      className="h-6 w-6 rounded-full"
-                                    />
-                                  ) : (
-                                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
-                                      {student.name.charAt(0)}
-                                    </div>
-                                  )}
-                                  <span className="text-sm font-medium text-foreground">
-                                    {student.name}
-                                  </span>
-                                </div>
-                                
-                                {/* Botão de Edição */}
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={async () => {
-                                    const { data } = await supabase
-                                      .from('profiles')
-                                      .select('*')
-                                      .eq('id', student.id)
-                                      .single();
-                                    
-                                    setSelectedStudent(data);
-                                    setIsEditStudentModalOpen(true);
-                                  }}
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-pink-500/10 hover:text-pink-400"
-                                  title="Editar aluno"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
+                                {student.avatar ? (
+                                  <img
+                                    src={student.avatar}
+                                    alt={student.name}
+                                    className="h-6 w-6 rounded-full"
+                                  />
+                                ) : (
+                                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
+                                    {student.name.charAt(0)}
+                                  </div>
+                                )}
+                                <span className="text-sm font-medium text-foreground">
+                                  {student.name}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -747,45 +605,12 @@ export default function FamilyRelationsPage() {
                   searchTerm={searchTerm}
                   selectedFamilyKey={selectedFamilyKey}
                   onFamilySelect={setSelectedFamilyKey}
-                  onEditStudent={async (studentId) => {
-                    const { data } = await supabase
-                      .from('profiles')
-                      .select('*')
-                      .eq('id', studentId)
-                      .single();
-                    
-                    setSelectedStudent(data);
-                    setIsEditStudentModalOpen(true);
-                  }}
                 />
               )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Modal de Edição de Aluno */}
-      <StudentFormSteps
-        open={isEditStudentModalOpen}
-        onOpenChange={(open) => {
-          setIsEditStudentModalOpen(open);
-          if (!open) {
-            setSelectedStudent(null);
-          }
-        }}
-        student={selectedStudent}
-        onSave={() => {
-          loadFamilyDetails();
-          toast.success('Aluno atualizado com sucesso!');
-        }}
-      />
-
-      {/* Modal de Resultados do Diagnóstico */}
-      <DiagnosisResultsModal
-        open={showDiagnosisModal}
-        onClose={() => setShowDiagnosisModal(false)}
-        results={diagnosisResults}
-      />
     </div>
   );
 }

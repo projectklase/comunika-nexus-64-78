@@ -1,11 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -13,9 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Users, Phone, Mail, AlertTriangle, CheckCircle, X, Sparkles } from 'lucide-react';
+import { Copy, Users, Phone, Mail, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { Guardian } from '@/hooks/useDuplicateCheck';
-import { toast } from 'sonner';
 
 interface ExistingStudent {
   id: string;
@@ -28,7 +26,6 @@ interface SiblingGuardianSuggestionProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   similarStudents: ExistingStudent[];
-  currentStudentGuardians?: Guardian[]; // Guardians do aluno sendo cadastrado
   onCopyGuardians: (
     guardians: Guardian[], 
     relatedStudentId: string,
@@ -40,119 +37,11 @@ interface SiblingGuardianSuggestionProps {
   ) => void;
 }
 
-interface RelationshipInference {
-  type: 'SIBLING' | 'COUSIN';
-  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
-  reason: string;
-}
-
-// Função para inferir relacionamento baseado em responsáveis compartilhados
-function inferRelationshipsFromGuardians(
-  currentStudentGuardians: Guardian[],
-  relatedStudentGuardians: Guardian[]
-): RelationshipInference | null {
-  if (!currentStudentGuardians.length || !relatedStudentGuardians.length) {
-    return null;
-  }
-
-  const isSamePerson = (g1: Guardian, g2: Guardian): boolean => {
-    const sameEmail = g1.email && g2.email && 
-      g1.email.toLowerCase().trim() === g2.email.toLowerCase().trim();
-    const samePhone = g1.phone && g2.phone && 
-      g1.phone.replace(/\D/g, '') === g2.phone.replace(/\D/g, '');
-    return sameEmail || samePhone;
-  };
-
-  // 1️⃣ Regra: MESMO PAI ou MESMA MÃE → SIBLING (irmãos) - ALTA confiança
-  const sharedParent = currentStudentGuardians.find(cg => 
-    (cg.relation === 'PAI' || cg.relation === 'MAE') &&
-    relatedStudentGuardians.some(rg => 
-      rg.relation === cg.relation && isSamePerson(cg, rg)
-    )
-  );
-  
-  if (sharedParent) {
-    const parentType = sharedParent.relation === 'PAI' ? 'pai' : 'mãe';
-    return {
-      type: 'SIBLING',
-      confidence: 'HIGH',
-      reason: `Compartilham o mesmo ${parentType}: ${sharedParent.name}`
-    };
-  }
-  
-  // 2️⃣ Regra: UM tem como MÃE/PAI, OUTRO tem como TIO/TIA → COUSIN (primos) - ALTA confiança
-  const parentOfCurrent = currentStudentGuardians.find(cg => 
-    cg.relation === 'MAE' || cg.relation === 'PAI'
-  );
-  const uncleOfRelated = relatedStudentGuardians.find(rg => 
-    rg.relation === 'TIO' && parentOfCurrent && isSamePerson(parentOfCurrent, rg)
-  );
-  
-  if (parentOfCurrent && uncleOfRelated) {
-    return {
-      type: 'COUSIN',
-      confidence: 'HIGH',
-      reason: `${parentOfCurrent.name} é mãe/pai de um e tio/tia do outro`
-    };
-  }
-  
-  // Verificar inverso: current tem como TIO, related tem como MÃE/PAI
-  const uncleOfCurrent = currentStudentGuardians.find(cg => cg.relation === 'TIO');
-  const parentOfRelated = relatedStudentGuardians.find(rg => 
-    (rg.relation === 'MAE' || rg.relation === 'PAI') && uncleOfCurrent && isSamePerson(uncleOfCurrent, rg)
-  );
-  
-  if (uncleOfCurrent && parentOfRelated) {
-    return {
-      type: 'COUSIN',
-      confidence: 'HIGH',
-      reason: `${uncleOfCurrent.name} é tio/tia de um e mãe/pai do outro`
-    };
-  }
-  
-  // 3️⃣ Regra: MESMO RESPONSÁVEL/TUTOR → SIBLING (sugestão) - MÉDIA confiança
-  const sharedGuardian = currentStudentGuardians.find(cg => 
-    (cg.relation === 'RESPONSAVEL' || cg.relation === 'TUTOR') &&
-    relatedStudentGuardians.some(rg => isSamePerson(cg, rg))
-  );
-  
-  if (sharedGuardian) {
-    return {
-      type: 'SIBLING',
-      confidence: 'MEDIUM',
-      reason: `Compartilham o mesmo responsável: ${sharedGuardian.name}`
-    };
-  }
-  
-  // 4️⃣ Regra: MESMO AVÔ/AVÓ → COUSIN (primos) - MÉDIA confiança
-  const sharedGrandparent = currentStudentGuardians.find(cg => 
-    cg.relation === 'AVO' &&
-    relatedStudentGuardians.some(rg => rg.relation === 'AVO' && isSamePerson(cg, rg))
-  );
-  
-  if (sharedGrandparent) {
-    return {
-      type: 'COUSIN',
-      confidence: 'MEDIUM',
-      reason: `Compartilham o mesmo avô/avó: ${sharedGrandparent.name}`
-    };
-  }
-  
-  return null;
-}
-
-// ✅ FASE 4: Removido GODPARENT_GODCHILD (agora só via guardianRelationships)
 const RELATIONSHIP_OPTIONS = [
   { value: 'SIBLING', label: '👨‍👩‍👧‍👦 Irmão/Irmã', description: 'Compartilham os mesmos pais' },
   { value: 'COUSIN', label: '👥 Primo/Prima', description: 'Filhos de irmãos dos pais' },
   { value: 'UNCLE_NEPHEW', label: '👨‍👦 Tio-Sobrinho', description: 'Relação tio/tia com sobrinho' },
-  { value: 'OTHER', label: '✏️ Outro', description: 'Digite a relação específica' },
-];
-
-// ✨ FASE 3: Opções de relacionamento Guardian → Student
-const GUARDIAN_RELATIONSHIP_OPTIONS = [
-  { value: 'GODPARENT', label: '🕊️ Padrinho/Madrinha', description: 'Relação de compadrio' },
-  { value: 'EXTENDED_FAMILY', label: '👨‍👩‍👧 Família Estendida', description: 'Avós, tios, primos adultos' },
+  { value: 'GODPARENT_GODCHILD', label: '🕊️ Padrinho-Afilhado', description: 'Relação de compadrio' },
   { value: 'OTHER', label: '✏️ Outro', description: 'Digite a relação específica' },
 ];
 
@@ -160,44 +49,14 @@ export function SiblingGuardianSuggestion({
   open,
   onOpenChange,
   similarStudents,
-  currentStudentGuardians = [],
   onCopyGuardians,
 }: SiblingGuardianSuggestionProps) {
   const [selectedRelationship, setSelectedRelationship] = useState<string>('SIBLING');
   const [customRelationship, setCustomRelationship] = useState<string>('');
   const [showRelationshipSelector, setShowRelationshipSelector] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<ExistingStudent | null>(null);
-  
-  // ✨ FASE 3: Estado para relacionamentos Guardian → Student
-  const [showGuardianRelationship, setShowGuardianRelationship] = useState(false);
-  const [selectedGuardianForRelationship, setSelectedGuardianForRelationship] = useState<Guardian | null>(null);
 
   const studentsWithGuardians = similarStudents.filter(s => s.guardians && s.guardians.length > 0);
-
-  // Calcular inferência de relacionamento para cada aluno similar
-  const studentInferences = useMemo(() => {
-    const inferences = new Map<string, RelationshipInference | null>();
-    
-    studentsWithGuardians.forEach(student => {
-      const inference = inferRelationshipsFromGuardians(
-        currentStudentGuardians,
-        student.guardians || []
-      );
-      inferences.set(student.id, inference);
-    });
-    
-    return inferences;
-  }, [studentsWithGuardians, currentStudentGuardians]);
-
-  // Pré-selecionar SIBLING se houver inferência HIGH para o aluno selecionado
-  useEffect(() => {
-    if (selectedStudent) {
-      const inference = studentInferences.get(selectedStudent.id);
-      if (inference && inference.confidence === 'HIGH') {
-        setSelectedRelationship(inference.type);
-      }
-    }
-  }, [selectedStudent, studentInferences]);
 
   if (studentsWithGuardians.length === 0) {
     return null;
@@ -206,12 +65,6 @@ export function SiblingGuardianSuggestion({
   const handleCopyClick = (student: ExistingStudent) => {
     setSelectedStudent(student);
     setShowRelationshipSelector(true);
-    
-    // Pré-selecionar baseado na inferência
-    const inference = studentInferences.get(student.id);
-    if (inference) {
-      setSelectedRelationship(inference.type);
-    }
   };
 
   const handleCancelRelationship = () => {
@@ -223,56 +76,6 @@ export function SiblingGuardianSuggestion({
 
   const handleConfirmAndCopy = () => {
     if (!selectedStudent) return;
-
-    // ⚠️ FASE 4 VALIDAÇÃO: Prevenir relacionamentos inválidos
-    const validTypes = ['SIBLING', 'COUSIN', 'UNCLE_NEPHEW', 'OTHER'];
-    if (!validTypes.includes(selectedRelationship)) {
-      console.error('❌ FASE 4 VALIDAÇÃO: Tipo de relacionamento inválido:', selectedRelationship);
-      toast.error('Tipo de relacionamento inválido entre alunos');
-      return;
-    }
-
-    // 🚨 FASE 6.3 VALIDAÇÃO BLOQUEANTE: Verificar inconsistências com inferência
-    const inference = studentInferences.get(selectedStudent.id);
-    
-    if (inference && inference.confidence === 'HIGH') {
-      if (selectedRelationship !== inference.type) {
-        const relationshipLabels: Record<string, string> = {
-          'SIBLING': 'Irmãos',
-          'COUSIN': 'Primos',
-          'UNCLE_NEPHEW': 'Tio-Sobrinho',
-          'OTHER': 'Outro'
-        };
-        
-        toast.error(
-          `Impossível cadastrar como ${relationshipLabels[selectedRelationship]}!`,
-          {
-            description: `${inference.reason}. Portanto, devem ser cadastrados como ${relationshipLabels[inference.type]}.`,
-            duration: 8000,
-          }
-        );
-        return; // BLOQUEIA
-      }
-    }
-    
-    // ⚠️ ALERTA para inconsistências MEDIUM
-    if (inference && inference.confidence === 'MEDIUM') {
-      if (selectedRelationship !== inference.type) {
-        const relationshipLabels: Record<string, string> = {
-          'SIBLING': 'Irmãos',
-          'COUSIN': 'Primos',
-          'UNCLE_NEPHEW': 'Tio-Sobrinho',
-          'OTHER': 'Outro'
-        };
-        
-        const shouldContinue = window.confirm(
-          `⚠️ ATENÇÃO: A estrutura familiar sugere que são ${relationshipLabels[inference.type]}.\n\n` +
-          `Motivo: ${inference.reason}\n\n` +
-          `Você tem certeza que deseja cadastrar como ${relationshipLabels[selectedRelationship]}?`
-        );
-        if (!shouldContinue) return;
-      }
-    }
 
     // Remove IDs para criar novos registros
     const newGuardians = (selectedStudent.guardians || []).map(g => ({
@@ -333,33 +136,6 @@ export function SiblingGuardianSuggestion({
                 </Badge>
               </div>
 
-              {/* Badge de Detecção Automática */}
-              {(() => {
-                const inference = studentInferences.get(student.id);
-                if (inference && inference.confidence === 'HIGH') {
-                  return (
-                    <Alert className="mb-3 bg-green-500/10 border-green-500/30">
-                      <Sparkles className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-sm">
-                        <span className="font-semibold text-green-700">Detectado Automaticamente:</span>{' '}
-                        <span className="text-green-600">{inference.reason}</span>
-                      </AlertDescription>
-                    </Alert>
-                  );
-                } else if (inference && inference.confidence === 'MEDIUM') {
-                  return (
-                    <Alert className="mb-3 bg-blue-500/10 border-blue-500/30">
-                      <Sparkles className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-sm">
-                        <span className="font-semibold text-blue-700">Possível Relação:</span>{' '}
-                        <span className="text-blue-600">{inference.reason}</span>
-                      </AlertDescription>
-                    </Alert>
-                  );
-                }
-                return null;
-              })()}
-
               {/* Lista de Responsáveis */}
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -368,7 +144,7 @@ export function SiblingGuardianSuggestion({
                 {student.guardians?.map((guardian, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3 p-3 rounded-md bg-background/50 border border-border/30 group"
+                    className="flex items-start gap-3 p-3 rounded-md bg-background/50 border border-border/30"
                   >
                     <Avatar className="h-8 w-8 mt-0.5">
                       <AvatarFallback className="bg-muted text-xs">
@@ -376,7 +152,7 @@ export function SiblingGuardianSuggestion({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
                         <p className="font-medium text-sm text-foreground">{guardian.name}</p>
                         <Badge variant="secondary" className="text-xs">
                           {guardian.relation}
@@ -386,19 +162,6 @@ export function SiblingGuardianSuggestion({
                             Principal
                           </Badge>
                         )}
-                        {/* ✨ FASE 3: Botão para registrar relacionamento Guardian → Student */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => {
-                            setSelectedGuardianForRelationship(guardian);
-                            setShowGuardianRelationship(true);
-                          }}
-                        >
-                          <Users className="w-3 h-3 mr-1" />
-                          É padrinho/madrinha?
-                        </Button>
                       </div>
                       <div className="flex flex-col gap-1 mt-1">
                         {guardian.phone && (
@@ -434,37 +197,6 @@ export function SiblingGuardianSuggestion({
                   <Label className="text-sm font-semibold mb-2 block">
                     Qual a relação entre os alunos?
                   </Label>
-
-                  {/* Mostrar inferência no seletor de relacionamento */}
-                  {(() => {
-                    const inference = studentInferences.get(selectedStudent.id);
-                    if (inference) {
-                      return (
-                        <div className={`mb-3 p-2 rounded-md flex items-start gap-2 ${
-                          inference.confidence === 'HIGH' 
-                            ? 'bg-green-500/10 border border-green-500/30' 
-                            : 'bg-blue-500/10 border border-blue-500/30'
-                        }`}>
-                          <Sparkles className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
-                            inference.confidence === 'HIGH' ? 'text-green-600' : 'text-blue-600'
-                          }`} />
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-xs font-medium ${
-                              inference.confidence === 'HIGH' ? 'text-green-700' : 'text-blue-700'
-                            }`}>
-                              {inference.confidence === 'HIGH' ? '✓ Detectado Automaticamente' : 'Possível Relação'}
-                            </p>
-                            <p className={`text-xs ${
-                              inference.confidence === 'HIGH' ? 'text-green-600' : 'text-blue-600'
-                            }`}>
-                              {inference.reason}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
                   
                   <Select
                     value={selectedRelationship}
@@ -533,18 +265,6 @@ export function SiblingGuardianSuggestion({
             </p>
           </div>
         </div>
-
-        {/* ✨ FASE 3: Informação sobre padrinhos/madrinhas */}
-        <Alert className="mt-4 bg-blue-500/10 border-blue-500/20">
-          <Sparkles className="h-4 w-4 text-blue-500" />
-          <AlertDescription className="text-sm">
-            <span className="font-semibold text-blue-700">Dica:</span>{' '}
-            <span className="text-blue-600">
-              Para registrar padrinhos/madrinhas, passe o mouse sobre o responsável e clique em "É padrinho/madrinha?".
-              Isso criará um relacionamento especial entre o responsável e o aluno.
-            </span>
-          </AlertDescription>
-        </Alert>
 
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>

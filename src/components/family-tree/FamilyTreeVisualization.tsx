@@ -31,7 +31,6 @@ interface FamilyTreeVisualizationProps {
   searchTerm?: string;
   selectedFamilyKey?: string | null;
   onFamilySelect?: (familyKey: string | null) => void;
-  onEditStudent?: (studentId: string) => void;
 }
 
 const nodeTypes = {
@@ -44,7 +43,6 @@ function FamilyTreeVisualizationInner({
   searchTerm,
   selectedFamilyKey,
   onFamilySelect,
-  onEditStudent,
 }: FamilyTreeVisualizationProps) {
   const { currentSchool } = useSchool();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
@@ -188,14 +186,13 @@ function FamilyTreeVisualizationInner({
         >
         <Background 
           variant={BackgroundVariant.Dots} 
-          gap={24} 
-          size={1.2} 
-          color="hsl(var(--muted-foreground) / 0.18)"
-          className="opacity-60"
+          gap={20} 
+          size={1} 
+          color="hsl(var(--muted-foreground) / 0.1)"
         />
         
         <Controls 
-          className="!bg-background/95 !border-border backdrop-blur-xl shadow-lg rounded-lg"
+          className="!bg-background/90 !border-border backdrop-blur-sm"
           showInteractive={false}
         />
         
@@ -204,8 +201,8 @@ function FamilyTreeVisualizationInner({
             if (node.type === 'guardianNode') return 'hsl(var(--chart-1))';
             return 'hsl(var(--chart-2))';
           }}
-          className="!bg-background/90 !border-border backdrop-blur-xl shadow-lg rounded-lg"
-          maskColor="hsl(var(--muted) / 0.3)"
+          className="!bg-background/90 !border-border backdrop-blur-sm"
+          maskColor="rgba(0,0,0,0.2)"
         />
         
         {/* ✅ Botão de exportação (Fase 4.3) */}
@@ -289,7 +286,6 @@ function FamilyTreeVisualizationInner({
           onNext={selectNextFamily}
           onPrevious={selectPreviousFamily}
           totalFamilies={filteredCount}
-          onEditStudent={onEditStudent || (() => {})}
         />
       </div>
     </div>
@@ -302,7 +298,6 @@ export function FamilyTreeVisualization({
   searchTerm,
   selectedFamilyKey,
   onFamilySelect,
-  onEditStudent,
 }: FamilyTreeVisualizationProps) {
   return (
     <ReactFlowProvider>
@@ -311,7 +306,6 @@ export function FamilyTreeVisualization({
         searchTerm={searchTerm}
         selectedFamilyKey={selectedFamilyKey}
         onFamilySelect={onFamilySelect}
-        onEditStudent={onEditStudent}
       />
     </ReactFlowProvider>
   );
