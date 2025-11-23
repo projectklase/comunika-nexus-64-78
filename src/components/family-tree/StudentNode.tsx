@@ -33,9 +33,11 @@ export function StudentNode({ data }: StudentNodeProps) {
       <Handle type="target" position={Position.Top} id="top" />
       <Handle type="source" position={Position.Bottom} id="bottom" />
       
-      {/* Handles laterais bidirecionais para conexões horizontais */}
-      <Handle type="source" position={Position.Left} id="left" />
+      {/* Handles laterais bidirecionais - sobrepostos para aceitar source E target */}
+      <Handle type="source" position={Position.Left} id="left-source" />
+      <Handle type="target" position={Position.Left} id="left" />
       <Handle type="source" position={Position.Right} id="right" />
+      <Handle type="target" position={Position.Right} id="right-target" />
       
       <div className={`px-4 py-3 rounded-xl bg-gradient-to-br from-chart-2 to-chart-2/80 ${borderClass} shadow-md min-w-[160px] hover:scale-105 transition-transform`}>
         <div className="flex items-center gap-2">
