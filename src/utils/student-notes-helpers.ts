@@ -12,7 +12,7 @@ export const StudentNotesSchema = z.object({
   healthNotes: z.string().optional(), // Observações de saúde
   consents: z.any().optional(), // Consentimentos
   
-  // ✨ Registro de relacionamentos familiares
+  // ✨ Registro de relacionamentos familiares (Student ↔ Student)
   familyRelationships: z.array(z.object({
     relatedStudentId: z.string().uuid(),
     relatedStudentName: z.string(),
@@ -20,10 +20,23 @@ export const StudentNotesSchema = z.object({
       'SIBLING',           // Irmão/Irmã
       'COUSIN',            // Primo/Prima
       'UNCLE_NEPHEW',      // Tio-Sobrinho
-      'GODPARENT_GODCHILD', // Padrinho-Afilhado
       'OTHER'              // Outro (com descrição customizada)
     ]),
     customRelationship: z.string().optional(), // Para quando escolher "Outro"
+    createdAt: z.string(), // ISO timestamp
+  })).optional(),
+
+  // ✨ FASE 3: Relacionamentos com Responsáveis (Guardian → Student)
+  guardianRelationships: z.array(z.object({
+    guardianId: z.string(),              // ID do Guardian (UUID)
+    guardianName: z.string(),            // Nome do Guardian
+    guardianOf: z.string().uuid(),       // ID do aluno que TEM esse guardian
+    relationshipType: z.enum([
+      'GODPARENT',         // Padrinho/Madrinha
+      'EXTENDED_FAMILY',   // Família estendida
+      'OTHER'              // Outro
+    ]),
+    customRelationship: z.string().optional(),
     createdAt: z.string(), // ISO timestamp
   })).optional(),
 }).passthrough(); // Permite campos adicionais
