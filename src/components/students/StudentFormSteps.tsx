@@ -955,28 +955,56 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
           .insert(classStudents);
       }
 
-      // Salvar guardiões
+      // Salvar guardiões com validação ANTES de deletar
       if (formData.student?.guardians && formData.student.guardians.length > 0) {
-        await supabase
-          .from('guardians')
-          .delete()
-          .eq('student_id', studentId);
-
+        // ✅ FASE 4.1: Validar guardians ANTES de deletar os existentes
         const validGuardians = formData.student.guardians
-          .filter(g => g.name.trim())
+          .filter(g => g.name?.trim() && g.relation) // Nome E relação são obrigatórios
           .map(g => ({
             student_id: studentId,
-            name: g.name,
+            name: g.name.trim(),
             relation: g.relation,
-            phone: g.phone || null,
-            email: g.email || null,
+            phone: g.phone?.trim() || null,
+            email: g.email?.trim() || null,
             is_primary: g.isPrimary || false
           }));
 
+        // ✅ FASE 4.2: Verificar se aluno menor de idade tem pelo menos 1 guardião
+        const studentAge = formData.student?.dob 
+          ? Math.floor((new Date().getTime() - new Date(formData.student.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+          : null;
+        
+        const isMinor = studentAge !== null && studentAge < 18;
+
+        if (validGuardians.length === 0 && isMinor) {
+          toast.error('⚠️ Alunos menores de idade precisam de pelo menos um responsável com nome e parentesco preenchidos');
+          throw new Error('Responsável obrigatório incompleto');
+        }
+
+        // ✅ FASE 4.3: Só deleta e re-insere se houver guardians válidos
         if (validGuardians.length > 0) {
           await supabase
             .from('guardians')
+            .delete()
+            .eq('student_id', studentId);
+
+          const { error: insertError } = await supabase
+            .from('guardians')
             .insert(validGuardians);
+
+          if (insertError) {
+            console.error('Erro ao inserir guardians:', insertError);
+            toast.error('Erro ao salvar responsáveis');
+            throw insertError;
+          }
+
+          console.log(`✅ ${validGuardians.length} responsável(is) salvos com sucesso`);
+        } else if (!isMinor) {
+          // Aluno maior de idade sem guardians - limpar todos
+          await supabase
+            .from('guardians')
+            .delete()
+            .eq('student_id', studentId);
         }
       }
 

@@ -85,14 +85,15 @@ export async function cleanInvalidRelationships(schoolId: string): Promise<FixRe
 
         if (updateError) {
           console.error(`❌ Erro ao atualizar ${student.name}:`, updateError);
+          // Continua mesmo com erro para não bloquear outros alunos
           continue;
         }
 
         studentsUpdated++;
-        console.log(`  ✅ ${student.name} atualizado (${validRelationships.length} relacionamentos válidos)`);
+        console.log(`  ✅ ${student.name} atualizado (${validRelationships.length} relacionamentos válidos mantidos)`);
       }
-    } catch (parseError) {
-      console.error(`⚠️ Erro ao processar ${student.name}:`, parseError);
+    } catch (parseError: any) {
+      console.error(`⚠️ Erro ao processar ${student.name}:`, parseError.message || parseError);
       // Continua processando outros alunos mesmo se um falhar
     }
   }
