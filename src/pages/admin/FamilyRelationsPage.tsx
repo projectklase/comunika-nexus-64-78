@@ -27,7 +27,8 @@ import {
   UserCircle2,
   ExternalLink,
   Pencil,
-  Wrench
+  Wrench,
+  Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -37,6 +38,8 @@ import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisu
 import { useFamilyRelationsState } from '@/hooks/useFamilyRelationsState';
 import { StudentFormSteps } from '@/components/students/StudentFormSteps';
 import { cleanInvalidRelationships } from '@/utils/fix-family-relationships';
+import { diagnoseInconsistentRelationships, type DiagnosisResult } from '@/utils/diagnose-family-relationships';
+import { DiagnosisResultsModal } from '@/components/family-tree/DiagnosisResultsModal';
 
 
 export default function FamilyRelationsPage() {
@@ -51,6 +54,11 @@ export default function FamilyRelationsPage() {
   const [isEditStudentModalOpen, setIsEditStudentModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [isCleaningRelationships, setIsCleaningRelationships] = useState(false);
+  
+  // Estados para diagnóstico de relacionamentos
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
+  const [diagnosisResults, setDiagnosisResults] = useState<DiagnosisResult | null>(null);
 
   // ✅ Estado global compartilhado (Fase 4)
   const {
@@ -208,6 +216,36 @@ export default function FamilyRelationsPage() {
     }
   };
 
+  const handleDiagnoseRelationships = async () => {
+    if (!currentSchool?.id) {
+      toast.error('Escola não identificada');
+      return;
+    }
+
+    setIsDiagnosing(true);
+    try {
+      const results = await diagnoseInconsistentRelationships(currentSchool.id);
+      setDiagnosisResults(results);
+      setShowDiagnosisModal(true);
+      
+      if (results.totalIssues === 0) {
+        toast.success('✅ Nenhuma inconsistência detectada!');
+      } else {
+        toast.warning(
+          `🔍 ${results.totalIssues} inconsistência${results.totalIssues > 1 ? 's' : ''} detectada${results.totalIssues > 1 ? 's' : ''}`,
+          {
+            description: `${results.criticalIssues} críticas, ${results.highIssues} altas`
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao diagnosticar relacionamentos:', error);
+      toast.error('Falha ao diagnosticar relacionamentos');
+    } finally {
+      setIsDiagnosing(false);
+    }
+  };
+
   // ✅ Filtro de famílias usando busca global (Fase 4)
   const filteredFamilies = families.filter(family =>
     family.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -250,6 +288,26 @@ export default function FamilyRelationsPage() {
         </div>
         
         <div className="flex gap-2">
+          <Button
+            onClick={handleDiagnoseRelationships}
+            disabled={isDiagnosing}
+            variant="outline"
+            className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border-blue-500/30 gap-2"
+            title="Analisa inconsistências comparando relacionamentos cadastrados com guardians compartilhados"
+          >
+            {isDiagnosing ? (
+              <>
+                <div className="h-4 w-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                Diagnosticando...
+              </>
+            ) : (
+              <>
+                <Shield className="h-4 w-4" />
+                Diagnosticar
+              </>
+            )}
+          </Button>
+
           <Button
             onClick={handleCleanInvalidRelationships}
             disabled={isCleaningRelationships}
@@ -720,6 +778,13 @@ export default function FamilyRelationsPage() {
           loadFamilyDetails();
           toast.success('Aluno atualizado com sucesso!');
         }}
+      />
+
+      {/* Modal de Resultados do Diagnóstico */}
+      <DiagnosisResultsModal
+        open={showDiagnosisModal}
+        onClose={() => setShowDiagnosisModal(false)}
+        results={diagnosisResults}
       />
     </div>
   );
