@@ -100,25 +100,22 @@ export function useSecretarias() {
         }
       });
 
-      // Tratar resposta de erro da edge function
-      if (response.error) {
-        const errorData = response.error as any;
-        
-        // Tentar extrair a mensagem de múltiplas fontes possíveis
-        const errorMessage = 
-          errorData.error ||           // Campo "error" do JSON body
-          errorData.message ||          // Campo "message" padrão
-          errorData.msg ||              // Alternativa comum
-          (typeof errorData === 'string' ? errorData : null) || // String direta
-          'Erro ao criar secretaria';
-        
-        console.error('Edge function error:', { errorData, errorMessage });
-        throw new Error(errorMessage);
+      // ✅ PRIORIDADE 1: Verificar response.data primeiro (contém o body JSON mesmo com erro HTTP)
+      if (response.data && !response.data.success && response.data.error) {
+        console.error('Edge function returned error:', response.data);
+        throw new Error(response.data.error);
       }
       
-      // Se o status não é success, também é um erro
-      if (!response.data?.success && response.data?.error) {
-        throw new Error(response.data.error);
+      // ✅ PRIORIDADE 2: Verificar response.error como fallback
+      if (response.error) {
+        const errorData = response.error as any;
+        const errorMessage = 
+          errorData.message || 
+          (typeof errorData === 'string' ? errorData : null) || 
+          'Erro ao criar secretaria';
+        
+        console.error('Edge function error object:', errorData);
+        throw new Error(errorMessage);
       }
 
       // Update phone if provided
