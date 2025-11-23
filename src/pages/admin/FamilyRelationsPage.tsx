@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,15 @@ export default function FamilyRelationsPage() {
     setActiveTab,
     navigateToTree,
   } = useFamilyRelationsState();
+
+  // ✅ Estado local para input sem debounce (Fase 4.1)
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  // ✅ Sincronizar debounced search com estado global (Fase 4.1)
+  useEffect(() => {
+    setSearchTerm(debouncedSearch);
+  }, [debouncedSearch, setSearchTerm]);
 
   // ✅ Ref para scroll automático na lista
   const familyCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -320,12 +330,12 @@ export default function FamilyRelationsPage() {
       {/* ✅ Busca Global (Fase 4) */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
-          placeholder="Buscar responsável, aluno ou email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-12 h-12 text-base bg-background/50 backdrop-blur-sm border-border"
-        />
+              <Input
+                placeholder="Buscar responsável, aluno ou email..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-12 h-12 text-base bg-background/50 backdrop-blur-sm border-border"
+              />
         {filteredFamilies.length > 0 && families.length > 0 && (
           <Badge 
             variant="secondary" 
