@@ -94,41 +94,50 @@ async function fetchGuardianRelationships(
  * Retorna estilo de edge baseado no tipo de relacionamento
  */
 function getEdgeStyleByRelationship(type: RelationshipType) {
-  const styles: Record<RelationshipType, { style: any }> = {
+  const styles: Record<RelationshipType, { style: any; animated?: boolean; className?: string }> = {
     SIBLING: {
       style: {
         stroke: 'hsl(var(--chart-2))',
-        strokeWidth: 2,
-        strokeDasharray: '5,5',
+        strokeWidth: 3,
       },
+      animated: true,
+      className: 'drop-shadow-[0_0_8px_hsl(var(--chart-2)/0.4)]',
     },
     COUSIN: {
       style: {
-        stroke: 'hsl(var(--chart-3))', // Laranja para primos
-        strokeWidth: 1.5,
-        strokeDasharray: '10,5',
+        stroke: 'hsl(var(--chart-3))',
+        strokeWidth: 2.5,
+        strokeDasharray: '12,6',
       },
+      animated: false,
+      className: 'drop-shadow-[0_0_6px_hsl(var(--chart-3)/0.3)]',
     },
     UNCLE_NEPHEW: {
       style: {
-        stroke: 'hsl(var(--chart-4))', // Verde para tio-sobrinho
-        strokeWidth: 1.5,
-        strokeDasharray: '3,3',
+        stroke: 'hsl(var(--chart-4))',
+        strokeWidth: 2.5,
+        strokeDasharray: '6,3',
       },
+      animated: false,
+      className: 'drop-shadow-[0_0_6px_hsl(var(--chart-4)/0.3)]',
     },
     OTHER: {
       style: {
         stroke: 'hsl(var(--muted-foreground))',
-        strokeWidth: 1,
-        strokeDasharray: '2,2',
+        strokeWidth: 1.5,
+        strokeDasharray: '4,4',
       },
+      animated: false,
+      className: 'opacity-60',
     },
     NOT_REGISTERED: {
       style: {
         stroke: 'hsl(var(--muted-foreground) / 0.3)',
         strokeWidth: 1,
-        strokeDasharray: '5,5',
+        strokeDasharray: '6,6',
       },
+      animated: false,
+      className: 'opacity-30',
     },
   };
 
@@ -227,11 +236,12 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
         source: guardianNodeId,
         target: studentNodeId,
         type: 'smoothstep',
-        animated: true,
+        animated: false,
         style: { 
           stroke: 'hsl(var(--chart-1))', 
-          strokeWidth: 2 
+          strokeWidth: 2.5 
         },
+        className: 'drop-shadow-[0_0_4px_hsl(var(--chart-1)/0.2)]',
         data: {
           relationshipLabel: 'Responsável',
         },
@@ -275,7 +285,9 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
           sourceHandle,
           targetHandle,
           type: 'smoothstep',
+          animated: edgeStyles.animated || false,
           style: edgeStyles.style,
+          className: edgeStyles.className,
           data: {
             relationshipType,
             relationshipLabel: RELATIONSHIP_LABELS[relationshipType],
@@ -323,10 +335,11 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
       type: 'smoothstep',
       animated: true,
       style: {
-        stroke: 'hsl(var(--chart-5))', // Azul para padrinhos
-        strokeWidth: 3,
-        strokeDasharray: '8,4',
+        stroke: 'hsl(var(--chart-5))',
+        strokeWidth: 2.5,
+        strokeDasharray: '10,5',
       },
+      className: 'drop-shadow-[0_0_8px_hsl(var(--chart-5)/0.4)]',
       data: {
         relationshipType: gRel.relationshipType,
         relationshipLabel,

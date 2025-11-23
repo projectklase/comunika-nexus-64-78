@@ -186,13 +186,14 @@ function FamilyTreeVisualizationInner({
         >
         <Background 
           variant={BackgroundVariant.Dots} 
-          gap={20} 
-          size={1} 
-          color="hsl(var(--muted-foreground) / 0.1)"
+          gap={24} 
+          size={1.2} 
+          color="hsl(var(--muted-foreground) / 0.18)"
+          className="opacity-60"
         />
         
         <Controls 
-          className="!bg-background/90 !border-border backdrop-blur-sm"
+          className="!bg-background/95 !border-border backdrop-blur-xl shadow-lg rounded-lg"
           showInteractive={false}
         />
         
@@ -201,8 +202,8 @@ function FamilyTreeVisualizationInner({
             if (node.type === 'guardianNode') return 'hsl(var(--chart-1))';
             return 'hsl(var(--chart-2))';
           }}
-          className="!bg-background/90 !border-border backdrop-blur-sm"
-          maskColor="rgba(0,0,0,0.2)"
+          className="!bg-background/90 !border-border backdrop-blur-xl shadow-lg rounded-lg"
+          maskColor="hsl(var(--muted) / 0.3)"
         />
         
         {/* ✅ Botão de exportação (Fase 4.3) */}
