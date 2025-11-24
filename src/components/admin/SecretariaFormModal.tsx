@@ -504,6 +504,20 @@ export function SecretariaFormModal({
                 id="phone"
                 value={formData.phone}
                 onChange={(value) => handleFieldChange('phone', value)}
+                onBlur={async () => {
+                  // ✅ VERIFICAR TELEFONE DUPLICADO EM TEMPO REAL
+                  if (formData.phone && !isEditing) {
+                    const result = await checkDuplicates({
+                      phone: formData.phone
+                    }, secretaria?.id);
+                    
+                    if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
+                      toast.warning('⚠️ Este telefone já está cadastrado no sistema');
+                      setDuplicateCheck(result);
+                      setShowDuplicateModal(true);
+                    }
+                  }
+                }}
                 error={touched.phone ? errors.phone : null}
                 showError={false}
                 disabled={loading}
