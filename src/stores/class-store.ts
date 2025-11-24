@@ -3,6 +3,7 @@ import { SchoolClass, ClassStatus, ClassFilters } from '@/types/class';
 import { validateClassData } from '@/lib/data-hygiene';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logAudit } from './audit-store';
 
 interface ClassStore {
   classes: SchoolClass[];
@@ -255,12 +256,55 @@ export const useClassStore = create<ClassStore>((set, get) => ({
 
   bulkArchive: async (ids: string[]) => {
     try {
+      // Buscar dados do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', user.id)
+        .single();
+
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      // Buscar nomes das turmas
+      const { data: classData } = await (supabase as any)
+        .from('classes')
+        .select('id, name')
+        .in('id', ids);
+
       const { error } = await (supabase as any)
         .from('classes')
         .update({ status: 'Arquivada' })
         .in('id', ids);
 
       if (error) throw error;
+
+      // Log de auditoria para cada turma
+      if (profile && userRole && classData) {
+        for (const cls of classData) {
+          await logAudit({
+            actor_id: user.id,
+            actor_name: profile.name,
+            actor_email: profile.email,
+            actor_role: userRole.role,
+            action: 'ARCHIVE',
+            entity: 'CLASS',
+            entity_id: cls.id,
+            entity_label: cls.name,
+            scope: 'GLOBAL',
+            meta: {
+              archived_count: ids.length,
+              operation: 'bulk_archive'
+            }
+          });
+        }
+      }
 
       await get().loadClasses();
       toast.success(`${ids.length} turma(s) arquivada(s)`);
@@ -285,12 +329,63 @@ export const useClassStore = create<ClassStore>((set, get) => ({
 
   bulkAssignTeacher: async (classIds: string[], teacherId: string) => {
     try {
+      // Buscar dados do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', user.id)
+        .single();
+
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      // Buscar nomes das turmas e do professor
+      const { data: classData } = await (supabase as any)
+        .from('classes')
+        .select('id, name')
+        .in('id', classIds);
+
+      const { data: teacherProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', teacherId)
+        .single();
+
       const { error } = await (supabase as any)
         .from('classes')
         .update({ main_teacher_id: teacherId })
         .in('id', classIds);
 
       if (error) throw error;
+
+      // Log de auditoria para cada turma
+      if (profile && userRole && classData && teacherProfile) {
+        for (const cls of classData) {
+          await logAudit({
+            actor_id: user.id,
+            actor_name: profile.name,
+            actor_email: profile.email,
+            actor_role: userRole.role,
+            action: 'ASSIGN',
+            entity: 'TEACHER',
+            entity_id: teacherId,
+            entity_label: teacherProfile.name,
+            scope: `CLASS:${cls.id}`,
+            class_name: cls.name,
+            meta: {
+              teacher_name: teacherProfile.name,
+              class_count: classIds.length,
+              operation: 'bulk_assign_teacher'
+            }
+          });
+        }
+      }
 
       await get().loadClasses();
       toast.success('Professor atribuído às turmas');

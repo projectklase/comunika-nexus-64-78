@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useSchool } from '@/contexts/SchoolContext';
+import { logAudit } from '@/stores/audit-store';
 
 // Define types locally since the database types file may not be in sync yet
 interface ClassRow {
@@ -368,6 +369,29 @@ export function useClasses() {
 
   const assignTeachers = async (classId: string, teacherIds: string[]) => {
     try {
+      // Buscar dados do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', user.id)
+        .single();
+
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      // Buscar dados da turma
+      const { data: classData } = await (supabase as any)
+        .from('classes')
+        .select('name')
+        .eq('id', classId)
+        .single();
+
       // For now, we'll update only the main_teacher_id with the first teacher
       // In the future, we might need a separate table for multiple teachers per class
       const mainTeacherId = teacherIds.length > 0 ? teacherIds[0] : null;
@@ -378,6 +402,37 @@ export function useClasses() {
         .eq('id', classId);
 
       if (error) throw error;
+
+      // Log de auditoria para cada professor atribuído
+      if (profile && userRole && classData) {
+        for (const teacherId of teacherIds) {
+          const { data: teacherProfile } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', teacherId)
+            .single();
+
+          if (teacherProfile) {
+            await logAudit({
+              actor_id: user.id,
+              actor_name: profile.name,
+              actor_email: profile.email,
+              actor_role: userRole.role,
+              action: 'ASSIGN',
+              entity: 'TEACHER',
+              entity_id: teacherId,
+              entity_label: teacherProfile.name,
+              scope: `CLASS:${classId}`,
+              class_name: classData.name,
+              meta: {
+                teacher_name: teacherProfile.name,
+                teacher_count: teacherIds.length,
+                operation: 'assign_teachers'
+              }
+            });
+          }
+        }
+      }
 
       toast({
         title: 'Professores atribuídos',
