@@ -71,6 +71,8 @@ import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
 import { SiblingGuardianSuggestion } from './SiblingGuardianSuggestion';
 import { useSchool } from '@/contexts/SchoolContext';
 import { SmartLevelSelect } from '@/components/classes/SmartLevelSelect';
+import { SmartProgramSelect } from '@/components/classes/SmartProgramSelect';
+import { QuickCreateClassSheet } from '@/components/classes/QuickCreateClassSheet';
 
 interface StudentFormStepsProps {
   open: boolean;
@@ -115,6 +117,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
   const [showSiblingSuggestion, setShowSiblingSuggestion] = useState(false);
   const [siblingCandidates, setSiblingCandidates] = useState<any[]>([]);
+  const [showProgramSheet, setShowProgramSheet] = useState(false);
+  const [showClassSheet, setShowClassSheet] = useState(false);
 
   // Helper para mapear campos do backend para o DuplicateWarning
   const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
@@ -130,9 +134,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     return fieldMap[field] || 'document';
   };
 
-  const { classes } = useClasses();
-  const { programs } = usePrograms();
-  const { levels } = useLevels();
+  const { classes, loadClasses } = useClasses();
+  const { programs, fetchPrograms } = usePrograms();
+  const { levels, refetch: refetchLevels } = useLevels();
   const { createStudent, updateStudent } = useStudents();
   const { currentSchool } = useSchool();
   const { checkDuplicates, isChecking } = useDuplicateCheck();
@@ -1760,8 +1764,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
             <div className="space-y-2">
               <Label>Programa *</Label>
-              <Select
-                value={formData.student?.programId}
+              <SmartProgramSelect
+                value={formData.student?.programId || ''}
                 onValueChange={(value) => {
                   // ✨ Resetar nível e turmas ao mudar programa
                   updateFormData({ 
@@ -1772,18 +1776,15 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     }
                   });
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o programa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {programs.map((program) => (
-                    <SelectItem key={program.id} value={program.id}>
-                      {program.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                programs={programs}
+                onProgramCreated={fetchPrograms}
+              />
+              {programs.length === 0 && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-500 flex items-center gap-1">
+                  <span>ℹ️</span>
+                  <span>Nenhum programa cadastrado ainda. Use o campo acima para criar.</span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -1800,6 +1801,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   });
                 }}
                 levels={filteredLevels}
+                onLevelCreated={refetchLevels}
               />
               {filteredLevels.length === 0 && (
                 <p className="text-xs text-yellow-600 dark:text-yellow-500 flex items-center gap-1">
@@ -1820,9 +1822,21 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     ⚠️ Selecione um nível para ver as turmas disponíveis
                   </p>
                 ) : filteredClasses.length === 0 ? (
-                  <p className="text-sm text-yellow-600 dark:text-yellow-500 text-center py-4">
-                    ℹ️ Não há turmas cadastradas para este programa e nível
-                  </p>
+                  <div className="flex flex-col items-center gap-3 py-4">
+                    <p className="text-sm text-yellow-600 dark:text-yellow-500 text-center">
+                      ℹ️ Não há turmas cadastradas para este nível
+                    </p>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowClassSheet(true)}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Criar Turma
+                    </Button>
+                  </div>
                 ) : (
                   <>
                     <div className="flex items-center justify-between pb-2 border-b">
@@ -2572,6 +2586,24 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       similarStudents={siblingCandidates}
       newStudentName={formData.name}
       onCopyGuardians={handleCopyGuardians}
+    />
+
+    {/* Modal de Criação Rápida de Turma */}
+    <QuickCreateClassSheet
+      open={showClassSheet}
+      onOpenChange={setShowClassSheet}
+      levelId={formData.student?.levelId}
+      programId={formData.student?.programId}
+      onClassCreated={async (classId) => {
+        // Adicionar a nova turma ao array de turmas selecionadas
+        const currentClassIds = formData.student?.classIds || [];
+        updateFormData({ student: { classIds: [...currentClassIds, classId] } });
+        
+        // Recarregar lista de turmas
+        await loadClasses();
+        
+        setShowClassSheet(false);
+      }}
     />
     </>
   );
