@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useProgramStore } from '@/stores/program-store';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ export function SubjectFormModal({ open, onOpenChange, subject }: SubjectFormMod
   const { toast } = useToast();
   const { createSubject, updateSubject, subjects } = useSubjects();
   const { getActivePrograms } = useProgramStore();
+  const { currentSchool } = useSchool();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
