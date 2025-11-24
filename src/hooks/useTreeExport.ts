@@ -1,11 +1,16 @@
-import { useState, RefObject } from 'react';
+import { useState, RefObject, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
 import { toPng, toCanvas } from 'html-to-image';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
+import { ExportOverlay } from '@/components/family-tree/ExportOverlay';
 
 export function useTreeExport(
   reactFlowWrapper: RefObject<HTMLDivElement>,
-  schoolName: string
+  schoolName: string,
+  totalFamilies: number = 0,
+  totalStudents: number = 0,
+  totalGuardians: number = 0
 ) {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -37,23 +42,53 @@ export function useTreeExport(
     }
 
     setIsExporting(true);
+    let exportWrapper: HTMLDivElement | null = null;
+    let root: ReturnType<typeof createRoot> | null = null;
 
     try {
       const hiddenElements = hideUIElements();
 
-      const dataUrl = await toPng(reactFlowWrapper.current, {
+      // 🎨 Criar wrapper temporário para exportação profissional
+      exportWrapper = document.createElement('div');
+      exportWrapper.style.position = 'absolute';
+      exportWrapper.style.left = '-99999px';
+      exportWrapper.style.top = '-99999px';
+      exportWrapper.style.width = '3508px'; // A4 Landscape @ 300 DPI
+      exportWrapper.style.height = '2480px';
+      document.body.appendChild(exportWrapper);
+
+      // Clonar conteúdo do ReactFlow
+      const treeClone = reactFlowWrapper.current.cloneNode(true) as HTMLDivElement;
+      treeClone.style.width = '100%';
+      treeClone.style.height = '100%';
+      const treeHTML = treeClone.outerHTML;
+
+      // Renderizar overlay profissional com React
+      root = createRoot(exportWrapper);
+      await new Promise<void>((resolve) => {
+        root!.render(
+          createElement(ExportOverlay, {
+            schoolName,
+            totalFamilies,
+            totalStudents,
+            totalGuardians,
+            exportDate: new Date(),
+            children: createElement('div', {
+              dangerouslySetInnerHTML: { __html: treeHTML }
+            }),
+          })
+        );
+        // Aguardar renderização
+        setTimeout(resolve, 500);
+      });
+
+      // Capturar em alta resolução (300 DPI)
+      const dataUrl = await toPng(exportWrapper, {
         cacheBust: true,
         backgroundColor: '#ffffff',
-        pixelRatio: 2,
-        filter: (node) => {
-          const classList = node.classList;
-          if (!classList) return true;
-          
-          return !classList.contains('react-flow__minimap') &&
-                 !classList.contains('react-flow__controls') &&
-                 !classList.contains('react-flow__attribution') &&
-                 !classList.contains('react-flow__panel');
-        }
+        pixelRatio: 3, // 300 DPI para impressão profissional
+        width: 3508,
+        height: 2480,
       });
 
       const link = document.createElement('a');
@@ -62,11 +97,18 @@ export function useTreeExport(
       link.click();
 
       restoreUIElements(hiddenElements);
-      toast.success('Árvore exportada como PNG com sucesso!');
+      toast.success('Árvore exportada como PNG de alta qualidade!');
     } catch (error) {
       console.error('Erro ao exportar PNG:', error);
       toast.error('Erro ao exportar árvore. Tente novamente.');
     } finally {
+      // Cleanup
+      if (root) {
+        root.unmount();
+      }
+      if (exportWrapper && document.body.contains(exportWrapper)) {
+        document.body.removeChild(exportWrapper);
+      }
       setIsExporting(false);
     }
   };
