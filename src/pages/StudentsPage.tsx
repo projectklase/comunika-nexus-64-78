@@ -43,6 +43,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 export default function StudentsPage() {
@@ -138,15 +149,12 @@ export default function StudentsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleDelete = async (studentId: string, studentName: string) => {
-    // Adiciona uma confirmação para segurança
-    if (!window.confirm(`Tem certeza que deseja excluir o aluno ${studentName}? Esta ação não pode ser desfeita.`)) {
-      return;
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      await deleteStudent(studentId);
+    } catch (error) {
+      // Error handling is done in the hook
     }
-    
-    // A função 'deleteStudent' que está sendo chamada aqui é a nova,
-    // que já vem do seu hook 'useStudents' corrigido.
-    await deleteStudent(studentId);
   };
 
   return (
@@ -418,10 +426,32 @@ export default function StudentsPage() {
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(student.id, student.name)}>
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir o aluno <strong>{student.name}</strong>? 
+                                    Esta ação não pode ser desfeita e removerá todos os dados associados.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleDeleteStudent(student.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
