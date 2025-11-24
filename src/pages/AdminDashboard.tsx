@@ -27,7 +27,8 @@ import { ptBR } from 'date-fns/locale';
 import { 
   getActionLabel, 
   getEntityLabel, 
-  getRoleLabel 
+  getRoleLabel,
+  getActorDisplayName
 } from '@/utils/audit-helpers';
 import { AuditEvent } from '@/types/audit';
 import { FamilyMetricsWidget } from '@/components/admin/FamilyMetricsWidget';
@@ -549,7 +550,7 @@ export default function AdminDashboard() {
               <span className={`${actionColor} mt-0.5 text-lg`}>{actionIcon}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-foreground group-hover:text-purple-300 transition-colors">{audit.actor_name}</span>
+                  <span className="text-foreground group-hover:text-purple-300 transition-colors">{getActorDisplayName(audit.actor_name)}</span>
                   <Badge variant="outline" className="text-[9px] border-white/20 text-muted-foreground">
                     {getRoleLabel(audit.actor_role)}
                   </Badge>
