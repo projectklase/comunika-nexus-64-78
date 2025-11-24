@@ -77,6 +77,15 @@ const App = () => (
             <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* 🚨 DEV ONLY: Quick login for development/testing */}
+          {process.env.NODE_ENV === 'development' && (
+            <Route path="/dev/quick-login" element={
+              React.createElement(
+                React.lazy(() => import('./pages/dev/QuickLoginDev'))
+              )
+            } />
+          )}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
