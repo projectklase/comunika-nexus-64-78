@@ -25,6 +25,10 @@ import { FamilyBreadcrumb } from './FamilyBreadcrumb';
 import { ExportTreeButton } from './ExportTreeButton';
 import { useTreeExport } from '@/hooks/useTreeExport';
 import { useSchool } from '@/contexts/SchoolContext';
+import { StudentFormSteps } from '@/components/students/StudentFormSteps';
+import { useStudents } from '@/hooks/useStudents';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface FamilyTreeVisualizationProps {
   families: FamilyGroup[];
@@ -65,6 +69,13 @@ function FamilyTreeVisualizationInner({
     reactFlowWrapperRef,
     currentSchool?.name || 'Escola'
   );
+
+  // Estados para edição de aluno
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedStudentForEdit, setSelectedStudentForEdit] = useState<any>(null);
+  const [loadingStudent, setLoadingStudent] = useState(false);
+  
+  const { fetchStudents } = useStudents();
 
   // ✅ Hook de seleção de família (Fase 3)
   const {
@@ -127,6 +138,63 @@ function FamilyTreeVisualizationInner({
       onFamilySelect(familyKey);
     }
   }, [selectFamily, edges, onFamilySelect]);
+
+  // Handler para editar aluno
+  const handleEditStudent = useCallback(async (studentId: string) => {
+    setLoadingStudent(true);
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', studentId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const { data: guardiansData } = await supabase
+        .from('guardians')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('is_primary', { ascending: false });
+
+      const { data: classesData } = await supabase
+        .from('class_students')
+        .select('class_id')
+        .eq('student_id', studentId);
+
+      const studentData: any = {
+        id: profileData.id,
+        name: profileData.name,
+        email: profileData.email,
+        avatar: profileData.avatar,
+        dob: profileData.dob,
+        enrollmentNumber: profileData.enrollment_number,
+        phone: profileData.phone,
+        isActive: profileData.is_active,
+        createdAt: profileData.created_at,
+        updatedAt: profileData.updated_at,
+        guardians: guardiansData || [],
+        classes: classesData?.map(c => ({ id: c.class_id, name: '' })) || [],
+        notes: profileData.student_notes,
+      };
+
+      setSelectedStudentForEdit(studentData);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      console.error('Erro ao carregar dados do aluno:', error);
+      toast.error('Erro ao carregar dados do aluno');
+    } finally {
+      setLoadingStudent(false);
+    }
+  }, []);
+
+  // Handler após salvar o aluno editado
+  const handleSaveStudent = useCallback(async () => {
+    await fetchStudents();
+    setIsEditModalOpen(false);
+    setSelectedStudentForEdit(null);
+    toast.success('Aluno atualizado com sucesso!');
+  }, [fetchStudents]);
 
   if (isBuilding) {
     return (
@@ -286,7 +354,21 @@ function FamilyTreeVisualizationInner({
           onNext={selectNextFamily}
           onPrevious={selectPreviousFamily}
           totalFamilies={filteredCount}
+          onEditStudent={handleEditStudent}
         />
+
+        {/* Modal de edição de aluno */}
+        {isEditModalOpen && selectedStudentForEdit && (
+          <StudentFormSteps
+            open={isEditModalOpen}
+            onOpenChange={(open) => {
+              setIsEditModalOpen(open);
+              if (!open) setSelectedStudentForEdit(null);
+            }}
+            student={selectedStudentForEdit}
+            onSave={handleSaveStudent}
+          />
+        )}
       </div>
     </div>
   );
