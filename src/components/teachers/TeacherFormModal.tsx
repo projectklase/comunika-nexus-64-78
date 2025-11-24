@@ -124,6 +124,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
@@ -442,12 +443,45 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
     }
   };
 
-  const addPhone = () => {
-    if (newPhone.trim() && validatePhone(newPhone) === null) {
-      const currentPhones = form.getValues('phones') || [];
-      form.setValue('phones', [...currentPhones, newPhone.trim()]);
-      setNewPhone('');
+  const addPhone = async () => {
+    if (!newPhone.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite um telefone",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    if (validatePhone(newPhone) !== null) {
+      toast({
+        title: "Telefone inválido",
+        description: "Verifique o formato do telefone",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // ✅ VERIFICAR DUPLICATA ANTES DE ADICIONAR
+    setIsCheckingPhone(true);
+    const result = await checkDuplicates({
+      phone: newPhone
+    }, teacher?.id);
+    setIsCheckingPhone(false);
+    
+    if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
+      setDuplicateCheck(result);
+      setShowDuplicateModal(true);
+      return; // Não adiciona se duplicado
+    }
+    
+    const currentPhones = form.getValues('phones') || [];
+    form.setValue('phones', [...currentPhones, newPhone.trim()]);
+    setNewPhone('');
+    toast({
+      title: "Telefone adicionado",
+      description: "O telefone foi adicionado com sucesso"
+    });
   };
 
   const removePhone = (index: number) => {

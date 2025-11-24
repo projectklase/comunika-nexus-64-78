@@ -58,6 +58,7 @@ import {
   generateSecurePassword,
   validateDateBR
 } from '@/lib/validation';
+import { normalizePhoneForComparison } from '@/lib/phone-utils';
 import { Person, Guardian, StudentExtra } from '@/types/class';
 import { useClasses } from '@/hooks/useClasses';
 import { usePrograms } from '@/hooks/usePrograms';
@@ -649,8 +650,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       if (guardianEmail) {
         query = query.eq('email', guardianEmail.toLowerCase().trim());
       } else if (guardianPhone) {
-        const cleanPhone = guardianPhone.replace(/\D/g, '');
-        query = query.eq('phone', cleanPhone);
+        // ✅ CORREÇÃO: Buscar TODOS os responsáveis com telefone (não usar .eq)
+        query = query.not('phone', 'is', null);
       }
 
       const { data: existingGuardians } = await query;
@@ -659,8 +660,23 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         return [];
       }
 
+      // ✅ CORREÇÃO: Filtrar manualmente após normalizar ambos os lados
+      let filteredGuardians = existingGuardians;
+      
+      if (guardianPhone) {
+        const normalizedInput = normalizePhoneForComparison(guardianPhone);
+        filteredGuardians = existingGuardians.filter(g => {
+          const normalizedDb = normalizePhoneForComparison(g.phone);
+          return normalizedDb === normalizedInput && normalizedDb.length > 0;
+        });
+        
+        if (filteredGuardians.length === 0) {
+          return [];
+        }
+      }
+
       // Buscar os alunos relacionados a esses responsáveis
-      const studentIds = [...new Set(existingGuardians.map(g => g.student_id))];
+      const studentIds = [...new Set(filteredGuardians.map(g => g.student_id))];
       
       const { data: studentsData } = await supabase
         .from('profiles')
