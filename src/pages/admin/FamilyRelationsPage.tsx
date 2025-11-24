@@ -3,7 +3,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, RefreshCw } from 'lucide-react';
+import { X, RefreshCw, Wand2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,6 +34,7 @@ import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
 import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisualization';
 import { useFamilyRelationsState } from '@/hooks/useFamilyRelationsState';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTransitiveInference } from '@/hooks/useTransitiveInference';
 
 
 export default function FamilyRelationsPage() {
@@ -44,6 +45,9 @@ export default function FamilyRelationsPage() {
   const [families, setFamilies] = useState<FamilyGroup[]>([]);
   const [loadingFamilies, setLoadingFamilies] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // ✨ Hook de inferência transitiva
+  const { runTransitiveInference, isProcessing } = useTransitiveInference();
 
   // ✅ Estado global compartilhado (Fase 4)
   const {
@@ -182,6 +186,36 @@ export default function FamilyRelationsPage() {
     }
   };
 
+  // ✨ NOVO: Executar inferência transitiva
+  const handleFixRelationships = async () => {
+    if (!currentSchool?.id) {
+      toast.error('Nenhuma escola selecionada');
+      return;
+    }
+    
+    const confirmed = window.confirm(
+      '🔍 Esta ação irá analisar todos os relacionamentos existentes e ' +
+      'criar automaticamente relacionamentos transitivos faltantes.\n\n' +
+      'Exemplo: Se Jonathan é primo de Gabriela e Gabriela é irmã de João, ' +
+      'o sistema irá registrar que Jonathan é primo de João.\n\n' +
+      'Deseja continuar?'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      const count = await runTransitiveInference(currentSchool.id);
+      
+      if (count > 0) {
+        // Recarregar dados da página
+        await queryClient.invalidateQueries({ queryKey: ['family-metrics'] });
+        await loadFamilyDetails();
+      }
+    } catch (error) {
+      console.error('Erro ao corrigir relacionamentos:', error);
+    }
+  };
+
   // ✅ Filtro de famílias usando busca global (Fase 4)
   const filteredFamilies = families.filter(family =>
     family.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -223,6 +257,18 @@ export default function FamilyRelationsPage() {
           >
             <RefreshCw className="h-4 w-4" />
             Atualizar
+          </Button>
+          
+          {/* ✨ NOVO: Botão de Inferência Transitiva */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleFixRelationships}
+            disabled={isProcessing || metricsLoading || loadingFamilies}
+            className="gap-2 border-purple-500/30 hover:bg-purple-500/10 text-purple-300 hover:text-purple-200"
+          >
+            <Wand2 className="h-4 w-4" />
+            {isProcessing ? 'Processando...' : 'Corrigir Relacionamentos'}
           </Button>
           
           <div>
