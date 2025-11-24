@@ -6,6 +6,7 @@ import { useSchool } from '@/contexts/SchoolContext';
 export interface Level {
   id: string;
   name: string;
+  program_id?: string | null; // ✨ Vincula o nível a um programa específico
   code?: string | null;
   display_order?: number | null;
   description?: string | null;
