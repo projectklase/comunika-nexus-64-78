@@ -645,6 +645,20 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
                 // Limpa erro ao digitar
                 if (phoneError) setPhoneError(null);
               }}
+              onBlur={async () => {
+                // ✅ VALIDAÇÃO INLINE DE DUPLICATA em tempo real
+                if (newPhone && validatePhone(newPhone) === null) {
+                  setIsCheckingPhone(true);
+                  const result = await checkDuplicates({ phone: newPhone }, teacher?.id);
+                  setIsCheckingPhone(false);
+                  
+                  if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
+                    const issue = result.similarities.find(s => s.type === 'phone');
+                    const duplicateUser = issue?.existingUsers?.[0];
+                    setPhoneError(`✕ Telefone já cadastrado${duplicateUser ? ` (${duplicateUser.name})` : ''}`);
+                  }
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
