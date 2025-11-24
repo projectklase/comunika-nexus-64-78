@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { parseStudentNotes } from '@/utils/student-notes-helpers';
+import { normalizePhoneForComparison } from '@/lib/phone-utils';
 
 export interface Address {
   street?: string;
@@ -205,48 +206,56 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
 
       // 5. VERIFICAR TELEFONE PRINCIPAL (ALERTA MÉDIO + BUSCAR GUARDIANS)
       if (data.phone) {
-        const cleanPhone = data.phone.replace(/\D/g, '');
+        const cleanPhone = normalizePhoneForComparison(data.phone);
         
-        const { data: phoneDuplicates, error: phoneError } = await supabase
+        // ✅ BUSCAR TODOS OS PROFILES DA ESCOLA (não filtrar por phone)
+        const { data: allProfiles, error: phoneError } = await supabase
           .from('profiles')
           .select('id, name, email, phone')
-          .eq('phone', cleanPhone)
           .eq('current_school_id', currentSchoolId)
           .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
         if (phoneError) {
           console.error('Erro ao verificar telefone:', phoneError);
-        } else if (phoneDuplicates && phoneDuplicates.length > 0) {
-          // Buscar guardians dos alunos similares
-          const { data: guardiansData } = await supabase
-            .from('guardians')
-            .select('*')
-            .in('student_id', phoneDuplicates.map(u => u.id));
-
-          const usersWithGuardians = phoneDuplicates.map(u => {
-            const userGuardians = guardiansData?.filter(g => g.student_id === u.id) || [];
-            return {
-              id: u.id,
-              name: u.name,
-              email: u.email,
-              guardians: userGuardians.map(g => ({
-                id: g.id,
-                name: g.name,
-                relation: g.relation,
-                phone: g.phone || undefined,
-                email: g.email || undefined,
-                isPrimary: g.is_primary || false,
-              })),
-            };
+        } else if (allProfiles) {
+          // ✅ FILTRAR MANUALMENTE NORMALIZANDO AMBOS OS LADOS
+          const phoneDuplicates = allProfiles.filter(p => {
+            const dbPhone = normalizePhoneForComparison(p.phone);
+            return dbPhone === cleanPhone && dbPhone.length > 0;
           });
 
-          result.similarities.push({
-            type: 'phone',
-            severity: 'medium',
-            message: `Encontramos ${phoneDuplicates.length} aluno(s) com o mesmo telefone`,
-            existingUsers: usersWithGuardians,
-          });
-          result.hasSimilarities = true;
+          if (phoneDuplicates.length > 0) {
+            // Buscar guardians dos alunos similares
+            const { data: guardiansData } = await supabase
+              .from('guardians')
+              .select('*')
+              .in('student_id', phoneDuplicates.map(u => u.id));
+
+            const usersWithGuardians = phoneDuplicates.map(u => {
+              const userGuardians = guardiansData?.filter(g => g.student_id === u.id) || [];
+              return {
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                guardians: userGuardians.map(g => ({
+                  id: g.id,
+                  name: g.name,
+                  relation: g.relation,
+                  phone: g.phone || undefined,
+                  email: g.email || undefined,
+                  isPrimary: g.is_primary || false,
+                })),
+              };
+            });
+
+            result.similarities.push({
+              type: 'phone',
+              severity: 'medium',
+              message: `Encontramos ${phoneDuplicates.length} aluno(s) com o mesmo telefone`,
+              existingUsers: usersWithGuardians,
+            });
+            result.hasSimilarities = true;
+          }
         }
       }
 
@@ -305,34 +314,34 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
             });
             result.hasSimilarities = true;
           }
+        }
       }
-    }
 
-    // 7. VERIFICAR EMAIL DUPLICADO - BLOQUEANTE
-    if (data.email) {
-      const { data: emailDuplicates, error: emailError } = await supabase
-        .from('profiles')
-        .select('id, name, email, dob')
-        .eq('email', data.email)
-        .eq('current_school_id', currentSchoolId)
-        .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
+      // 7. VERIFICAR EMAIL DUPLICADO - BLOQUEANTE
+      if (data.email) {
+        const { data: emailDuplicates, error: emailError } = await supabase
+          .from('profiles')
+          .select('id, name, email, dob')
+          .eq('email', data.email)
+          .eq('current_school_id', currentSchoolId)
+          .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
-      if (emailError) {
-        console.error('Erro ao verificar email:', emailError);
-      } else if (emailDuplicates && emailDuplicates.length > 0) {
-        result.blockingIssues.push({
-          field: 'email',
-          message: '🚫 Email já cadastrado',
-          existingUser: {
-            id: emailDuplicates[0].id,
-            name: emailDuplicates[0].name,
-            email: emailDuplicates[0].email,
-            dob: emailDuplicates[0].dob || undefined,
-          },
-        });
-        result.hasBlocking = true;
+        if (emailError) {
+          console.error('Erro ao verificar email:', emailError);
+        } else if (emailDuplicates && emailDuplicates.length > 0) {
+          result.blockingIssues.push({
+            field: 'email',
+            message: '🚫 Email já cadastrado',
+            existingUser: {
+              id: emailDuplicates[0].id,
+              name: emailDuplicates[0].name,
+              email: emailDuplicates[0].email,
+              dob: emailDuplicates[0].dob || undefined,
+            },
+          });
+          result.hasBlocking = true;
+        }
       }
-    }
     } catch (error) {
       console.error('Erro ao verificar duplicatas:', error);
     } finally {

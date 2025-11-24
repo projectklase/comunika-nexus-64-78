@@ -489,9 +489,13 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         }
         break;
         
-      case 2: // Contato & Endereço - Valida Email
+      case 2: // Contato & Endereço - Valida Email e Telefone
         if (formData.student?.email) {
           checkData.email = formData.student.email;
+        }
+        // ✅ ADICIONAR VALIDAÇÃO DE TELEFONE
+        if (formData.student?.phones?.[0]) {
+          checkData.phone = formData.student.phones[0];
         }
         break;
         
