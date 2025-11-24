@@ -22,7 +22,7 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { Person, TeacherExtra } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
@@ -125,6 +125,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
@@ -470,6 +471,9 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
     setIsCheckingPhone(false);
     
     if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
+      const issue = result.similarities.find(s => s.type === 'phone');
+      const duplicateUser = issue?.existingUsers?.[0];
+      setPhoneError(`✕ Telefone já cadastrado${duplicateUser ? ` (${duplicateUser.name})` : ''}`);
       setDuplicateCheck(result);
       setShowDuplicateModal(true);
       return; // Não adiciona se duplicado
@@ -632,20 +636,36 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       <div className="space-y-2">
         <Label>Telefones</Label>
         <div className="flex gap-2">
-          <InputPhone
-            placeholder="(11) 99999-9999"
-            value={newPhone}
-            onChange={setNewPhone}
-            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPhone())}
-            showError={false}
-          />
+          <div className="flex-1">
+            <InputPhone
+              placeholder="(11) 99999-9999"
+              value={newPhone}
+              onChange={(value) => {
+                setNewPhone(value);
+                // Limpa erro ao digitar
+                if (phoneError) setPhoneError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addPhone();
+                }
+              }}
+              error={phoneError}
+              showError={true}
+            />
+          </div>
           <Button 
             type="button" 
             variant="outline" 
             onClick={addPhone}
-            disabled={!newPhone.trim() || validatePhone(newPhone) !== null}
+            disabled={!newPhone.trim() || validatePhone(newPhone) !== null || isCheckingPhone || phoneError !== null}
           >
-            <Plus className="h-4 w-4" />
+            {isCheckingPhone ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -1,7 +1,7 @@
 # Padrão Global de Validação de Telefones
 
 ## Regra de Ouro
-**TODO campo de telefone que cadastra/edita usuários DEVE usar validação de duplicatas.**
+**TODO campo de telefone que cadastra/edita usuários DEVE usar validação de duplicatas com erro inline.**
 
 ## Arquitetura
 
@@ -19,84 +19,164 @@
 - `checkDuplicates()` - Verificação de duplicatas com isolamento multi-tenant
 - Busca TODOS os perfis da escola e filtra manualmente após normalização
 
-## Padrão de Implementação
+## Validação Inline (Mensagem Vermelha)
+
+### Padrão de Implementação
+
+**TODO campo de telefone DEVE exibir erro inline ao detectar duplicata:**
+
+```typescript
+onBlur={async () => {
+  if (phone && validatePhone(phone) === null) {
+    const result = await checkDuplicates({ phone }, userId);
+    
+    if (result.hasSimilarities?.some(s => s.type === 'phone')) {
+      const issue = result.similarities.find(s => s.type === 'phone');
+      const user = issue?.existingUsers?.[0];
+      
+      // ✅ ERRO INLINE (seguir padrão do formulário):
+      
+      // React Hook Form:
+      form.setError('phone', { 
+        type: 'manual', 
+        message: `✕ Telefone já cadastrado${user ? ` (${user.name})` : ''}` 
+      });
+      
+      // Estado manual:
+      setErrors(prev => ({ 
+        ...prev, 
+        phone: `✕ Telefone já cadastrado${user ? ` (${user.name})` : ''}` 
+      }));
+    }
+  }
+}
+```
+
+### Visual Esperado
+
+```
+[Campo de Telefone]
+✕ Telefone já cadastrado (Maria Silva)
+```
+
+**Importante:** A mensagem inline é PRIORIDADE. Toasts e modais são opcionais/secundários.
+
+## Padrão de Implementação por Tipo de Formulário
 
 ### Para Campos Únicos (Secretaria, Professor Rápido)
 
 ```typescript
-import { usePhoneValidation } from '@/hooks/usePhoneValidation';
-import { useState } from 'react';
+import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
+import { useSchool } from '@/contexts/SchoolContext';
+import { validatePhone } from '@/lib/validation';
 
-const { validatePhoneWithDuplicateCheck, isChecking } = usePhoneValidation();
-const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
+const { currentSchool } = useSchool();
+const { checkDuplicates } = useDuplicateCheck(currentSchool?.id || null);
+const [phoneError, setPhoneError] = useState<string | null>(null);
 
-// No campo de telefone:
-<InputPhone
-  value={phone}
-  onChange={setPhone}
-  onBlur={async () => {
-    if (phone) {
-      const isValid = await validatePhoneWithDuplicateCheck(phone, undefined, {
-        showToast: true,
-        onDuplicate: (result) => {
-          setDuplicateCheck(result);
-          setShowDuplicateModal(true);
-        }
-      });
-    }
-  }}
+// React Hook Form:
+<FormField
+  control={form.control}
+  name="phone"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Telefone *</FormLabel>
+      <FormControl>
+        <InputPhone 
+          value={field.value}
+          onChange={field.onChange}
+          onBlur={async () => {
+            const phone = field.value?.trim();
+            if (phone && validatePhone(phone) === null) {
+              const result = await checkDuplicates({ phone });
+              
+              if (result.hasSimilarities?.some(s => s.type === 'phone')) {
+                const issue = result.similarities.find(s => s.type === 'phone');
+                const user = issue?.existingUsers?.[0];
+                
+                form.setError('phone', {
+                  type: 'manual',
+                  message: `✕ Telefone já cadastrado${user ? ` (${user.name})` : ''}`
+                });
+              }
+            }
+          }}
+        />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
 />
 
-// Modal de alerta:
-{showDuplicateModal && duplicateCheck && (
-  <DuplicateWarning
-    type="critical"
-    fieldType="phone"
-    message="Telefone já cadastrado"
-    details={duplicateCheck}
-    onCancel={() => setShowDuplicateModal(false)}
-    onConfirm={() => setShowDuplicateModal(false)}
-  />
-)}
+// Estado manual:
+<InputPhone
+  value={phone}
+  onChange={(value) => {
+    setPhone(value);
+    if (phoneError) setPhoneError(null); // Limpa erro ao digitar
+  }}
+  onBlur={async () => {
+    if (phone && validatePhone(phone) === null) {
+      const result = await checkDuplicates({ phone });
+      
+      if (result.hasSimilarities?.some(s => s.type === 'phone')) {
+        const issue = result.similarities.find(s => s.type === 'phone');
+        const user = issue?.existingUsers?.[0];
+        setPhoneError(`✕ Telefone já cadastrado${user ? ` (${user.name})` : ''}`);
+      }
+    }
+  }}
+  error={phoneError}
+  showError={true}
+/>
 ```
 
 ### Para Arrays de Telefones (Professor Completo)
 
 ```typescript
-const { validatePhoneWithDuplicateCheck, isChecking } = usePhoneValidation();
+const { checkDuplicates } = useDuplicateCheck(currentSchool?.id || null);
+const [phoneError, setPhoneError] = useState<string | null>(null);
+const [isCheckingPhone, setIsCheckingPhone] = useState(false);
 
 const addPhone = async () => {
-  if (!newPhone.trim()) return;
+  if (phoneError) return; // Bloqueia se houver erro inline
   
-  const isValid = await validatePhoneWithDuplicateCheck(
-    newPhone,
-    teacher?.id, // Exclui o professor em edição
-    {
-      showToast: true,
-      onDuplicate: (result) => {
-        setDuplicateCheck(result);
-        setShowDuplicateModal(true);
-      }
-    }
-  );
+  setIsCheckingPhone(true);
+  const result = await checkDuplicates({ phone: newPhone }, teacher?.id);
+  setIsCheckingPhone(false);
   
-  if (isValid) {
-    // Adiciona à lista apenas se válido
-    const currentPhones = form.getValues('phones') || [];
-    form.setValue('phones', [...currentPhones, newPhone.trim()]);
-    setNewPhone('');
+  if (result.hasSimilarities?.some(s => s.type === 'phone')) {
+    const issue = result.similarities.find(s => s.type === 'phone');
+    const user = issue?.existingUsers?.[0];
+    setPhoneError(`✕ Telefone já cadastrado${user ? ` (${user.name})` : ''}`);
+    return;
   }
+  
+  // Adiciona à lista
+  form.setValue('phones', [...form.getValues('phones') || [], newPhone]);
+  setNewPhone('');
 };
 
-// Botão com loading
-<Button 
-  onClick={addPhone}
-  disabled={!newPhone.trim() || isChecking}
->
-  {isChecking ? <Loader2 className="animate-spin" /> : <Plus />}
-  Adicionar
-</Button>
+// Campo com erro inline:
+<div className="flex gap-2">
+  <div className="flex-1">
+    <InputPhone
+      value={newPhone}
+      onChange={(value) => {
+        setNewPhone(value);
+        if (phoneError) setPhoneError(null);
+      }}
+      error={phoneError}
+      showError={true}
+    />
+  </div>
+  <Button 
+    onClick={addPhone}
+    disabled={!newPhone.trim() || isCheckingPhone || phoneError !== null}
+  >
+    {isCheckingPhone ? <Loader2 className="animate-spin" /> : <Plus />}
+  </Button>
+</div>
 ```
 
 ### Para Responsáveis (Cadastro de Alunos)
@@ -122,6 +202,39 @@ const checkGuardianDuplicates = async (guardianPhone?: string) => {
     });
   }
 };
+
+// Erro inline nos telefones dos alunos:
+<InputPhone
+  value={phone}
+  onChange={(value) => {
+    // ... update form data
+    
+    // Limpa erro inline ao digitar
+    if (errors[`phone_${index}`]) {
+      setErrors(prev => {
+        const { [`phone_${index}`]: removed, ...rest } = prev;
+        return rest;
+      });
+    }
+  }}
+  onBlur={async () => {
+    if (phone && validatePhone(phone) === null) {
+      const result = await checkDuplicates({ phone }, studentId);
+      
+      if (result.hasSimilarities?.some(s => s.type === 'phone')) {
+        const issue = result.similarities.find(s => s.type === 'phone');
+        const user = issue?.existingUsers?.[0];
+        
+        setErrors(prev => ({ 
+          ...prev, 
+          [`phone_${index}`]: `✕ Telefone já cadastrado${user ? ` (${user.name})` : ''}` 
+        }));
+      }
+    }
+  }}
+  error={errors[`phone_${index}`]}
+  showError={true}
+/>
 ```
 
 ## Isolamento Multi-Tenant
@@ -144,21 +257,23 @@ const checkGuardianDuplicates = async (guardianPhone?: string) => {
 
 ## Componentes Implementados
 
-| Componente | Tipo de Validação | Status |
-|------------|-------------------|--------|
-| `SecretariaFormModal.tsx` | `onBlur` campo único | ✅ Implementado |
-| `QuickTeacherModal.tsx` | `onBlur` campo único | ✅ Implementado |
-| `TeacherFormModal.tsx` | Validação ao adicionar telefone | ✅ Implementado |
-| `StudentFormSteps.tsx` | Proativa por step + responsáveis | ✅ Implementado |
+| Componente | Tipo de Validação | Erro Inline | Status |
+|------------|-------------------|-------------|--------|
+| `SecretariaFormModal.tsx` | `onBlur` campo único | ✅ Sim | ✅ Implementado |
+| `QuickTeacherModal.tsx` | `onBlur` campo único | ✅ Sim | ✅ Implementado |
+| `TeacherFormModal.tsx` | Validação ao adicionar | ✅ Sim | ✅ Implementado |
+| `StudentFormSteps.tsx` | Proativa + responsáveis | ✅ Sim | ✅ Implementado |
 
 ## Checklist de Validação
 
 Ao adicionar validação de telefone em NOVO componente:
 
-- [ ] Importar `usePhoneValidation` ou funções de `phone-utils.ts`
-- [ ] Adicionar estado `isChecking` para loading
+- [ ] Importar `useDuplicateCheck` e `normalizePhoneForComparison`
+- [ ] Adicionar estado `phoneError` ou usar `form.setError`
+- [ ] Adicionar estado `isChecking` para loading (se aplicável)
 - [ ] Validar telefone antes de salvar/adicionar
-- [ ] Exibir modal `DuplicateWarning` em caso de duplicata
+- [ ] Exibir erro INLINE com nome do usuário duplicado
+- [ ] Limpar erro inline ao digitar novamente
 - [ ] Filtrar queries por `currentSchool.id`
 - [ ] Normalizar telefones antes de comparar
 - [ ] Testar com telefones formatados vs não-formatados
@@ -171,7 +286,7 @@ Ao adicionar validação de telefone em NOVO componente:
 Escola: Colegio ABC
 Usuário existente: Maria Silva - (11) 11111-1111
 Tentativa de criar: João Silva - 11111111111
-Resultado esperado: ⚠️ Modal de alerta
+Resultado esperado: ✕ Telefone já cadastrado (Maria Silva)
 ```
 
 ### Teste 2: Isolamento Multi-Tenant
@@ -187,6 +302,15 @@ Escola: Colegio ABC
 Aluno 1: Ana Silva - Responsável: Helena (11) 11111-1111
 Tentativa: João Silva - Responsável: Helena (11111111111)
 Resultado esperado: 💡 Modal de sugestão de vínculo familiar
+```
+
+### Teste 4: Erro Inline ao Adicionar Telefone
+```
+Formulário de professor
+Telefone existente: (11) 11111-1111 (Carlos Albuquerque)
+Tentativa de adicionar: 11111111111
+Resultado esperado: Campo fica vermelho com "✕ Telefone já cadastrado (Carlos Albuquerque)"
+Botão "Adicionar" fica desabilitado
 ```
 
 ## Debugging
@@ -207,17 +331,23 @@ console.log('[Phone Validation] Match:', normalizedInput === normalizedDb);
    - Confirmar que `currentSchool.id` está correto
    - Checar se query está buscando TODOS os perfis
 
-2. **Falso positivo (alerta indevido)**
+2. **Erro inline não aparece**
+   - Verificar se o campo está passando `error={phoneError}` e `showError={true}`
+   - Confirmar que o estado está sendo atualizado corretamente
+   - Checar se o componente `InputPhone` está renderizando a mensagem de erro
+
+3. **Falso positivo (alerta indevido)**
    - Verificar se `excludeUserId` está sendo passado corretamente em modo de edição
    - Confirmar filtro por escola
 
-3. **Performance lenta**
+4. **Performance lenta**
    - Considerar adicionar índice GIN para telefones normalizados
    - Limitar quantidade de resultados retornados
 
 ## Referências
 
 - **Implementação Inicial:** Correção de bug de detecção de telefones duplicados (2025-11-24)
+- **Validação Inline:** Implementação de erros inline em todos os formulários (2025-11-24)
 - **Hook Global:** `src/hooks/usePhoneValidation.ts`
 - **Utilitários:** `src/lib/phone-utils.ts`
 - **Documentação de Duplicatas:** `docs/duplicate-detection-system.md`

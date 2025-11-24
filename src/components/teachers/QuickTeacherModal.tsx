@@ -200,11 +200,17 @@ export function QuickTeacherModal({
                           const result = await checkDuplicates({ phone });
                           
                           if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
-                            toast({
-                              title: "Telefone já cadastrado",
-                              description: "Este telefone já está em uso no sistema",
-                              variant: "destructive"
+                            const issue = result.similarities.find(s => s.type === 'phone');
+                            const duplicateUser = issue?.existingUsers?.[0];
+                            const errorMsg = `✕ Telefone já cadastrado${duplicateUser ? ` (${duplicateUser.name})` : ''}`;
+                            
+                            // Erro inline via React Hook Form
+                            form.setError('phone', {
+                              type: 'manual',
+                              message: errorMsg
                             });
+                            
+                            // Mantém modal também
                             setDuplicateCheck(result);
                             setShowDuplicateModal(true);
                           }
