@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useClasses } from '@/hooks/useClasses';
 import { useTeachers } from '@/hooks/useTeachers';
+import { useSchool } from '@/contexts/SchoolContext';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,8 @@ export function AssignTeachersDialog({
 }: AssignTeachersDialogProps) {
   const { toast } = useToast();
   const { assignTeachers } = useClasses();
-  const { teachers: allTeachers, loading: teachersLoading } = useTeachers();
+  const { teachers: allTeachers, loading: teachersLoading, fetchTeachers } = useTeachers();
+  const { currentSchool } = useSchool();
   
   const [search, setSearch] = useState('');
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
@@ -51,6 +53,27 @@ export function AssignTeachersDialog({
     teacher.name?.toLowerCase().includes(search.toLowerCase()) ||
     teacher.email?.toLowerCase().includes(search.toLowerCase())
   );
+
+  // ✅ FASE 1: Debug logs
+  useEffect(() => {
+    console.log('🔍 [AssignTeachersDialog] Debug Info:', {
+      open,
+      currentSchool: currentSchool?.name,
+      schoolId: currentSchool?.id,
+      allTeachers: allTeachers.length,
+      teachersLoading,
+      mappedTeachers: teachers.length,
+      filteredTeachers: filteredTeachers.length
+    });
+  }, [open, currentSchool, allTeachers, teachersLoading, teachers, filteredTeachers]);
+
+  // ✅ FASE 2: Forçar refetch ao abrir modal
+  useEffect(() => {
+    if (open && currentSchool) {
+      console.log('🔄 [AssignTeachersDialog] Modal aberto, forçando reload de professores...');
+      fetchTeachers();
+    }
+  }, [open, currentSchool, fetchTeachers]);
 
   useEffect(() => {
     setSelectedTeachers(currentTeachers);
@@ -81,8 +104,17 @@ export function AssignTeachersDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass-card max-w-2xl">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="gradient-text">Atribuir Professores</DialogTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchTeachers()}
+            disabled={teachersLoading}
+            className="text-xs"
+          >
+            {teachersLoading ? 'Carregando...' : '🔄 Atualizar'}
+          </Button>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -173,9 +205,39 @@ export function AssignTeachersDialog({
               );
             })}
 
-            {filteredTeachers.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                {search ? 'Nenhum professor encontrado.' : 'Nenhum professor disponível.'}
+            {/* ✅ FASE 3: Tratamento contextual de estado vazio */}
+            {!teachersLoading && filteredTeachers.length === 0 && (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-muted-foreground">
+                  {!currentSchool 
+                    ? '⚠️ Nenhuma escola selecionada'
+                    : search 
+                    ? 'Nenhum professor encontrado com este filtro.'
+                    : teachers.length === 0
+                    ? '⚠️ Nenhum professor cadastrado nesta escola ainda.'
+                    : 'Nenhum professor disponível.'
+                  }
+                </p>
+                {!currentSchool && (
+                  <p className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20 px-3 py-2 rounded-md inline-block">
+                    Selecione uma escola no topo da página para continuar.
+                  </p>
+                )}
+                {teachers.length === 0 && currentSchool && (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Vá para "Cadastros → Professores" para adicionar professores.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.location.href = '/secretaria/professores'}
+                      className="text-xs"
+                    >
+                      Ir para Professores
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
