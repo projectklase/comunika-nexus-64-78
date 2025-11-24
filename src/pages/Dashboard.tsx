@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSchool } from "@/contexts/SchoolContext";
 import { DashboardCard } from "@/components/Dashboard/DashboardCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { getRoleRoutePrefix } from "@/utils/auth-helpers";
 
 const Dashboard = () => {
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { currentSchool } = useSchool();
   const navigate = useNavigate();
   const [showComposer, setShowComposer] = useState(false);
   const [activeClassesCount, setActiveClassesCount] = useState(0);
@@ -27,22 +29,31 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      // 🔒 GUARD: Bloquear se não tiver escola definida
+      if (!currentSchool?.id) {
+        console.error('[Dashboard] ⚠️ Tentativa de buscar turmas sem currentSchool definido!');
+        setActiveClassesCount(0);
+        return;
+      }
+
       const { count, error } = await supabase
         .from("classes")
         .select("*", { count: "exact", head: true })
-        .eq("status", "Ativa");
+        .eq("status", "Ativa")
+        .eq("school_id", currentSchool.id); // ✅ FILTRO CRÍTICO ADICIONADO
 
       if (error) {
         console.error("Erro ao buscar contagem de turmas:", error);
       } else if (count !== null) {
+        console.log('🔵 [Dashboard] Contagem de turmas ativas:', count, 'para escola:', currentSchool.name);
         setActiveClassesCount(count);
       }
     };
 
-    if (user?.role === "secretaria") {
+    if (user?.role === "secretaria" && currentSchool) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user, currentSchool]);
 
   // Redirecionar roles que têm dashboards específicos
   useEffect(() => {
