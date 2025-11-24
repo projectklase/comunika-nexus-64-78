@@ -95,9 +95,9 @@ export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: C
   // Use catalog guards hook
   const { hasCatalogs, getMissingCatalogs } = useCatalogGuards();
   
-  const { levels, isLoading: levelsLoading } = useLevels();
-  const { modalities, isLoading: modalitiesLoading } = useModalities();
-  const { subjects, isLoading: subjectsLoading } = useSubjects();
+  const { levels, isLoading: levelsLoading, refetch: refetchLevels } = useLevels();
+  const { modalities, isLoading: modalitiesLoading, refetch: refetchModalities } = useModalities();
+  const { subjects, isLoading: subjectsLoading, refetch: refetchSubjects } = useSubjects();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -645,8 +645,9 @@ export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: C
       <QuickCreateLevelSheet
         open={showLevelSheet}
         onOpenChange={setShowLevelSheet}
-        onLevelCreated={(levelId) => {
+        onLevelCreated={async (levelId) => {
           form.setValue('levelId', levelId);
+          await refetchLevels?.();
           setShowLevelSheet(false);
         }}
       />
@@ -654,8 +655,9 @@ export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: C
       <QuickCreateModalitySheet
         open={showModalitySheet}
         onOpenChange={setShowModalitySheet}
-        onModalityCreated={(modalityId) => {
+        onModalityCreated={async (modalityId) => {
           form.setValue('modalityId', modalityId);
+          await refetchModalities?.();
           setShowModalitySheet(false);
         }}
       />
@@ -663,10 +665,11 @@ export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: C
       <QuickCreateSubjectSheet
         open={showSubjectSheet}
         onOpenChange={setShowSubjectSheet}
-        onSubjectCreated={(subjectId) => {
+        onSubjectCreated={async (subjectId) => {
           // Adicionar a nova matéria ao array de matérias selecionadas
           const currentSubjects = form.getValues('subjectIds') || [];
           form.setValue('subjectIds', [...currentSubjects, subjectId]);
+          await refetchSubjects?.();
           setShowSubjectSheet(false);
         }}
       />
