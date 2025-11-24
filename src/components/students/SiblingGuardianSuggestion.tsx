@@ -12,7 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Users, Phone, Mail, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { Copy, Users, Phone, Mail, AlertTriangle, CheckCircle, X, AlertCircle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { toast } from 'sonner';
 import { Guardian } from '@/hooks/useDuplicateCheck';
 
 interface ExistingStudent {
@@ -26,32 +28,37 @@ interface SiblingGuardianSuggestionProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   similarStudents: ExistingStudent[];
+  newStudentName: string; // Nome do aluno sendo cadastrado
   onCopyGuardians: (
     guardians: Guardian[], 
     relatedStudentId: string,
     relatedStudentName: string,
-    relationshipData: {
-      type: string;
-      customLabel?: string;
-    }
+    guardianRelationshipType: string, // Tipo de parentesco com o responsável
+    customLabel?: string
   ) => void;
 }
 
-const RELATIONSHIP_OPTIONS = [
-  { value: 'SIBLING', label: '👨‍👩‍👧‍👦 Irmão/Irmã', description: 'Compartilham os mesmos pais' },
-  { value: 'COUSIN', label: '👥 Primo/Prima', description: 'Filhos de irmãos dos pais' },
-  { value: 'UNCLE_NEPHEW', label: '👨‍👦 Tio-Sobrinho', description: 'Relação tio/tia com sobrinho' },
-  { value: 'GODPARENT_GODCHILD', label: '🕊️ Padrinho-Afilhado', description: 'Relação de compadrio' },
-  { value: 'OTHER', label: '✏️ Outro', description: 'Digite a relação específica' },
+// Opções de parentesco RESPONSÁVEL → ALUNO (não mais aluno ↔ aluno)
+const GUARDIAN_RELATIONSHIP_OPTIONS = [
+  { value: 'MAE', label: '👩 Mãe', description: 'Mãe biológica ou adotiva' },
+  { value: 'PAI', label: '👨 Pai', description: 'Pai biológico ou adotivo' },
+  { value: 'TIA', label: '👩‍👦 Tia', description: 'Irmã dos pais' },
+  { value: 'TIO', label: '👨‍👦 Tio', description: 'Irmão dos pais' },
+  { value: 'AVO_F', label: '👵 Avó', description: 'Mãe dos pais' },
+  { value: 'AVO', label: '👴 Avô', description: 'Pai dos pais' },
+  { value: 'PADRINHO', label: '🕊️ Padrinho', description: 'Padrinho de batismo/crisma' },
+  { value: 'MADRINHA', label: '🕊️ Madrinha', description: 'Madrinha de batismo/crisma' },
+  { value: 'OUTRO', label: '✏️ Outro', description: 'Digite o tipo de parentesco' },
 ];
 
 export function SiblingGuardianSuggestion({
   open,
   onOpenChange,
   similarStudents,
+  newStudentName,
   onCopyGuardians,
 }: SiblingGuardianSuggestionProps) {
-  const [selectedRelationship, setSelectedRelationship] = useState<string>('SIBLING');
+  const [selectedRelationship, setSelectedRelationship] = useState<string>('');
   const [customRelationship, setCustomRelationship] = useState<string>('');
   const [showRelationshipSelector, setShowRelationshipSelector] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<ExistingStudent | null>(null);
@@ -70,12 +77,22 @@ export function SiblingGuardianSuggestion({
   const handleCancelRelationship = () => {
     setShowRelationshipSelector(false);
     setSelectedStudent(null);
-    setSelectedRelationship('SIBLING');
+    setSelectedRelationship('');
     setCustomRelationship('');
   };
 
   const handleConfirmAndCopy = () => {
     if (!selectedStudent) return;
+
+    if (!selectedRelationship) {
+      toast.error('Selecione o grau de parentesco');
+      return;
+    }
+
+    if (selectedRelationship === 'OUTRO' && !customRelationship.trim()) {
+      toast.error('Digite o tipo de parentesco personalizado');
+      return;
+    }
 
     // Remove IDs para criar novos registros
     const newGuardians = (selectedStudent.guardians || []).map(g => ({
@@ -87,10 +104,8 @@ export function SiblingGuardianSuggestion({
       newGuardians,
       selectedStudent.id,
       selectedStudent.name,
-      {
-        type: selectedRelationship,
-        customLabel: selectedRelationship === 'OTHER' ? customRelationship : undefined
-      }
+      selectedRelationship,
+      selectedRelationship === 'OUTRO' ? customRelationship : undefined
     );
     
     onOpenChange(false);
@@ -193,42 +208,59 @@ export function SiblingGuardianSuggestion({
                   Copiar Responsáveis
                 </Button>
               ) : (
-                <div className="mt-4 p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
-                  <Label className="text-sm font-semibold mb-2 block">
-                    Qual a relação entre os alunos?
-                  </Label>
-                  
-                  <Select
-                    value={selectedRelationship}
-                    onValueChange={(value) => {
-                      setSelectedRelationship(value);
-                      if (value !== 'OTHER') setCustomRelationship('');
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RELATIONSHIP_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <div>
-                            <div className="font-medium">{opt.label}</div>
-                            <div className="text-xs text-muted-foreground">{opt.description}</div>
-                          </div>
-                        </SelectItem>
+                <div className="mt-4 p-4 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-4">
+                  {/* Badge contextual mostrando responsável → novo aluno */}
+                  <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                    <Users className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      <span className="text-primary">{selectedStudent.guardians?.[0]?.name}</span> → <span className="text-primary">{newStudentName}</span>
+                    </span>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold mb-3 block text-foreground">
+                      Qual o grau de parentesco entre <span className="text-primary">{selectedStudent.guardians?.[0]?.name}</span> e <span className="text-primary">{newStudentName}</span>?
+                    </Label>
+                    
+                    <RadioGroup 
+                      value={selectedRelationship} 
+                      onValueChange={setSelectedRelationship}
+                      className="space-y-2"
+                    >
+                      {GUARDIAN_RELATIONSHIP_OPTIONS.map((option) => (
+                        <div key={option.value} className="flex items-start space-x-3 space-y-0">
+                          <RadioGroupItem value={option.value} id={`rel-${option.value}`} />
+                          <Label
+                            htmlFor={`rel-${option.value}`}
+                            className="flex flex-col cursor-pointer flex-1"
+                          >
+                            <span className="font-medium text-sm">{option.label}</span>
+                            <span className="text-xs text-muted-foreground">{option.description}</span>
+                          </Label>
+                        </div>
                       ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  {/* Campo customizado quando escolher "Outro" */}
-                  {selectedRelationship === 'OTHER' && (
-                    <Input
-                      placeholder="Ex: Primo de segundo grau, Vizinho responsável, etc."
-                      value={customRelationship}
-                      onChange={(e) => setCustomRelationship(e.target.value)}
-                      className="mt-2"
-                    />
-                  )}
+                    </RadioGroup>
+
+                    {selectedRelationship === 'OUTRO' && (
+                      <Input
+                        placeholder="Ex: Tio-avô, Primo da mãe..."
+                        value={customRelationship}
+                        onChange={(e) => setCustomRelationship(e.target.value)}
+                        className="mt-3"
+                      />
+                    )}
+                  </div>
+
+                  {/* Aviso sobre inferência inteligente */}
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                    <div className="flex gap-2">
+                      <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-700">
+                        <strong>💡 Sistema Inteligente:</strong> Com base nessa informação, o sistema vai inferir automaticamente 
+                        os relacionamentos entre alunos (irmãos, primos, etc). Escolha com atenção!
+                      </p>
+                    </div>
+                  </div>
                   
                   <div className="flex gap-2 mt-3">
                     <Button
@@ -241,7 +273,7 @@ export function SiblingGuardianSuggestion({
                     </Button>
                     <Button
                       onClick={handleConfirmAndCopy}
-                      disabled={selectedRelationship === 'OTHER' && !customRelationship.trim()}
+                      disabled={!selectedRelationship || (selectedRelationship === 'OUTRO' && !customRelationship.trim())}
                       className="flex-1"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />

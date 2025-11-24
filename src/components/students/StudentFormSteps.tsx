@@ -711,7 +711,8 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     guardians: any[], 
     relatedStudentId: string,
     relatedStudentName: string,
-    relationshipData: { type: string; customLabel?: string }
+    guardianRelationshipType: string, // Tipo de parentesco com o responsável
+    customLabel?: string
   ) => {
     // 1. Copiar os responsáveis (lógica existente mantida)
     updateFormData({
@@ -727,12 +728,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       }
     });
     
-    // 2. ✨ NOVO: Registrar o relacionamento familiar
+    // 2. ✨ NOVO: Registrar o relacionamento familiar (será expandido na FASE 2)
     const relationshipRecord = {
       relatedStudentId,
       relatedStudentName,
-      relationshipType: relationshipData.type as 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'GODPARENT_GODCHILD' | 'OTHER',
-      customRelationship: relationshipData.customLabel,
+      relationshipType: guardianRelationshipType as 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'OTHER',
+      customRelationship: customLabel,
       createdAt: new Date().toISOString(),
     };
     
@@ -751,21 +752,9 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       }
     }));
     
-    const relationLabel = getRelationshipLabel(relationshipData);
-    toast.success(`Responsáveis copiados e relação "${relationLabel}" registrada!`);
+    const relationLabel = customLabel || guardianRelationshipType;
+    toast.success(`Responsáveis copiados! Parentesco "${relationLabel}" registrado com ${relatedStudentName}.`);
     setShowSiblingSuggestion(false);
-  };
-
-  // Helper para exibir label amigável do relacionamento
-  const getRelationshipLabel = (data: { type: string; customLabel?: string }) => {
-    if (data.type === 'OTHER') return data.customLabel;
-    const labels: Record<string, string> = {
-      'SIBLING': 'Irmão/Irmã',
-      'COUSIN': 'Primo/Prima',
-      'UNCLE_NEPHEW': 'Tio-Sobrinho',
-      'GODPARENT_GODCHILD': 'Padrinho-Afilhado',
-    };
-    return labels[data.type] || data.type;
   };
 
   const handleResetPassword = () => {
@@ -2173,6 +2162,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       open={showSiblingSuggestion}
       onOpenChange={setShowSiblingSuggestion}
       similarStudents={siblingCandidates}
+      newStudentName={formData.name}
       onCopyGuardians={handleCopyGuardians}
     />
     </>
