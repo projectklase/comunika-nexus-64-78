@@ -7,6 +7,7 @@ export interface SchoolClass {
   grade?: string;        // ex: "7º ano"
   year?: number;         // ex: 2025
   status: ClassStatus;   // ATIVA/ARQUIVADA
+  schoolId?: string;     // ✅ Multi-tenancy: ID da escola
   programId?: string;    // Programa/Modalidade
   levelId?: string;      // Global - from catalog
   modalityId?: string;   // Global - from catalog  
