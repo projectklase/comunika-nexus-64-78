@@ -5,6 +5,7 @@ import { useSchool } from '@/contexts/SchoolContext';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -105,7 +106,12 @@ export function AssignTeachersDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass-card max-w-2xl">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="gradient-text">Atribuir Professores</DialogTitle>
+          <div>
+            <DialogTitle className="gradient-text">Atribuir Professores</DialogTitle>
+            <DialogDescription className="sr-only">
+              Selecione os professores que serão atribuídos a esta turma
+            </DialogDescription>
+          </div>
           <Button
             variant="ghost"
             size="sm"

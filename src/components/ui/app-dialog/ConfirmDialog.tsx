@@ -1,11 +1,11 @@
 import {
-  AppDialog,
-  AppDialogContent,
-  AppDialogDescription,
-  AppDialogFooter,
-  AppDialogHeader,
-  AppDialogTitle,
-} from './AppDialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 interface ConfirmDialogProps {
@@ -62,17 +62,17 @@ export function ConfirmDialog({
   };
 
   return (
-    <AppDialog open={open} onOpenChange={onOpenChange} modalId="confirm-dialog" priority={200}>
-      <AppDialogContent className="sm:max-w-[425px]" preventClose={loading}>
-        <AppDialogHeader>
-          <AppDialogTitle className={variant === 'destructive' ? 'text-destructive' : ''}>
+    <Dialog open={open} onOpenChange={loading ? undefined : onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]" onPointerDownOutside={loading ? (e) => e.preventDefault() : undefined} onEscapeKeyDown={loading ? (e) => e.preventDefault() : undefined}>
+        <DialogHeader>
+          <DialogTitle className={variant === 'destructive' ? 'text-destructive' : ''}>
             {title}
-          </AppDialogTitle>
-          <AppDialogDescription>
+          </DialogTitle>
+          <DialogDescription>
             {description}
-          </AppDialogDescription>
-        </AppDialogHeader>
-        <AppDialogFooter>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -89,8 +89,8 @@ export function ConfirmDialog({
           >
             {loading ? 'Processando...' : confirmText}
           </Button>
-        </AppDialogFooter>
-      </AppDialogContent>
-    </AppDialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
