@@ -42,73 +42,68 @@ export function useTreeExport(
     }
 
     setIsExporting(true);
-    let exportWrapper: HTMLDivElement | null = null;
-    let root: ReturnType<typeof createRoot> | null = null;
 
     try {
       const hiddenElements = hideUIElements();
 
-      // 🎨 Criar wrapper temporário para exportação profissional
-      exportWrapper = document.createElement('div');
+      // 🎯 Estratégia: capturar o ReactFlow real em alta resolução primeiro
+      const treeDataUrl = await toPng(reactFlowWrapper.current, {
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+        pixelRatio: 3,
+      });
+
+      // 🎨 Criar wrapper temporário para overlay profissional
+      const exportWrapper = document.createElement('div');
       exportWrapper.style.position = 'absolute';
       exportWrapper.style.left = '-99999px';
       exportWrapper.style.top = '-99999px';
-      exportWrapper.style.width = '3508px'; // A4 Landscape @ 300 DPI
+      exportWrapper.style.width = '3508px';
       exportWrapper.style.height = '2480px';
       document.body.appendChild(exportWrapper);
 
-      // Clonar conteúdo do ReactFlow
-      const treeClone = reactFlowWrapper.current.cloneNode(true) as HTMLDivElement;
-      treeClone.style.width = '100%';
-      treeClone.style.height = '100%';
-      const treeHTML = treeClone.outerHTML;
-
-      // Renderizar overlay profissional com React
-      root = createRoot(exportWrapper);
+      // Renderizar overlay com a imagem capturada
+      const root = createRoot(exportWrapper);
       await new Promise<void>((resolve) => {
-        root!.render(
+        root.render(
           createElement(ExportOverlay, {
             schoolName,
             totalFamilies,
             totalStudents,
             totalGuardians,
             exportDate: new Date(),
-            children: createElement('div', {
-              dangerouslySetInnerHTML: { __html: treeHTML }
+            children: createElement('img', {
+              src: treeDataUrl,
+              style: { width: '100%', height: '100%', objectFit: 'contain' }
             }),
           })
         );
-        // Aguardar renderização
-        setTimeout(resolve, 500);
+        setTimeout(resolve, 800);
       });
 
-      // Capturar em alta resolução (300 DPI)
-      const dataUrl = await toPng(exportWrapper, {
+      // Capturar layout completo em 300 DPI
+      const finalDataUrl = await toPng(exportWrapper, {
         cacheBust: true,
         backgroundColor: '#ffffff',
-        pixelRatio: 3, // 300 DPI para impressão profissional
+        pixelRatio: 3,
         width: 3508,
         height: 2480,
       });
 
       const link = document.createElement('a');
       link.download = `Arvore_Genealogica_${schoolName.replace(/\s+/g, '_')}_${getTimestamp()}.png`;
-      link.href = dataUrl;
+      link.href = finalDataUrl;
       link.click();
 
+      // Cleanup
+      root.unmount();
+      document.body.removeChild(exportWrapper);
       restoreUIElements(hiddenElements);
       toast.success('Árvore exportada como PNG de alta qualidade!');
     } catch (error) {
       console.error('Erro ao exportar PNG:', error);
       toast.error('Erro ao exportar árvore. Tente novamente.');
     } finally {
-      // Cleanup
-      if (root) {
-        root.unmount();
-      }
-      if (exportWrapper && document.body.contains(exportWrapper)) {
-        document.body.removeChild(exportWrapper);
-      }
       setIsExporting(false);
     }
   };
