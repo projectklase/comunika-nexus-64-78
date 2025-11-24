@@ -52,7 +52,7 @@ export function usePrograms() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentSchool]);
 
   const createProgram = useCallback(async (programData: Omit<Program, 'id' | 'createdAt' | 'updatedAt'>) => {
     // Validar se há escola selecionada
