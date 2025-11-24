@@ -23,7 +23,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLevels } from '@/hooks/useLevels';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { HelpCircle, Loader2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const levelSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo'),
@@ -183,7 +184,24 @@ export function QuickCreateLevelSheet({
               name="order"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ordem</FormLabel>
+                  <FormLabel className="flex items-center gap-1.5">
+                    Ordem
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="right" 
+                          className="max-w-[200px] backdrop-blur-xl bg-background/95 border border-white/10"
+                        >
+                          <p className="text-xs">
+                            Define a sequência dos níveis na listagem. Ex: 1 = primeiro, 2 = segundo...
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number"

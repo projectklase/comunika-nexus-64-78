@@ -89,6 +89,7 @@ export function QuickCreateClassSheet({
           code: data.code?.trim(),
           year: data.year,
           level_id: levelId,
+          school_id: currentSchool?.id,
           status: 'Ativa',
         } as any,
         [] // subjectIds vazio - turma rápida sem matérias
