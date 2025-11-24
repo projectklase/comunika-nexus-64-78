@@ -101,15 +101,24 @@ export function useClasses() {
       );
       const subjectsMap = new Map(subjectsRes.data?.map(s => [s.id, s.name]) || []);
 
-      // Group class subjects
-      const classSubjectsMap = new Map<string, string[]>();
+      // Group class subjects - criar dois Maps (IDs e nomes)
+      const classSubjectsIdsMap = new Map<string, string[]>(); // ✅ NOVO - para IDs
+      const classSubjectsNamesMap = new Map<string, string[]>(); // ✅ RENOMEAR - para nomes
+      
       classSubjectsRes.data?.forEach((cs: any) => {
-        if (!classSubjectsMap.has(cs.class_id)) {
-          classSubjectsMap.set(cs.class_id, []);
+        // Salvar IDs
+        if (!classSubjectsIdsMap.has(cs.class_id)) {
+          classSubjectsIdsMap.set(cs.class_id, []);
+        }
+        classSubjectsIdsMap.get(cs.class_id)?.push(cs.subject_id); // ✅ SALVAR ID
+        
+        // Salvar nomes (para display)
+        if (!classSubjectsNamesMap.has(cs.class_id)) {
+          classSubjectsNamesMap.set(cs.class_id, []);
         }
         const subjectName = subjectsMap.get(cs.subject_id);
         if (subjectName) {
-          classSubjectsMap.get(cs.class_id)?.push(subjectName);
+          classSubjectsNamesMap.get(cs.class_id)?.push(subjectName);
         }
       });
 
@@ -129,7 +138,7 @@ export function useClasses() {
         status: cls.status === 'Ativa' ? 'ATIVA' : 'ARQUIVADA',
         levelId: cls.level_id || undefined,
         modalityId: cls.modality_id || undefined,
-        subjectIds: classSubjectsMap.get(cls.id) || [],
+        subjectIds: classSubjectsIdsMap.get(cls.id) || [], // ✅ AGORA COM IDS
         daysOfWeek: cls.week_days || [],
         startTime: cls.start_time || '',
         endTime: cls.end_time || '',
@@ -141,7 +150,7 @@ export function useClasses() {
         level_name: cls.level_id ? levelsMap.get(cls.level_id) : undefined,
         modality_name: cls.modality_id ? modalitiesMap.get(cls.modality_id) : undefined,
         teacher_name: cls.main_teacher_id ? teachersMap.get(cls.main_teacher_id) : undefined,
-        subject_names: classSubjectsMap.get(cls.id) || [],
+        subject_names: classSubjectsNamesMap.get(cls.id) || [], // ✅ CONTINUA COM NOMES
         student_count: studentCountMap.get(cls.id) || 0,
       }));
 
@@ -230,13 +239,22 @@ export function useClasses() {
 
   const updateClass = async (id: string, updates: ClassUpdate, subjectIds?: string[]) => {
     try {
+      console.log('🔵 [useClasses] Atualizando turma:', id);
+      console.log('🔵 [useClasses] Dados do update:', updates);
+      console.log('🔵 [useClasses] SubjectIds:', subjectIds);
+      
       // Update class - using type assertion
       const { error: classError } = await (supabase as any)
         .from('classes')
         .update(updates)
         .eq('id', id);
 
-      if (classError) throw classError;
+      if (classError) {
+        console.error('🔴 [useClasses] Erro ao atualizar turma:', classError);
+        throw classError;
+      }
+      
+      console.log('✅ [useClasses] Turma atualizada com sucesso');
 
       // Update subjects if provided
       if (subjectIds !== undefined) {
