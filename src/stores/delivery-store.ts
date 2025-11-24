@@ -357,17 +357,30 @@ class DeliveryStore {
     }
   }
 
-  async getProfessorMetrics(classIds: string[]): Promise<{
+  async getProfessorMetrics(classIds: string[], schoolId?: string): Promise<{
     pendingDeliveries: number;
     weeklyDeadlines: number;
   }> {
     try {
-      // Count pending deliveries
-      const { data: pendingData, error: pendingError } = await supabase
+      // ✅ GUARD: Validar school_id
+      if (!schoolId) {
+        console.warn('⚠️ [deliveryStore] getProfessorMetrics chamado sem schoolId - possível vazamento multi-tenant');
+        return { pendingDeliveries: 0, weeklyDeadlines: 0 };
+      }
+
+      // Count pending deliveries COM filtro de escola
+      let pendingQuery = supabase
         .from('deliveries')
         .select('id')
         .in('class_id', classIds)
         .eq('review_status', 'AGUARDANDO');
+
+      // ✅ FILTRO CRÍTICO DE MULTI-TENANCY
+      if (schoolId) {
+        pendingQuery = pendingQuery.eq('school_id', schoolId);
+      }
+
+      const { data: pendingData, error: pendingError } = await pendingQuery;
 
       if (pendingError) throw pendingError;
 
@@ -377,7 +390,8 @@ class DeliveryStore {
       endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
       endOfWeek.setHours(23, 59, 59, 999);
 
-      const { data: weeklyData, error: weeklyError } = await supabase
+      // Count weekly deadlines COM filtro de escola
+      let weeklyQuery = supabase
         .from('posts')
         .select('id, class_ids')
         .in('type', ['ATIVIDADE', 'TRABALHO', 'PROVA'])
@@ -385,12 +399,25 @@ class DeliveryStore {
         .lte('due_at', endOfWeek.toISOString())
         .eq('status', 'PUBLISHED');
 
+      // ✅ FILTRO CRÍTICO DE MULTI-TENANCY
+      if (schoolId) {
+        weeklyQuery = weeklyQuery.eq('school_id', schoolId);
+      }
+
+      const { data: weeklyData, error: weeklyError } = await weeklyQuery;
+
       if (weeklyError) throw weeklyError;
 
       // Filter by class_ids in array field
       const filteredWeekly = weeklyData?.filter((post: any) => 
         post.class_ids?.some((id: string) => classIds.includes(id))
       ) || [];
+
+      console.log('🔵 [deliveryStore] Métricas do professor:', {
+        pendingDeliveries: pendingData ? pendingData.length : 0,
+        weeklyDeadlines: filteredWeekly.length,
+        schoolId
+      });
 
       return {
         pendingDeliveries: pendingData ? pendingData.length : 0,

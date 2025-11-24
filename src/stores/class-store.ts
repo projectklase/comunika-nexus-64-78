@@ -9,8 +9,11 @@ interface ClassStore {
   classes: SchoolClass[];
   loading: boolean;
   
+  // Internal helper
+  _reloadWithCurrentSchool: () => Promise<void>;
+  
   // Basic CRUD
-  loadClasses: () => void;
+  loadClasses: (schoolId?: string) => void;
   getClass: (id: string) => SchoolClass | undefined;
   createClass: (classData: Omit<SchoolClass, 'id' | 'createdAt' | 'updatedAt'>) => Promise<SchoolClass>;
   updateClass: (id: string, updates: Partial<SchoolClass>) => Promise<void>;
@@ -46,6 +49,7 @@ const dbRowToClass = (row: any): SchoolClass => ({
   grade: row.series || undefined,
   year: row.year,
   status: row.status === 'Ativa' ? 'ATIVA' : 'ARQUIVADA',
+  schoolId: row.school_id || undefined, // ✅ Mapear school_id
   levelId: row.level_id || undefined,
   modalityId: row.modality_id || undefined,
   subjectIds: [], // Will be populated from class_subjects
@@ -62,13 +66,51 @@ export const useClassStore = create<ClassStore>((set, get) => ({
   classes: [],
   loading: false,
 
-  loadClasses: async () => {
+  // ✅ Helper interno para recarregar com school_id do usuário atual
+  _reloadWithCurrentSchool: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('⚠️ [useClassStore] Usuário não autenticado para reload');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('current_school_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.current_school_id) {
+        await get().loadClasses(profile.current_school_id);
+      } else {
+        console.warn('⚠️ [useClassStore] current_school_id não definido no perfil');
+        await get().loadClasses(); // Fallback sem filtro
+      }
+    } catch (error) {
+      console.error('❌ [useClassStore] Erro ao recarregar com school atual:', error);
+      await get().loadClasses(); // Fallback sem filtro
+    }
+  },
+
+  loadClasses: async (schoolId?: string) => {
     set({ loading: true });
     try {
-      const { data: classesData, error } = await (supabase as any)
+      // 🔒 GUARD: Validar school_id
+      if (!schoolId) {
+        console.warn('⚠️ [useClassStore] loadClasses chamado sem schoolId - possível vazamento multi-tenant');
+      }
+
+      let query = (supabase as any)
         .from('classes')
-        .select('*')
-        .order('name');
+        .select('*');
+
+      // ✅ FILTRO CRÍTICO DE MULTI-TENANCY
+      if (schoolId) {
+        query = query.eq('school_id', schoolId);
+      }
+
+      const { data: classesData, error } = await query.order('name');
 
       if (error) throw error;
 
@@ -102,6 +144,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
         students: classStudentsMap.get(row.id) || [],
       }));
 
+      console.log('🔵 [useClassStore] Turmas carregadas:', classes.length, 'para schoolId:', schoolId);
       set({ classes, loading: false });
     } catch (error) {
       console.error('Error loading classes:', error);
@@ -161,7 +204,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
         await (supabase as any).from('class_students').insert(classStudents);
       }
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success('Turma criada com sucesso');
       
       return dbRowToClass(newClass);
@@ -219,7 +262,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
         }
       }
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success('Turma atualizada');
     } catch (error: any) {
       console.error('Error updating class:', error);
@@ -237,7 +280,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
 
       if (error) throw error;
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success('Turma excluída');
     } catch (error: any) {
       console.error('Error deleting class:', error);
@@ -307,7 +350,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
         }
       }
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success(`${ids.length} turma(s) arquivada(s)`);
     } catch (error: any) {
       console.error('Error archiving classes:', error);
@@ -389,7 +432,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
         }
       }
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success('Professor atribuído às turmas');
     } catch (error: any) {
       console.error('Error assigning teacher:', error);
@@ -411,7 +454,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
 
       if (error) throw error;
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success('Alunos adicionados à turma');
     } catch (error: any) {
       console.error('Error adding students:', error);
@@ -430,7 +473,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
 
       if (error) throw error;
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success('Aluno removido da turma');
     } catch (error: any) {
       console.error('Error removing student:', error);
@@ -460,7 +503,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
 
       if (error) throw error;
 
-      await get().loadClasses();
+      await get()._reloadWithCurrentSchool(); // ✅ Usar helper
       toast.success('Alunos transferidos');
     } catch (error: any) {
       console.error('Error transferring students:', error);

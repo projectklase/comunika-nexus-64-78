@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { useStoreInitialization } from '@/hooks/useStoreInitialization';
 import { getProfessorClasses } from '@/utils/professor-helpers';
 import { DashboardCard } from '@/components/Dashboard/DashboardCard';
@@ -15,6 +16,7 @@ import { deliveryStore } from '@/stores/delivery-store';
 
 export default function ProfessorDashboard() {
   const { user, isLoading } = useAuth();
+  const { currentSchool } = useSchool();
   const navigate = useNavigate();
   useStoreInitialization();
   const { levels } = useLevels();
@@ -49,7 +51,8 @@ export default function ProfessorDashboard() {
     return null;
   }
   
-  const professorClasses = getProfessorClasses(user.id);
+  // ✅ Passar school_id para getProfessorClasses
+  const professorClasses = getProfessorClasses(user.id, currentSchool?.id);
   const orderedClasses = orderClassesBySchedule(professorClasses);
   
   const recentActivities = posts
@@ -61,18 +64,26 @@ export default function ProfessorDashboard() {
   
   useEffect(() => {
     async function fetchDeliveryMetrics() {
+      // ✅ GUARD: Não buscar sem escola
+      if (!currentSchool?.id) {
+        console.warn('⚠️ [ProfessorDashboard] currentSchool não definido - não buscando métricas');
+        setDeliveryMetrics({ pendingDeliveries: 0, weeklyDeadlines: 0 });
+        return;
+      }
+
       if (professorClasses.length === 0) {
         setDeliveryMetrics({ pendingDeliveries: 0, weeklyDeadlines: 0 });
         return;
       }
       
       const classIds = professorClasses.map(c => c.id);
-      const metrics = await deliveryStore.getProfessorMetrics(classIds);
+      console.log('🔵 [ProfessorDashboard] Buscando métricas para school_id:', currentSchool.id);
+      const metrics = await deliveryStore.getProfessorMetrics(classIds, currentSchool.id);
       setDeliveryMetrics(metrics);
     }
     
     fetchDeliveryMetrics();
-  }, [professorClasses]);
+  }, [professorClasses, currentSchool]);
   
   return (
     <div className="space-y-6">

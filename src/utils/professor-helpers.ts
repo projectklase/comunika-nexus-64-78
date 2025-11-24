@@ -8,15 +8,20 @@ import { useClassStore } from '@/stores/class-store';
 export function getProfessorClasses(userId: string, schoolId?: string): SchoolClass[] {
   const { classes } = useClassStore.getState();
   
+  // ✅ GUARD: Log de debug
+  console.log('🔵 [getProfessorClasses] Buscando turmas para userId:', userId, 'schoolId:', schoolId);
+  
   // Filtrar turmas onde o professor está no array teachers
-  const professorClasses = classes.filter(c => 
+  let professorClasses = classes.filter(c => 
     c.teachers && c.teachers.includes(userId) && c.status === 'ATIVA'
   );
   
-  // Filtrar por schoolId se fornecido (multi-tenant)
+  // ✅ IMPLEMENTAR FILTRO DE ESCOLA (não mais TODO)
   if (schoolId) {
-    // TODO: Implementar filtro por schoolId quando tiver esse campo
-    // return professorClasses.filter(c => c.schoolId === schoolId);
+    professorClasses = professorClasses.filter(c => c.schoolId === schoolId);
+    console.log('🔵 [getProfessorClasses] Turmas após filtro de escola:', professorClasses.length);
+  } else {
+    console.warn('⚠️ [getProfessorClasses] schoolId não fornecido - possível vazamento multi-tenant');
   }
   
   return professorClasses;
