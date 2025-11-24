@@ -25,6 +25,10 @@ import { usePeopleStore } from '@/stores/people-store';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { validateEmail, validatePhone } from '@/lib/validation';
+import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
+import { useSchool } from '@/contexts/SchoolContext';
+import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
+import { normalizePhoneForComparison } from '@/lib/phone-utils';
 
 const quickTeacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -52,6 +56,10 @@ export function QuickTeacherModal({
   const [isLoading, setIsLoading] = useState(false);
   const { createTeacher, people } = usePeopleStore();
   const { toast } = useToast();
+  const { currentSchool } = useSchool();
+  const { checkDuplicates } = useDuplicateCheck(currentSchool?.id || null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
 
   const form = useForm<QuickTeacherFormData>({
     resolver: zodResolver(quickTeacherSchema),
@@ -186,6 +194,22 @@ export function QuickTeacherModal({
                       placeholder="(11) 99999-9999"
                       value={field.value}
                       onChange={field.onChange}
+                      onBlur={async () => {
+                        const phone = field.value?.trim();
+                        if (phone && validatePhone(phone) === null) {
+                          const result = await checkDuplicates({ phone });
+                          
+                          if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
+                            toast({
+                              title: "Telefone já cadastrado",
+                              description: "Este telefone já está em uso no sistema",
+                              variant: "destructive"
+                            });
+                            setDuplicateCheck(result);
+                            setShowDuplicateModal(true);
+                          }
+                        }
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
@@ -215,6 +239,26 @@ export function QuickTeacherModal({
             </div>
           </form>
         </Form>
+
+        {/* Modal de alerta de duplicatas */}
+        {showDuplicateModal && duplicateCheck && (
+          <DuplicateWarning
+            issues={[{
+              type: 'critical',
+              field: 'phone',
+              message: 'Este telefone já está cadastrado no sistema',
+              existingUsers: duplicateCheck.similarities
+                .filter((s: any) => s.type === 'phone')
+                .flatMap((s: any) => s.matches)
+            }]}
+            hasBlocking={false}
+            onCancel={() => setShowDuplicateModal(false)}
+            onConfirm={() => {
+              setShowDuplicateModal(false);
+              // Permite continuar mesmo com duplicata (soft warning)
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
