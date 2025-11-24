@@ -66,6 +66,7 @@ export interface CreateAuditEventParams {
   entity: AuditEntity;
   entity_id: string;
   entity_label: string;
+  school_id?: string;
   scope?: AuditScope;
   class_name?: string;
   meta?: Record<string, any>;

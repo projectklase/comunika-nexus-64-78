@@ -272,10 +272,10 @@ export const useClassStore = create<ClassStore>((set, get) => ({
         .eq('user_id', user.id)
         .single();
 
-      // Buscar nomes das turmas
+      // Buscar nomes das turmas e school_id
       const { data: classData } = await (supabase as any)
         .from('classes')
-        .select('id, name')
+        .select('id, name, school_id')
         .in('id', ids);
 
       const { error } = await (supabase as any)
@@ -293,6 +293,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
             actor_name: profile.name,
             actor_email: profile.email,
             actor_role: userRole.role,
+            school_id: cls.school_id,
             action: 'ARCHIVE',
             entity: 'CLASS',
             entity_id: cls.id,
@@ -345,10 +346,10 @@ export const useClassStore = create<ClassStore>((set, get) => ({
         .eq('user_id', user.id)
         .single();
 
-      // Buscar nomes das turmas e do professor
+      // Buscar nomes das turmas, do professor e school_id
       const { data: classData } = await (supabase as any)
         .from('classes')
-        .select('id, name')
+        .select('id, name, school_id')
         .in('id', classIds);
 
       const { data: teacherProfile } = await supabase
@@ -372,6 +373,7 @@ export const useClassStore = create<ClassStore>((set, get) => ({
             actor_name: profile.name,
             actor_email: profile.email,
             actor_role: userRole.role,
+            school_id: cls.school_id,
             action: 'ASSIGN',
             entity: 'TEACHER',
             entity_id: teacherId,

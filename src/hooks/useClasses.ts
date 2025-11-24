@@ -385,10 +385,10 @@ export function useClasses() {
         .eq('user_id', user.id)
         .single();
 
-      // Buscar dados da turma
+      // Buscar dados da turma e school_id
       const { data: classData } = await (supabase as any)
         .from('classes')
-        .select('name')
+        .select('name, school_id')
         .eq('id', classId)
         .single();
 
@@ -418,6 +418,7 @@ export function useClasses() {
               actor_name: profile.name,
               actor_email: profile.email,
               actor_role: userRole.role,
+              school_id: classData.school_id,
               action: 'ASSIGN',
               entity: 'TEACHER',
               entity_id: teacherId,
