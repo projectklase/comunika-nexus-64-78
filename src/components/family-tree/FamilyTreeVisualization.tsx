@@ -64,16 +64,10 @@ function FamilyTreeVisualizationInner({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLegendOpen, setIsLegendOpen] = useState(true);
   
-  // ✅ Hook de exportação (Fase 4.3) - com estatísticas
-  const totalStudents = filteredFamilies.reduce((acc, fam) => acc + fam.students.length, 0);
-  const totalGuardians = filteredFamilies.length; // Cada FamilyGroup tem 1 guardian principal
-
+  // ✅ Hook de exportação (Fase 4.3)
   const { isExporting, exportToPNG, exportToPDF } = useTreeExport(
     reactFlowWrapperRef,
-    currentSchool?.name || 'Escola',
-    filteredFamilies.length,
-    totalStudents,
-    totalGuardians
+    currentSchool?.name || 'Escola'
   );
 
   // Estados para edição de aluno
