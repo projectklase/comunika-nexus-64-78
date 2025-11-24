@@ -728,33 +728,195 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       }
     });
     
-    // 2. ✨ NOVO: Registrar o relacionamento familiar (será expandido na FASE 2)
-    const relationshipRecord = {
-      relatedStudentId,
-      relatedStudentName,
-      relationshipType: guardianRelationshipType as 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'OTHER',
-      customRelationship: customLabel,
-      createdAt: new Date().toISOString(),
+    // 2. ✨ Inferir relacionamento aluno↔aluno automaticamente
+    const sharedGuardianName = guardians[0]?.name; // Nome do responsável compartilhado
+    
+    const inference = inferStudentRelationship(
+      guardians,
+      guardianRelationshipType,
+      sharedGuardianName
+    );
+    
+    // 3. Registrar relacionamento APENAS se houver inferência válida
+    if (inference.type) {
+      const relationshipRecord = {
+        relatedStudentId,
+        relatedStudentName,
+        relationshipType: inference.type,
+        confidence: inference.confidence,
+        inferredFrom: `${sharedGuardianName} (${guardianRelationshipType})`,
+        customRelationship: inference.type === 'OTHER' ? customLabel : undefined,
+        createdAt: new Date().toISOString(),
+      };
+      
+      setFormData(prev => ({
+        ...prev,
+        student: {
+          ...prev.student,
+          notes: {
+            ...prev.student?.notes,
+            familyRelationships: [
+              ...(prev.student?.notes?.familyRelationships || []),
+              relationshipRecord
+            ]
+          }
+        }
+      }));
+      
+      const relationLabels: Record<string, string> = {
+        'SIBLING': 'Irmãos',
+        'COUSIN': 'Primos',
+        'UNCLE_NEPHEW': 'Tios-Sobrinhos',
+        'OTHER': customLabel || 'Outro'
+      };
+      
+      const confidenceEmoji = inference.confidence === 'HIGH' ? '✅' : inference.confidence === 'MEDIUM' ? '⚠️' : 'ℹ️';
+      
+      toast.success(
+        `Responsáveis copiados! ${confidenceEmoji} Relação detectada: ${relationLabels[inference.type]}`,
+        { description: inference.explanation }
+      );
+    } else {
+      // Se for PADRINHO/MADRINHA ou não houver inferência clara
+      if (['PADRINHO', 'MADRINHA'].includes(guardianRelationshipType)) {
+        toast.info(
+          `Responsáveis copiados! ${sharedGuardianName} registrado como ${guardianRelationshipType}`,
+          { description: 'Relacionamento guardian→student salvo. Nenhuma relação aluno↔aluno criada.' }
+        );
+        // TODO FASE 3: Salvar em guardianRelationships
+      } else {
+        toast.success(
+          'Responsáveis copiados!',
+          { description: 'Não foi possível inferir relacionamento familiar automaticamente.' }
+        );
+      }
+    }
+    
+    setShowSiblingSuggestion(false);
+  };
+
+  /**
+   * 🧠 INFERÊNCIA INTELIGENTE DE RELACIONAMENTOS
+   * 
+   * Analisa os tipos de parentesco que dois alunos têm com o MESMO responsável
+   * e deduz automaticamente o relacionamento entre eles.
+   * 
+   * @param existingStudentGuardians - Guardians do aluno já cadastrado
+   * @param newGuardianRelationType - Tipo de parentesco do novo aluno com o responsável
+   * @param sharedGuardianName - Nome do responsável compartilhado
+   * @returns Objeto com tipo de relacionamento, confiança e explicação
+   */
+  const inferStudentRelationship = (
+    existingStudentGuardians: any[],
+    newGuardianRelationType: string,
+    sharedGuardianName: string
+  ): { 
+    type: 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'OTHER' | null; 
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+    explanation: string;
+  } => {
+    // Encontrar como o aluno existente chama esse responsável
+    const existingGuardian = existingStudentGuardians.find(
+      g => g.name === sharedGuardianName
+    );
+    
+    if (!existingGuardian) {
+      return { 
+        type: null, 
+        confidence: 'LOW', 
+        explanation: 'Não foi possível determinar o relacionamento' 
+      };
+    }
+    
+    const existingType = existingGuardian.relation.toUpperCase();
+    const newType = newGuardianRelationType.toUpperCase();
+    
+    // MATRIZ DE INFERÊNCIA INTELIGENTE
+    const relationshipMatrix: Record<string, Record<string, any>> = {
+      // Se ambos têm como MÃE → IRMÃOS (100% certeza)
+      'MAE': {
+        'MAE': { type: 'SIBLING', confidence: 'HIGH', explanation: '👨‍👩‍👧‍👦 Ambos são filhos da mesma mãe' },
+        'MÃE': { type: 'SIBLING', confidence: 'HIGH', explanation: '👨‍👩‍👧‍👦 Ambos são filhos da mesma mãe' },
+        'TIA': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Um é filho, outro é sobrinho - são primos' },
+        'TIO': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Um é filho, outro é sobrinho - são primos' },
+        'AVO_F': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Diferença de geração detectada' },
+        'AVO': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Diferença de geração detectada' },
+      },
+      'MÃE': {
+        'MAE': { type: 'SIBLING', confidence: 'HIGH', explanation: '👨‍👩‍👧‍👦 Ambos são filhos da mesma mãe' },
+        'MÃE': { type: 'SIBLING', confidence: 'HIGH', explanation: '👨‍👩‍👧‍👦 Ambos são filhos da mesma mãe' },
+        'TIA': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Um é filho, outro é sobrinho - são primos' },
+        'TIO': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Um é filho, outro é sobrinho - são primos' },
+      },
+      // Se ambos têm como PAI → IRMÃOS (100% certeza)
+      'PAI': {
+        'PAI': { type: 'SIBLING', confidence: 'HIGH', explanation: '👨‍👩‍👧‍👦 Ambos são filhos do mesmo pai' },
+        'TIO': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Um é filho, outro é sobrinho - são primos' },
+        'TIA': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Um é filho, outro é sobrinho - são primos' },
+        'AVO': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Diferença de geração detectada' },
+        'AVO_F': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Diferença de geração detectada' },
+      },
+      // Se um tem como MÃE/PAI e outro como TIA/TIO → PRIMOS
+      'TIA': {
+        'MAE': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Tia de um é mãe do outro - são primos' },
+        'MÃE': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Tia de um é mãe do outro - são primos' },
+        'PAI': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Tia de um é relacionada ao pai do outro - são primos' },
+        'TIA': { type: 'COUSIN', confidence: 'MEDIUM', explanation: '👥 Mesma tia para ambos - provavelmente primos' },
+      },
+      'TIO': {
+        'MAE': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Tio de um é irmão da mãe do outro - são primos' },
+        'MÃE': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Tio de um é irmão da mãe do outro - são primos' },
+        'PAI': { type: 'COUSIN', confidence: 'HIGH', explanation: '👥 Tio de um é irmão do pai do outro - são primos' },
+        'TIO': { type: 'COUSIN', confidence: 'MEDIUM', explanation: '👥 Mesmo tio para ambos - provavelmente primos' },
+      },
+      // Avós indicam gerações diferentes
+      'AVO': {
+        'MAE': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Avô de um é relacionado à mãe do outro' },
+        'MÃE': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Avô de um é relacionado à mãe do outro' },
+        'PAI': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Avô de um é relacionado ao pai do outro' },
+        'AVO': { type: 'COUSIN', confidence: 'LOW', explanation: 'ℹ️ Mesmo avô - relação familiar complexa' },
+      },
+      'AVO_F': {
+        'MAE': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Avó de um é relacionada à mãe do outro' },
+        'MÃE': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Avó de um é relacionada à mãe do outro' },
+        'PAI': { type: 'UNCLE_NEPHEW', confidence: 'MEDIUM', explanation: '👨‍👦 Avó de um é relacionada ao pai do outro' },
+        'AVO_F': { type: 'COUSIN', confidence: 'LOW', explanation: 'ℹ️ Mesma avó - relação familiar complexa' },
+      },
+      // Padrinhos/Madrinhas NÃO geram relacionamento aluno↔aluno
+      'PADRINHO': {
+        'MAE': { type: null, confidence: 'LOW', explanation: 'Padrinho não define relação entre alunos' },
+        'MÃE': { type: null, confidence: 'LOW', explanation: 'Padrinho não define relação entre alunos' },
+        'PAI': { type: null, confidence: 'LOW', explanation: 'Padrinho não define relação entre alunos' },
+        'PADRINHO': { type: null, confidence: 'LOW', explanation: 'Ambos afilhados do mesmo padrinho - não gera relação aluno↔aluno' },
+      },
+      'MADRINHA': {
+        'MAE': { type: null, confidence: 'LOW', explanation: 'Madrinha não define relação entre alunos' },
+        'MÃE': { type: null, confidence: 'LOW', explanation: 'Madrinha não define relação entre alunos' },
+        'PAI': { type: null, confidence: 'LOW', explanation: 'Madrinha não define relação entre alunos' },
+        'MADRINHA': { type: null, confidence: 'LOW', explanation: 'Ambos afilhados da mesma madrinha - não gera relação aluno↔aluno' },
+      },
+      // Responsável/Tutor genérico - baixa confiança
+      'RESPONSAVEL': {
+        'RESPONSAVEL': { type: 'SIBLING', confidence: 'MEDIUM', explanation: '⚠️ Mesmo responsável - podem ser irmãos ou primos' },
+        'RESPONSÁVEL': { type: 'SIBLING', confidence: 'MEDIUM', explanation: '⚠️ Mesmo responsável - podem ser irmãos ou primos' },
+      },
+      'RESPONSÁVEL': {
+        'RESPONSAVEL': { type: 'SIBLING', confidence: 'MEDIUM', explanation: '⚠️ Mesmo responsável - podem ser irmãos ou primos' },
+        'RESPONSÁVEL': { type: 'SIBLING', confidence: 'MEDIUM', explanation: '⚠️ Mesmo responsável - podem ser irmãos ou primos' },
+      },
+      'TUTOR': {
+        'TUTOR': { type: 'SIBLING', confidence: 'LOW', explanation: 'ℹ️ Mesmo tutor - relação familiar incerta' },
+      },
     };
     
-    // Atualizar formData para incluir o relacionamento
-    setFormData(prev => ({
-      ...prev,
-      student: {
-        ...prev.student,
-        notes: {
-          ...prev.student?.notes,
-          familyRelationships: [
-            ...(prev.student?.notes?.familyRelationships || []),
-            relationshipRecord
-          ]
-        }
-      }
-    }));
+    // Buscar inferência na matriz (tentando ambas direções)
+    const result = relationshipMatrix[existingType]?.[newType] || 
+                   relationshipMatrix[newType]?.[existingType] || 
+                   { type: 'OTHER', confidence: 'LOW', explanation: 'ℹ️ Relação familiar complexa ou não catalogada' };
     
-    const relationLabel = customLabel || guardianRelationshipType;
-    toast.success(`Responsáveis copiados! Parentesco "${relationLabel}" registrado com ${relatedStudentName}.`);
-    setShowSiblingSuggestion(false);
+    console.log('🧠 [Inferência] Aluno Existente (' + existingType + ' de ' + sharedGuardianName + ') ↔ Novo Aluno (' + newType + ' de ' + sharedGuardianName + ') = ' + (result.type || 'Nenhum') + ' [' + result.confidence + ']');
+    
+    return result;
   };
 
   const handleResetPassword = () => {
