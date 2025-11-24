@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useClassStore } from '@/stores/class-store';
-import { usePeopleStore } from '@/stores/people-store';
+import { useTeachers } from '@/hooks/useTeachers';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Archive, UserPlus } from 'lucide-react';
@@ -15,12 +16,21 @@ interface BulkActionsProps {
 export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
   const { toast } = useToast();
   const { bulkArchive, bulkAssignTeacher } = useClassStore();
-  const { getTeachers } = usePeopleStore();
+  const { teachers, loading: teachersLoading, fetchTeachers } = useTeachers();
+  const { currentSchool } = useSchool();
   
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
 
-  const teachers = getTeachers();
+  // 🔍 Debug logs para validação
+  useEffect(() => {
+    console.log('🎯 [BulkActions] Estado:', {
+      currentSchool: currentSchool?.name,
+      teachersCount: teachers.length,
+      teachersLoading,
+      selectedIds: selectedIds.length
+    });
+  }, [currentSchool, teachers, teachersLoading, selectedIds]);
 
   const handleBulkArchive = async () => {
     try {
@@ -91,25 +101,40 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
           <div className="flex items-center space-x-2">
             <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
               <SelectTrigger className="w-48 glass-input">
-                <SelectValue placeholder="Selecionar professor" />
+                <SelectValue placeholder={
+                  teachersLoading 
+                    ? "Carregando professores..." 
+                    : teachers.length === 0
+                    ? "Nenhum professor disponível"
+                    : "Selecionar professor"
+                } />
               </SelectTrigger>
               <SelectContent className="glass-card">
-                {teachers.map(teacher => (
-                  <SelectItem key={teacher.id} value={teacher.id}>
-                    {teacher.name}
-                  </SelectItem>
-                ))}
+                {teachers.length === 0 ? (
+                  <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                    {!currentSchool 
+                      ? '⚠️ Nenhuma escola selecionada'
+                      : 'Nenhum professor cadastrado nesta escola.'
+                    }
+                  </div>
+                ) : (
+                  teachers.map(teacher => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             
             <Button
               size="sm"
               onClick={handleBulkAssignTeacher}
-              disabled={!selectedTeacher}
+              disabled={!selectedTeacher || teachersLoading}
               className="glass-button"
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Atribuir
+              {teachersLoading ? 'Carregando...' : 'Atribuir'}
             </Button>
           </div>
         </div>
