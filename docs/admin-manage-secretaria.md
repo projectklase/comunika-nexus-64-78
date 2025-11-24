@@ -91,9 +91,34 @@ Todos os eventos são logados em `audit_events`:
 - [ ] Telefone inválido é rejeitado
 - [ ] Formulário limpa após sucesso
 
+## Funcionalidades Implementadas (Atualização 2025-01-24)
+
+### ✅ Editar Secretaria
+- Modal `SecretariaFormModal` aceita prop `secretaria` para modo de edição
+- Botão "Editar" no menu dropdown de ações
+- Validação de senha desativada no modo de edição
+- Função `updateSecretaria` do `useSecretarias` para persistir mudanças
+- Audit logging de edições
+
+### ✅ Deletar Secretaria
+- Função `deleteSecretaria` em `useSecretarias.ts`
+- Usa edge function `delete-user` com `SUPABASE_SERVICE_ROLE_KEY`
+- `AlertDialog` de confirmação para segurança
+- Audit logging de exclusões
+- Opção "Excluir" no menu de ações
+
+### ✅ Detecção de Duplicatas
+- Validação inline em tempo real para email (blocking)
+- Hook `useDuplicateCheck` para validação de email duplicado
+- Modal `DuplicateWarning` para alertas de duplicatas
+- Validação backend na edge function `create-demo-user`
+- Bloqueio de cadastro se email já existir
+- Ver documentação completa: [Sistema de Detecção de Duplicatas](./duplicate-detection-system.md)
+
 ## Próximos Passos (Futuro)
-1. Editar informações da secretaria (nome, telefone)
-2. Resetar senha da secretaria
-3. Visualizar logs de auditoria específicos da secretaria
-4. Exportar lista de secretarias para CSV
-5. Permissões granulares (ex: algumas secretarias não podem criar professores)
+1. ✅ ~~Editar informações da secretaria~~ (IMPLEMENTADO)
+2. ✅ ~~Deletar secretaria~~ (IMPLEMENTADO)
+3. Resetar senha da secretaria
+4. Visualizar logs de auditoria específicos da secretaria
+5. Exportar lista de secretarias para CSV
+6. Permissões granulares (ex: algumas secretarias não podem criar professores)
