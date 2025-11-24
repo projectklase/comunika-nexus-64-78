@@ -10,6 +10,13 @@ interface StudentRelationship {
   customRelationship?: string;
 }
 
+interface GuardianRelationship {
+  guardianName: string;
+  guardianOf: string; // ID do aluno que tem esse responsável
+  godchildStudentId: string; // ID do aluno que É o afilhado
+  relationshipType: 'PADRINHO' | 'MADRINHA' | 'EXTENDED_FAMILY' | 'OTHER';
+}
+
 /**
  * Buscar relacionamentos reais cadastrados em student_notes
  */
@@ -37,6 +44,40 @@ async function fetchStudentRelationships(
         relatedStudentId: rel.relatedStudentId,
         relationshipType: rel.relationshipType as RelationshipType,
         customRelationship: rel.customRelationship,
+      });
+    }
+  }
+
+  return relationships;
+}
+
+/**
+ * ✨ FASE 4: Buscar relacionamentos Guardian→Student (padrinhos/madrinhas)
+ */
+async function fetchGuardianRelationships(
+  studentIds: string[]
+): Promise<GuardianRelationship[]> {
+  if (studentIds.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, student_notes')
+    .in('id', studentIds);
+
+  if (!profiles) return [];
+
+  const relationships: GuardianRelationship[] = [];
+
+  for (const profile of profiles) {
+    const notes = parseStudentNotes(profile.student_notes);
+    if (!notes?.guardianRelationships) continue;
+
+    for (const rel of notes.guardianRelationships) {
+      relationships.push({
+        guardianName: rel.guardianName,
+        guardianOf: rel.guardianOf,
+        godchildStudentId: profile.id, // O aluno ATUAL é o afilhado
+        relationshipType: rel.relationshipType,
       });
     }
   }
@@ -105,8 +146,10 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
   
   // ✅ Buscar relacionamentos reais
   const realRelationships = await fetchStudentRelationships(allStudentIds);
+  const guardianRelationships = await fetchGuardianRelationships(allStudentIds);
   
   console.log('🌳 [Family Tree Debug] Relacionamentos encontrados:', realRelationships.length);
+  console.log('🌳 [Family Tree Debug] Relacionamentos Guardian→Student:', guardianRelationships.length);
   
   // Criar um Map para acesso rápido
   const relationshipMap = new Map<string, RelationshipType>();
@@ -300,6 +343,76 @@ export async function buildFamilyTree(families: FamilyGroup[]): Promise<FamilyTr
       data: {
         relationshipType: rel.relationshipType,
         relationshipLabel: RELATIONSHIP_LABELS[rel.relationshipType],
+      },
+    });
+    
+    existingEdges.add(edgeId);
+  });
+  
+  // 6. ✨ FASE 4: CONECTAR RELACIONAMENTOS GUARDIAN→STUDENT (PADRINHOS/MADRINHAS)
+  console.log('🌳 [Family Tree Debug] Criando edges Guardian→Student (padrinhos/madrinhas)...');
+  
+  guardianRelationships.forEach(rel => {
+    // Encontrar o nó do Guardian (responsável do aluno que TEM o padrinho)
+    const guardianFamily = families.find(f => 
+      f.students.some(s => s.id === rel.guardianOf)
+    );
+    
+    if (!guardianFamily) {
+      console.warn(`  ⚠️  Família não encontrada para guardianOf=${rel.guardianOf.slice(0,8)}`);
+      return;
+    }
+    
+    // Encontrar o nó do Student (afilhado)
+    const godchildFamily = families.find(f => 
+      f.students.some(s => s.id === rel.godchildStudentId)
+    );
+    
+    if (!godchildFamily) {
+      console.warn(`  ⚠️  Família não encontrada para godchild=${rel.godchildStudentId.slice(0,8)}`);
+      return;
+    }
+    
+    const guardianNodeId = `guardian-${guardianFamily.family_key}`;
+    const studentNodeId = `student-${rel.godchildStudentId}`;
+    
+    // Verificar se os nós existem
+    const guardianNode = nodes.find(n => n.id === guardianNodeId);
+    const studentNode = nodes.find(n => n.id === studentNodeId);
+    
+    if (!guardianNode || !studentNode) {
+      console.warn(`  ⚠️  Nós não encontrados para Guardian→Student edge`);
+      return;
+    }
+    
+    // Criar edge vertical (Guardian bottom → Student top)
+    const edgeId = `godparent-${guardianNodeId}-${studentNodeId}`;
+    
+    if (existingEdges.has(edgeId)) return;
+    
+    const relationLabel = rel.relationshipType === 'PADRINHO' ? 'Padrinho' : 
+                          rel.relationshipType === 'MADRINHA' ? 'Madrinha' : 
+                          'Família Estendida';
+    
+    console.log(`  ├─ ${relationLabel}: ${rel.guardianName} → ${studentNode.data.name}`);
+    console.log(`  │  └─ Guardian: ${guardianNodeId}`);
+    console.log(`  │  └─ Student: ${studentNodeId}`);
+    
+    edges.push({
+      id: edgeId,
+      source: guardianNodeId,
+      target: studentNodeId,
+      sourceHandle: 'bottom',
+      targetHandle: 'top',
+      type: 'smoothstep',
+      style: {
+        stroke: 'hsl(var(--chart-5))', // Azul para padrinho/madrinha
+        strokeWidth: 2,
+        strokeDasharray: '8,4,2,4',
+      },
+      data: {
+        relationshipType: 'GODPARENT_GODCHILD',
+        relationshipLabel: relationLabel,
       },
     });
     
