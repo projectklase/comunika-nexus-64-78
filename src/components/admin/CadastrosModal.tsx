@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Users, UserCog, UsersRound, Layers, BookOpen, FolderKanban, type LucideIcon } from "lucide-react";
+import { Users, UserCog, School, Layers, BookOpen, FolderKanban, type LucideIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -29,10 +29,10 @@ const cadastrosLinks: CadastroLink[] = [
     icon: UserCog,
   },
   {
-    title: "Secretárias",
-    description: "Gerenciar cadastro de secretárias",
-    url: "/admin/gerenciar-secretarias",
-    icon: UsersRound,
+    title: "Turmas",
+    description: "Gerenciar turmas e matrículas",
+    url: "/secretaria/turmas",
+    icon: School,
   },
   {
     title: "Níveis",
