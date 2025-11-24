@@ -68,6 +68,7 @@ import { useDuplicateCheck, DuplicateCheckResult } from '@/hooks/useDuplicateChe
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
 import { SiblingGuardianSuggestion } from './SiblingGuardianSuggestion';
 import { useSchool } from '@/contexts/SchoolContext';
+import { SmartLevelSelect } from '@/components/classes/SmartLevelSelect';
 
 interface StudentFormStepsProps {
   open: boolean;
@@ -135,31 +136,22 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
 
   // ✨ FILTRAGEM INTELIGENTE EM CASCATA
-  // Filtrar níveis por programa selecionado
+  // Níveis genéricos - podem ser usados em qualquer programa
   const filteredLevels = useMemo(() => {
-    if (!formData.student?.programId) return [];
-    return levels.filter(level => level.program_id === formData.student?.programId && level.is_active);
-  }, [formData.student?.programId, levels]);
+    return levels.filter(level => level.is_active);
+  }, [levels]);
 
-  // Filtrar turmas por programa (via level) E por nível específico
+  // Filtrar turmas por nível específico
   const filteredClasses = useMemo(() => {
     let filtered = classes.filter(cls => cls.status === 'ATIVA');
     
-    // Filtro por Programa (via levelId → program_id)
-    if (formData.student?.programId) {
-      const programLevelIds = levels
-        .filter(l => l.program_id === formData.student?.programId)
-        .map(l => l.id);
-      filtered = filtered.filter(c => c.levelId && programLevelIds.includes(c.levelId));
-    }
-    
-    // Filtro por Nível específico
+    // Filtro apenas por Nível específico
     if (formData.student?.levelId) {
       filtered = filtered.filter(c => c.levelId === formData.student?.levelId);
     }
     
     return filtered;
-  }, [formData.student?.programId, formData.student?.levelId, classes, levels]);
+  }, [formData.student?.levelId, classes]);
 
   useEffect(() => {
     if (open) {
@@ -1743,18 +1735,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   ))}
                 </SelectContent>
               </Select>
-              {!formData.student?.programId && (
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ Selecione um programa para ver os níveis disponíveis
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
               <Label>Nível</Label>
-              <Select
-                value={formData.student?.levelId}
-                disabled={!formData.student?.programId}
+              <SmartLevelSelect
+                value={formData.student?.levelId || ''}
                 onValueChange={(value) => {
                   // ✨ Resetar turmas ao mudar nível
                   updateFormData({ 
@@ -1764,25 +1750,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     }
                   });
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    !formData.student?.programId 
-                      ? "Selecione um programa primeiro" 
-                      : "Selecione o nível"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredLevels.map((level) => (
-                    <SelectItem key={level.id} value={level.id}>
-                      {level.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {formData.student?.programId && filteredLevels.length === 0 && (
-                <p className="text-xs text-yellow-600 dark:text-yellow-500">
-                  ℹ️ Não há níveis cadastrados para este programa
+                levels={filteredLevels}
+              />
+              {filteredLevels.length === 0 && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-500 flex items-center gap-1">
+                  <span>ℹ️</span>
+                  <span>Nenhum nível cadastrado ainda. Use o campo acima para criar.</span>
                 </p>
               )}
             </div>
