@@ -29,6 +29,7 @@ import {
   getEntityLabel, 
   getRoleLabel 
 } from '@/utils/audit-helpers';
+import { AuditEvent } from '@/types/audit';
 import { FamilyMetricsWidget } from '@/components/admin/FamilyMetricsWidget';
 
 interface DashboardMetrics {
@@ -49,16 +50,6 @@ interface DashboardMetrics {
   totalRedemptions: number;
   pendingRedemptions: number;
   recentAudits: AuditEvent[];
-}
-
-interface AuditEvent {
-  id: string;
-  action: string;
-  entity: string;
-  entity_label: string;
-  actor_name: string;
-  actor_role: string;
-  at: string;
 }
 
 export default function AdminDashboard() {
@@ -201,7 +192,7 @@ export default function AdminDashboard() {
         
         // Auditoria
         supabase.from('audit_events')
-          .select('id, action, entity, entity_label, actor_name, actor_role, at')
+          .select('id, action, entity, entity_id, entity_label, actor_id, actor_name, actor_email, actor_role, school_id, scope, class_name, at, meta, diff_json')
           .eq('school_id', currentSchool.id)
           .order('at', { ascending: false })
           .limit(10)
@@ -229,7 +220,7 @@ export default function AdminDashboard() {
         totalKoins,
         totalRedemptions: redemptionsResult.count || 0,
         pendingRedemptions: pendingRedemptionsResult.count || 0,
-        recentAudits: auditsResult.data || []
+        recentAudits: (auditsResult.data || []) as AuditEvent[]
       });
     } catch (error) {
       console.error('Erro ao carregar métricas:', error);
@@ -564,12 +555,26 @@ export default function AdminDashboard() {
                   </Badge>
                 </div>
                 <p className="text-muted-foreground group-hover:text-foreground/80 text-xs transition-colors">
-                  {getActionLabel(audit.action as any)} → {audit.entity_label || getEntityLabel(audit.entity as any)}
+                  {audit.action === 'ASSIGN' && audit.entity === 'TEACHER' && audit.class_name ? (
+                    <>
+                      {getActionLabel(audit.action as any)} → {audit.entity_label}
+                      <span className="text-purple-400 ml-1">
+                        (Turma: {audit.class_name})
+                      </span>
+                    </>
+                  ) : (
+                    <>{getActionLabel(audit.action as any)} → {audit.entity_label || getEntityLabel(audit.entity as any)}</>
+                  )}
                 </p>
               </div>
-              <span className="text-[10px] text-muted-foreground group-hover:text-foreground/60 transition-colors whitespace-nowrap">
-                {format(new Date(audit.at), 'HH:mm:ss')}
-              </span>
+              <div className="flex flex-col items-end text-[10px] text-muted-foreground group-hover:text-foreground/60 transition-colors">
+                <span className="whitespace-nowrap font-mono">
+                  {format(new Date(audit.at), 'HH:mm:ss')}
+                </span>
+                <span className="whitespace-nowrap font-mono">
+                  {format(new Date(audit.at), 'dd/MM/yyyy', { locale: ptBR })}
+                </span>
+              </div>
             </div>
                 );
               })
