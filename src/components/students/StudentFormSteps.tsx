@@ -55,7 +55,8 @@ import {
   sanitizeString,
   normalizeSpaces,
   onlyDigits,
-  generateSecurePassword
+  generateSecurePassword,
+  validateDateBR
 } from '@/lib/validation';
 import { Person, Guardian, StudentExtra } from '@/types/class';
 import { useClasses } from '@/hooks/useClasses';
@@ -1316,18 +1317,13 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   
                   // Tenta converter para ISO quando completo
                   if (digits.length === 8) {
-                    const day = digits.slice(0, 2);
-                    const month = digits.slice(2, 4);
-                    const year = digits.slice(4, 8);
+                    const validationError = validateDateBR(formatted);
                     
-                    const dayNum = parseInt(day, 10);
-                    const monthNum = parseInt(month, 10);
-                    const yearNum = parseInt(year, 10);
-                    
-                    // Validação básica
-                    if (dayNum >= 1 && dayNum <= 31 && 
-                        monthNum >= 1 && monthNum <= 12 && 
-                        yearNum >= 1900 && yearNum <= new Date().getFullYear()) {
+                    if (!validationError) {
+                      // Data válida
+                      const day = digits.slice(0, 2);
+                      const month = digits.slice(2, 4);
+                      const year = digits.slice(4, 8);
                       const isoDate = `${year}-${month}-${day}`;
                       updateFormData({ student: { dob: isoDate } });
                       
@@ -1338,6 +1334,10 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                           return rest;
                         });
                       }
+                    } else {
+                      // Data inválida
+                      setErrors(prev => ({ ...prev, dob: validationError }));
+                      updateFormData({ student: { dob: undefined } });
                     }
                   } else {
                     // Ainda está digitando, limpa a data
@@ -1358,9 +1358,12 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   Maior de idade
                 </Badge>
               )}
-              {errors.dob && (
-                <p className="text-sm text-destructive">{errors.dob}</p>
-              )}
+            {errors.dob && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <span>⚠️</span>
+                <span>{errors.dob}</span>
+              </p>
+            )}
             </div>
 
             <div className="space-y-2">

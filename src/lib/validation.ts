@@ -227,3 +227,41 @@ export const validateZipCode = (v = '') => {
   
   return null;
 };
+
+/**
+ * Valida uma data no formato DD/MM/YYYY
+ * Retorna null se válida, ou mensagem de erro
+ */
+export const validateDateBR = (dateStr: string): string | null => {
+  if (!dateStr || dateStr.length < 10) {
+    return 'Data incompleta';
+  }
+  
+  const digits = dateStr.replace(/\D/g, '');
+  if (digits.length !== 8) {
+    return 'Data inválida';
+  }
+  
+  const dayNum = parseInt(digits.slice(0, 2), 10);
+  const monthNum = parseInt(digits.slice(2, 4), 10);
+  const yearNum = parseInt(digits.slice(4, 8), 10);
+  
+  // Criar objeto Date para validação
+  const dateObj = new Date(yearNum, monthNum - 1, dayNum);
+  
+  // Verificar se a data é válida
+  const isValid = 
+    !isNaN(dateObj.getTime()) &&
+    dateObj.getDate() === dayNum &&
+    dateObj.getMonth() === monthNum - 1 &&
+    dateObj.getFullYear() === yearNum &&
+    yearNum >= 1900 &&
+    yearNum <= new Date().getFullYear() &&
+    monthNum >= 1 && monthNum <= 12;
+  
+  if (!isValid) {
+    return 'Data inválida. Verifique dia, mês e ano.';
+  }
+  
+  return null; // Válida
+};
