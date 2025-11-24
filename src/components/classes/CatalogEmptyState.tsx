@@ -55,7 +55,7 @@ export function CatalogEmptyState({
           Antes de criar turmas, você precisa cadastrar os itens abaixo:
         </p>
 
-        <div className="space-y-3 w-full max-w-sm mb-6">
+        <div className="space-y-3 w-full max-w-md mb-6">
           {missingCatalogs.map((catalog) => (
             <div key={catalog.type} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border">
               <div className="flex items-center gap-3">
@@ -85,7 +85,7 @@ export function CatalogEmptyState({
               variant="ghost"
               size="sm"
               onClick={onOpenGlobalCatalog}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground whitespace-nowrap"
             >
               <ExternalLink className="h-3 w-3 mr-2" />
               Abrir Catálogo Global
