@@ -3,7 +3,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Wand2, AlertTriangle } from 'lucide-react';
+import { X, Wand2, AlertTriangle, Wrench } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useFamilyMetrics } from '@/hooks/useFamilyMetrics';
 import { useSchool } from '@/contexts/SchoolContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -225,47 +231,83 @@ export default function FamilyRelationsPage() {
   }, [selectedFamilyKey, activeTab]);
 
   return (
-    <div className="min-h-screen bg-background p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/admin/dashboard')}
-            className="hover:bg-white/10"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          
-          <div>
-            <h1 className="text-4xl font-bold gradient-text flex items-center gap-3">
-              <Heart className="h-8 w-8 text-pink-400" />
-              Relações Familiares
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Análise de vínculos familiares e responsáveis compartilhados
-            </p>
-          </div>
-        </div>
-        
+        {/* Botão Voltar - Esquerda */}
         <Button
-          onClick={handleExport}
-          disabled={isExporting || !metrics}
-          className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/admin/dashboard')}
+          className="hover:bg-white/10"
         >
-          {isExporting ? (
-            <>
-              <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              Exportando...
-            </>
-          ) : (
-            <>
-              <FileSpreadsheet className="h-4 w-4" />
-              Exportar Excel
-            </>
-          )}
+          <ArrowLeft className="h-5 w-5" />
         </Button>
+
+        {/* Título Centralizado */}
+        <div className="flex-1 text-center">
+          <h1 className="text-4xl font-bold gradient-text flex items-center justify-center gap-3">
+            <Heart className="h-8 w-8 text-pink-400" />
+            Relações Familiares
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Análise de vínculos familiares e responsáveis compartilhados
+          </p>
+        </div>
+
+        {/* Botões de Ação - Direita */}
+        <div className="flex items-center gap-2">
+          {/* Menu de Ferramentas */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="border-purple-500/30 hover:bg-purple-500/10"
+              >
+                <Wrench className="h-4 w-4 text-purple-400" />
+              </Button>
+            </DropdownMenuTrigger>
+            
+            <DropdownMenuContent 
+              align="end" 
+              className="w-64 bg-background/95 backdrop-blur-xl border border-white/20"
+            >
+              <DropdownMenuItem 
+                onClick={() => setShowFixDialog(true)}
+                disabled={isProcessing || metricsLoading}
+                className="gap-2 cursor-pointer"
+              >
+                <Wand2 className="h-4 w-4 text-purple-400" />
+                <div className="flex-1">
+                  <p className="font-medium">Corrigir Relacionamentos</p>
+                  <p className="text-xs text-muted-foreground">
+                    Inferir relacionamentos transitivos
+                  </p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Botão Exportar Excel */}
+          <Button
+            onClick={handleExport}
+            disabled={isExporting || !metrics}
+            className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
+          >
+            {isExporting ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                Exportando...
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="h-4 w-4" />
+                Exportar Excel
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Métricas Resumidas */}
@@ -335,20 +377,6 @@ export default function FamilyRelationsPage() {
           </Card>
         </div>
       )}
-
-      {/* Botão de Correção de Relacionamentos */}
-      <div className="flex justify-center">
-        <Button 
-          variant="outline"
-          size="sm"
-          onClick={() => setShowFixDialog(true)}
-          disabled={isProcessing || metricsLoading}
-          className="border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50 transition-colors"
-        >
-          <Wand2 className="h-4 w-4 mr-2" />
-          {isProcessing ? 'Processando...' : 'Corrigir Relacionamentos'}
-        </Button>
-      </div>
 
       {/* Distribuição de Parentescos */}
       {metrics && metrics.relationship_distribution.length > 0 && (
