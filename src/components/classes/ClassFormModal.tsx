@@ -148,6 +148,7 @@ export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: C
         levelId: schoolClass.levelId || '',
         modalityId: schoolClass.modalityId || '',
         subjectIds: schoolClass.subjectIds || [],
+        teacherId: schoolClass.teachers?.[0] || '', // ✅ ADICIONAR teacherId
         grade: schoolClass.grade || '',
         year: schoolClass.year || currentYear,
         status: schoolClass.status,
