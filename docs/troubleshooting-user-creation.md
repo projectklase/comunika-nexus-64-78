@@ -18,9 +18,29 @@ O problema tinha múltiplas causas relacionadas a **race conditions** e timing:
 
 5. **Validação Incompleta**: O login não validava se o perfil estava completo antes de considerar bem-sucedido
 
-## Soluções Implementadas
+## Soluções Implementadas (Última Atualização: 2025-01-24)
 
-### 1. Removida Inserção Duplicada (Edge Function)
+### 1. Sistema de Detecção de Duplicatas (2025-01)
+
+**Arquivos Criados**:
+- `src/hooks/useDuplicateCheck.ts`: Hook para validação em tempo real
+- `src/components/DuplicateWarning.tsx`: Modal de alertas de duplicatas
+
+**Funcionalidades**:
+- **Hard-constraints (bloqueantes)**: CPF, Email, Matrícula
+- **Soft-warnings (alertas)**: Nome + DOB, Telefone, Endereço
+- **Validação inline**: Feedback visual ao digitar (ícones ✅/❌)
+- **Validação proativa por step**: Verifica duplicatas antes de avançar step
+- **Backend validation**: Edge function `create-demo-user` valida server-side
+
+**Benefício**: Previne cadastros duplicados e fraudes, melhorando integridade de dados
+
+**Documentação Completa**: [Sistema de Detecção de Duplicatas](./duplicate-detection-system.md)
+
+---
+
+### 2. Removida Inserção Duplicada (Edge Function)
+### 2. Removida Inserção Duplicada (Edge Function)
 **Arquivo**: `supabase/functions/create-demo-user/index.ts`
 
 ```typescript
@@ -35,7 +55,7 @@ console.log('User role will be created automatically by trigger')
 
 **Benefício**: Elimina erro de duplicate key e reduz latência
 
-### 2. Adicionada Política RLS para Trigger (SQL)
+### 3. Adicionada Política RLS para Trigger (SQL)
 **Arquivo**: Nova migração SQL
 
 ```sql
@@ -47,7 +67,7 @@ WITH CHECK (true);
 
 **Benefício**: Garante que o trigger sempre consiga inserir roles
 
-### 3. Implementado Retry Automático (AuthContext)
+### 4. Implementado Retry Automático (AuthContext)
 **Arquivo**: `src/contexts/AuthContext.tsx`
 
 ```typescript
@@ -71,7 +91,7 @@ const getUserProfile = async (userId: string, retryCount = 0): Promise<User | nu
 
 **Benefício**: Torna o login robusto contra problemas de timing
 
-### 4. Melhorado Feedback ao Usuário (Hooks)
+### 5. Melhorado Feedback ao Usuário (Hooks)
 **Arquivos**: `src/hooks/useStudents.ts` e `src/hooks/useTeachers.ts`
 
 ```typescript
@@ -87,7 +107,7 @@ await new Promise(resolve => setTimeout(resolve, 5000));
 
 **Benefício**: Usuário sabe exatamente o que esperar
 
-### 5. Validação de Perfil Completo
+### 6. Validação de Perfil Completo
 **Arquivo**: `src/contexts/AuthContext.tsx`
 
 ```typescript
@@ -193,7 +213,14 @@ Se problemas similares persistirem após estas correções:
 
 ## Changelog
 
-- **2025-01-11**: Implementadas todas as 5 correções
+- **2025-01-24**: Adicionado Sistema de Detecção de Duplicatas
+  - Hook `useDuplicateCheck` para validação em tempo real
+  - Componente `DuplicateWarning` para feedback visual
+  - Validação inline com ícones ✅/❌
+  - Validação proativa por step
+  - Backend validation na edge function
+
+- **2025-01-11**: Implementadas 5 correções de race conditions
   - Removida inserção duplicada de role
   - Adicionada política RLS para trigger
   - Implementado retry automático no getUserProfile
