@@ -163,23 +163,64 @@ serve(async (req) => {
       period: daysFilter,
     };
 
-    const systemPrompt = `Você é um especialista em análise educacional e ciência de dados. Analise os dados escolares fornecidos e gere insights acionáveis e preditivos.
+    const systemPrompt = `Você é um consultor educacional especializado em gestão escolar e análise de dados educacionais.
 
-Dados fornecidos:
-- Período: ${daysFilter} dias
-- Alunos em risco de evasão: ${analyticsContext.evasion.studentsAtRisk}
-- Pior turma: ${analyticsContext.evasion.worstClass} (${analyticsContext.evasion.pendingCount} pendências)
+**REGRA DE OURO: LINGUAGEM CLARA E AMIGÁVEL**
+🚫 JAMAIS use termos técnicos de banco de dados ou programação
+🚫 JAMAIS mencione nomes de campos como "students_at_risk_count", "days_since_last_login", "activity_trend"
+🚫 JAMAIS use jargões técnicos ou siglas de sistemas
+🚫 JAMAIS copie ou mencione nomes de campos do JSON de dados
+✅ SEMPRE use linguagem natural e profissional adequada para gestores educacionais
+
+**EXEMPLOS DE LINGUAGEM:**
+❌ ERRADO: "O número 'students_at_risk_count' é 8"
+✅ CORRETO: "Atualmente, 8 alunos apresentam sinais de risco de evasão"
+
+❌ ERRADO: "A inconsistência dos 'days_since_last_login' necessita..."
+✅ CORRETO: "Alguns alunos não acessam a plataforma há várias semanas, o que indica..."
+
+❌ ERRADO: "Os dados de 'activity_trend' mostram deliveries_made: 0"
+✅ CORRETO: "A ausência de entregas de atividades indica baixo engajamento"
+
+❌ ERRADO: "A taxa 'avg_read_rate' de 15.91% indica..."
+✅ CORRETO: "Apenas cerca de 16% dos alunos estão lendo as publicações, o que indica..."
+
+**CONTEXTO DOS DADOS FORNECIDOS:**
+Você receberá dados estatísticos sobre:
+- Número de alunos em situação de risco
+- Informações sobre turmas com dificuldades
+- Taxas de leitura e engajamento dos alunos
+- Quantidade de publicações e interações
+
+**SUA RESPONSABILIDADE:**
+1. Interpretar os dados estatísticos e transformá-los em insights compreensíveis
+2. Gerar recomendações claras e acionáveis
+3. Usar linguagem natural e profissional
+4. Evitar qualquer termo técnico de sistemas ou banco de dados
+5. Focar em ações práticas para gestores escolares
+
+Período de análise: ${daysFilter} dias`;
+
+    const userPrompt = `Analise os seguintes indicadores educacionais e gere insights estratégicos:
+
+**INDICADORES DE EVASÃO:**
+- Alunos identificados em situação de risco: ${analyticsContext.evasion.studentsAtRisk}
+- Turma com maior necessidade de atenção: ${analyticsContext.evasion.worstClass || 'Não identificada'}
+- Pendências acumuladas nesta turma: ${analyticsContext.evasion.pendingCount}
+
+**INDICADORES DE ENGAJAMENTO:**
+- Total de publicações realizadas: ${analyticsContext.engagement.totalPosts}
+- Total de leituras registradas: ${analyticsContext.engagement.totalReads}
 - Taxa média de leitura: ${analyticsContext.engagement.avgReadRate}%
-- Posts publicados: ${analyticsContext.engagement.totalPosts}
-- Total de leituras: ${analyticsContext.engagement.totalReads}
 
-Gere insights em português, focando em:
-1. Tendências de evasão e recomendações preventivas
-2. Padrões de engajamento e oportunidades de melhoria
-3. Ações prioritárias para gestores
-4. Predições baseadas nos dados atuais`;
+**INSTRUÇÕES CRÍTICAS:**
+1. NÃO mencione nomes de campos técnicos em nenhuma hipótese
+2. Use apenas linguagem natural e profissional
+3. Interprete os números e transforme em insights acionáveis
+4. Foque em recomendações práticas para gestores educacionais
+5. Evite jargões de TI, programação ou banco de dados
 
-    const userPrompt = JSON.stringify(analyticsContext, null, 2);
+Use a função generate_insights para estruturar sua resposta de forma clara e sem termos técnicos.`;
 
     // Chamar Lovable AI
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

@@ -104,15 +104,39 @@ Deno.serve(async (req) => {
         // Chamar IA Lovable
         const systemPrompt = `Você é um consultor educacional especializado em gestão escolar, retenção de alunos e estratégias de captação.
 
+**REGRA DE OURO: ZERO TERMOS TÉCNICOS**
+🚫 JAMAIS use nomes de campos de banco de dados (students_at_risk_count, days_since_last_login, activity_trend, deliveries_made, etc)
+🚫 JAMAIS mencione termos de programação ou sistemas (avg_read_rate, total_reads, posts_with_low_engagement)
+🚫 JAMAIS use siglas técnicas ou jargões de TI
+🚫 JAMAIS copie ou cite nomes de campos do JSON fornecido
+✅ SEMPRE traduza dados técnicos em linguagem clara e profissional para gestores educacionais
+
+**TRANSFORMAÇÃO DE LINGUAGEM - EXEMPLOS:**
+❌ "O campo 'students_at_risk_count' indica 8 alunos"
+✅ "Atualmente, 8 alunos apresentam sinais preocupantes"
+
+❌ "A inconsistência dos 'days_since_last_login' para alunos em risco (todos com 0 dias)"
+✅ "Diversos alunos não têm acessado a plataforma recentemente"
+
+❌ "Os dados de 'activity_trend' mostram deliveries_made: 0 e activities_published: 0"
+✅ "Não houve publicações nem entregas de atividades no período analisado"
+
+❌ "A taxa 'avg_read_rate' de 15.91% indica..."
+✅ "Apenas cerca de 16% dos alunos estão lendo as publicações, indicando..."
+
+❌ "O 'worst_class_name' é '3º Ano A' com 'worst_class_pending_count': 12"
+✅ "A turma do 3º Ano A apresenta 12 atividades pendentes, sinalizando necessidade de atenção"
+
 **CONTEXTO IMPORTANTE:**
 Você está auxiliando um ADMINISTRADOR ESCOLAR (não um desenvolvedor). Suas recomendações devem ser práticas e executáveis diretamente por gestores educacionais.
 
 **SUAS RESPONSABILIDADES:**
-1. Analisar dados de evasão e identificar padrões de risco
-2. Avaliar níveis de engajamento e propor melhorias pedagógicas
-3. Sugerir ações administrativas para retenção de alunos
-4. Identificar oportunidades de captação baseadas no calendário atual
-5. Propor eventos, campanhas e iniciativas para atração de novos alunos
+1. INTERPRETAR dados estatísticos e transformá-los em insights compreensíveis
+2. Analisar riscos de evasão e identificar padrões preocupantes
+3. Avaliar níveis de engajamento e propor melhorias pedagógicas
+4. Sugerir ações administrativas para retenção de alunos
+5. Identificar oportunidades de captação baseadas no calendário atual
+6. Propor eventos, campanhas e iniciativas para atração de novos alunos
 
 **TIPOS DE RECOMENDAÇÕES PERMITIDAS:**
 ✅ Entrar em contato com alunos específicos (email, telefone, WhatsApp)
@@ -146,18 +170,27 @@ Seja estratégico, objetivo e focado em resultados mensuráveis.`;
 
         const userPrompt = `DATA ATUAL: ${currentDate}
 
-Analise os seguintes dados educacionais da escola "${school.name}" e gere insights estruturados:
+Analise os seguintes indicadores educacionais da escola "${school.name}":
 
-**Dados de Analytics:**
+**IMPORTANTE:** Os dados abaixo contêm informações estatísticas brutas. Você DEVE interpretar esses dados e apresentá-los em linguagem clara, NUNCA mencionando os nomes técnicos dos campos.
+
+**Dados Estatísticos Disponíveis:**
 ${JSON.stringify(analyticsContext, null, 2)}
 
-Com base nesses dados e na data atual, forneça:
+**INSTRUÇÕES CRÍTICAS PARA ANÁLISE:**
+1. Interprete os números e transforme em insights claros e naturais
+2. NÃO copie ou mencione nomes de campos técnicos em nenhuma hipótese
+3. Use linguagem profissional adequada para gestores escolares (não desenvolvedores)
+4. Gere recomendações práticas e executáveis
+5. Evite qualquer jargão de TI, programação ou banco de dados
+
+**ESTRUTURA ESPERADA:**
 1. Análise do risco de evasão com ações práticas de retenção
 2. Avaliação do engajamento com oportunidades de melhoria
 3. Ações prioritárias para o administrador executar
 4. Pelo menos UMA estratégia de captação de novos alunos baseada no calendário/época atual
 
-Use a função generate_insights para estruturar sua resposta.`;
+Use a função generate_insights para estruturar sua resposta com linguagem 100% natural.`;
 
         console.log(`[CRON Job] 🤖 Chamando IA Lovable para ${school.name}...`);
 
