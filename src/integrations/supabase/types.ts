@@ -715,6 +715,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          program_id: string | null
           school_id: string | null
           updated_at: string | null
         }
@@ -726,6 +727,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          program_id?: string | null
           school_id?: string | null
           updated_at?: string | null
         }
@@ -737,10 +739,18 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          program_id?: string | null
           school_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "levels_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "levels_school_id_fkey"
             columns: ["school_id"]

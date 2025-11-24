@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -133,6 +133,33 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const { createStudent, updateStudent } = useStudents();
   const { currentSchool } = useSchool();
   const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
+
+  // ✨ FILTRAGEM INTELIGENTE EM CASCATA
+  // Filtrar níveis por programa selecionado
+  const filteredLevels = useMemo(() => {
+    if (!formData.student?.programId) return [];
+    return levels.filter(level => level.program_id === formData.student?.programId && level.is_active);
+  }, [formData.student?.programId, levels]);
+
+  // Filtrar turmas por programa (via level) E por nível específico
+  const filteredClasses = useMemo(() => {
+    let filtered = classes.filter(cls => cls.status === 'ATIVA');
+    
+    // Filtro por Programa (via levelId → program_id)
+    if (formData.student?.programId) {
+      const programLevelIds = levels
+        .filter(l => l.program_id === formData.student?.programId)
+        .map(l => l.id);
+      filtered = filtered.filter(c => c.levelId && programLevelIds.includes(c.levelId));
+    }
+    
+    // Filtro por Nível específico
+    if (formData.student?.levelId) {
+      filtered = filtered.filter(c => c.levelId === formData.student?.levelId);
+    }
+    
+    return filtered;
+  }, [formData.student?.programId, formData.student?.levelId, classes, levels]);
 
   useEffect(() => {
     if (open) {
@@ -1691,12 +1718,19 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             </div>
 
             <div className="space-y-2">
-              <Label>Programa</Label>
+              <Label>Programa *</Label>
               <Select
                 value={formData.student?.programId}
-                onValueChange={(value) => updateFormData({ 
-                  student: { programId: value }
-                })}
+                onValueChange={(value) => {
+                  // ✨ Resetar nível e turmas ao mudar programa
+                  updateFormData({ 
+                    student: { 
+                      programId: value,
+                      levelId: undefined,
+                      classIds: []
+                    }
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o programa" />
@@ -1709,53 +1743,99 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                   ))}
                 </SelectContent>
               </Select>
+              {!formData.student?.programId && (
+                <p className="text-xs text-muted-foreground">
+                  ⚠️ Selecione um programa para ver os níveis disponíveis
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Nível</Label>
               <Select
                 value={formData.student?.levelId}
-                onValueChange={(value) => updateFormData({ 
-                  student: { levelId: value }
-                })}
+                disabled={!formData.student?.programId}
+                onValueChange={(value) => {
+                  // ✨ Resetar turmas ao mudar nível
+                  updateFormData({ 
+                    student: { 
+                      levelId: value,
+                      classIds: []
+                    }
+                  });
+                }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o nível" />
+                  <SelectValue placeholder={
+                    !formData.student?.programId 
+                      ? "Selecione um programa primeiro" 
+                      : "Selecione o nível"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {levels.map((level) => (
+                  {filteredLevels.map((level) => (
                     <SelectItem key={level.id} value={level.id}>
                       {level.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {formData.student?.programId && filteredLevels.length === 0 && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-500">
+                  ℹ️ Não há níveis cadastrados para este programa
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Turmas</Label>
-              <div className="border rounded-lg p-3 space-y-2 max-h-[200px] overflow-y-auto">
-                {classes.map((cls) => (
-                  <div key={cls.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`class-${cls.id}`}
-                      checked={formData.student?.classIds?.includes(cls.id) || false}
-                      onCheckedChange={(checked) => {
-                        const currentIds = formData.student?.classIds || [];
-                        const newIds = checked
-                          ? [...currentIds, cls.id]
-                          : currentIds.filter(id => id !== cls.id);
-                        updateFormData({ student: { classIds: newIds } });
-                      }}
-                    />
-                    <Label 
-                      htmlFor={`class-${cls.id}`}
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      {cls.name}
-                    </Label>
-                  </div>
-                ))}
+              <div className={cn(
+                "border rounded-lg p-3 space-y-2 max-h-[200px] overflow-y-auto",
+                !formData.student?.levelId && "opacity-50"
+              )}>
+                {!formData.student?.levelId ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    ⚠️ Selecione um nível para ver as turmas disponíveis
+                  </p>
+                ) : filteredClasses.length === 0 ? (
+                  <p className="text-sm text-yellow-600 dark:text-yellow-500 text-center py-4">
+                    ℹ️ Não há turmas cadastradas para este programa e nível
+                  </p>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between pb-2 border-b">
+                      <p className="text-xs text-muted-foreground">
+                        {filteredClasses.length} turma(s) disponível(is)
+                      </p>
+                    </div>
+                    {filteredClasses.map((cls) => (
+                      <div key={cls.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`class-${cls.id}`}
+                          checked={formData.student?.classIds?.includes(cls.id) || false}
+                          onCheckedChange={(checked) => {
+                            const currentIds = formData.student?.classIds || [];
+                            const newIds = checked
+                              ? [...currentIds, cls.id]
+                              : currentIds.filter(id => id !== cls.id);
+                            updateFormData({ student: { classIds: newIds } });
+                          }}
+                        />
+                        <Label 
+                          htmlFor={`class-${cls.id}`}
+                          className="text-sm font-normal cursor-pointer flex-1"
+                        >
+                          {cls.name}
+                        </Label>
+                        {cls.level_name && (
+                          <Badge variant="outline" className="text-xs">
+                            {cls.level_name}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
           </div>
