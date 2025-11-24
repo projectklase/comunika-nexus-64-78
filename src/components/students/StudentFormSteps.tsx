@@ -1480,8 +1480,34 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                           return rest;
                         });
                       }
+                      
+                      // Limpa erro inline de duplicata ao editar
+                      if (errors[`phone_${index}`] && value.trim()) {
+                        setErrors(prev => {
+                          const { [`phone_${index}`]: removed, ...rest } = prev;
+                          return rest;
+                        });
+                      }
+                    }}
+                    onBlur={async () => {
+                      // Validação inline de duplicata
+                      if (phone && validatePhone(phone) === null && !student) {
+                        const result = await checkDuplicates({ phone }, student?.id);
+                        
+                        if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
+                          const issue = result.similarities.find(s => s.type === 'phone');
+                          const duplicateUser = issue?.existingUsers?.[0];
+                          
+                          setErrors(prev => ({ 
+                            ...prev, 
+                            [`phone_${index}`]: `✕ Telefone já cadastrado${duplicateUser ? ` (${duplicateUser.name})` : ''}` 
+                          }));
+                        }
+                      }
                     }}
                     placeholder="(00) 00000-0000"
+                    error={errors[`phone_${index}`]}
+                    showError={true}
                   />
                   {(formData.student?.phones?.length || 0) > 1 && (
                     <Button
