@@ -57,7 +57,7 @@ export function QuickTeacherModal({
   const { createTeacher, people } = usePeopleStore();
   const { toast } = useToast();
   const { currentSchool } = useSchool();
-  const { checkDuplicates } = useDuplicateCheck(currentSchool?.id || null);
+  const { checkDuplicates } = useDuplicateCheck();
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
 
@@ -197,7 +197,7 @@ export function QuickTeacherModal({
                       onBlur={async () => {
                         const phone = field.value?.trim();
                         if (phone && validatePhone(phone) === null) {
-                          const result = await checkDuplicates({ phone });
+                          const result = await checkDuplicates({ phone }, currentSchool?.id || null);
                           
                           if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
                             const issue = result.similarities.find(s => s.type === 'phone');

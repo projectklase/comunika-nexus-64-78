@@ -135,7 +135,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   const { levels } = useLevels();
   const { createStudent, updateStudent } = useStudents();
   const { currentSchool } = useSchool();
-  const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
+  const { checkDuplicates, isChecking } = useDuplicateCheck();
 
   // ✨ FILTRAGEM INTELIGENTE EM CASCATA
   // Níveis genéricos - podem ser usados em qualquer programa
@@ -516,7 +516,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     }
     
     // Verifica duplicatas
-    const result = await checkDuplicates(checkData, student?.id);
+    const result = await checkDuplicates(checkData, currentSchool?.id || null, student?.id);
     
     // Se houver bloqueantes, impede navegação e mostra modal
     if (result.hasBlocking) {
@@ -611,7 +611,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
     const result = await checkDuplicates({
       phone,
       address,
-    }, student?.id);
+    }, currentSchool?.id || null, student?.id);
 
     // Filtrar similaridades de telefone/endereço que tenham guardians
     const phoneSimilar = result.similarities.find(s => s.type === 'phone');
@@ -1084,7 +1084,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       dob: formData.student?.dob,
       phone: formData.student?.phones?.[0],
       address: formData.student?.address
-    }, student?.id);
+    }, currentSchool?.id || null, student?.id);
 
     // Se houver bloqueantes, impede submit
     if (result.hasBlocking) {
@@ -1412,7 +1412,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 onBlur={async () => {
                   const cpf = onlyDigits(formData.student?.document || '');
                   if (cpf && cpf.length === 11) {
-                    const result = await checkDuplicates({ cpf }, student?.id);
+                    const result = await checkDuplicates({ cpf }, currentSchool?.id || null, student?.id);
                     if (result.hasBlocking) {
                       const issue = result.blockingIssues.find(i => i.field === 'cpf');
                       if (issue) {
@@ -1492,7 +1492,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                     onBlur={async () => {
                       // Validação inline de duplicata
                       if (phone && validatePhone(phone) === null && !student) {
-                        const result = await checkDuplicates({ phone }, student?.id);
+                        const result = await checkDuplicates({ phone }, currentSchool?.id || null, student?.id);
                         
                         if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
                           const issue = result.similarities.find(s => s.type === 'phone');
@@ -1553,7 +1553,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 onBlur={async () => {
                   const email = formData.student?.email;
                   if (email && !validateEmail(email)) {
-                    const result = await checkDuplicates({ email }, student?.id);
+                    const result = await checkDuplicates({ email }, currentSchool?.id || null, student?.id);
                     if (result.hasBlocking) {
                       const issue = result.blockingIssues.find(i => i.field === 'email');
                       if (issue) {
@@ -1739,7 +1739,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                 onBlur={async () => {
                   const enrollment = formData.student?.enrollmentNumber;
                   if (enrollment) {
-                    const result = await checkDuplicates({ enrollmentNumber: enrollment }, student?.id);
+                    const result = await checkDuplicates({ enrollmentNumber: enrollment }, currentSchool?.id || null, student?.id);
                     if (result.hasBlocking) {
                       const issue = result.blockingIssues.find(i => i.field === 'enrollment_number');
                       if (issue) {

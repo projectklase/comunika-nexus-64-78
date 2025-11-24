@@ -60,7 +60,7 @@ export function SecretariaFormModal({
   } | null>(null);
   
   const { currentSchool } = useSchool();
-  const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
+  const { checkDuplicates, isChecking } = useDuplicateCheck();
   const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
@@ -210,7 +210,7 @@ export function SecretariaFormModal({
         name: normalizedData.name,
         email: normalizedData.email,
         phone: normalizedData.phone
-      }, secretaria?.id);
+      }, currentSchool?.id || null, secretaria?.id);
       
       console.log('🔍 Resultado da verificação de duplicatas:', {
         hasBlocking: result.hasBlocking,
@@ -373,6 +373,7 @@ export function SecretariaFormModal({
                   if (!isEditing && formData.name.length >= 3) {
                     const result = await checkDuplicates(
                       { name: formData.name },
+                      currentSchool?.id || null,
                       secretaria?.id
                     );
                     
@@ -413,6 +414,7 @@ export function SecretariaFormModal({
                   if (!isEditing && formData.email.includes('@')) {
                     const result = await checkDuplicates(
                       { email: formData.email },
+                      currentSchool?.id || null,
                       secretaria?.id
                     );
                     
@@ -504,12 +506,12 @@ export function SecretariaFormModal({
                 id="phone"
                 value={formData.phone}
                 onChange={(value) => handleFieldChange('phone', value)}
-                onBlur={async () => {
-                  // ✅ VERIFICAR TELEFONE DUPLICADO EM TEMPO REAL
-                  if (formData.phone && !isEditing) {
-                    const result = await checkDuplicates({
-                      phone: formData.phone
-                    }, secretaria?.id);
+                  onBlur={async () => {
+                    // ✅ VERIFICAR TELEFONE DUPLICADO EM TEMPO REAL
+                    if (formData.phone && !isEditing) {
+                      const result = await checkDuplicates({
+                        phone: formData.phone
+                      }, currentSchool?.id || null, secretaria?.id);
                     
                     if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
                       toast.warning('⚠️ Este telefone já está cadastrado no sistema');

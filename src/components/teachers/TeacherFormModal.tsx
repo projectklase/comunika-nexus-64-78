@@ -132,7 +132,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const { subjects } = useSubjects();
   const { toast } = useToast();
   const { currentSchool } = useSchool();
-  const { checkDuplicates, isChecking } = useDuplicateCheck(currentSchool?.id || null);
+  const { checkDuplicates, isChecking } = useDuplicateCheck();
 
   // Função de validação preventiva por etapa
   const validateDuplicatesForStep = async (step: number): Promise<boolean> => {
@@ -168,7 +168,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
     }
     
     // Verifica duplicatas
-    const result = await checkDuplicates(checkData, teacher?.id);
+    const result = await checkDuplicates(checkData, currentSchool?.id || null, teacher?.id);
     
     // Se houver bloqueantes, impede navegação e mostra modal
     if (result.hasBlocking) {
@@ -467,7 +467,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
     setIsCheckingPhone(true);
     const result = await checkDuplicates({
       phone: newPhone
-    }, teacher?.id);
+    }, currentSchool?.id || null, teacher?.id);
     setIsCheckingPhone(false);
     
     if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
@@ -562,7 +562,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
                   // ✅ VALIDAÇÃO INLINE DE DUPLICATA - CPF do Professor
                   const doc = onlyDigits(field.value || '');
                   if (doc && doc.length === 11) {
-                    const result = await checkDuplicates({ cpf: doc }, teacher?.id);
+                    const result = await checkDuplicates({ cpf: doc }, currentSchool?.id || null, teacher?.id);
                     if (result.hasBlocking) {
                       const issue = result.blockingIssues[0];
                       const duplicateUser = issue?.existingUser;
@@ -605,7 +605,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
                 onBlur={async () => {
                   const email = field.value;
                   if (email && email.includes('@') && !teacher) {
-                    const result = await checkDuplicates({ email }, teacher?.id);
+                    const result = await checkDuplicates({ email }, currentSchool?.id || null, teacher?.id);
                     if (result.hasBlocking) {
                       const issue = result.blockingIssues.find(i => i.field === 'email');
                       if (issue) {
@@ -668,7 +668,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
                 // ✅ VALIDAÇÃO INLINE DE DUPLICATA em tempo real
                 if (newPhone && validatePhone(newPhone) === null) {
                   setIsCheckingPhone(true);
-                  const result = await checkDuplicates({ phone: newPhone }, teacher?.id);
+                  const result = await checkDuplicates({ phone: newPhone }, currentSchool?.id || null, teacher?.id);
                   setIsCheckingPhone(false);
                   
                   if (result.hasSimilarities && result.similarities.some(s => s.type === 'phone')) {
