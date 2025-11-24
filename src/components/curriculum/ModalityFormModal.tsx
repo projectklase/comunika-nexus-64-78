@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ export function ModalityFormModal({ open, onOpenChange, modality }: ModalityForm
   const { createModality, updateModality } = useModalities();
   const { getActivePrograms } = useProgramStore();
   const { toast } = useToast();
+  const { currentSchool } = useSchool();
   const programs = getActivePrograms();
 
   const form = useForm<ModalityFormData>({

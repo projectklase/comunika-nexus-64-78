@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useLevels } from '@/hooks/useLevels';
 import { useProgramStore } from '@/stores/program-store';
+import { useSchool } from '@/contexts/SchoolContext';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ export function LevelFormModal({ open, onOpenChange, level }: LevelFormModalProp
   const { toast } = useToast();
   const { createLevel, updateLevel } = useLevels();
   const { getActivePrograms } = useProgramStore();
+  const { currentSchool } = useSchool();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
