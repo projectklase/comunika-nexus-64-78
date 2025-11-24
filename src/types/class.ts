@@ -90,7 +90,18 @@ export interface StudentExtra {
     familyRelationships?: Array<{
       relatedStudentId: string;
       relatedStudentName: string;
-      relationshipType: 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'GODPARENT_GODCHILD' | 'OTHER';
+      relationshipType: 'SIBLING' | 'COUSIN' | 'UNCLE_NEPHEW' | 'OTHER';
+      confidence?: 'HIGH' | 'MEDIUM' | 'LOW'; // ✨ Nível de confiança da inferência
+      inferredFrom?: string; // ✨ De onde foi inferido (ex: "Helena Maria (MÃE)")
+      customRelationship?: string;
+      createdAt: string;
+    }>;
+    // ✨ NOVO: Relacionamentos Guardian→Student (verticais)
+    guardianRelationships?: Array<{
+      guardianId?: string; // ID do guardian na tabela guardians
+      guardianName: string; // Nome do responsável
+      guardianOf: string; // ID do aluno que TEM esse responsável
+      relationshipType: 'PADRINHO' | 'MADRINHA' | 'EXTENDED_FAMILY' | 'OTHER';
       customRelationship?: string;
       createdAt: string;
     }>;

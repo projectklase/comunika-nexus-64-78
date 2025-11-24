@@ -12,7 +12,7 @@ export const StudentNotesSchema = z.object({
   healthNotes: z.string().optional(), // Observações de saúde
   consents: z.any().optional(), // Consentimentos
   
-  // ✨ Registro de relacionamentos familiares
+  // ✨ Relacionamentos ALUNO ↔ ALUNO (horizontais)
   familyRelationships: z.array(z.object({
     relatedStudentId: z.string().uuid(),
     relatedStudentName: z.string(),
@@ -20,8 +20,25 @@ export const StudentNotesSchema = z.object({
       'SIBLING',           // Irmão/Irmã
       'COUSIN',            // Primo/Prima
       'UNCLE_NEPHEW',      // Tio-Sobrinho
-      'GODPARENT_GODCHILD', // Padrinho-Afilhado
       'OTHER'              // Outro (com descrição customizada)
+      // ❌ REMOVIDO: GODPARENT_GODCHILD (agora em guardianRelationships)
+    ]),
+    confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(), // ✨ NOVO: Nível de confiança da inferência
+    inferredFrom: z.string().optional(), // ✨ NOVO: De onde foi inferido (ex: "Helena Maria (MÃE)")
+    customRelationship: z.string().optional(), // Para quando escolher "Outro"
+    createdAt: z.string(), // ISO timestamp
+  })).optional(),
+  
+  // ✨ NOVO: Relacionamentos RESPONSÁVEL → ALUNO (verticais)
+  guardianRelationships: z.array(z.object({
+    guardianId: z.string().uuid().optional(), // ID do guardian na tabela guardians
+    guardianName: z.string(), // Nome do responsável
+    guardianOf: z.string().uuid(), // ID do aluno que TEM esse responsável
+    relationshipType: z.enum([
+      'PADRINHO',          // Padrinho do aluno atual
+      'MADRINHA',          // Madrinha do aluno atual
+      'EXTENDED_FAMILY',   // Família estendida (avós, tios que são responsáveis de outro aluno)
+      'OTHER'              // Outro tipo
     ]),
     customRelationship: z.string().optional(), // Para quando escolher "Outro"
     createdAt: z.string(), // ISO timestamp

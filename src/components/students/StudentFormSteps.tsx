@@ -777,13 +777,36 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         { description: inference.explanation }
       );
     } else {
-      // Se for PADRINHO/MADRINHA ou não houver inferência clara
+      // ✨ FASE 3: Salvar relacionamento Guardian→Student para PADRINHO/MADRINHA
       if (['PADRINHO', 'MADRINHA'].includes(guardianRelationshipType)) {
+        const guardianRelationshipRecord = {
+          guardianId: guardians[0]?.id, // ID do guardian na tabela guardians (se disponível)
+          guardianName: sharedGuardianName,
+          guardianOf: relatedStudentId, // ID do aluno que já tem esse responsável
+          relationshipType: guardianRelationshipType as 'PADRINHO' | 'MADRINHA',
+          customRelationship: guardianRelationshipType === 'OUTRO' ? customLabel : undefined,
+          createdAt: new Date().toISOString(),
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          student: {
+            ...prev.student,
+            notes: {
+              ...prev.student?.notes,
+              guardianRelationships: [
+                ...(prev.student?.notes?.guardianRelationships || []),
+                guardianRelationshipRecord
+              ]
+            }
+          }
+        }));
+        
+        const relationLabel = guardianRelationshipType === 'PADRINHO' ? 'Padrinho' : 'Madrinha';
         toast.info(
-          `Responsáveis copiados! ${sharedGuardianName} registrado como ${guardianRelationshipType}`,
-          { description: 'Relacionamento guardian→student salvo. Nenhuma relação aluno↔aluno criada.' }
+          `Responsáveis copiados! ${sharedGuardianName} registrado como ${relationLabel} de ${formData.name}`,
+          { description: 'Relacionamento guardian→student salvo. Nenhuma relação aluno↔aluno criada automaticamente.' }
         );
-        // TODO FASE 3: Salvar em guardianRelationships
       } else {
         toast.success(
           'Responsáveis copiados!',
