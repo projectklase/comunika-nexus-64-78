@@ -60,13 +60,16 @@ interface CheckData {
   email?: string;
 }
 
-export function useDuplicateCheck(currentSchoolId: string | null) {
+export function useDuplicateCheck() {
   const [isChecking, setIsChecking] = useState(false);
 
   const checkDuplicates = async (
     data: CheckData,
+    schoolId: string | null,
     excludeUserId?: string
   ): Promise<DuplicateCheckResult> => {
+    console.log('[DuplicateCheck] schoolId:', schoolId, '| excludeUserId:', excludeUserId);
+    
     setIsChecking(true);
 
     const result: DuplicateCheckResult = {
@@ -76,7 +79,8 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
       similarities: [],
     };
 
-    if (!currentSchoolId) {
+    if (!schoolId) {
+      console.warn('[DuplicateCheck] schoolId é null/undefined - pulando verificação');
       setIsChecking(false);
       return result;
     }
@@ -89,7 +93,7 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
         const { data: profilesWithCpf, error: cpfError } = await supabase
           .from('profiles')
           .select('id, name, email, student_notes, enrollment_number')
-          .eq('current_school_id', currentSchoolId)
+          .eq('current_school_id', schoolId)
           .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
         if (cpfError) {
@@ -126,7 +130,7 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
           .from('profiles')
           .select('id, name, email, enrollment_number')
           .eq('enrollment_number', data.enrollmentNumber)
-          .eq('current_school_id', currentSchoolId)
+          .eq('current_school_id', schoolId)
           .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
         if (enrollmentError) {
@@ -154,7 +158,7 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
           .from('profiles')
           .select('id, name, email, dob, enrollment_number')
           .ilike('name', data.name)
-          .eq('current_school_id', currentSchoolId)
+          .eq('current_school_id', schoolId)
           .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
         if (nameError) {
@@ -212,7 +216,7 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
         const { data: allProfiles, error: phoneError } = await supabase
           .from('profiles')
           .select('id, name, email, phone')
-          .eq('current_school_id', currentSchoolId)
+          .eq('current_school_id', schoolId)
           .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
         if (phoneError) {
@@ -264,7 +268,7 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
         const { data: allProfiles, error: addressError } = await supabase
           .from('profiles')
           .select('id, name, email, student_notes')
-          .eq('current_school_id', currentSchoolId)
+          .eq('current_school_id', schoolId)
           .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
         if (addressError) {
@@ -323,7 +327,7 @@ export function useDuplicateCheck(currentSchoolId: string | null) {
           .from('profiles')
           .select('id, name, email, dob')
           .eq('email', data.email)
-          .eq('current_school_id', currentSchoolId)
+          .eq('current_school_id', schoolId)
           .neq('id', excludeUserId || '00000000-0000-0000-0000-000000000000');
 
         if (emailError) {

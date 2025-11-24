@@ -16,7 +16,7 @@ interface PhoneValidationOptions {
  */
 export function usePhoneValidation() {
   const { currentSchool } = useSchool();
-  const { checkDuplicates } = useDuplicateCheck(currentSchool?.id || null);
+  const { checkDuplicates } = useDuplicateCheck();
   const [isChecking, setIsChecking] = useState(false);
 
   /**
@@ -43,7 +43,7 @@ export function usePhoneValidation() {
     // 2. Verificar duplicatas
     setIsChecking(true);
     try {
-      const result = await checkDuplicates({ phone }, excludeUserId);
+      const result = await checkDuplicates({ phone }, currentSchool?.id || null, excludeUserId);
       setIsChecking(false);
 
       const hasDuplicate = result.hasSimilarities && 
