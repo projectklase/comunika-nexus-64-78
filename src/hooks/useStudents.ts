@@ -128,10 +128,105 @@ export function useStudents() {
         filteredData = filteredData.filter((student: any) => filteredStudentIds.includes(student.id));
       }
 
-      // Enrich students with related data
-      const enrichedStudents = await Promise.all(filteredData.map(async (student: any) => {
-        // Parse student_notes to get program/level info
-        let programId, levelId, programName, levelName;
+      // ⚡ FASE 1: Coletar IDs únicos para batch queries
+      console.time('⚡ [useStudents] Enriquecimento de dados');
+      
+      const allProgramIds = new Set<string>();
+      const allLevelIds = new Set<string>();
+      const allStudentIds = filteredData.map((s: any) => s.id);
+
+      filteredData.forEach((student: any) => {
+        try {
+          if (student.student_notes) {
+            const notes = JSON.parse(student.student_notes);
+            if (notes.programId) allProgramIds.add(notes.programId);
+            if (notes.levelId) allLevelIds.add(notes.levelId);
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      });
+
+      // ⚡ FASE 2: Buscar TODOS os programas em batch (1 query)
+      let programsMap = new Map<string, string>();
+      if (allProgramIds.size > 0) {
+        const { data: programsData } = await supabase
+          .from('programs')
+          .select('id, name')
+          .in('id', Array.from(allProgramIds));
+        
+        programsData?.forEach(p => programsMap.set(p.id, p.name));
+      }
+
+      // ⚡ FASE 3: Buscar TODOS os níveis em batch (1 query)
+      let levelsMap = new Map<string, string>();
+      if (allLevelIds.size > 0) {
+        const { data: levelsData } = await supabase
+          .from('levels')
+          .select('id, name')
+          .in('id', Array.from(allLevelIds));
+        
+        levelsData?.forEach(l => levelsMap.set(l.id, l.name));
+      }
+
+      // ⚡ FASE 4: Buscar TODOS os guardians em batch (1 query)
+      const { data: allGuardiansData } = await supabase
+        .from('guardians')
+        .select('*')
+        .in('student_id', allStudentIds)
+        .order('is_primary', { ascending: false });
+
+      // Agrupar guardians por student_id
+      const guardiansMap = new Map<string, Guardian[]>();
+      allGuardiansData?.forEach(g => {
+        if (!guardiansMap.has(g.student_id)) {
+          guardiansMap.set(g.student_id, []);
+        }
+        guardiansMap.get(g.student_id)?.push(g);
+      });
+
+      // ⚡ FASE 5: Buscar turmas DA ESCOLA (1 query - já estava correto)
+      const { data: schoolClasses } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('school_id', currentSchool.id);
+
+      const schoolClassIds = schoolClasses?.map(c => c.id) || [];
+
+      // ⚡ FASE 6: Buscar TODAS as relações class_students em batch (1 query)
+      const { data: allClassStudentsData } = await supabase
+        .from('class_students')
+        .select('student_id, class_id')
+        .in('student_id', allStudentIds)
+        .in('class_id', schoolClassIds);
+
+      // Agrupar class_ids por student_id
+      const studentClassesMap = new Map<string, string[]>();
+      allClassStudentsData?.forEach(cs => {
+        if (!studentClassesMap.has(cs.student_id)) {
+          studentClassesMap.set(cs.student_id, []);
+        }
+        studentClassesMap.get(cs.student_id)?.push(cs.class_id);
+      });
+
+      // Coletar todos os class_ids únicos
+      const allClassIds = new Set<string>();
+      allClassStudentsData?.forEach(cs => allClassIds.add(cs.class_id));
+
+      // ⚡ FASE 7: Buscar detalhes de TODAS as turmas em batch (1 query)
+      let classesMap = new Map<string, StudentClass>();
+      if (allClassIds.size > 0) {
+        const { data: classesData } = await supabase
+          .from('classes')
+          .select('id, name, code')
+          .in('id', Array.from(allClassIds));
+        
+        classesData?.forEach(c => classesMap.set(c.id, c));
+      }
+
+      // ⚡ FASE 8: Mapear dados enriquecidos (síncrono, sem queries adicionais)
+      const enrichedStudents = filteredData.map((student: any) => {
+        let programId, levelId;
         try {
           if (student.student_notes) {
             const notes = JSON.parse(student.student_notes);
@@ -142,68 +237,22 @@ export function useStudents() {
           // Ignore parse errors
         }
 
-        // Fetch program and level names if IDs exist
-        if (programId) {
-          const { data: programData } = await supabase
-            .from('programs')
-            .select('name')
-            .eq('id', programId)
-            .single();
-          programName = programData?.name;
-        }
-
-        if (levelId) {
-          const { data: levelData } = await supabase
-            .from('levels')
-            .select('name')
-            .eq('id', levelId)
-            .single();
-          levelName = levelData?.name;
-        }
-
-        // Fetch guardians
-        const { data: guardiansData } = await supabase
-          .from('guardians')
-          .select('*')
-          .eq('student_id', student.id)
-          .order('is_primary', { ascending: false });
-
-        // Fetch classes - buscar turmas DA ESCOLA primeiro para garantir segurança
-        const { data: schoolClasses } = await supabase
-          .from('classes')
-          .select('id')
-          .eq('school_id', currentSchool.id);
-
-        const schoolClassIds = schoolClasses?.map(c => c.id) || [];
-
-        const { data: classStudentsData } = await supabase
-          .from('class_students')
-          .select('class_id')
-          .eq('student_id', student.id)
-          .in('class_id', schoolClassIds);
-
-        const studentClassIds = classStudentsData?.map(cs => cs.class_id) || [];
-        let classes: StudentClass[] = [];
-
-        if (studentClassIds.length > 0) {
-          const { data: classesData } = await supabase
-            .from('classes')
-            .select('id, name, code')
-            .in('id', studentClassIds);
-          classes = classesData || [];
-        }
-
         return {
           ...student,
-          role: 'aluno', // Garantir que role existe
-          guardians: guardiansData || [],
-          classes: classes,
+          role: 'aluno',
+          guardians: guardiansMap.get(student.id) || [],
+          classes: (studentClassesMap.get(student.id) || [])
+            .map(classId => classesMap.get(classId))
+            .filter(Boolean) as StudentClass[],
           program_id: programId,
-          program_name: programName,
+          program_name: programId ? programsMap.get(programId) : undefined,
           level_id: levelId,
-          level_name: levelName,
+          level_name: levelId ? levelsMap.get(levelId) : undefined,
         };
-      }));
+      });
+
+      console.timeEnd('⚡ [useStudents] Enriquecimento de dados');
+      console.log(`✅ [useStudents] Batch queries: ${allStudentIds.length} alunos enriquecidos com 8 queries fixas`);
 
       // Ordenar por nome
       enrichedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
