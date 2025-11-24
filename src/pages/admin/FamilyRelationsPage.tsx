@@ -3,11 +3,21 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, RefreshCw, Wand2 } from 'lucide-react';
+import { X, Wand2, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useFamilyMetrics } from '@/hooks/useFamilyMetrics';
 import { useSchool } from '@/contexts/SchoolContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +55,7 @@ export default function FamilyRelationsPage() {
   const [families, setFamilies] = useState<FamilyGroup[]>([]);
   const [loadingFamilies, setLoadingFamilies] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showFixDialog, setShowFixDialog] = useState(false);
   
   // ✨ Hook de inferência transitiva
   const { runTransitiveInference, isProcessing } = useTransitiveInference();
@@ -174,34 +185,14 @@ export default function FamilyRelationsPage() {
     }
   };
 
-  // ✅ SOLUÇÃO 2: Função de recarregar manual
-  const handleRefresh = async () => {
-    const toastId = toast.loading('Atualizando dados...');
-    try {
-      await queryClient.invalidateQueries({ queryKey: ['family-metrics'] });
-      await loadFamilyDetails();
-      toast.success('Dados atualizados!', { id: toastId });
-    } catch (error) {
-      toast.error('Erro ao atualizar dados', { id: toastId });
-    }
-  };
-
-  // ✨ NOVO: Executar inferência transitiva
+  // ✨ Executar inferência transitiva
   const handleFixRelationships = async () => {
     if (!currentSchool?.id) {
       toast.error('Nenhuma escola selecionada');
       return;
     }
     
-    const confirmed = window.confirm(
-      '🔍 Esta ação irá analisar todos os relacionamentos existentes e ' +
-      'criar automaticamente relacionamentos transitivos faltantes.\n\n' +
-      'Exemplo: Se Jonathan é primo de Gabriela e Gabriela é irmã de João, ' +
-      'o sistema irá registrar que Jonathan é primo de João.\n\n' +
-      'Deseja continuar?'
-    );
-    
-    if (!confirmed) return;
+    setShowFixDialog(false);
     
     try {
       const count = await runTransitiveInference(currentSchool.id);
@@ -245,30 +236,6 @@ export default function FamilyRelationsPage() {
             className="hover:bg-white/10"
           >
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-          
-          {/* ✅ SOLUÇÃO 2: Botão de Recarregar */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={metricsLoading || loadingFamilies}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
-          
-          {/* ✨ NOVO: Botão de Inferência Transitiva */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleFixRelationships}
-            disabled={isProcessing || metricsLoading || loadingFamilies}
-            className="gap-2 border-purple-500/30 hover:bg-purple-500/10 text-purple-300 hover:text-purple-200"
-          >
-            <Wand2 className="h-4 w-4" />
-            {isProcessing ? 'Processando...' : 'Corrigir Relacionamentos'}
           </Button>
           
           <div>
@@ -368,6 +335,20 @@ export default function FamilyRelationsPage() {
           </Card>
         </div>
       )}
+
+      {/* Botão de Correção de Relacionamentos */}
+      <div className="flex justify-center">
+        <Button 
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFixDialog(true)}
+          disabled={isProcessing || metricsLoading}
+          className="border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50 transition-colors"
+        >
+          <Wand2 className="h-4 w-4 mr-2" />
+          {isProcessing ? 'Processando...' : 'Corrigir Relacionamentos'}
+        </Button>
+      </div>
 
       {/* Distribuição de Parentescos */}
       {metrics && metrics.relationship_distribution.length > 0 && (
@@ -684,6 +665,52 @@ export default function FamilyRelationsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* AlertDialog de Confirmação */}
+      <AlertDialog open={showFixDialog} onOpenChange={setShowFixDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-full bg-purple-500/10">
+                <Wand2 className="h-5 w-5 text-purple-500" />
+              </div>
+              <AlertDialogTitle>Corrigir Relacionamentos Familiares</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-3 text-left">
+              <p>
+                Esta ação irá analisar todos os relacionamentos existentes e criar automaticamente 
+                relacionamentos transitivos que estão faltando.
+              </p>
+              
+              <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                <p className="text-sm font-medium text-foreground mb-1">Exemplo prático:</p>
+                <p className="text-sm text-muted-foreground">
+                  Se <strong>Jonathan</strong> é primo de <strong>Gabriela</strong> e{" "}
+                  <strong>Gabriela</strong> é irmã de <strong>João</strong>, o sistema irá 
+                  registrar automaticamente que <strong>Jonathan</strong> é primo de <strong>João</strong>.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
+                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <p>
+                  Esta operação pode levar alguns segundos dependendo do número de alunos cadastrados.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleFixRelationships}
+              disabled={isProcessing}
+              className="bg-purple-500 hover:bg-purple-600"
+            >
+              {isProcessing ? 'Processando...' : 'Confirmar e Corrigir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
