@@ -446,7 +446,8 @@ export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: C
                           value={field.value}
                           onValueChange={field.onChange}
                           levels={activeLevels}
-                          onLevelCreated={() => {
+                          onLevelCreated={async () => {
+                            await refetchLevels?.();
                             toast({
                               title: "Nível criado!",
                               description: "O nível foi criado e selecionado.",
@@ -473,7 +474,8 @@ export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: C
                           value={field.value}
                           onValueChange={field.onChange}
                           modalities={activeModalities}
-                          onModalityCreated={() => {
+                          onModalityCreated={async () => {
+                            await refetchModalities?.();
                             toast({
                               title: "Modalidade criada!",
                               description: "A modalidade foi criada e selecionada.",
