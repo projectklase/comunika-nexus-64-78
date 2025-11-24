@@ -81,9 +81,10 @@ interface ClassFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   schoolClass?: SchoolClass | null;
+  onSuccess?: () => void | Promise<void>;
 }
 
-export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormModalProps) {
+export function ClassFormModal({ open, onOpenChange, schoolClass, onSuccess }: ClassFormModalProps) {
   const [showLevelSheet, setShowLevelSheet] = useState(false);
   const [showModalitySheet, setShowModalitySheet] = useState(false);
   const [showSubjectSheet, setShowSubjectSheet] = useState(false);
@@ -264,6 +265,13 @@ export function ClassFormModal({ open, onOpenChange, schoolClass }: ClassFormMod
 
       // Limpar rascunho após salvar
       clearDraft(DRAFT_KEY);
+      
+      // ✅ Callback de sucesso ANTES de fechar o modal
+      if (onSuccess) {
+        console.log('🔄 [ClassFormModal] Executando callback onSuccess...');
+        await onSuccess();
+      }
+      
       onOpenChange(false);
     } catch (error) {
       console.error('🔴 [ClassFormModal] Erro ao salvar turma:', error);

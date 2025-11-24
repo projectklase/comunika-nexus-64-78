@@ -36,6 +36,13 @@ export default function ClassesPage() {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // ✅ Função para recarregar lista após criar/editar turma
+  const handleClassCreated = async () => {
+    console.log('🔄 [ClassesPage] Recarregando lista de turmas...');
+    await loadClasses();
+    console.log('✅ [ClassesPage] Lista de turmas atualizada');
+  };
+
   const handleMainExport = () => {
     exportClassesSummary(filters);
   };
@@ -109,6 +116,7 @@ export default function ClassesPage() {
         <ClassFormModal 
           open={showCreateModal}
           onOpenChange={setShowCreateModal}
+          onSuccess={handleClassCreated}
         />
 
         {/* Import Modal */}
