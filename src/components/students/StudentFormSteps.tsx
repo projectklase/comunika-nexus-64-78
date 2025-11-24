@@ -707,7 +707,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
   };
 
   // Copiar guardians de um irmão com registro de relacionamento familiar
-  const handleCopyGuardians = (
+  const handleCopyGuardians = async (
     guardians: any[], 
     relatedStudentId: string,
     relatedStudentName: string,
@@ -728,27 +728,106 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
       }
     });
     
-    // 2. ✨ Inferir relacionamento aluno↔aluno automaticamente
-    const sharedGuardianName = guardians[0]?.name; // Nome do responsável compartilhado
+    // 2. 🔍 Buscar TODOS os alunos que compartilham o mesmo responsável
+    const sharedGuardianName = guardians[0]?.name;
+    const sharedGuardianEmail = guardians[0]?.email;
+    const sharedGuardianPhone = guardians[0]?.phone;
     
-    const inference = inferStudentRelationship(
-      guardians,
-      guardianRelationshipType,
-      sharedGuardianName
-    );
+    let allRelatedStudents: Array<{
+      id: string;
+      name: string;
+      guardians: any[];
+    }> = [];
     
-    // 3. Registrar relacionamento APENAS se houver inferência válida
-    if (inference.type) {
-      const relationshipRecord = {
-        relatedStudentId,
-        relatedStudentName,
-        relationshipType: inference.type,
-        confidence: inference.confidence,
-        inferredFrom: `${sharedGuardianName} (${guardianRelationshipType})`,
-        customRelationship: inference.type === 'OTHER' ? customLabel : undefined,
-        createdAt: new Date().toISOString(),
-      };
+    if (currentSchool?.id && (sharedGuardianEmail || sharedGuardianPhone)) {
+      try {
+        // Buscar responsáveis com email ou telefone similar
+        let query = supabase
+          .from('guardians')
+          .select('id, name, email, phone, relation, student_id');
+
+        if (sharedGuardianEmail) {
+          query = query.eq('email', sharedGuardianEmail.toLowerCase().trim());
+        } else if (sharedGuardianPhone) {
+          const cleanPhone = sharedGuardianPhone.replace(/\D/g, '');
+          query = query.eq('phone', cleanPhone);
+        }
+
+        const { data: existingGuardians } = await query;
+
+        if (existingGuardians && existingGuardians.length > 0) {
+          // Buscar os alunos relacionados a esses responsáveis
+          const studentIds = [...new Set(existingGuardians.map(g => g.student_id))];
+          
+          const { data: studentsData } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', studentIds)
+            .eq('current_school_id', currentSchool.id);
+
+          if (studentsData && studentsData.length > 0) {
+            // Buscar TODOS os responsáveis de cada aluno encontrado
+            const { data: allGuardiansData } = await supabase
+              .from('guardians')
+              .select('*')
+              .in('student_id', studentIds);
+
+            // Montar array de alunos com seus responsáveis
+            allRelatedStudents = studentsData.map(student => {
+              const studentGuardians = allGuardiansData?.filter(
+                g => g.student_id === student.id
+              ) || [];
+
+              return {
+                id: student.id,
+                name: student.name,
+                guardians: studentGuardians.map(g => ({
+                  id: g.id,
+                  name: g.name,
+                  relation: g.relation,
+                  phone: g.phone || undefined,
+                  email: g.email || undefined,
+                  isPrimary: g.is_primary || false,
+                })),
+              };
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar alunos relacionados:', error);
+      }
+    }
+    
+    // 3. ✨ Inferir e criar relacionamentos com TODOS os alunos encontrados
+    const newRelationships: any[] = [];
+    let successCount = 0;
+    
+    for (const relatedStudent of allRelatedStudents) {
+      const inference = inferStudentRelationship(
+        relatedStudent.guardians,
+        guardianRelationshipType,
+        sharedGuardianName
+      );
       
+      // Registrar relacionamento APENAS se houver inferência válida
+      if (inference.type) {
+        const relationshipRecord = {
+          relatedStudentId: relatedStudent.id,
+          relatedStudentName: relatedStudent.name,
+          relationshipType: inference.type,
+          confidence: inference.confidence,
+          inferredFrom: `${sharedGuardianName} (${guardianRelationshipType})`,
+          customRelationship: inference.type === 'OTHER' ? customLabel : undefined,
+          createdAt: new Date().toISOString(),
+        };
+        
+        newRelationships.push(relationshipRecord);
+        successCount++;
+      }
+    }
+    
+    // 4. Salvar todos os relacionamentos no formData
+    if (newRelationships.length > 0) {
       setFormData(prev => ({
         ...prev,
         student: {
@@ -757,7 +836,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
             ...prev.student?.notes,
             familyRelationships: [
               ...(prev.student?.notes?.familyRelationships || []),
-              relationshipRecord
+              ...newRelationships
             ]
           }
         }
@@ -770,11 +849,14 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
         'OTHER': customLabel || 'Outro'
       };
       
-      const confidenceEmoji = inference.confidence === 'HIGH' ? '✅' : inference.confidence === 'MEDIUM' ? '⚠️' : 'ℹ️';
+      const primaryRelation = newRelationships[0];
+      const confidenceEmoji = primaryRelation.confidence === 'HIGH' ? '✅' : primaryRelation.confidence === 'MEDIUM' ? '⚠️' : 'ℹ️';
       
       toast.success(
-        `Responsáveis copiados! ${confidenceEmoji} Relação detectada: ${relationLabels[inference.type]}`,
-        { description: inference.explanation }
+        `Responsáveis copiados! ${confidenceEmoji} ${successCount} relacionamento(s) detectado(s)`,
+        { 
+          description: `${relationLabels[primaryRelation.relationshipType]} com ${allRelatedStudents.map(s => s.name).join(', ')}` 
+        }
       );
     } else {
       // ✨ FASE 3: Salvar relacionamento Guardian→Student para PADRINHO/MADRINHA
