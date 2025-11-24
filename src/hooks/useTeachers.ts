@@ -286,6 +286,7 @@ export function useTeachers() {
           actor_name: actorProfile?.name || user.email || 'Unknown',
           actor_email: actorProfile?.email || user.email || '',
           actor_role: actorRole?.role || 'unknown',
+          school_id: currentSchool.id,
           meta: {
             email: teacherToDelete.email,
             phone: teacherToDelete.phone,

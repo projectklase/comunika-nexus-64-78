@@ -153,13 +153,30 @@ export const logAudit = async (params: CreateAuditEventParams & {
   actor_name?: string;
   actor_email?: string;
   actor_role?: string;
+  school_id?: string;
 }): Promise<void> => {
   // Extract actor info from params
-  const { actor_id, actor_name, actor_email, actor_role, ...eventParams } = params;
+  const { 
+    actor_id, 
+    actor_name, 
+    actor_email, 
+    actor_role, 
+    school_id,
+    ...eventParams 
+  } = params;
 
   if (!actor_id || !actor_name) {
     console.error('Tentativa de registrar evento de auditoria sem informações do ator.');
     return;
+  }
+
+  // Validação: Avisar se school_id estiver ausente
+  if (!school_id) {
+    console.warn('⚠️ Evento de auditoria criado sem school_id:', {
+      action: eventParams.action,
+      entity: eventParams.entity,
+      actor: actor_name
+    });
   }
 
   const newEventData: any = {
@@ -167,6 +184,7 @@ export const logAudit = async (params: CreateAuditEventParams & {
     actor_name,
     actor_email: actor_email || '',
     actor_role: actor_role || 'unknown',
+    school_id: school_id || null,
     action: eventParams.action,
     entity: eventParams.entity,
     entity_id: eventParams.entity_id,

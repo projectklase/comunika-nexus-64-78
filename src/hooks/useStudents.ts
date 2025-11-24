@@ -435,6 +435,7 @@ export function useStudents() {
           actor_name: actorProfile?.name || user.email || 'Unknown',
           actor_email: actorProfile?.email || user.email || '',
           actor_role: actorRole?.role || 'unknown',
+          school_id: currentSchool.id,
           meta: {
             email: studentToDelete.email,
             classes: classIds,

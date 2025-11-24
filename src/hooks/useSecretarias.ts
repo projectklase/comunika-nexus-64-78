@@ -133,11 +133,11 @@ export function useSecretarias() {
           actor_name: user.name,
           actor_email: user.email,
           actor_role: user.role,
+          school_id: currentSchool.id,
           scope: 'GLOBAL',
           meta: {
             role: 'secretaria',
-            email: formData.email,
-            school_id: currentSchool.id
+            email: formData.email
           }
         });
       }
@@ -166,7 +166,7 @@ export function useSecretarias() {
       if (error) throw error;
 
       // Audit log
-      if (user) {
+      if (user && currentSchool) {
         await logAudit({
           action: 'UPDATE',
           entity: 'USER',
@@ -176,6 +176,7 @@ export function useSecretarias() {
           actor_name: user.name,
           actor_email: user.email,
           actor_role: user.role,
+          school_id: currentSchool.id,
           scope: 'GLOBAL',
           meta: {
             role: 'secretaria',
@@ -204,7 +205,7 @@ export function useSecretarias() {
       if (error) throw error;
 
       // Audit log
-      if (user) {
+      if (user && currentSchool) {
         await logAudit({
           action: 'ARCHIVE',
           entity: 'USER',
@@ -214,6 +215,7 @@ export function useSecretarias() {
           actor_name: user.name,
           actor_email: user.email,
           actor_role: user.role,
+          school_id: currentSchool.id,
           scope: 'GLOBAL',
           meta: {
             role: 'secretaria'
@@ -241,7 +243,7 @@ export function useSecretarias() {
       if (error) throw error;
 
       // Audit log
-      if (user) {
+      if (user && currentSchool) {
         await logAudit({
           action: 'UPDATE',
           entity: 'USER',
@@ -251,6 +253,7 @@ export function useSecretarias() {
           actor_name: user.name,
           actor_email: user.email,
           actor_role: user.role,
+          school_id: currentSchool.id,
           scope: 'GLOBAL',
           meta: {
             role: 'secretaria',
@@ -306,6 +309,7 @@ export function useSecretarias() {
           actor_name: actorProfile?.name || user.email || 'Unknown',
           actor_email: actorProfile?.email || user.email || '',
           actor_role: actorRole?.role || 'unknown',
+          school_id: currentSchool.id,
           meta: {
             role: 'secretaria',
             email: secretariaToDelete.email,
