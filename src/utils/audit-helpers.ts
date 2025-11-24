@@ -18,6 +18,7 @@ export const getActionLabel = (action: AuditAction): string => {
     REQUEST_REDEMPTION: 'Solicitou Resgate',
     APPROVE_REDEMPTION: 'Aprovou Resgate',
     REJECT_REDEMPTION: 'Rejeitou Resgate',
+    SECURITY_PASSWORD_RESET_FORCED: 'Forçou Reset de Senha',
   };
   return labels[action] || action;
 };
@@ -59,6 +60,7 @@ export const getActionChipClass = (action: AuditAction): string => {
     REQUEST_REDEMPTION: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
     APPROVE_REDEMPTION: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
     REJECT_REDEMPTION: 'bg-red-500/20 text-red-400 border-red-500/30',
+    SECURITY_PASSWORD_RESET_FORCED: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   };
   return classes[action] || 'bg-muted text-muted-foreground border-border';
 };
@@ -279,4 +281,18 @@ export const getRoleLabel = (role: string): string => {
   
   // Se não encontrou, capitaliza a primeira letra
   return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Sem Role';
+};
+
+/**
+ * Traduz nomes de atores técnicos para labels amigáveis
+ */
+export const getActorDisplayName = (actorName: string): string => {
+  const technicalNames: Record<string, string> = {
+    'SYSTEM': 'Sistema',
+    'system': 'Sistema',
+    'ADMIN': 'Administrador',
+    'admin': 'Administrador',
+  };
+  
+  return technicalNames[actorName] || actorName;
 };

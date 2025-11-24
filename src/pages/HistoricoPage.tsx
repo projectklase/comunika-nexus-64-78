@@ -33,7 +33,8 @@ import {
   formatRelativeTime,
   formatDisplayValue,
   getFieldLabel,
-  getRoleLabel
+  getRoleLabel,
+  getActorDisplayName
 } from '@/utils/audit-helpers';
 
 export default function HistoricoPage() {
@@ -355,7 +356,7 @@ function TimelineView({ events }: { events: AuditEvent[] }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium">{event.actor_name}</span>
+                    <span className="font-medium">{getActorDisplayName(event.actor_name)}</span>
                     <Badge variant="outline" className="text-xs">
                       {getRoleLabel(event.actor_role)}
                     </Badge>
@@ -439,7 +440,7 @@ function TableView({ events }: { events: AuditEvent[] }) {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="text-sm font-medium">{event.actor_name || 'Usuário desconhecido'}</div>
+                      <div className="text-sm font-medium">{getActorDisplayName(event.actor_name) || 'Usuário desconhecido'}</div>
                       <div className="text-xs text-muted-foreground">{getRoleLabel(event.actor_role)}</div>
                     </div>
                   </div>
@@ -508,7 +509,7 @@ function EventDetailsDrawer({ event }: { event: AuditEvent }) {
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Usuário</label>
-              <p>{event.actor_name || 'Usuário desconhecido'} ({event.actor_email || 'Email não disponível'})</p>
+              <p>{getActorDisplayName(event.actor_name) || 'Usuário desconhecido'} ({event.actor_email || 'Email não disponível'})</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Role</label>
