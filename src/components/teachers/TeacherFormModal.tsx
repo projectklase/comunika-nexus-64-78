@@ -546,24 +546,43 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         name="document"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Documento</FormLabel>
+            <FormLabel>Documento (CPF)</FormLabel>
             <FormControl>
               <Input 
                 placeholder="CPF, RG ou outro documento" 
                 {...field}
+                onChange={(e) => {
+                  field.onChange(e);
+                  // Limpa erro ao digitar
+                  if (form.formState.errors.document) {
+                    form.clearErrors('document');
+                  }
+                }}
                 onBlur={async () => {
+                  // ✅ VALIDAÇÃO INLINE DE DUPLICATA - CPF do Professor
                   const doc = onlyDigits(field.value || '');
                   if (doc && doc.length === 11) {
                     const result = await checkDuplicates({ cpf: doc }, teacher?.id);
                     if (result.hasBlocking) {
+                      const issue = result.blockingIssues[0];
+                      const duplicateUser = issue?.existingUser;
+                      const errorMsg = `✕ CPF já cadastrado${duplicateUser ? ` (${duplicateUser.name})` : ''}`;
+                      
+                      // ✅ ERRO INLINE VISUAL com React Hook Form
+                      form.setError('document', {
+                        type: 'manual',
+                        message: errorMsg
+                      });
+                      
                       toast({
                         title: "CPF Duplicado",
-                        description: result.blockingIssues[0]?.message,
+                        description: errorMsg,
                         variant: "destructive"
                       });
                     }
                   }
                 }}
+                className={form.formState.errors.document ? 'border-destructive' : ''}
               />
             </FormControl>
             <FormMessage />

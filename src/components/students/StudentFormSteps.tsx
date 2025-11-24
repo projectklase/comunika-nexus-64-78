@@ -1975,7 +1975,7 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
 
                   <div className="space-y-2">
                     <Label>Telefone {isStudentMinor && '*'}</Label>
-                    <InputPhone
+                     <InputPhone
                       value={guardian.phone}
                       onChange={(value) => {
                         updateGuardian(index, { phone: value });
@@ -1987,9 +1987,17 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                             return rest;
                           });
                         }
+                        
+                        // Limpa erro inline ao editar
+                        if (errors[`guardian_phone_${index}`]) {
+                          setErrors(prev => {
+                            const { [`guardian_phone_${index}`]: removed, ...rest } = prev;
+                            return rest;
+                          });
+                        }
                       }}
                       onBlur={async () => {
-                        // Verificar se telefone do responsável já existe
+                        // ✅ VALIDAÇÃO INLINE DE DUPLICATA - Telefone do Responsável
                         const phone = guardian.phone?.trim();
                         if (!phone || phone.replace(/\D/g, '').length < 10 || student?.id) {
                           return; // Não valida telefones incompletos ou edição
@@ -1998,22 +2006,43 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                         const candidates = await checkGuardianDuplicates(undefined, phone);
                         
                         if (candidates.length > 0) {
+                          const duplicateStudent = candidates[0];
+                          const errorMsg = `✕ Telefone já cadastrado${duplicateStudent ? ` (Responsável de ${duplicateStudent.name})` : ''}`;
+                          
+                          // ✅ ERRO INLINE VISUAL
+                          setErrors(prev => ({
+                            ...prev,
+                            [`guardian_phone_${index}`]: errorMsg
+                          }));
+                          
+                          // Mantém toast + modal para contexto adicional
                           showGuardianDuplicateWarning(candidates);
                         }
                       }}
                       placeholder="(00) 00000-0000"
-                      error={errors[`guardian_phone${index}`]}
+                      error={errors[`guardian_phone_${index}`]}
+                      showError={true}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                   <div className="space-y-2">
                     <Label>Email</Label>
                     <Input
                       type="email"
                       value={guardian.email}
-                      onChange={(e) => updateGuardian(index, { email: sanitizeString(e.target.value.toLowerCase(), 255) })}
+                      onChange={(e) => {
+                        updateGuardian(index, { email: sanitizeString(e.target.value.toLowerCase(), 255) });
+                        
+                        // Limpa erro inline ao editar
+                        if (errors[`guardian_email_${index}`]) {
+                          setErrors(prev => {
+                            const { [`guardian_email_${index}`]: removed, ...rest } = prev;
+                            return rest;
+                          });
+                        }
+                      }}
                       onBlur={async () => {
-                        // Verificar se email do responsável já existe
+                        // ✅ VALIDAÇÃO INLINE DE DUPLICATA - Email do Responsável
                         const email = guardian.email?.trim();
                         if (!email || !email.includes('@') || student?.id) {
                           return; // Não valida se estiver editando aluno existente
@@ -2022,15 +2051,25 @@ export function StudentFormSteps({ open, onOpenChange, student, onSave }: Studen
                         const candidates = await checkGuardianDuplicates(email, undefined);
                         
                         if (candidates.length > 0) {
+                          const duplicateStudent = candidates[0];
+                          const errorMsg = `✕ Email já cadastrado${duplicateStudent ? ` (Responsável de ${duplicateStudent.name})` : ''}`;
+                          
+                          // ✅ ERRO INLINE VISUAL
+                          setErrors(prev => ({
+                            ...prev,
+                            [`guardian_email_${index}`]: errorMsg
+                          }));
+                          
+                          // Mantém toast + modal para contexto adicional
                           showGuardianDuplicateWarning(candidates);
                         }
                       }}
                       placeholder="email@exemplo.com"
                       maxLength={255}
-                      className={errors[`guardian_email${index}`] ? 'border-destructive' : ''}
+                      className={errors[`guardian_email_${index}`] ? 'border-destructive' : ''}
                     />
-                    {errors[`guardian_email${index}`] && (
-                      <p className="text-xs text-destructive">{errors[`guardian_email${index}`]}</p>
+                    {errors[`guardian_email_${index}`] && (
+                      <p className="text-sm text-destructive">{errors[`guardian_email_${index}`]}</p>
                     )}
                   </div>
 
