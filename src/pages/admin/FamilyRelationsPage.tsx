@@ -619,8 +619,7 @@ export default function FamilyRelationsPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                const studentIds = family.students.map(s => s.id).join(',');
-                                navigate(`/admin/alunos?ids=${studentIds}`);
+                                navigate(`/secretaria/cadastros/alunos?search=${encodeURIComponent(family.guardian_name)}`);
                               }}
                               className="gap-2 border-blue-500/30 hover:bg-blue-500/10 hover:border-blue-500"
                             >
