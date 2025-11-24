@@ -3,7 +3,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,10 +33,12 @@ import { RELATIONSHIP_LABELS, type RelationshipType, type FamilyGroup } from '@/
 import { exportFamilyRelationsToExcel } from '@/utils/family-relations-export';
 import { FamilyTreeVisualization } from '@/components/family-tree/FamilyTreeVisualization';
 import { useFamilyRelationsState } from '@/hooks/useFamilyRelationsState';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 export default function FamilyRelationsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { currentSchool } = useSchool();
   const { data: metrics, isLoading: metricsLoading } = useFamilyMetrics();
   const [families, setFamilies] = useState<FamilyGroup[]>([]);
@@ -168,6 +170,18 @@ export default function FamilyRelationsPage() {
     }
   };
 
+  // ✅ SOLUÇÃO 2: Função de recarregar manual
+  const handleRefresh = async () => {
+    const toastId = toast.loading('Atualizando dados...');
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['family-metrics'] });
+      await loadFamilyDetails();
+      toast.success('Dados atualizados!', { id: toastId });
+    } catch (error) {
+      toast.error('Erro ao atualizar dados', { id: toastId });
+    }
+  };
+
   // ✅ Filtro de famílias usando busca global (Fase 4)
   const filteredFamilies = families.filter(family =>
     family.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,6 +212,19 @@ export default function FamilyRelationsPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
+          
+          {/* ✅ SOLUÇÃO 2: Botão de Recarregar */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={metricsLoading || loadingFamilies}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+          
           <div>
             <h1 className="text-4xl font-bold gradient-text flex items-center gap-3">
               <Heart className="h-8 w-8 text-pink-400" />

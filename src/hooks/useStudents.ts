@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useSchool } from '@/contexts/SchoolContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { logAudit } from '@/stores/audit-store';
+import { useQueryClient } from '@tanstack/react-query';
 
 // As interfaces e a estrutura geral do hook permanecem as mesmas.
 interface Guardian {
@@ -55,6 +56,7 @@ interface StudentFilters {
 export function useStudents() {
   const { currentSchool } = useSchool();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -425,6 +427,10 @@ export function useStudents() {
       
       // Passo 2: Atualizar a lista na tela para refletir a remoção.
       await fetchStudents();
+      
+      // ✅ SOLUÇÃO 1: Invalidar cache de relações familiares
+      await queryClient.invalidateQueries({ queryKey: ['family-metrics'] });
+      await queryClient.invalidateQueries({ queryKey: ['family-groups'] });
 
     } catch (err: any) {
       console.error('Error deleting student:', err);
