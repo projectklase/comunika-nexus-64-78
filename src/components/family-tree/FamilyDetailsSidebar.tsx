@@ -1,4 +1,4 @@
-import { X, Mail, Phone, Users, Link2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { X, Mail, Phone, Users, Link2, ChevronLeft, ChevronRight, RotateCcw, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,6 +24,7 @@ interface FamilyDetailsSidebarProps {
   onNext: () => void;
   onPrevious: () => void;
   totalFamilies: number;
+  onEditStudent?: (studentId: string) => void;
 }
 
 export function FamilyDetailsSidebar({
@@ -32,6 +33,7 @@ export function FamilyDetailsSidebar({
   onNext,
   onPrevious,
   totalFamilies,
+  onEditStudent,
 }: FamilyDetailsSidebarProps) {
   // ✅ Atalhos de teclado (Fase 4.2): ESC fecha, ← e → navegam
   useModalKeyboardShortcuts(!!selectedFamily, onClose, [
@@ -162,7 +164,7 @@ export function FamilyDetailsSidebar({
               return (
                 <div
                   key={student.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
+                  className="group flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
                 >
                   <Avatar className="h-10 w-10 border-2 border-primary/20">
                     <AvatarImage src={student.avatar} alt={student.name} />
@@ -176,6 +178,17 @@ export function FamilyDetailsSidebar({
                     </p>
                     <p className="text-xs text-muted-foreground">Aluno</p>
                   </div>
+                  {onEditStudent && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => onEditStudent(student.id)}
+                      title="Editar aluno"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               );
             })}
