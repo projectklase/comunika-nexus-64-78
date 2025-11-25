@@ -31,6 +31,7 @@ import { useSchool } from '@/contexts/SchoolContext';
 import { onlyDigits } from '@/lib/validation';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
 import { useAvailableSchools } from '@/hooks/useAvailableSchools';
+import { supabase } from '@/integrations/supabase/client';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -237,6 +238,21 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           consents: teacherData.consents || { image: false, whatsapp: false },
           notes: teacherData.notes,
         });
+
+        // FASE 2: Buscar escolas do professor ao editar
+        const loadTeacherSchools = async () => {
+          const { data: memberships } = await supabase
+            .from('school_memberships')
+            .select('school_id')
+            .eq('user_id', teacher.id)
+            .eq('role', 'professor');
+          
+          const teacherSchoolIds = memberships?.map(m => m.school_id) || [];
+          setSelectedSchools(teacherSchoolIds);
+          setIsMultiSchool(teacherSchoolIds.length > 1);
+        };
+
+        loadTeacherSchools();
       } else {
         form.reset({
           name: '',
@@ -296,6 +312,8 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
             ...(teacher.preferences || {}), // Preservar preferências existentes
             teacher: teacherData, // Adicionar dados do professor
           },
+          // FASE 4: Passar schoolIds no update
+          schoolIds: isMultiSchool ? selectedSchools : [currentSchool!.id],
         };
         
         console.log('📝 [TeacherForm] Atualizando professor com:', updates);
@@ -637,8 +655,8 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         )}
       />
 
-      {/* Múltiplas Escolas */}
-      {!teacher && availableSchools.length > 1 && (
+      {/* Múltiplas Escolas - FASE 1: Mostrar na edição também */}
+      {availableSchools.length > 1 && (
         <div className="space-y-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">

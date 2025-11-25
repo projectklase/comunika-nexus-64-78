@@ -201,18 +201,78 @@ export function useTeachers() {
     }
   }, [fetchTeachers, currentSchool]);
 
-  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string }) => {
+  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string; schoolIds?: string[] }) => {
     setLoading(true);
     try {
       console.log('💾 [useTeachers] Recebendo updates:', updates);
       console.log('💾 [useTeachers] Campo preferences:', updates.preferences);
       
+      // FASE 3: Sincronizar school_memberships se schoolIds fornecido
+      if (updates.schoolIds) {
+        console.log('🏫 [useTeachers] Sincronizando escolas do professor...');
+        
+        // Buscar memberships atuais
+        const { data: currentMemberships } = await supabase
+          .from('school_memberships')
+          .select('school_id')
+          .eq('user_id', id)
+          .eq('role', 'professor');
+        
+        const currentSchoolIds = currentMemberships?.map(m => m.school_id) || [];
+        const newSchoolIds = updates.schoolIds;
+        
+        console.log('🏫 [useTeachers] Escolas atuais:', currentSchoolIds);
+        console.log('🏫 [useTeachers] Novas escolas:', newSchoolIds);
+        
+        // Escolas a adicionar
+        const toAdd = newSchoolIds.filter(schoolId => !currentSchoolIds.includes(schoolId));
+        
+        // Escolas a remover
+        const toRemove = currentSchoolIds.filter(schoolId => !newSchoolIds.includes(schoolId));
+        
+        console.log('🏫 [useTeachers] Adicionar:', toAdd);
+        console.log('🏫 [useTeachers] Remover:', toRemove);
+        
+        // Inserir novos memberships
+        if (toAdd.length > 0) {
+          const { error: insertError } = await supabase
+            .from('school_memberships')
+            .insert(
+              toAdd.map(schoolId => ({
+                user_id: id,
+                school_id: schoolId,
+                role: 'professor',
+                is_primary: false
+              }))
+            );
+          
+          if (insertError) throw insertError;
+          console.log('✅ [useTeachers] Memberships adicionados:', toAdd.length);
+        }
+        
+        // Remover memberships antigos
+        if (toRemove.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('school_memberships')
+            .delete()
+            .eq('user_id', id)
+            .eq('role', 'professor')
+            .in('school_id', toRemove);
+          
+          if (deleteError) throw deleteError;
+          console.log('✅ [useTeachers] Memberships removidos:', toRemove.length);
+        }
+      }
+      
+      // Remove schoolIds do objeto updates antes de atualizar profile
+      const { schoolIds, ...profileUpdates } = updates;
+      
       // If password is being updated, use edge function
-      if (updates.password) {
+      if (profileUpdates.password) {
         const { data, error } = await supabase.functions.invoke('create-demo-user', {
           body: {
             userId: id,
-            password: updates.password,
+            password: profileUpdates.password,
             updatePasswordOnly: true,
           }
         });
@@ -223,24 +283,26 @@ export function useTeachers() {
         }
 
         // Remove password from updates object before updating profile
-        const { password, ...profileUpdates } = updates;
+        const { password, ...finalUpdates } = profileUpdates;
         
-        if (Object.keys(profileUpdates).length > 0) {
+        if (Object.keys(finalUpdates).length > 0) {
           const { error: profileError } = await supabase
             .from('profiles')
-            .update(profileUpdates)
+            .update(finalUpdates)
             .eq('id', id);
 
           if (profileError) throw profileError;
         }
       } else {
         // Regular profile update
-        const { error } = await supabase
-          .from('profiles')
-          .update(updates)
-          .eq('id', id);
+        if (Object.keys(profileUpdates).length > 0) {
+          const { error } = await supabase
+            .from('profiles')
+            .update(profileUpdates)
+            .eq('id', id);
 
-        if (error) throw error;
+          if (error) throw error;
+        }
       }
 
       toast.success('Professor atualizado com sucesso');
