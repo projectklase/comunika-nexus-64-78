@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,12 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2, Edit } from 'lucide-react';
+import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2, Edit, Key } from 'lucide-react';
 import { useSecretarias } from '@/hooks/useSecretarias';
 import { SecretariaFormModal } from '@/components/admin/SecretariaFormModal';
+import { SecretariaPermissionsModal } from '@/components/admin/SecretariaPermissionsModal';
 import { Secretaria } from '@/types/secretaria';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useSecretariaPermissions } from '@/hooks/useSecretariaPermissions';
 
 export default function SecretariasPage() {
   const {
@@ -54,7 +56,11 @@ export default function SecretariasPage() {
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
   const [selectedSecretaria, setSelectedSecretaria] = useState<Secretaria | null>(null);
+  
+  const { fetchSecretariaPermissions } = useSecretariaPermissions();
+  const [secretariasWithPermissions, setSecretariasWithPermissions] = useState<Set<string>>(new Set());
 
   const handleArchive = async () => {
     if (!selectedSecretaria) return;
@@ -88,6 +94,26 @@ export default function SecretariasPage() {
 
   const activeCount = secretarias.filter(s => s.is_active).length;
   const inactiveCount = secretarias.filter(s => !s.is_active).length;
+
+  // Carregar badges de permissões
+  useEffect(() => {
+    const loadPermissionsBadges = async () => {
+      const idsWithPerms = new Set<string>();
+      
+      for (const sec of secretarias) {
+        const perms = await fetchSecretariaPermissions(sec.id);
+        if (perms && perms.length > 0) {
+          idsWithPerms.add(sec.id);
+        }
+      }
+      
+      setSecretariasWithPermissions(idsWithPerms);
+    };
+    
+    if (secretarias.length > 0) {
+      loadPermissionsBadges();
+    }
+  }, [secretarias, fetchSecretariaPermissions]);
 
   return (
     <AppLayout>
@@ -221,7 +247,15 @@ export default function SecretariasPage() {
                             <AvatarImage src={secretaria.avatar} />
                             <AvatarFallback>{getInitials(secretaria.name)}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{secretaria.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{secretaria.name}</span>
+                            {secretariasWithPermissions.has(secretaria.id) && (
+                              <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                <Key className="h-3 w-3 mr-1" />
+                                Permissões+
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>{secretaria.email}</TableCell>
@@ -250,6 +284,15 @@ export default function SecretariasPage() {
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedSecretaria(secretaria);
+                                setPermissionsModalOpen(true);
+                              }}
+                            >
+                              <Key className="mr-2 h-4 w-4" />
+                              Gerenciar Permissões
                             </DropdownMenuItem>
                             {secretaria.is_active ? (
                               <DropdownMenuItem
@@ -370,6 +413,13 @@ export default function SecretariasPage() {
             return success;
           }}
           onSubmit={async () => false}
+        />
+
+        {/* Permissions Modal */}
+        <SecretariaPermissionsModal
+          open={permissionsModalOpen}
+          onOpenChange={setPermissionsModalOpen}
+          secretaria={selectedSecretaria}
         />
       </div>
     </AppLayout>
