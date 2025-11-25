@@ -221,6 +221,20 @@ export function useTeachers() {
       console.log('💾 [useTeachers] Recebendo updates:', updates);
       console.log('💾 [useTeachers] Campo preferences:', updates.preferences);
       
+      // ✅ Buscar dados do ator para audit log
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: actorProfile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', user?.id)
+        .single();
+
+      const { data: actorRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .single();
+      
       // If password is being updated, use edge function
       if (updates.password) {
         const { data, error } = await supabase.functions.invoke('create-demo-user', {
@@ -312,6 +326,21 @@ export function useTeachers() {
             .eq('school_id', schoolId)
             .eq('status', 'Ativa');
 
+          // ✅ CRÍTICO: Limpar main_teacher_id das turmas ANTES de remover membership
+          if (affectedClasses && affectedClasses.length > 0) {
+            const classIds = affectedClasses.map(c => c.id);
+            const { error: updateError } = await supabase
+              .from('classes')
+              .update({ main_teacher_id: null })
+              .in('id', classIds);
+            
+            if (updateError) {
+              console.error('❌ [useTeachers] Erro ao limpar main_teacher_id:', updateError);
+            } else {
+              console.log('🧹 [useTeachers] Limpou main_teacher_id de', classIds.length, 'turmas');
+            }
+          }
+
           const { error: deleteError } = await supabase.from('school_memberships')
             .delete()
             .eq('user_id', id)
@@ -325,19 +354,24 @@ export function useTeachers() {
           
           console.log('🗑️ [useTeachers] Removido membership:', schoolId);
 
-          // Registrar remoção no histórico de auditoria
+          // Registrar remoção no histórico de auditoria COM DADOS COMPLETOS DO ATOR
           await logAudit({
-            action: 'DELETE',
+            action: 'UPDATE', // ✅ Mudado de DELETE para UPDATE (remoção de acesso, não exclusão)
             entity: 'TEACHER',
             entity_id: id,
             entity_label: `${updates.name || 'Professor'} removido de ${schoolData?.name || 'escola desconhecida'}`,
+            actor_id: user?.id,
+            actor_name: actorProfile?.name || user?.email || 'Usuário Desconhecido',
+            actor_email: actorProfile?.email || user?.email || '',
+            actor_role: actorRole?.role || 'unknown',
+            school_id: currentSchool?.id, // ✅ Usar escola ATUAL para aparecer no histórico correto
             meta: {
+              operation: 'REMOVE_SCHOOL_ACCESS',
               removed_school_id: schoolId,
               removed_school_name: schoolData?.name || 'Desconhecida',
               affected_classes: affectedClasses?.map(c => ({ id: c.id, name: c.name })) || [],
               affected_classes_count: affectedClasses?.length || 0
-            },
-            school_id: schoolId
+            }
           });
         }
         
