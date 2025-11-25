@@ -1013,7 +1013,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
                       >
                         <Checkbox
                           checked={isChecked}
-                          disabled={isCurrentSchool}
+                          disabled={isCurrentSchool && selectedSchools.length <= 1}
                           onCheckedChange={(checked) => handleSchoolCheckboxChange(school.id, !!checked)}
                         />
                         <span className={cn(
