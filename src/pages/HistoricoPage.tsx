@@ -25,6 +25,9 @@ import {
   MoreHorizontal,
   Filter
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { UserSearchCombobox } from '@/components/audit/UserSearchCombobox';
+import { MobileFiltersSheet } from '@/components/audit/MobileFiltersSheet';
 import { 
   getActionLabel, 
   getEntityLabel, 
@@ -43,6 +46,7 @@ export default function HistoricoPage() {
   const { events, loading, loadEvents, getFilteredEvents, exportEvents } = useAuditStore();
   const { getTeachers, getStudents } = usePeopleStore();
   const { getActiveClasses } = useClassStore();
+  const isMobile = useIsMobile();
   
   const [filters, setFilters] = useState<AuditFilters>({
     period: '30d',
@@ -55,6 +59,17 @@ export default function HistoricoPage() {
   });
   
   const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline');
+  
+  // Contar filtros ativos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.entity && filters.entity !== 'ALL_ENTITIES') count++;
+    if (filters.action && filters.action !== 'ALL_ACTIONS') count++;
+    if (filters.actor_id && filters.actor_id !== 'ALL_USERS') count++;
+    if (filters.class_id && filters.class_id !== 'ALL_CLASSES') count++;
+    if (filters.post_type && filters.post_type !== 'ALL_POST_TYPES') count++;
+    return count;
+  }, [filters]);
   
   useEffect(() => {
     loadEvents();
@@ -109,32 +124,75 @@ export default function HistoricoPage() {
   }
   
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Histórico</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Histórico</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Registro completo de todas as alterações no workspace
           </p>
         </div>
         
-        <Button onClick={handleExport} disabled={filteredEvents.length === 0}>
+        <Button onClick={handleExport} disabled={filteredEvents.length === 0} size={isMobile ? "sm" : "default"}>
           <Download className="h-4 w-4 mr-2" />
-          Exportar CSV
+          {!isMobile && "Exportar CSV"}
         </Button>
       </div>
       
       {/* Filtros */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Filter className="h-5 w-5 mr-2" />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {isMobile ? (
+        // Mobile: Filtros essenciais + Sheet
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            {/* Período - sempre visível */}
+            <div className="flex-1">
+              <Select 
+                value={filters.period || 'ALL_PERIODS'} 
+                onValueChange={(value) => updateFilter('period', value === 'ALL_PERIODS' ? undefined : value)}
+              >
+                <SelectTrigger className="glass-input h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="glass-card">
+                  <SelectItem value="today">Hoje</SelectItem>
+                  <SelectItem value="7d">7 dias</SelectItem>
+                  <SelectItem value="30d">30 dias</SelectItem>
+                  <SelectItem value="ALL_PERIODS">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Sheet com filtros avançados */}
+            <MobileFiltersSheet
+              filters={filters}
+              onFilterChange={updateFilter}
+              activeFiltersCount={activeFiltersCount}
+            />
+          </div>
+          
+          {/* Busca - sempre visível */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={filters.search || ''}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="pl-10 glass-input h-9"
+            />
+          </div>
+        </div>
+      ) : (
+        // Desktop: Grid completo
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <Filter className="h-5 w-5 mr-2" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Período */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Período</label>
@@ -154,25 +212,13 @@ export default function HistoricoPage() {
               </Select>
             </div>
             
-            {/* Usuário */}
+            {/* Usuário - Combobox inteligente */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Usuário</label>
-              <Select 
-                value={filters.actor_id || 'ALL_USERS'} 
-                onValueChange={(value) => updateFilter('actor_id', value)}
-              >
-                <SelectTrigger className="glass-input">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="glass-card">
-                  <SelectItem value="ALL_USERS">Todos os usuários</SelectItem>
-                  {allUsers.map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name} ({user.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <UserSearchCombobox
+                value={filters.actor_id || 'ALL_USERS'}
+                onSelect={(value) => updateFilter('actor_id', value)}
+              />
             </div>
             
             {/* Entidade */}
@@ -282,19 +328,27 @@ export default function HistoricoPage() {
           </div>
         </CardContent>
       </Card>
+      )}
       
       {/* View Toggle */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="text-sm text-muted-foreground">
           {filteredEvents.length} evento(s) encontrado(s)
+          {activeFiltersCount > 0 && (
+            <Badge variant="outline" className="ml-2 text-xs">
+              {activeFiltersCount} filtro(s) ativo(s)
+            </Badge>
+          )}
         </div>
         
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
-          <TabsList className="glass-card">
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="table">Tabela</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {!isMobile && (
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
+            <TabsList className="glass-card">
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              <TabsTrigger value="table">Tabela</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
       </div>
       
       {/* Content */}
