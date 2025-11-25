@@ -10,6 +10,9 @@ import { Key, Building2 } from 'lucide-react';
 import { Secretaria } from '@/types/secretaria';
 import { useSecretariaPermissions } from '@/hooks/useSecretariaPermissions';
 import { useSchool } from '@/contexts/SchoolContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface SecretariaPermissionsModalProps {
   open: boolean;
@@ -22,6 +25,7 @@ export function SecretariaPermissionsModal({
   onOpenChange,
   secretaria,
 }: SecretariaPermissionsModalProps) {
+  const { user } = useAuth();
   const { availableSchools } = useSchool();
   const {
     permissions,
@@ -66,16 +70,53 @@ export function SecretariaPermissionsModal({
     try {
       if (!manageAllSchools) {
         // Revogar permissão
-        await revokePermission(secretaria.id, 'manage_all_schools');
+        console.log('[SecretariaPermissionsModal] 🗑️ Revoking permission for:', secretaria.id);
+        const { error } = await supabase
+          .from('secretaria_permissions')
+          .delete()
+          .eq('secretaria_id', secretaria.id)
+          .eq('permission_key', 'manage_all_schools');
+
+        if (error) throw error;
+        console.log('[SecretariaPermissionsModal] ✅ Permission revoked successfully');
       } else {
-        // Conceder permissão
-        const value = {
-          schools: schoolsMode === 'all' ? ['*'] : selectedSchools,
-        };
-        await grantPermission(secretaria.id, 'manage_all_schools', value);
+        // Conceder permissão usando UPSERT para evitar duplicatas
+        const permissionValue = schoolsMode === 'all' 
+          ? { schools: ['*'] } 
+          : { schools: selectedSchools };
+
+        console.log('[SecretariaPermissionsModal] 💾 Upserting permission:', {
+          secretaria_id: secretaria.id,
+          permission_key: 'manage_all_schools',
+          permission_value: permissionValue
+        });
+
+        const { error } = await supabase
+          .from('secretaria_permissions')
+          .upsert({
+            secretaria_id: secretaria.id,
+            permission_key: 'manage_all_schools',
+            permission_value: permissionValue,
+            granted_by: user?.id,
+            granted_at: new Date().toISOString(),
+            school_id: null // Permissão global não está vinculada a uma escola específica
+          }, { 
+            onConflict: 'secretaria_id,permission_key',
+            ignoreDuplicates: false 
+          });
+
+        if (error) {
+          console.error('[SecretariaPermissionsModal] ❌ Error upserting permission:', error);
+          throw error;
+        }
+        console.log('[SecretariaPermissionsModal] ✅ Permission upserted successfully');
       }
 
+      toast.success('Permissões salvas com sucesso!');
       onOpenChange(false);
+    } catch (error) {
+      console.error('[SecretariaPermissionsModal] ❌ Error saving permissions:', error);
+      toast.error('Erro ao salvar permissões');
     } finally {
       setIsSaving(false);
     }
