@@ -275,12 +275,18 @@ export function useTeachers() {
         // 2. Adicionar novas escolas
         const schoolsToAdd = updates.schoolIds.filter(schoolId => !currentSchoolIds.includes(schoolId));
         for (const schoolId of schoolsToAdd) {
-          await supabase.from('school_memberships').insert({
+          const { error: insertError } = await supabase.from('school_memberships').insert({
             user_id: id,
             school_id: schoolId,
             role: 'professor',
             is_primary: false
           });
+          
+          if (insertError) {
+            console.error('❌ [useTeachers] Erro ao adicionar membership:', insertError);
+            throw new Error(`Sem permissão para adicionar escola. Contate o administrador. (${insertError.message})`);
+          }
+          
           console.log('✅ [useTeachers] Adicionado membership:', schoolId);
         }
         
@@ -289,11 +295,17 @@ export function useTeachers() {
           !updates.schoolIds!.includes(schoolId) && schoolId !== primarySchoolId
         );
         for (const schoolId of schoolsToRemove) {
-          await supabase.from('school_memberships')
+          const { error: deleteError } = await supabase.from('school_memberships')
             .delete()
             .eq('user_id', id)
             .eq('school_id', schoolId)
             .eq('role', 'professor');
+          
+          if (deleteError) {
+            console.error('❌ [useTeachers] Erro ao remover membership:', deleteError);
+            throw new Error(`Sem permissão para remover escola. Contate o administrador. (${deleteError.message})`);
+          }
+          
           console.log('🗑️ [useTeachers] Removido membership:', schoolId);
         }
         
