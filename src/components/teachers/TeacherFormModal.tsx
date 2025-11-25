@@ -23,6 +23,8 @@ import { Person, TeacherExtra } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2 } from 'lucide-react';
+import { RemoveSchoolWarningModal } from './RemoveSchoolWarningModal';
+import { useTeacherImpactCheck } from '@/hooks/useTeacherImpactCheck';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
@@ -131,6 +133,17 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [isMultiSchool, setIsMultiSchool] = useState(false);
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+  const [showRemoveWarning, setShowRemoveWarning] = useState(false);
+  const [pendingRemoval, setPendingRemoval] = useState<{
+    schoolId: string;
+    schoolName: string;
+    impact: {
+      hasImpact: boolean;
+      classes: Array<{ id: string; name: string; studentCount: number }>;
+      totalClasses: number;
+      totalStudents: number;
+    };
+  } | null>(null);
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { schools: availableSchools, loading: loadingSchools, refetch: refetchSchools } = useAvailableSchools();
@@ -139,6 +152,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const { toast } = useToast();
   const { currentSchool } = useSchool();
   const { checkDuplicates, isChecking } = useDuplicateCheck();
+  const { checkTeacherSchoolImpact } = useTeacherImpactCheck();
 
   // Função de validação preventiva por etapa
   const validateDuplicatesForStep = async (step: number): Promise<boolean> => {
@@ -283,6 +297,70 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       setSelectedSchools(currentSchool ? [currentSchool.id] : []);
     }
   }, [open, teacher, form, currentSchool, availableSchools]);
+
+  // Handler para confirmar remoção após verificação de impacto
+  const handleConfirmRemoval = () => {
+    if (pendingRemoval) {
+      setSelectedSchools(prev => prev.filter(id => id !== pendingRemoval.schoolId));
+      setShowRemoveWarning(false);
+      setPendingRemoval(null);
+      toast({
+        title: "Escola removida",
+        description: "Escola removida da atribuição do professor",
+      });
+    }
+  };
+
+  // Handler para cancelar remoção
+  const handleCancelRemoval = () => {
+    setShowRemoveWarning(false);
+    setPendingRemoval(null);
+  };
+
+  // Handler para checkbox de escola com verificação de impacto
+  const handleSchoolCheckboxChange = async (schoolId: string, checked: boolean) => {
+    if (checked) {
+      // Adicionar escola normalmente
+      setSelectedSchools(prev => [...prev, schoolId]);
+    } else {
+      // Remover escola - verificar impacto primeiro
+      const schoolName = availableSchools.find(s => s.id === schoolId)?.name || 'Desconhecida';
+      
+      // Se estiver editando um professor, verificar impacto
+      if (teacher?.id) {
+        try {
+          const impact = await checkTeacherSchoolImpact(teacher.id, schoolId);
+          
+          if (impact.hasImpact) {
+            // Tem turmas afetadas - mostrar modal de confirmação
+            setPendingRemoval({
+              schoolId,
+              schoolName,
+              impact
+            });
+            setShowRemoveWarning(true);
+          } else {
+            // Sem turmas afetadas - remover diretamente
+            setSelectedSchools(prev => prev.filter(id => id !== schoolId));
+            toast({
+              title: "Escola removida",
+              description: "Escola removida (sem turmas afetadas)",
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao verificar impacto:', error);
+          toast({
+            title: "Erro",
+            description: "Erro ao verificar impacto da remoção",
+            variant: "destructive"
+          });
+        }
+      } else {
+        // Novo professor - remover diretamente
+        setSelectedSchools(prev => prev.filter(id => id !== schoolId));
+      }
+    }
+  };
 
   const activeClasses = classes.filter(c => c.status === 'ATIVA')
     .sort((a, b) => {
@@ -936,13 +1014,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
                         <Checkbox
                           checked={isChecked}
                           disabled={isCurrentSchool}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedSchools([...selectedSchools, school.id]);
-                            } else {
-                              setSelectedSchools(selectedSchools.filter(id => id !== school.id));
-                            }
-                          }}
+                          onCheckedChange={(checked) => handleSchoolCheckboxChange(school.id, !!checked)}
                         />
                         <span className={cn(
                           "flex-1",
@@ -1479,6 +1551,22 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           setUserConfirmedDuplicates(true);
         }}
         showActions={!duplicateCheck.hasBlocking}
+      />
+    )}
+    
+    {/* Modal de aviso de segurança para remoção de escola */}
+    {pendingRemoval && (
+      <RemoveSchoolWarningModal
+        open={showRemoveWarning}
+        onOpenChange={setShowRemoveWarning}
+        teacherName={form.getValues('name') || teacher?.name || ''}
+        schoolName={pendingRemoval.schoolName}
+        affectedClasses={pendingRemoval.impact.classes}
+        totalClasses={pendingRemoval.impact.totalClasses}
+        totalStudents={pendingRemoval.impact.totalStudents}
+        onConfirm={handleConfirmRemoval}
+        onCancel={handleCancelRemoval}
+        loading={false}
       />
     )}
     </>
