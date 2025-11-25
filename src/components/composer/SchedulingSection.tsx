@@ -136,11 +136,27 @@ export function SchedulingSection({
               onClick={onSchedule}
               disabled={!hasValidDateTime || isLoading}
               className={cn(
-                "h-9 px-4 border-primary/50 text-primary hover:bg-primary/10 hover:border-primary",
-                !hasValidDateTime && "opacity-50 cursor-not-allowed"
+                // Glassmorfismo base
+                "min-h-[36px] px-6 py-2",
+                "bg-primary/5 backdrop-blur-md",
+                "border border-primary/30",
+                "shadow-lg shadow-primary/5",
+                
+                // Tipografia e layout
+                "text-sm font-medium text-primary",
+                "flex items-center justify-center gap-2",
+                "whitespace-nowrap",
+                
+                // Estados hover
+                "hover:bg-primary/15 hover:border-primary/50",
+                "hover:shadow-xl hover:shadow-primary/10",
+                "transition-all duration-300",
+                
+                // Estado disabled
+                !hasValidDateTime && "opacity-50 cursor-not-allowed hover:bg-primary/5"
               )}
             >
-              <Calendar className="h-4 w-4 mr-2" />
+              <Calendar className="h-4 w-4" />
               {isLoading ? 'Agendando...' : 'Agendar Publicação'}
             </Button>
           </TooltipTrigger>
