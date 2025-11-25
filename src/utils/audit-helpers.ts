@@ -296,3 +296,40 @@ export const getActorDisplayName = (actorName: string): string => {
   
   return technicalNames[actorName] || actorName;
 };
+
+/**
+ * Traduz operações técnicas para labels amigáveis
+ */
+export const getOperationLabel = (operation: string): string => {
+  const labels: Record<string, string> = {
+    'REMOVE_SCHOOL_ACCESS': 'Remoção de acesso à escola',
+    'ADD_SCHOOL_ACCESS': 'Adição de acesso à escola',
+    'assign_teachers': 'Atribuição de professores',
+    'bulk_assign_teacher': 'Atribuição em lote',
+    'CREATE': 'Criação',
+    'UPDATE': 'Atualização',
+    'DELETE': 'Remoção',
+  };
+  return labels[operation] || operation;
+};
+
+/**
+ * Traduz campos de metadados técnicos para labels amigáveis
+ */
+export const getMetaFieldLabel = (fieldName: string): string => {
+  const labels: Record<string, string> = {
+    'operation': 'Operação',
+    'removed_school_id': 'ID da Escola Removida',
+    'removed_school_name': 'Escola Removida',
+    'added_school_id': 'ID da Escola Adicionada',
+    'added_school_name': 'Escola Adicionada',
+    'affected_classes': 'Turmas Afetadas',
+    'affected_classes_count': 'Quantidade de Turmas Afetadas',
+    'teacher_count': 'Quantidade de Professores',
+    'teacher_name': 'Nome do Professor',
+    'class_count': 'Quantidade de Turmas',
+    'email': 'E-mail',
+    'phone': 'Telefone',
+  };
+  return labels[fieldName] || fieldName;
+};

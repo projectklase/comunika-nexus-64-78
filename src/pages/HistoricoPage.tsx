@@ -34,7 +34,9 @@ import {
   formatDisplayValue,
   getFieldLabel,
   getRoleLabel,
-  getActorDisplayName
+  getActorDisplayName,
+  getOperationLabel,
+  getMetaFieldLabel
 } from '@/utils/audit-helpers';
 
 export default function HistoricoPage() {
@@ -558,11 +560,28 @@ function EventDetailsDrawer({ event }: { event: AuditEvent }) {
           {/* Metadata */}
           {Object.keys(event.meta).length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Metadados</h3>
-              <div className="glass-card p-4">
-                <pre className="text-sm overflow-x-auto">
-                  {JSON.stringify(event.meta, null, 2)}
-                </pre>
+              <h3 className="text-lg font-medium mb-4">Detalhes da Ação</h3>
+              <div className="glass-card p-4 space-y-3">
+                {Object.entries(event.meta).map(([key, value]) => {
+                  // Ocultar IDs técnicos para não confundir o usuário
+                  if (key.endsWith('_id')) return null;
+                  
+                  return (
+                    <div key={key} className="flex justify-between items-start">
+                      <span className="text-muted-foreground font-medium">{getMetaFieldLabel(key)}:</span>
+                      <span className="text-right max-w-md">
+                        {key === 'operation' 
+                          ? getOperationLabel(value as string)
+                          : key === 'affected_classes' && Array.isArray(value)
+                            ? value.length > 0 
+                              ? value.map((c: any) => c.name).join(', ')
+                              : 'Nenhuma'
+                            : formatDisplayValue(value)
+                        }
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
