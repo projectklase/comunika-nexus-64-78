@@ -132,7 +132,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const { toast } = useToast();
   const { currentSchool } = useSchool();
   const { checkDuplicates, isChecking } = useDuplicateCheck();
-  const { schools: availableSchools } = useAvailableSchools();
+  const { schools: availableSchools, refetch: refetchSchools, loading: loadingSchools } = useAvailableSchools();
 
   // Função de validação preventiva por etapa
   const validateDuplicatesForStep = async (step: number): Promise<boolean> => {
@@ -814,10 +814,26 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           )}
 
           {availableSchools.length === 1 && (
-            <p className="text-sm text-muted-foreground italic pl-4">
-              Apenas uma escola disponível. Para atribuir este professor a múltiplas escolas,
-              adicione mais escolas ao sistema ou solicite acesso a outras unidades.
-            </p>
+            <div className="flex items-center justify-between gap-3 pl-4">
+              <p className="text-sm text-muted-foreground italic">
+                Apenas uma escola disponível. Para atribuir este professor a múltiplas escolas,
+                adicione mais escolas ao sistema ou solicite acesso a outras unidades.
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={refetchSchools}
+                disabled={loadingSchools}
+                className="shrink-0"
+              >
+                {loadingSchools ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </Card>
