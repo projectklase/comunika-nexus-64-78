@@ -302,6 +302,30 @@ export function useTeachers() {
           }
           
           console.log('✅ [useTeachers] Adicionado membership:', schoolId);
+
+          // ✅ Registrar adição no histórico de auditoria
+          const { data: schoolData } = await supabase
+            .from('schools')
+            .select('name')
+            .eq('id', schoolId)
+            .single();
+
+          await logAudit({
+            action: 'ASSIGN',
+            entity: 'TEACHER',
+            entity_id: id,
+            entity_label: `${updates.name || 'Professor'} adicionado a ${schoolData?.name || 'Nova Escola'}`,
+            actor_id: user?.id,
+            actor_name: actorProfile?.name || user?.email || 'Usuário Desconhecido',
+            actor_email: actorProfile?.email || user?.email || '',
+            actor_role: actorRole?.role || 'unknown',
+            school_id: currentSchool?.id,
+            meta: {
+              operation: 'ADD_SCHOOL_ACCESS',
+              added_school_id: schoolId,
+              added_school_name: schoolData?.name || 'Desconhecida'
+            }
+          });
         }
         
         // 3. Remover escolas desmarcadas (exceto a primária)
