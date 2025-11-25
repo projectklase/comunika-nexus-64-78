@@ -119,6 +119,7 @@ export function useTeachers() {
     email: string;
     password?: string;
     phone?: string;
+    schoolIds?: string[]; // Array de IDs de escolas
   }) => {
     // ✅ Guard clause
     if (!currentSchool) {
@@ -133,6 +134,15 @@ export function useTeachers() {
       
       // Generate password if not provided
       const password = teacherData.password || `Prof${Math.floor(Math.random() * 10000)}!`;
+      
+      // Determinar escolas: se schoolIds fornecido, usar; caso contrário, usar escola atual
+      const schoolIds = teacherData.schoolIds || (currentSchool ? [currentSchool.id] : []);
+      
+      if (schoolIds.length === 0) {
+        throw new Error('Nenhuma escola selecionada');
+      }
+
+      console.log('🔵 [useTeachers] Criando professor nas escolas:', schoolIds);
       
       // Obter sessão para token de autenticação
       const { data: { session } } = await supabase.auth.getSession();
@@ -154,7 +164,7 @@ export function useTeachers() {
             name: teacherData.name,
             role: 'professor',
             phone: teacherData.phone,
-            school_id: currentSchool.id
+            school_ids: schoolIds // Enviar array de escolas
           })
         }
       );

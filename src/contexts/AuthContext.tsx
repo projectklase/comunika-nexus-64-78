@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType, UserPreferences } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+import { SchoolSelectionModal } from '@/components/auth/SchoolSelectionModal';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -29,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSchoolSelector, setShowSchoolSelector] = useState(false);
+  const [userSchools, setUserSchools] = useState<any[]>([]);
 
   // CORREÇÃO 2 e 5: Helper function com retry e validação completa
   const getUserProfile = async (userId: string, retryCount = 0): Promise<User | null> => {
@@ -163,6 +166,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const profile = await getUserProfile(session.user.id);
             if (profile) {
               setUser(profile);
+              
+              // ✅ Verificar se usuário tem múltiplas escolas (apenas professores)
+              if (profile.role === 'professor') {
+                const { data: memberships } = await supabase
+                  .from('school_memberships')
+                  .select('school_id, schools(id, name, slug, logo_url)')
+                  .eq('user_id', profile.id);
+                
+                if (memberships && memberships.length > 1) {
+                  setUserSchools(memberships.map(m => (m as any).schools));
+                  
+                  // Mostrar modal apenas na primeira vez
+                  const hasSeenSelector = localStorage.getItem('has_seen_school_selector');
+                  if (!hasSeenSelector) {
+                    setShowSchoolSelector(true);
+                  }
+                }
+              }
             } else {
               console.error('No profile found for user:', session.user.id);
               // Try once more after additional delay
@@ -372,6 +393,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={contextValue as AuthContextType}>
       {children}
+      <SchoolSelectionModal
+        open={showSchoolSelector}
+        onOpenChange={setShowSchoolSelector}
+      />
     </AuthContext.Provider>
   );
 };
