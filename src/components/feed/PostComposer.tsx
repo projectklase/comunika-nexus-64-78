@@ -1435,7 +1435,7 @@ return (
                 <div className={cn(
                   "space-y-3 p-5 rounded-lg border transition-all duration-200",
                   isImportant 
-                    ? "bg-amber-50/50 border-amber-300/60 shadow-sm" 
+                    ? "bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 backdrop-blur-sm border-amber-400/40 shadow-lg shadow-amber-500/10" 
                     : "bg-accent/5 border-border/40 hover:bg-accent/10"
                 )}>
                   <div className="flex items-center justify-between">
@@ -1453,13 +1453,13 @@ return (
                       <div className="flex items-center gap-2">
                         <Star className={cn(
                           "h-5 w-5 transition-colors", 
-                          isImportant ? "text-amber-500 fill-amber-100" : "text-muted-foreground"
+                          isImportant ? "text-amber-400 fill-amber-400/30" : "text-muted-foreground"
                         )} />
                         <Label 
                           htmlFor="isImportant" 
                           className={cn(
                             "text-sm font-medium cursor-pointer transition-colors",
-                            isImportant ? "text-amber-700" : "text-foreground"
+                            isImportant ? "text-amber-300" : "text-foreground"
                           )}
                         >
                           Marcar como Importante
@@ -1467,24 +1467,24 @@ return (
                       </div>
                     </div>
                     {isImportant && (
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/20 border border-amber-300/40">
-                        <Star className="h-3 w-3 text-amber-600 fill-amber-200" />
-                        <span className="text-xs font-medium text-amber-700">Prioridade Alta</span>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-sm border border-amber-400/50 shadow-sm shadow-amber-500/20">
+                        <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400/40" />
+                        <span className="text-xs font-semibold text-amber-300">Prioridade Alta</span>
                       </div>
                     )}
                   </div>
                   <div className="pl-8">
                     <p className={cn(
                       "text-xs transition-colors",
-                      isImportant ? "text-amber-600/80" : "text-muted-foreground"
+                      isImportant ? "text-amber-300/80" : "text-muted-foreground"
                     )}>
                       {type === 'AVISO' && 'Avisos importantes aparecem destacados no feed e nas notificações'}
                       {type === 'COMUNICADO' && 'Comunicados importantes recebem prioridade nas notificações dos usuários'}
                       {type === 'EVENTO' && 'Eventos importantes aparecem na aba "Importantes" das notificações'}
                     </p>
                     {isImportant && (
-                      <div className="mt-2 flex items-center gap-2 text-xs text-amber-600/90">
-                        <div className="w-1 h-1 rounded-full bg-amber-500"></div>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-amber-300/90">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
                         <span>Este {type.toLowerCase()} será destacado para todos os usuários</span>
                       </div>
                     )}
