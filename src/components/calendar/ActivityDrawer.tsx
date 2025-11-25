@@ -439,6 +439,19 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
             )}
           </div>
 
+          {/* Mobile close button */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-white hover:bg-white/20 h-10 w-10 p-0 rounded-xl shrink-0 -mt-1 -mr-1"
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+
           {/* Desktop expand/collapse button */}
           {isDesktop && (
             <div className="flex items-center gap-2">
