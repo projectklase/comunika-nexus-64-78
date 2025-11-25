@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
 import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
-import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
+import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, AlertCircle, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
 import { ROUTES } from '@/constants/routes';
@@ -136,7 +136,7 @@ const Login = () => {
     if (email.trim() === '' || password.trim() === '') {
       setFormError('Por favor, preencha email e senha.');
       setShowError(true);
-      setTimeout(() => setShowError(false), 1200);
+      setTimeout(() => setShowError(false), 5000);
       
       // Focus no primeiro campo vazio
       if (email.trim() === '') {
@@ -175,6 +175,13 @@ const Login = () => {
         setFormError(result.error || "Email ou senha incorretos.");
         setShowError(true);
         
+        // Toast de erro
+        toast({
+          variant: "destructive",
+          title: "Falha no login",
+          description: result.error || "Email ou senha incorretos. Verifique suas credenciais.",
+        });
+        
         // Focus first invalid field
         const emailInput = document.getElementById('email') as HTMLInputElement;
         const passwordInput = document.getElementById('password') as HTMLInputElement;
@@ -188,15 +195,23 @@ const Login = () => {
 
         setTimeout(() => {
           setShowError(false);
-        }, 1200);
+        }, 5000);
       }
     } catch (error) {
       console.error('Login error:', error);
-      setFormError("Erro interno. Tente novamente.");
+      const errorMessage = "Erro interno. Tente novamente.";
+      setFormError(errorMessage);
       setShowError(true);
+      
+      toast({
+        variant: "destructive",
+        title: "Erro no sistema",
+        description: errorMessage,
+      });
+      
       setTimeout(() => {
         setShowError(false);
-      }, 1200);
+      }, 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -341,12 +356,13 @@ const Login = () => {
               <CardContent className="space-y-5 px-6 pb-6">
                 {formError && (
                   <div 
-                    className="text-center py-3 px-4 bg-destructive/10 border border-destructive/20 rounded-lg text-xs text-destructive"
+                    className="flex items-center gap-2 py-3 px-4 bg-destructive/15 border border-destructive/30 rounded-lg text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300"
                     role="alert"
-                    aria-live="polite"
+                    aria-live="assertive"
                     id="form-error"
                   >
-                    {formError}
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{formError}</span>
                   </div>
                 )}
                 
@@ -365,7 +381,6 @@ const Login = () => {
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value.trim());
-                          setFormError('');
                         }}
                         className="pl-10 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                         required
@@ -391,7 +406,6 @@ const Login = () => {
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value);
-                          setFormError('');
                         }}
                         className="pl-10 pr-11 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                         required
