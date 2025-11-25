@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { CalendarFilters } from '@/components/calendar/CalendarFilters';
+import { MobileCalendarSheet } from '@/components/calendar/MobileCalendarSheet';
 import { CalendarModalProvider } from '@/components/calendar/CalendarModalManager';
 import { useCalendarData } from '@/hooks/useCalendarData';
 import { useUnifiedCalendarFocus } from '@/hooks/useUnifiedCalendarFocus';
 import { useSelectState, DEFAULT_SELECT_TOKENS, safeRestoreSelectValue } from '@/hooks/useSelectState';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { RESPONSIVE_CLASSES } from '@/lib/responsive-utils';
+import { cn } from '@/lib/utils';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -34,6 +38,7 @@ export default function ProfessorCalendar() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   // Redirect if not professor
   if (!user || user.role !== 'professor') {
@@ -131,6 +136,16 @@ export default function ProfessorCalendar() {
   const eventCount = events.filter(e => e.type === 'event').length;
   const deadlineCount = events.filter(e => e.type === 'deadline').length;
 
+  // Calculate active filters count for mobile badge
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (!activeFilters.events) count++;
+    if (!activeFilters.deadlines) count++;
+    if (!showHolidays) count++;
+    if (classFilter.value !== DEFAULT_SELECT_TOKENS.ALL_CLASSES) count++;
+    return count;
+  }, [activeFilters, showHolidays, classFilter.value]);
+
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = view === 'month' 
       ? (direction === 'next' ? addMonths(currentDate, 1) : subMonths(currentDate, 1))
@@ -179,67 +194,79 @@ export default function ProfessorCalendar() {
 
   return (
     <CalendarModalProvider>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Header Responsivo */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold gradient-text">Calendário do Professor</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Calendário do Professor</h1>
+            <p className="text-sm text-muted-foreground hidden sm:block">
               Visualize suas turmas, atividades e eventos
             </p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button 
               variant="default"
-              className="bg-primary hover:bg-primary/90"
+              size={isMobile ? "sm" : "default"}
+              className={cn("bg-primary hover:bg-primary/90", RESPONSIVE_CLASSES.iconButton)}
               onClick={() => {
-                // Close any open modals first
                 const newParams = new URLSearchParams(searchParams);
                 newParams.delete('modal');
                 newParams.delete('drawer');
-                
-                // Update URL to close modals, then navigate
                 setSearchParams(newParams, { replace: true });
-                
-                // Navigate after a brief delay to ensure modal closes
-                setTimeout(() => {
-                  navigate('/professor/atividades/nova');
-                }, 100);
+                setTimeout(() => navigate('/professor/atividades/nova'), 100);
               }}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Atividade
+              <Plus className="h-4 w-4" />
+              <span className="ml-2">Nova Atividade</span>
             </Button>
             
             <Button 
               onClick={goToToday}
               variant="outline"
-              className="glass-card border-primary/30 hover:bg-primary/20"
+              size={isMobile ? "sm" : "default"}
+              className={cn("glass-card border-primary/30", RESPONSIVE_CLASSES.iconButton)}
             >
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              Hoje
+              <CalendarIcon className="h-4 w-4" />
+              <span className="ml-2">Hoje</span>
             </Button>
           </div>
         </div>
 
-        {/* Filters */}
-        <CalendarFilters
-          activeFilters={activeFilters}
-          showHolidays={showHolidays}
-          selectedClassId={classFilter.value}
-          onFilterChange={setActiveFilters}
-          onHolidaysToggle={setShowHolidays}
-          onClassChange={classFilter.setValue}
-          eventCount={eventCount}
-          deadlineCount={deadlineCount}
-        />
+        {/* Filtros - Desktop inline, Mobile Sheet */}
+        <div className="hidden sm:block">
+          <CalendarFilters
+            activeFilters={activeFilters}
+            showHolidays={showHolidays}
+            selectedClassId={classFilter.value}
+            onFilterChange={setActiveFilters}
+            onHolidaysToggle={setShowHolidays}
+            onClassChange={classFilter.setValue}
+            eventCount={eventCount}
+            deadlineCount={deadlineCount}
+          />
+        </div>
+        <div className="sm:hidden">
+          <MobileCalendarSheet activeFiltersCount={activeFiltersCount}>
+            <CalendarFilters
+              activeFilters={activeFilters}
+              showHolidays={showHolidays}
+              selectedClassId={classFilter.value}
+              onFilterChange={setActiveFilters}
+              onHolidaysToggle={setShowHolidays}
+              onClassChange={classFilter.setValue}
+              eventCount={eventCount}
+              deadlineCount={deadlineCount}
+              compact
+            />
+          </MobileCalendarSheet>
+        </div>
 
-        {/* Calendar Navigation and Views */}
-        <div className="glass-card rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            {/* Date Navigation */}
-            <div className="flex items-center gap-4">
+        {/* Calendar Card com navegação responsiva */}
+        <div className="glass-card rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 sm:mb-6">
+            {/* Date Navigation - mais compacta no mobile */}
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -249,7 +276,7 @@ export default function ProfessorCalendar() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               
-              <h2 className="text-xl font-semibold text-foreground min-w-[200px] text-center">
+              <h2 className="text-base sm:text-xl font-semibold text-foreground min-w-[140px] sm:min-w-[200px] text-center">
                 {formatDateHeader()}
               </h2>
               
@@ -263,16 +290,16 @@ export default function ProfessorCalendar() {
               </Button>
             </div>
 
-            {/* View Switcher */}
+            {/* View Switcher - compacto no mobile */}
             <Tabs value={view} onValueChange={handleViewChange}>
               <TabsList className="glass border border-border/30">
-                <TabsTrigger value="month" className="flex items-center gap-2">
+                <TabsTrigger value="month" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
                   <Grid3X3 className="h-4 w-4" />
-                  Mês
+                  <span className="hidden sm:inline">Mês</span>
                 </TabsTrigger>
-                <TabsTrigger value="week" className="flex items-center gap-2">
+                <TabsTrigger value="week" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
                   <Rows4 className="h-4 w-4" />
-                  Semana
+                  <span className="hidden sm:inline">Semana</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -290,10 +317,12 @@ export default function ProfessorCalendar() {
           />
         </div>
 
-        {/* Tips for Professor */}
-        <div className="glass p-4 rounded-lg border border-primary/30">
-          <p className="text-sm text-muted-foreground">
-            💡 <strong>Dica:</strong> Você pode arrastar eventos, atividades, trabalhos e provas que você criou para alterar suas datas. Clique em qualquer dia para ver todos os eventos e atividades em detalhes com opções de gerenciamento.
+        {/* Dica responsiva */}
+        <div className="glass p-3 sm:p-4 rounded-lg border border-primary/30">
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            💡 <strong>Dica:</strong> {isMobile 
+              ? "Arraste eventos para mudar datas. Toque em um dia para detalhes." 
+              : "Você pode arrastar eventos, atividades, trabalhos e provas que você criou para alterar suas datas. Clique em qualquer dia para ver todos os eventos e atividades em detalhes com opções de gerenciamento."}
           </p>
         </div>
       </div>

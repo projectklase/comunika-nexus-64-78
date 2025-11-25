@@ -1,14 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { CalendarFilters } from '@/components/calendar/CalendarFilters';
+import { MobileCalendarSheet } from '@/components/calendar/MobileCalendarSheet';
 import { CalendarModalProvider } from '@/components/calendar/CalendarModalManager';
 import { useCalendarData } from '@/hooks/useCalendarData';
 import { useUnifiedCalendarFocus } from '@/hooks/useUnifiedCalendarFocus';
 import { useSelectState, DEFAULT_SELECT_TOKENS, safeRestoreSelectValue, SelectToken } from '@/hooks/useSelectState';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { RESPONSIVE_CLASSES } from '@/lib/responsive-utils';
+import { cn } from '@/lib/utils';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -36,6 +40,7 @@ export default function AlunoCalendario() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const isMountedRef = useRef(true);
+  const isMobile = useIsMobile();
   
   // Redirect if not aluno
   if (!user || user.role !== 'aluno') {
@@ -150,6 +155,16 @@ export default function AlunoCalendario() {
   const eventCount = events.filter(e => e.type === 'event').length;
   const deadlineCount = events.filter(e => e.type === 'deadline').length;
 
+  // Calculate active filters count for mobile badge
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (!activeFilters.events) count++;
+    if (!activeFilters.deadlines) count++;
+    if (!showHolidays) count++;
+    if (classFilter.value !== DEFAULT_SELECT_TOKENS.ALL_CLASSES) count++;
+    return count;
+  }, [activeFilters, showHolidays, classFilter.value]);
+
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = view === 'month' 
       ? (direction === 'next' ? addMonths(currentDate, 1) : subMonths(currentDate, 1))
@@ -198,12 +213,12 @@ export default function AlunoCalendario() {
 
   return (
     <CalendarModalProvider>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Header Responsivo */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold gradient-text">Meu Calendário</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Meu Calendário</h1>
+            <p className="text-sm text-muted-foreground hidden sm:block">
               Visualize suas atividades, eventos e prazos
             </p>
           </div>
@@ -211,30 +226,48 @@ export default function AlunoCalendario() {
           <Button 
             onClick={goToToday}
             variant="outline"
-            className="glass-card border-primary/30 hover:bg-primary/20"
+            size={isMobile ? "sm" : "default"}
+            className={cn("glass-card border-primary/30", RESPONSIVE_CLASSES.iconButton)}
           >
-            <CalendarIcon className="h-4 w-4 mr-2" />
-            Hoje
+            <CalendarIcon className="h-4 w-4" />
+            <span className="ml-2">Hoje</span>
           </Button>
         </div>
 
-        {/* Filters */}
-        <CalendarFilters
-          activeFilters={activeFilters}
-          showHolidays={showHolidays}
-          selectedClassId={classFilter.value}
-          onFilterChange={setActiveFilters}
-          onHolidaysToggle={setShowHolidays}
-          onClassChange={classFilter.setValue}
-          eventCount={eventCount}
-          deadlineCount={deadlineCount}
-        />
+        {/* Filtros - Desktop inline, Mobile Sheet */}
+        <div className="hidden sm:block">
+          <CalendarFilters
+            activeFilters={activeFilters}
+            showHolidays={showHolidays}
+            selectedClassId={classFilter.value}
+            onFilterChange={setActiveFilters}
+            onHolidaysToggle={setShowHolidays}
+            onClassChange={classFilter.setValue}
+            eventCount={eventCount}
+            deadlineCount={deadlineCount}
+          />
+        </div>
+        <div className="sm:hidden">
+          <MobileCalendarSheet activeFiltersCount={activeFiltersCount}>
+            <CalendarFilters
+              activeFilters={activeFilters}
+              showHolidays={showHolidays}
+              selectedClassId={classFilter.value}
+              onFilterChange={setActiveFilters}
+              onHolidaysToggle={setShowHolidays}
+              onClassChange={classFilter.setValue}
+              eventCount={eventCount}
+              deadlineCount={deadlineCount}
+              compact
+            />
+          </MobileCalendarSheet>
+        </div>
 
-        {/* Calendar Navigation and Views */}
-        <div className="glass-card rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            {/* Date Navigation */}
-            <div className="flex items-center gap-4">
+        {/* Calendar Card com navegação responsiva */}
+        <div className="glass-card rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 sm:mb-6">
+            {/* Date Navigation - mais compacta no mobile */}
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -244,7 +277,7 @@ export default function AlunoCalendario() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               
-              <h2 className="text-xl font-semibold text-foreground min-w-[200px] text-center">
+              <h2 className="text-base sm:text-xl font-semibold text-foreground min-w-[140px] sm:min-w-[200px] text-center">
                 {formatDateHeader()}
               </h2>
               
@@ -258,16 +291,16 @@ export default function AlunoCalendario() {
               </Button>
             </div>
 
-            {/* View Switcher */}
+            {/* View Switcher - compacto no mobile */}
             <Tabs value={view} onValueChange={handleViewChange}>
               <TabsList className="glass border border-border/30">
-                <TabsTrigger value="month" className="flex items-center gap-2">
+                <TabsTrigger value="month" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
                   <Grid3X3 className="h-4 w-4" />
-                  Mês
+                  <span className="hidden sm:inline">Mês</span>
                 </TabsTrigger>
-                <TabsTrigger value="week" className="flex items-center gap-2">
+                <TabsTrigger value="week" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
                   <Rows4 className="h-4 w-4" />
-                  Semana
+                  <span className="hidden sm:inline">Semana</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { getProfessorClasses } from '@/utils/professor-helpers';
 import { useStudentClasses } from '@/hooks/useStudentClasses';
 import { useClassStore } from '@/stores/class-store';
@@ -30,6 +31,7 @@ interface CalendarFiltersProps {
   onClassChange?: (classId: string) => void;
   eventCount: number;
   deadlineCount: number;
+  compact?: boolean; // For mobile Sheet usage
 }
 
 export function CalendarFilters({
@@ -40,9 +42,11 @@ export function CalendarFilters({
   onHolidaysToggle,
   onClassChange,
   eventCount,
-  deadlineCount
+  deadlineCount,
+  compact = false
 }: CalendarFiltersProps) {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { loadClasses } = useClassStore();
   const { loadPeople } = usePeopleStore();
   const { classes: studentClasses } = useStudentClasses();
@@ -73,10 +77,15 @@ export function CalendarFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 glass-card rounded-lg">
-      <div className="text-sm font-medium text-muted-foreground">
-        Filtros:
-      </div>
+    <div className={cn(
+      "flex flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 glass-card rounded-lg",
+      compact && "flex-col items-stretch"
+    )}>
+      {!compact && (
+        <div className="text-sm font-medium text-muted-foreground">
+          Filtros:
+        </div>
+      )}
 
       {/* Events Filter */}
       <Button
@@ -172,24 +181,26 @@ export function CalendarFilters({
         </div>
       )}
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 ml-auto">
-        <div className="text-xs text-muted-foreground">Legenda:</div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-amber-500/40" />
-            <span className="text-xs text-muted-foreground">Eventos</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-blue-500/40" />
-            <span className="text-xs text-muted-foreground">Atividades</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-primary/40" />
-            <span className="text-xs text-muted-foreground">Avisos</span>
+      {/* Legend - hide on mobile or compact mode */}
+      {!isMobile && !compact && (
+        <div className="flex items-center gap-4 ml-auto">
+          <div className="text-xs text-muted-foreground">Legenda:</div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-amber-500/40" />
+              <span className="text-xs text-muted-foreground">Eventos</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-blue-500/40" />
+              <span className="text-xs text-muted-foreground">Atividades</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-primary/40" />
+              <span className="text-xs text-muted-foreground">Avisos</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
