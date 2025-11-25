@@ -468,10 +468,16 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
         <div className="glass-card rounded-lg p-6">
         {/* Calendar Header */}
         <div className="grid grid-cols-7 gap-1 mb-4">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+          {(isMobile 
+            ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+            : ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+          ).map((day, idx) => (
             <div 
-              key={day} 
-              className="p-3 text-center text-sm font-medium text-muted-foreground border-b border-border/30"
+              key={idx} 
+              className={cn(
+                "text-center text-sm font-medium text-muted-foreground border-b border-border/30",
+                isMobile ? "p-2" : "p-3"
+              )}
             >
               {day}
             </div>
@@ -510,103 +516,143 @@ export function CalendarGrid({ currentDate, view, showHolidays, activeFilters, c
                     isCurrentDay && "ring-2 ring-primary/50 bg-primary/5",
                     !isCurrentMonth && "opacity-50",
                     holiday && "bg-amber-500/5 border-amber-500/20",
-                    // Dynamic heights based on layout tokens
-                    isMobile && "min-h-[var(--calendar-cell-min-height)] p-1",
-                    isTablet && "min-h-[100px] p-2",
-                    !isMobile && !isTablet && "min-h-[120px] p-2"
+                    // Mobile: altura fixa, Desktop/Tablet: altura dinâmica
+                    isMobile ? "h-[52px] p-1" : isTablet ? "min-h-[100px] p-2" : "min-h-[120px] p-2"
                   )}
-                  style={{ 
-                    minHeight: isMobile ? '80px' : '100px'
-                  }}
                   onClick={() => handleDayClick(day)}
                   aria-label={`Dia ${format(day, 'd')}, clique para ver detalhes do dia`}
                   onDragOver={user?.role !== 'aluno' ? (e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-                    // Add visual feedback on drag over
                     const element = e.currentTarget;
                     element.classList.add('ring-2', 'ring-primary/50', 'bg-primary/5', 'scale-[1.02]', 'transition-all', 'duration-200');
                   } : undefined}
                   onDragLeave={user?.role !== 'aluno' ? (e) => {
-                    // Remove visual feedback when drag leaves
                     const element = e.currentTarget;
                     element.classList.remove('ring-2', 'ring-primary/50', 'bg-primary/5', 'scale-[1.02]', 'transition-all', 'duration-200');
                   } : undefined}
                   onDrop={user?.role !== 'aluno' ? (e) => {
-                    // Remove visual feedback after drop
                     const element = e.currentTarget;
                     element.classList.remove('ring-2', 'ring-primary/50', 'bg-primary/5', 'scale-[1.02]', 'transition-all', 'duration-200');
                     handleEventDrop(e, day);
                   } : undefined}
                 >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={cn(
-                    "text-sm font-medium",
-                    isCurrentDay && "text-primary font-bold",
-                    holiday && "text-amber-400"
-                  )}>
-                    {format(day, 'd')}
-                  </span>
-                  {holiday && (
-                    <div className="w-2 h-2 rounded-full bg-amber-400/60" title={holiday.name} />
-                  )}
-                </div>
+                  {isMobile ? (
+                    // MOBILE: Layout compacto com dots
+                    <div className="h-full flex flex-col items-center justify-center">
+                      {/* Número do dia */}
+                      <span className={cn(
+                        "text-sm font-medium mb-1",
+                        isCurrentDay && "bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs",
+                        holiday && "text-amber-400"
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                      
+                      {/* Dots de eventos - max 3 + contador */}
+                      {dayItemsData.allItems.length > 0 && (
+                        <div className="flex items-center gap-0.5">
+                          {dayItemsData.allItems.slice(0, 3).map((event, i) => (
+                            <div 
+                              key={i}
+                              className={cn(
+                                "w-1.5 h-1.5 rounded-full",
+                                event.subtype === 'EVENTO' && "bg-amber-400",
+                                event.subtype === 'ATIVIDADE' && "bg-blue-400",
+                                event.subtype === 'TRABALHO' && "bg-orange-400",
+                                event.subtype === 'PROVA' && "bg-red-400",
+                                event.subtype === 'COMUNICADO' && "bg-purple-400",
+                                !['EVENTO', 'ATIVIDADE', 'TRABALHO', 'PROVA', 'COMUNICADO'].includes(event.subtype) && "bg-primary"
+                              )}
+                              title={event.meta.title}
+                            />
+                          ))}
+                          {dayItemsData.allItems.length > 3 && (
+                            <span className="text-[10px] text-muted-foreground ml-0.5">
+                              +{dayItemsData.allItems.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Indicador de feriado */}
+                      {holiday && (
+                        <div className="w-1 h-1 rounded-full bg-amber-400/60 mt-0.5" title={holiday.name} />
+                      )}
+                    </div>
+                  ) : (
+                    // DESKTOP/TABLET: Layout atual com EventChips
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={cn(
+                          "text-sm font-medium",
+                          isCurrentDay && "text-primary font-bold",
+                          holiday && "text-amber-400"
+                        )}>
+                          {format(day, 'd')}
+                        </span>
+                        {holiday && (
+                          <div className="w-2 h-2 rounded-full bg-amber-400/60" title={holiday.name} />
+                        )}
+                      </div>
 
-                  <div 
-                    className="space-y-0.5 overflow-hidden"
-                    style={{ 
-                      maxHeight: `${Math.min(maxCellHeight, 80)}px` 
-                    }}
-                  >
-                    {/* Render visible items */}
-                    {dayItemsData.visibleItems.map(event => {
-                      // Ensure valid event data
-                      if (!event || !event.id || !event.meta) {
-                        console.warn('Invalid event data:', event);
-                        return null;
-                      }
+                      <div 
+                        className="space-y-0.5 overflow-hidden"
+                        style={{ 
+                          maxHeight: `${Math.min(maxCellHeight, 80)}px` 
+                        }}
+                      >
+                        {/* Render visible items */}
+                        {dayItemsData.visibleItems.map(event => {
+                          // Ensure valid event data
+                          if (!event || !event.id || !event.meta) {
+                            console.warn('Invalid event data:', event);
+                            return null;
+                          }
 
-                      // Determine if event can be dragged based on user permissions
-                      const isDraggableEvent = user && user.role !== 'aluno' ? (() => {
-                        // Only allow dragging of actual posts (not holidays or other items)
-                        if (!['EVENTO', 'ATIVIDADE', 'TRABALHO', 'PROVA'].includes(event.subtype)) {
-                          return false;
-                        }
+                          // Determine if event can be dragged based on user permissions
+                          const isDraggableEvent = user && user.role !== 'aluno' ? (() => {
+                            // Only allow dragging of actual posts (not holidays or other items)
+                            if (!['EVENTO', 'ATIVIDADE', 'TRABALHO', 'PROVA'].includes(event.subtype)) {
+                              return false;
+                            }
+                            
+                           // Use the permission function
+                            const post = {
+                              authorName: event.meta.author,
+                              type: event.subtype,
+                              audience: event.meta.audience
+                            };
+                            return canUserMovePost(post);
+                          })() : false;
+                          
+                          console.log('Rendering event:', event.meta.title, 'isDraggable:', isDraggableEvent, 'subtype:', event.subtype, 'author:', event.meta.author, 'user:', user?.name);
+                          
+                          return (
+                            <EventChip
+                              key={`event-${String(event.id)}`}
+                              event={event}
+                              isDraggable={isDraggableEvent}
+                              className="text-xs"
+                              useUnifiedHandler={true}
+                            />
+                          );
+                        }).filter(Boolean)}
                         
-                       // Use the permission function
-                        const post = {
-                          authorName: event.meta.author,
-                          type: event.subtype,
-                          audience: event.meta.audience
-                        };
-                        return canUserMovePost(post);
-                      })() : false;
-                      
-                      console.log('Rendering event:', event.meta.title, 'isDraggable:', isDraggableEvent, 'subtype:', event.subtype, 'author:', event.meta.author, 'user:', user?.name);
-                      
-                      return (
-                        <EventChip
-                          key={`event-${String(event.id)}`}
-                          event={event}
-                          isDraggable={isDraggableEvent}
-                          className="text-xs"
-                          useUnifiedHandler={true}
-                        />
-                      );
-                    }).filter(Boolean)}
-                    
-                    {/* Render overflow button if needed */}
-                    {dayItemsData.hasOverflow && (
-                      <EventOverflowPopover
-                        events={dayItemsData.allItems}
-                        overflowCount={dayItemsData.overflowCount}
-                        visibleCount={dayItemsData.visibleItems.length}
-                        date={day}
-                        className="text-xs"
-                        isMobile={isMobile}
-                      />
-                    )}
-                  </div>
+                        {/* Render overflow button if needed */}
+                        {dayItemsData.hasOverflow && (
+                          <EventOverflowPopover
+                            events={dayItemsData.allItems}
+                            overflowCount={dayItemsData.overflowCount}
+                            visibleCount={dayItemsData.visibleItems.length}
+                            date={day}
+                            className="text-xs"
+                            isMobile={isMobile}
+                          />
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
 
               </div>
