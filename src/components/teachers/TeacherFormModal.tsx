@@ -31,6 +31,7 @@ import { useSchool } from '@/contexts/SchoolContext';
 import { onlyDigits } from '@/lib/validation';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
 import { useAvailableSchools } from '@/hooks/useAvailableSchools';
+import { supabase } from '@/integrations/supabase/client';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -213,43 +214,58 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
 
   // Load teacher data for editing
   useEffect(() => {
-    if (open) {
-      setCurrentStep(0); // Reset step when modal opens
-      setIsMultiSchool(false);
-      setSelectedSchools(currentSchool ? [currentSchool.id] : []);
-      
-      if (teacher) {
-        const teacherData = teacher.preferences?.teacher || {};
-        form.reset({
-          name: teacher.name,
-          document: teacherData.document,
-          email: teacher.email,
-          phones: teacherData.phones || [],
-          photoUrl: teacherData.photoUrl,
-          hiredAt: teacherData.hiredAt ? new Date(teacherData.hiredAt) : undefined,
-          bio: teacherData.bio,
-          qualifications: teacherData.qualifications || [],
-          specialties: teacherData.specialties || [],
-          workloadHours: teacherData.workloadHours,
-          classIds: teacherData.classIds || [],
-          availability: teacherData.availability || { daysOfWeek: [] },
-          address: teacherData.address || {},
-          consents: teacherData.consents || { image: false, whatsapp: false },
-          notes: teacherData.notes,
-        });
-      } else {
-        form.reset({
-          name: '',
-          phones: [],
-          qualifications: [],
-          specialties: [],
-          classIds: [],
-          availability: { daysOfWeek: [] },
-          address: {},
-          consents: { image: false, whatsapp: false },
-        });
+    const loadTeacherSchools = async () => {
+      if (open) {
+        setCurrentStep(0); // Reset step when modal opens
+        
+        if (teacher) {
+          // 🔍 Buscar escolas do professor existente
+          const { data: memberships } = await supabase
+            .from('school_memberships')
+            .select('school_id')
+            .eq('user_id', teacher.id);
+          
+          const teacherSchoolIds = memberships?.map(m => m.school_id) || [];
+          
+          setIsMultiSchool(teacherSchoolIds.length > 1);
+          setSelectedSchools(teacherSchoolIds.length > 0 ? teacherSchoolIds : (currentSchool ? [currentSchool.id] : []));
+          
+          const teacherData = teacher.preferences?.teacher || {};
+          form.reset({
+            name: teacher.name,
+            document: teacherData.document,
+            email: teacher.email,
+            phones: teacherData.phones || [],
+            photoUrl: teacherData.photoUrl,
+            hiredAt: teacherData.hiredAt ? new Date(teacherData.hiredAt) : undefined,
+            bio: teacherData.bio,
+            qualifications: teacherData.qualifications || [],
+            specialties: teacherData.specialties || [],
+            workloadHours: teacherData.workloadHours,
+            classIds: teacherData.classIds || [],
+            availability: teacherData.availability || { daysOfWeek: [] },
+            address: teacherData.address || {},
+            consents: teacherData.consents || { image: false, whatsapp: false },
+            notes: teacherData.notes,
+          });
+        } else {
+          setIsMultiSchool(false);
+          setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+          form.reset({
+            name: '',
+            phones: [],
+            qualifications: [],
+            specialties: [],
+            classIds: [],
+            availability: { daysOfWeek: [] },
+            address: {},
+            consents: { image: false, whatsapp: false },
+          });
+        }
       }
-    }
+    };
+
+    loadTeacherSchools();
   }, [teacher, open, form, currentSchool]);
 
   const activeClasses = classes.filter(c => c.status === 'ATIVA')
@@ -307,6 +323,41 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         }
         
         await updateTeacher(teacher.id, updates);
+        
+        // 🔄 Sincronizar school_memberships se múltiplas escolas
+        if (isMultiSchool) {
+          const { data: currentMemberships } = await supabase
+            .from('school_memberships')
+            .select('school_id')
+            .eq('user_id', teacher.id);
+          
+          const currentSchoolIds = currentMemberships?.map(m => m.school_id) || [];
+          
+          // Adicionar novas escolas
+          for (const schoolId of selectedSchools) {
+            if (!currentSchoolIds.includes(schoolId)) {
+              await supabase
+                .from('school_memberships')
+                .insert({
+                  user_id: teacher.id,
+                  school_id: schoolId,
+                  role: 'professor',
+                  is_primary: false
+                });
+            }
+          }
+          
+          // Remover escolas desmarcadas
+          for (const schoolId of currentSchoolIds) {
+            if (!selectedSchools.includes(schoolId)) {
+              await supabase
+                .from('school_memberships')
+                .delete()
+                .eq('user_id', teacher.id)
+                .eq('school_id', schoolId);
+            }
+          }
+        }
 
         // Update class enrollments
         if (data.classIds) {
@@ -638,7 +689,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       />
 
       {/* Múltiplas Escolas */}
-      {!teacher && availableSchools.length > 1 && (
+      {availableSchools.length > 1 && (
         <div className="space-y-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
