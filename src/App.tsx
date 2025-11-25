@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SchoolProvider } from "@/contexts/SchoolContext";
-import { SchoolSelectionManager } from "@/components/auth/SchoolSelectionManager";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { TeacherGuard } from "@/components/TeacherGuard";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -70,7 +69,6 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <SchoolProvider>
-          <SchoolSelectionManager />
           <ConditionalNotificationProvider>
             <ModalManagerProvider>
               <Toaster />

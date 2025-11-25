@@ -20,15 +20,3 @@ export interface SecretariaFilters {
   search?: string;
   status?: 'active' | 'inactive' | 'all';
 }
-
-export interface SecretariaPermission {
-  id: string;
-  secretaria_id: string;
-  permission_key: 'manage_all_schools' | string;
-  permission_value: {
-    schools?: string[]; // ["*"] para todas, ou ["uuid1", "uuid2"] para específicas
-  };
-  granted_by?: string;
-  granted_at: string;
-  school_id?: string;
-}

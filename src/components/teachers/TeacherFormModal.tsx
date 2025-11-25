@@ -22,7 +22,7 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { Person, TeacherExtra } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2, Building2, School } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
@@ -30,8 +30,6 @@ import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
 import { useSchool } from '@/contexts/SchoolContext';
 import { onlyDigits } from '@/lib/validation';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
-import { useAvailableSchools } from '@/hooks/useAvailableSchools';
-import { supabase } from '@/integrations/supabase/client';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -47,6 +45,7 @@ const teacherSchema = z.object({
     if (!phones || phones.length === 0) return true;
     return phones.every(phone => validatePhone(phone) === null);
   }, 'Um ou mais telefones são inválidos'),
+  photoUrl: z.string().optional(),
   hiredAt: z.date().optional(),
   bio: z.string().optional().refine((bio) => {
     if (!bio) return true;
@@ -68,6 +67,10 @@ const teacherSchema = z.object({
     city: z.string().optional(),
     state: z.string().optional(),
     zip: z.string().optional(),
+  }).optional(),
+  consents: z.object({
+    image: z.boolean().optional(),
+    whatsapp: z.boolean().optional(),
   }).optional(),
   notes: z.string().optional(),
 }).refine((data) => {
@@ -123,8 +126,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [isMultiSchool, setIsMultiSchool] = useState(false);
-  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
@@ -132,7 +133,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const { toast } = useToast();
   const { currentSchool } = useSchool();
   const { checkDuplicates, isChecking } = useDuplicateCheck();
-  const { schools: availableSchools, refetch: refetchSchools, loading: loadingSchools } = useAvailableSchools();
 
   // Função de validação preventiva por etapa
   const validateDuplicatesForStep = async (step: number): Promise<boolean> => {
@@ -203,6 +203,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       classIds: [],
       availability: { daysOfWeek: [] },
       address: {},
+      consents: { image: false, whatsapp: false },
     },
   });
 
@@ -210,9 +211,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   useEffect(() => {
     if (open) {
       setCurrentStep(0); // Reset step when modal opens
-      setIsMultiSchool(false);
-      setSelectedSchools(currentSchool ? [currentSchool.id] : []);
-      
       if (teacher) {
         const teacherData = teacher.preferences?.teacher || {};
         form.reset({
@@ -220,6 +218,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           document: teacherData.document,
           email: teacher.email,
           phones: teacherData.phones || [],
+          photoUrl: teacherData.photoUrl,
           hiredAt: teacherData.hiredAt ? new Date(teacherData.hiredAt) : undefined,
           bio: teacherData.bio,
           qualifications: teacherData.qualifications || [],
@@ -228,23 +227,9 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           classIds: teacherData.classIds || [],
           availability: teacherData.availability || { daysOfWeek: [] },
           address: teacherData.address || {},
+          consents: teacherData.consents || { image: false, whatsapp: false },
           notes: teacherData.notes,
         });
-
-        // FASE 2: Buscar escolas do professor ao editar
-        const loadTeacherSchools = async () => {
-          const { data: memberships } = await supabase
-            .from('school_memberships')
-            .select('school_id')
-            .eq('user_id', teacher.id)
-            .eq('role', 'professor');
-          
-          const teacherSchoolIds = memberships?.map(m => m.school_id) || [];
-          setSelectedSchools(teacherSchoolIds);
-          setIsMultiSchool(teacherSchoolIds.length > 1);
-        };
-
-        loadTeacherSchools();
       } else {
         form.reset({
           name: '',
@@ -254,10 +239,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           classIds: [],
           availability: { daysOfWeek: [] },
           address: {},
+          consents: { image: false, whatsapp: false },
         });
       }
     }
-  }, [teacher, open, form, currentSchool]);
+  }, [teacher, open, form]);
 
   const activeClasses = classes.filter(c => c.status === 'ATIVA')
     .sort((a, b) => {
@@ -280,12 +266,14 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         document: data.document,
         phones: data.phones,
         email: data.email,
+        photoUrl: data.photoUrl,
         bio: data.bio,
         qualifications: data.qualifications,
         specialties: data.specialties,
         workloadHours: data.workloadHours,
         availability: data.availability,
         address: data.address,
+        consents: data.consents,
         classIds: data.classIds,
         hiredAt: data.hiredAt ? data.hiredAt.toISOString() : undefined,
         notes: data.notes,
@@ -301,8 +289,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
             ...(teacher.preferences || {}), // Preservar preferências existentes
             teacher: teacherData, // Adicionar dados do professor
           },
-          // FASE 4: Passar schoolIds no update
-          schoolIds: isMultiSchool ? selectedSchools : [currentSchool!.id],
         };
         
         console.log('📝 [TeacherForm] Atualizando professor com:', updates);
@@ -347,11 +333,10 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           description: "As informações do professor foram atualizadas com sucesso.",
         });
       } else {
-        // Create new teacher com múltiplas escolas
+        // Create new teacher - usando apenas os dados básicos
         const result = await createTeacher({
           name: data.name,
           email: data.email,
-          schoolIds: isMultiSchool ? selectedSchools : [currentSchool!.id],
         });
 
         // Mostrar credenciais após criação
@@ -644,7 +629,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         )}
       />
 
-
       {teacher && (
         <FormField
           control={form.control}
@@ -727,116 +711,19 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         </div>
       </div>
 
-      {/* Seção de Múltiplas Escolas */}
-      <Card className="p-6 space-y-4 glass">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <School className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold">Múltiplas Escolas</h3>
-            <p className="text-sm text-muted-foreground">
-              Configure se este professor atua em mais de uma unidade
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Professor em Múltiplas Escolas</p>
-                <p className="text-sm text-muted-foreground">
-                  Permite acesso a mais de uma unidade escolar
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={isMultiSchool}
-              onCheckedChange={(checked) => {
-                setIsMultiSchool(checked);
-                if (!checked) {
-                  setSelectedSchools(currentSchool ? [currentSchool.id] : []);
-                }
-              }}
-            />
-          </div>
-
-          {isMultiSchool && (
-            <div className="space-y-3 pl-4 border-l-2 border-primary/20">
-              <Label className="text-sm font-medium">
-                Selecione as escolas onde este professor atua:
-              </Label>
-              <div className="space-y-2">
-                {availableSchools.map((school) => (
-                  <div
-                    key={school.id}
-                    className="flex items-center space-x-2 p-3 rounded-lg border bg-background/50 hover:bg-accent/50 transition-colors"
-                  >
-                    <Checkbox
-                      id={`school-${school.id}`}
-                      checked={selectedSchools.includes(school.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedSchools([...selectedSchools, school.id]);
-                        } else {
-                          if (selectedSchools.length > 1 || school.id !== currentSchool?.id) {
-                            setSelectedSchools(selectedSchools.filter(id => id !== school.id));
-                          }
-                        }
-                      }}
-                      disabled={school.id === currentSchool?.id && selectedSchools.length === 1}
-                    />
-                    <Label
-                      htmlFor={`school-${school.id}`}
-                      className="flex-1 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        {school.logo_url && (
-                          <img src={school.logo_url} alt={school.name} className="h-6 w-6 rounded" />
-                        )}
-                        <span className="font-medium">{school.name}</span>
-                        {school.id === currentSchool?.id && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            Escola Atual
-                          </span>
-                        )}
-                      </div>
-                    </Label>
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {selectedSchools.length} escola(s) selecionada(s)
-              </p>
-            </div>
-          )}
-
-          {availableSchools.length === 1 && (
-            <div className="flex items-center justify-between gap-3 pl-4">
-              <p className="text-sm text-muted-foreground italic">
-                Apenas uma escola disponível. Para atribuir este professor a múltiplas escolas,
-                adicione mais escolas ao sistema ou solicite acesso a outras unidades.
-              </p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={refetchSchools}
-                disabled={loadingSchools}
-                className="shrink-0"
-              >
-                {loadingSchools ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-      </Card>
+      <FormField
+        control={form.control}
+        name="photoUrl"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>URL da Foto</FormLabel>
+            <FormControl>
+              <Input placeholder="https://exemplo.com/foto.jpg" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <FormField
         control={form.control}
@@ -1192,6 +1079,39 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
               )}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Consentimentos</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <FormField
+            control={form.control}
+            name="consents.image"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+                <FormLabel>Consentimento para uso de imagem</FormLabel>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="consents.whatsapp"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+                <FormLabel>Consentimento para WhatsApp</FormLabel>
+              </FormItem>
+            )}
+          />
         </CardContent>
       </Card>
 

@@ -16,8 +16,7 @@ interface DemoUserRequest {
   student_notes?: string
   userId?: string // Para atualizar senha de usuário existente
   updatePasswordOnly?: boolean // Flag para indicar que é apenas update de senha
-  school_id?: string // ID da escola principal para vincular o usuário
-  school_ids?: string[] // Array de IDs de escolas (múltiplas escolas)
+  school_id?: string // ✅ NOVO: ID da escola para vincular o usuário
 }
 
 Deno.serve(async (req) => {
@@ -93,12 +92,10 @@ Deno.serve(async (req) => {
     const callerRole = userRoles.role
     console.log('Caller role:', callerRole)
 
-    const { email, password, name, role, dob, phone, enrollment_number, student_notes, userId, updatePasswordOnly, school_id, school_ids }: DemoUserRequest = await req.json()
+    const { email, password, name, role, dob, phone, enrollment_number, student_notes, userId, updatePasswordOnly, school_id }: DemoUserRequest = await req.json()
     
-    // ✅ Determinar escolas: usar school_ids se fornecido, caso contrário usar school_id
-    const targetSchoolIds = school_ids && school_ids.length > 0 ? school_ids : (school_id ? [school_id] : []);
-    
-    console.log('School IDs received:', targetSchoolIds)
+    // ✅ Log do school_id recebido
+    console.log('School ID received:', school_id)
 
     // Se é apenas para atualizar senha
     if (updatePasswordOnly && userId) {
@@ -212,11 +209,11 @@ Deno.serve(async (req) => {
     if (student_notes) {
       try {
         const notesData = JSON.parse(student_notes);
-        if (notesData.document && targetSchoolIds.length > 0) {
+        if (notesData.document) {
           const { data: existingCPF } = await supabaseAdmin
             .from('profiles')
             .select('id, name, email, student_notes')
-            .in('current_school_id', targetSchoolIds)
+            .eq('current_school_id', school_id)
             .neq('id', '00000000-0000-0000-0000-000000000000');
 
           if (existingCPF) {
@@ -254,12 +251,12 @@ Deno.serve(async (req) => {
     }
 
     // ✅ VALIDAÇÃO: Verificar matrícula duplicada (se fornecida)
-    if (enrollment_number && role === 'aluno' && targetSchoolIds.length > 0) {
+    if (enrollment_number && role === 'aluno' && school_id) {
       const { data: existingEnrollment } = await supabaseAdmin
         .from('profiles')
         .select('id, name, email')
         .eq('enrollment_number', enrollment_number)
-        .in('current_school_id', targetSchoolIds)
+        .eq('current_school_id', school_id)
         .maybeSingle();
 
       if (existingEnrollment) {
@@ -357,13 +354,12 @@ Deno.serve(async (req) => {
     console.log('Demo user created successfully:', data.user?.email)
 
     // Criar ou atualizar o perfil na tabela profiles com todos os dados
-    // current_school_id será a primeira escola da lista (primária)
     const profileData: any = {
       id: data.user.id,
       email: email,
       name: name,
       is_active: true,
-      current_school_id: targetSchoolIds.length > 0 ? targetSchoolIds[0] : null
+      current_school_id: school_id || null
     }
 
     // Adicionar campos opcionais se fornecidos
@@ -387,47 +383,42 @@ Deno.serve(async (req) => {
     // O trigger handle_new_user_role já cria a role automaticamente
     console.log('User role will be created automatically by trigger handle_new_user_role')
 
-    // ✅ VINCULAR A MÚLTIPLAS ESCOLAS via school_memberships
-    if (targetSchoolIds.length > 0) {
-      console.log(`📝 Vinculando ${role} a ${targetSchoolIds.length} escola(s)`)
+    // ✅ VINCULAR À ESCOLA via school_memberships (professor, secretaria, aluno)
+    if (school_id) {
+      console.log(`📝 Verificando vínculo school_membership para ${role}:`, school_id)
       
-      for (let i = 0; i < targetSchoolIds.length; i++) {
-        const schoolId = targetSchoolIds[i];
-        const isPrimary = i === 0; // Primeira escola é primária
+      // Verificar se já existe registro para este usuário nesta escola
+      const { data: existingMembership } = await supabaseAdmin
+        .from('school_memberships')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .eq('school_id', school_id)
+        .eq('role', role)
+        .single()
+
+      if (!existingMembership) {
+        console.log(`📝 Criando vínculo school_membership para ${role}:`, school_id)
         
-        // Verificar se já existe registro para este usuário nesta escola
-        const { data: existingMembership } = await supabaseAdmin
+        const { error: membershipError } = await supabaseAdmin
           .from('school_memberships')
-          .select('id')
-          .eq('user_id', data.user.id)
-          .eq('school_id', schoolId)
-          .eq('role', role)
-          .single()
+          .insert({
+            user_id: data.user.id,
+            school_id: school_id,
+            role: role,
+            is_primary: true
+          })
 
-        if (!existingMembership) {
-          console.log(`📝 Criando vínculo school_membership para ${role} na escola ${schoolId} (primária: ${isPrimary})`)
-          
-          const { error: membershipError } = await supabaseAdmin
-            .from('school_memberships')
-            .insert({
-              user_id: data.user.id,
-              school_id: schoolId,
-              role: role,
-              is_primary: isPrimary
-            })
-
-          if (membershipError) {
-            console.error('❌ Erro ao criar school_membership:', membershipError)
-            throw new Error(`Erro ao vincular ${role} à escola ${schoolId}: ${membershipError.message}`)
-          }
-          
-          console.log(`✅ ${role} vinculado à escola ${schoolId} com sucesso`)
-        } else {
-          console.log(`ℹ️ ${role} já possui vínculo com a escola ${schoolId}`)
+        if (membershipError) {
+          console.error('❌ Erro ao criar school_membership:', membershipError)
+          throw new Error(`Erro ao vincular ${role} à escola: ${membershipError.message}`)
         }
+        
+        console.log(`✅ ${role} vinculado à escola com sucesso`)
+      } else {
+        console.log(`ℹ️ ${role} já possui vínculo com esta escola`)
       }
     } else {
-      console.warn(`⚠️ Nenhuma escola fornecida, ${role} criado sem vínculo de escola`)
+      console.warn(`⚠️ Nenhum school_id fornecido, ${role} criado sem vínculo de escola`)
     }
 
     return new Response(

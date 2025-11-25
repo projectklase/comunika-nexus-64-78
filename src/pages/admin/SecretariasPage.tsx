@@ -29,11 +29,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2, Edit, Key } from 'lucide-react';
+import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2, Edit } from 'lucide-react';
 import { useSecretarias } from '@/hooks/useSecretarias';
 import { SecretariaFormModal } from '@/components/admin/SecretariaFormModal';
-import { SecretariaPermissionsModal } from '@/components/admin/SecretariaPermissionsModal';
-import { SecretariaPermissionBadge } from '@/components/admin/SecretariaPermissionBadge';
 import { Secretaria } from '@/types/secretaria';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -56,7 +54,6 @@ export default function SecretariasPage() {
   const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
   const [selectedSecretaria, setSelectedSecretaria] = useState<Secretaria | null>(null);
 
   const handleArchive = async () => {
@@ -230,12 +227,9 @@ export default function SecretariasPage() {
                       <TableCell>{secretaria.email}</TableCell>
                       <TableCell>{secretaria.phone || '—'}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={secretaria.is_active ? 'default' : 'secondary'}>
-                            {secretaria.is_active ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                          <SecretariaPermissionBadge secretariaId={secretaria.id} />
-                        </div>
+                        <Badge variant={secretaria.is_active ? 'default' : 'secondary'}>
+                          {secretaria.is_active ? 'Ativo' : 'Inativo'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {format(new Date(secretaria.created_at), 'dd/MM/yyyy', { locale: ptBR })}
@@ -256,15 +250,6 @@ export default function SecretariasPage() {
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedSecretaria(secretaria);
-                                setPermissionsModalOpen(true);
-                              }}
-                            >
-                              <Key className="mr-2 h-4 w-4" />
-                              Gerenciar Permissões
                             </DropdownMenuItem>
                             {secretaria.is_active ? (
                               <DropdownMenuItem
@@ -313,12 +298,6 @@ export default function SecretariasPage() {
           open={createModalOpen}
           onOpenChange={setCreateModalOpen}
           onSubmit={createSecretaria}
-        />
-
-        <SecretariaPermissionsModal
-          open={permissionsModalOpen}
-          onOpenChange={setPermissionsModalOpen}
-          secretaria={selectedSecretaria}
         />
 
         {/* Archive Dialog */}

@@ -119,7 +119,6 @@ export function useTeachers() {
     email: string;
     password?: string;
     phone?: string;
-    schoolIds?: string[]; // Array de IDs de escolas
   }) => {
     // ✅ Guard clause
     if (!currentSchool) {
@@ -134,15 +133,6 @@ export function useTeachers() {
       
       // Generate password if not provided
       const password = teacherData.password || `Prof${Math.floor(Math.random() * 10000)}!`;
-      
-      // Determinar escolas: se schoolIds fornecido, usar; caso contrário, usar escola atual
-      const schoolIds = teacherData.schoolIds || (currentSchool ? [currentSchool.id] : []);
-      
-      if (schoolIds.length === 0) {
-        throw new Error('Nenhuma escola selecionada');
-      }
-
-      console.log('🔵 [useTeachers] Criando professor nas escolas:', schoolIds);
       
       // Obter sessão para token de autenticação
       const { data: { session } } = await supabase.auth.getSession();
@@ -164,7 +154,7 @@ export function useTeachers() {
             name: teacherData.name,
             role: 'professor',
             phone: teacherData.phone,
-            school_ids: schoolIds // Enviar array de escolas
+            school_id: currentSchool.id
           })
         }
       );
@@ -201,78 +191,18 @@ export function useTeachers() {
     }
   }, [fetchTeachers, currentSchool]);
 
-  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string; schoolIds?: string[] }) => {
+  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string }) => {
     setLoading(true);
     try {
       console.log('💾 [useTeachers] Recebendo updates:', updates);
       console.log('💾 [useTeachers] Campo preferences:', updates.preferences);
       
-      // FASE 3: Sincronizar school_memberships se schoolIds fornecido
-      if (updates.schoolIds) {
-        console.log('🏫 [useTeachers] Sincronizando escolas do professor...');
-        
-        // Buscar memberships atuais
-        const { data: currentMemberships } = await supabase
-          .from('school_memberships')
-          .select('school_id')
-          .eq('user_id', id)
-          .eq('role', 'professor');
-        
-        const currentSchoolIds = currentMemberships?.map(m => m.school_id) || [];
-        const newSchoolIds = updates.schoolIds;
-        
-        console.log('🏫 [useTeachers] Escolas atuais:', currentSchoolIds);
-        console.log('🏫 [useTeachers] Novas escolas:', newSchoolIds);
-        
-        // Escolas a adicionar
-        const toAdd = newSchoolIds.filter(schoolId => !currentSchoolIds.includes(schoolId));
-        
-        // Escolas a remover
-        const toRemove = currentSchoolIds.filter(schoolId => !newSchoolIds.includes(schoolId));
-        
-        console.log('🏫 [useTeachers] Adicionar:', toAdd);
-        console.log('🏫 [useTeachers] Remover:', toRemove);
-        
-        // Inserir novos memberships
-        if (toAdd.length > 0) {
-          const { error: insertError } = await supabase
-            .from('school_memberships')
-            .insert(
-              toAdd.map(schoolId => ({
-                user_id: id,
-                school_id: schoolId,
-                role: 'professor',
-                is_primary: false
-              }))
-            );
-          
-          if (insertError) throw insertError;
-          console.log('✅ [useTeachers] Memberships adicionados:', toAdd.length);
-        }
-        
-        // Remover memberships antigos
-        if (toRemove.length > 0) {
-          const { error: deleteError } = await supabase
-            .from('school_memberships')
-            .delete()
-            .eq('user_id', id)
-            .eq('role', 'professor')
-            .in('school_id', toRemove);
-          
-          if (deleteError) throw deleteError;
-          console.log('✅ [useTeachers] Memberships removidos:', toRemove.length);
-        }
-      }
-      
-      // Remove schoolIds do objeto updates antes de atualizar profile
-      const { schoolIds, ...profileUpdates } = updates;
-      
       // If password is being updated, use edge function
-      if (profileUpdates.password) {
+      if (updates.password) {
         const { data, error } = await supabase.functions.invoke('create-demo-user', {
           body: {
             userId: id,
-            password: profileUpdates.password,
+            password: updates.password,
             updatePasswordOnly: true,
           }
         });
@@ -283,26 +213,24 @@ export function useTeachers() {
         }
 
         // Remove password from updates object before updating profile
-        const { password, ...finalUpdates } = profileUpdates;
+        const { password, ...profileUpdates } = updates;
         
-        if (Object.keys(finalUpdates).length > 0) {
+        if (Object.keys(profileUpdates).length > 0) {
           const { error: profileError } = await supabase
             .from('profiles')
-            .update(finalUpdates)
+            .update(profileUpdates)
             .eq('id', id);
 
           if (profileError) throw profileError;
         }
       } else {
         // Regular profile update
-        if (Object.keys(profileUpdates).length > 0) {
-          const { error } = await supabase
-            .from('profiles')
-            .update(profileUpdates)
-            .eq('id', id);
+        const { error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', id);
 
-          if (error) throw error;
-        }
+        if (error) throw error;
       }
 
       toast.success('Professor atualizado com sucesso');

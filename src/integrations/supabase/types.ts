@@ -1374,44 +1374,6 @@ export type Database = {
         }
         Relationships: []
       }
-      secretaria_permissions: {
-        Row: {
-          granted_at: string | null
-          granted_by: string | null
-          id: string
-          permission_key: string
-          permission_value: Json | null
-          school_id: string | null
-          secretaria_id: string
-        }
-        Insert: {
-          granted_at?: string | null
-          granted_by?: string | null
-          id?: string
-          permission_key: string
-          permission_value?: Json | null
-          school_id?: string | null
-          secretaria_id: string
-        }
-        Update: {
-          granted_at?: string | null
-          granted_by?: string | null
-          id?: string
-          permission_key?: string
-          permission_value?: Json | null
-          school_id?: string | null
-          secretaria_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "secretaria_permissions_school_id_fkey"
-            columns: ["school_id"]
-            isOneToOne: false
-            referencedRelation: "schools"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       student_challenges: {
         Row: {
           challenge_id: string
