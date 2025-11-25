@@ -83,13 +83,13 @@ export function SecretariaPermissionsModal({
         }
         
         await grantSchoolAccess(secretaria.id, schoolIdsToGrant);
-        toast.success('Permissões atualizadas com sucesso');
+        toast.success('Permissões concedidas com sucesso');
       }
       
       handleClose();
     } catch (error) {
       console.error('Erro ao salvar permissões:', error);
-      toast.error('Erro ao salvar permissões');
+      toast.error('Falha ao processar permissões. Tente novamente.');
     }
   };
 
