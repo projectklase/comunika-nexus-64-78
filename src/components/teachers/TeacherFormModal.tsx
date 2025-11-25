@@ -31,7 +31,8 @@ import { useSchool } from '@/contexts/SchoolContext';
 import { onlyDigits } from '@/lib/validation';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
 import { useAvailableSchools } from '@/hooks/useAvailableSchools';
-import { Building2 } from 'lucide-react';
+import { Building2, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -235,6 +236,23 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           consents: teacherData.consents || { image: false, whatsapp: false },
           notes: teacherData.notes,
         });
+        
+        // Buscar escolas do professor ao editar
+        const fetchTeacherSchools = async () => {
+          const { data } = await supabase
+            .from('school_memberships')
+            .select('school_id')
+            .eq('user_id', teacher.id);
+          
+          if (data && data.length > 1) {
+            setIsMultiSchool(true);
+            setSelectedSchools(data.map(m => m.school_id));
+          } else {
+            setIsMultiSchool(false);
+            setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+          }
+        };
+        fetchTeacherSchools();
       } else {
         form.reset({
           name: '',
@@ -247,10 +265,10 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           consents: { image: false, whatsapp: false },
         });
         setIsMultiSchool(false);
-        setSelectedSchools([]);
+        setSelectedSchools(currentSchool ? [currentSchool.id] : []);
       }
     }
-  }, [teacher, open, form]);
+  }, [teacher, open, form, currentSchool]);
 
   const activeClasses = classes.filter(c => c.status === 'ATIVA')
     .sort((a, b) => {
@@ -304,6 +322,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         // Only include password if it was provided
         if (data.password && data.password.trim().length > 0) {
           updates.password = data.password;
+        }
+        
+        // Adicionar schoolIds se professor é multi-escola
+        if (isMultiSchool && selectedSchools.length > 0) {
+          updates.schoolIds = selectedSchools;
         }
         
         await updateTeacher(teacher.id, updates);
@@ -799,19 +822,130 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         </div>
       </div>
 
-      <FormField
-        control={form.control}
-        name="photoUrl"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>URL da Foto</FormLabel>
-            <FormControl>
-              <Input placeholder="https://exemplo.com/foto.jpg" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* Seção de Múltiplas Escolas */}
+      {availableSchools.length === 1 ? (
+        // Secretária SEM permissões - UI bloqueada
+        <Card className="glass-card border-muted/30 opacity-80">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              Múltiplas Escolas
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Configure se este professor atua em mais de uma unidade
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                <span>Professor em Múltiplas Escolas</span>
+                <span className="text-xs">(Permite acesso a mais de uma unidade escolar)</span>
+              </Label>
+              <Switch disabled checked={false} />
+            </div>
+            
+            {/* Escola atual sempre visível */}
+            <div className="glass-card p-3 border-primary/20">
+              <div className="flex items-center gap-2">
+                <Checkbox checked disabled />
+                <span className="font-semibold">{currentSchool?.name}</span>
+                <Badge variant="outline" className="text-xs text-primary">Escola Atual</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                1 escola(s) selecionada(s)
+              </p>
+            </div>
+            
+            {/* Mensagem de orientação */}
+            <p className="text-xs text-amber-500 mt-3 italic flex items-start gap-2">
+              <span>⚠️</span>
+              <span>Apenas uma escola disponível. Para atribuir este professor a múltiplas escolas, solicite permissão ao seu administrador.</span>
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        // Tem permissões - UI completa
+        <Card className="glass-card border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              Múltiplas Escolas
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Configure se este professor atua em mais de uma unidade
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="multi-school" className="text-sm flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                <span>Professor em Múltiplas Escolas</span>
+                <span className="text-xs text-muted-foreground">(Permite acesso a mais de uma unidade escolar)</span>
+              </Label>
+              <Switch
+                id="multi-school"
+                checked={isMultiSchool}
+                onCheckedChange={(checked) => {
+                  setIsMultiSchool(checked);
+                  if (!checked) {
+                    setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+                  }
+                }}
+              />
+            </div>
+
+            {isMultiSchool && (
+              <div className="space-y-2">
+                <Label className="text-sm">Selecione as escolas onde este professor atua:</Label>
+                <div className="glass-card p-3 space-y-2 max-h-48 overflow-y-auto">
+                  {availableSchools.map((school) => {
+                    const isCurrentSchool = school.id === currentSchool?.id;
+                    const isChecked = selectedSchools.includes(school.id);
+                    
+                    return (
+                      <div 
+                        key={school.id} 
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-md transition-colors",
+                          isCurrentSchool && "bg-primary/5"
+                        )}
+                      >
+                        <Checkbox
+                          checked={isChecked}
+                          disabled={isCurrentSchool}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSchools([...selectedSchools, school.id]);
+                            } else {
+                              setSelectedSchools(selectedSchools.filter(id => id !== school.id));
+                            }
+                          }}
+                        />
+                        <span className={cn(
+                          "flex-1",
+                          isCurrentSchool && "font-semibold"
+                        )}>
+                          {school.name}
+                        </span>
+                        {isCurrentSchool && (
+                          <Badge variant="outline" className="text-xs text-primary">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Escola Atual
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedSchools.length} escola(s) selecionada(s)
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <FormField
         control={form.control}
@@ -1167,39 +1301,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
               )}
             />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Consentimentos</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <FormField
-            control={form.control}
-            name="consents.image"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormLabel>Consentimento para uso de imagem</FormLabel>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="consents.whatsapp"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormLabel>Consentimento para WhatsApp</FormLabel>
-              </FormItem>
-            )}
-          />
         </CardContent>
       </Card>
 

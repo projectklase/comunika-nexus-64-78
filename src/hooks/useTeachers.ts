@@ -215,7 +215,7 @@ export function useTeachers() {
     }
   }, [fetchTeachers, currentSchool]);
 
-  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string }) => {
+  const updateTeacher = useCallback(async (id: string, updates: Partial<Teacher> & { password?: string; schoolIds?: string[] }) => {
     setLoading(true);
     try {
       console.log('💾 [useTeachers] Recebendo updates:', updates);
@@ -237,7 +237,7 @@ export function useTeachers() {
         }
 
         // Remove password from updates object before updating profile
-        const { password, ...profileUpdates } = updates;
+        const { password, schoolIds, ...profileUpdates } = updates;
         
         if (Object.keys(profileUpdates).length > 0) {
           const { error: profileError } = await supabase
@@ -249,12 +249,55 @@ export function useTeachers() {
         }
       } else {
         // Regular profile update
+        const { schoolIds, ...profileUpdates } = updates;
         const { error } = await supabase
           .from('profiles')
-          .update(updates)
+          .update(profileUpdates)
           .eq('id', id);
 
         if (error) throw error;
+      }
+
+      // ✅ NOVO: Sincronizar school_memberships se schoolIds foi fornecido
+      if (updates.schoolIds) {
+        console.log('🏫 [useTeachers] Sincronizando memberships:', updates.schoolIds);
+        
+        // 1. Buscar memberships atuais
+        const { data: currentMemberships } = await supabase
+          .from('school_memberships')
+          .select('school_id, is_primary')
+          .eq('user_id', id)
+          .eq('role', 'professor');
+        
+        const currentSchoolIds = currentMemberships?.map(m => m.school_id) || [];
+        const primarySchoolId = currentMemberships?.find(m => m.is_primary)?.school_id;
+        
+        // 2. Adicionar novas escolas
+        const schoolsToAdd = updates.schoolIds.filter(schoolId => !currentSchoolIds.includes(schoolId));
+        for (const schoolId of schoolsToAdd) {
+          await supabase.from('school_memberships').insert({
+            user_id: id,
+            school_id: schoolId,
+            role: 'professor',
+            is_primary: false
+          });
+          console.log('✅ [useTeachers] Adicionado membership:', schoolId);
+        }
+        
+        // 3. Remover escolas desmarcadas (exceto a primária)
+        const schoolsToRemove = currentSchoolIds.filter(schoolId => 
+          !updates.schoolIds!.includes(schoolId) && schoolId !== primarySchoolId
+        );
+        for (const schoolId of schoolsToRemove) {
+          await supabase.from('school_memberships')
+            .delete()
+            .eq('user_id', id)
+            .eq('school_id', schoolId)
+            .eq('role', 'professor');
+          console.log('🗑️ [useTeachers] Removido membership:', schoolId);
+        }
+        
+        console.log('✅ [useTeachers] Sincronização de memberships completa');
       }
 
       toast.success('Professor atualizado com sucesso');
