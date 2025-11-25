@@ -30,6 +30,8 @@ import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
 import { useSchool } from '@/contexts/SchoolContext';
 import { onlyDigits } from '@/lib/validation';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
+import { useAvailableSchools } from '@/hooks/useAvailableSchools';
+import { Building2 } from 'lucide-react';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -126,8 +128,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [isMultiSchool, setIsMultiSchool] = useState(false);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   
   const { createTeacher, updateTeacher } = useTeachers();
+  const { schools: availableSchools } = useAvailableSchools();
   const { classes, updateClass } = useClassStore();
   const { subjects } = useSubjects();
   const { toast } = useToast();
@@ -241,6 +246,8 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           address: {},
           consents: { image: false, whatsapp: false },
         });
+        setIsMultiSchool(false);
+        setSelectedSchools([]);
       }
     }
   }, [teacher, open, form]);
@@ -333,10 +340,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           description: "As informações do professor foram atualizadas com sucesso.",
         });
       } else {
-        // Create new teacher - usando apenas os dados básicos
+        // Create new teacher - usando apenas os dados básicos + escolas multi-escola
         const result = await createTeacher({
           name: data.name,
           email: data.email,
+          schoolIds: isMultiSchool ? selectedSchools : undefined,
         });
 
         // Mostrar credenciais após criação
@@ -650,6 +658,86 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
             </FormItem>
           )}
         />
+      )}
+
+      {/* ✅ NOVO: Seleção de múltiplas escolas */}
+      {!teacher && (
+        <Card className="glass-card border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              Professor em Múltiplas Escolas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="multi-school" className="text-sm">
+                Este professor atua em mais de uma escola?
+              </Label>
+              <Switch
+                id="multi-school"
+                checked={isMultiSchool}
+                onCheckedChange={(checked) => {
+                  setIsMultiSchool(checked);
+                  if (checked && currentSchool) {
+                    // Pré-selecionar escola atual
+                    setSelectedSchools([currentSchool.id]);
+                  } else {
+                    setSelectedSchools([]);
+                  }
+                }}
+              />
+            </div>
+
+            {isMultiSchool && (
+              <div className="space-y-3 pt-2 animate-in fade-in-50 slide-in-from-top-2">
+                <Label className="text-sm">Selecione as escolas:</Label>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto glass-card p-3">
+                  {availableSchools.map((school) => (
+                    <div key={school.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`school-${school.id}`}
+                        checked={selectedSchools.includes(school.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedSchools([...selectedSchools, school.id]);
+                          } else {
+                            // Não permitir desmarcar se for a última escola
+                            if (selectedSchools.length > 1) {
+                              setSelectedSchools(selectedSchools.filter(id => id !== school.id));
+                            } else {
+                              toast({
+                                title: "Atenção",
+                                description: "O professor deve estar vinculado a pelo menos uma escola.",
+                                variant: "destructive"
+                              });
+                            }
+                          }
+                        }}
+                        disabled={school.id === currentSchool?.id && selectedSchools.length === 1}
+                      />
+                      <Label 
+                        htmlFor={`school-${school.id}`} 
+                        className={cn(
+                          "text-sm cursor-pointer",
+                          school.id === currentSchool?.id && "font-semibold"
+                        )}
+                      >
+                        {school.name}
+                        {school.id === currentSchool?.id && (
+                          <Badge variant="secondary" className="ml-2 text-xs">Atual</Badge>
+                        )}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedSchools.length} {selectedSchools.length === 1 ? 'escola selecionada' : 'escolas selecionadas'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <div className="space-y-2">
