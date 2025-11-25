@@ -18,7 +18,8 @@ export function useAvailableSchools() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchAvailableSchools = useCallback(async () => {
-    if (!user) {
+    if (!user || !user.id) {
+      console.log('⚠️ [useAvailableSchools] User não disponível ainda');
       setSchools([]);
       setLoading(false);
       return;
@@ -28,7 +29,7 @@ export function useAvailableSchools() {
     setError(null);
 
     try {
-      console.log('🏫 [useAvailableSchools] Buscando escolas disponíveis para:', user.email);
+      console.log('🏫 [useAvailableSchools] Buscando escolas disponíveis para:', user.email, 'ID:', user.id);
 
       // 1. Buscar escolas via school_memberships (normal)
       const { data: memberships, error: memberError } = await supabase
@@ -68,7 +69,20 @@ export function useAvailableSchools() {
 
         for (const perm of permissions) {
           const permValue = perm.permission_value as any;
-          const schools = permValue?.schools;
+          let schools = permValue?.schools;
+          
+          // Pode estar como string JSON em alguns casos
+          if (typeof schools === 'string') {
+            try {
+              schools = JSON.parse(schools);
+              console.log('📝 [useAvailableSchools] Schools parseado de string:', schools);
+            } catch (e) {
+              console.warn('⚠️ [useAvailableSchools] Erro ao parsear schools:', e);
+            }
+          }
+          
+          console.log('🔍 [useAvailableSchools] Verificando schools:', schools);
+          
           if (schools === '*' || (Array.isArray(schools) && schools.includes('*'))) {
             // Permissão total: buscar TODAS as escolas ativas
             const { data: allSchools, error: allError } = await supabase

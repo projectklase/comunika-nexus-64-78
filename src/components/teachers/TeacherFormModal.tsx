@@ -133,7 +133,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   
   const { createTeacher, updateTeacher } = useTeachers();
-  const { schools: availableSchools } = useAvailableSchools();
+  const { schools: availableSchools, refetch: refetchSchools } = useAvailableSchools();
   const { classes, updateClass } = useClassStore();
   const { subjects } = useSubjects();
   const { toast } = useToast();
@@ -216,6 +216,9 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   // Load teacher data for editing
   useEffect(() => {
     if (open) {
+      // Refetch escolas para garantir dados atualizados
+      refetchSchools();
+      
       setCurrentStep(0); // Reset step when modal opens
       if (teacher) {
         const teacherData = teacher.preferences?.teacher || {};

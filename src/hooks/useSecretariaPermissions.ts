@@ -48,21 +48,24 @@ export function useSecretariaPermissions() {
         granted_by: user.id,
       };
 
-      // Upsert: atualiza se existe, cria se não existe
+      // Delete existente + Insert novo (mais robusto que upsert com NULL)
+      await supabase
+        .from('secretaria_permissions')
+        .delete()
+        .eq('secretaria_id', secretariaId)
+        .eq('permission_key', 'manage_all_schools');
+
       const { error } = await supabase
         .from('secretaria_permissions')
-        .upsert(permissionData, {
-          onConflict: 'secretaria_id,permission_key,school_id',
-        });
+        .insert(permissionData);
 
       if (error) throw error;
 
-      toast.success('Permissões atualizadas com sucesso');
       console.log('✅ [Permissions] Permissões salvas');
+      // Toast removido - exibido pelo modal
 
     } catch (err) {
       console.error('❌ [Permissions] Erro:', err);
-      toast.error('Erro ao salvar permissões');
       throw err;
     } finally {
       setLoading(false);
@@ -89,12 +92,11 @@ export function useSecretariaPermissions() {
 
       if (error) throw error;
 
-      toast.success('Permissões removidas com sucesso');
       console.log('✅ [Permissions] Permissões revogadas');
+      // Toast removido - exibido pelo modal
 
     } catch (err) {
       console.error('❌ [Permissions] Erro:', err);
-      toast.error('Erro ao remover permissões');
       throw err;
     } finally {
       setLoading(false);
