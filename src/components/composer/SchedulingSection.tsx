@@ -54,8 +54,8 @@ export function SchedulingSection({
     if (scheduledDateTime) {
       const formattedDate = format(scheduledDateTime, "dd/MM 'às' HH:mm", { locale: ptBR });
       return (
-        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-          <Calendar className="h-3 w-3 mr-1" />
+        <Badge variant="secondary" className="text-xs bg-gradient-to-r from-cyan-500/20 to-sky-500/20 backdrop-blur-sm text-cyan-300 border border-cyan-400/50 shadow-sm shadow-cyan-500/20">
+          <Calendar className="h-3 w-3 mr-1 text-cyan-400" />
           Agendado para {formattedDate}
           {onClearSchedule && (
             <button
@@ -74,18 +74,24 @@ export function SchedulingSection({
   };
 
   return (
-    <div className={cn("space-y-4 p-4 rounded-lg bg-accent/5 border border-accent/20", className)}>
+    <div className={cn(
+      "space-y-4 p-4 rounded-lg transition-all duration-200",
+      "bg-gradient-to-r from-cyan-500/10 via-sky-500/5 to-cyan-500/10",
+      "backdrop-blur-sm border border-cyan-400/30",
+      "shadow-lg shadow-cyan-500/5",
+      className
+    )}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <Label className="text-sm font-medium">Programar Publicação</Label>
+          <Clock className="h-4 w-4 text-cyan-400" />
+          <Label className="text-sm font-medium text-cyan-300">Programar Publicação</Label>
         </div>
         {getStatusBadge()}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+          <Label className="text-xs text-cyan-400/70 uppercase tracking-wide">
             Data
           </Label>
           <InputDate
@@ -93,7 +99,7 @@ export function SchedulingSection({
             onChange={onPublishDateChange}
             placeholder="dd/mm/aaaa"
             className={cn(
-              "h-9 text-sm bg-background/50 border-border/50 focus-visible:ring-primary/20",
+              "h-9 text-sm bg-background/50 border-cyan-400/30 focus-visible:ring-cyan-400/30 focus-visible:border-cyan-400/50",
               isPastDate && "border-destructive focus-visible:ring-destructive/20"
             )}
             error={isPastDate}
@@ -101,7 +107,7 @@ export function SchedulingSection({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+          <Label className="text-xs text-cyan-400/70 uppercase tracking-wide">
             Hora
           </Label>
           <InputTime
@@ -110,7 +116,7 @@ export function SchedulingSection({
             placeholder="hh:mm"
             step={15}
             className={cn(
-              "h-9 text-sm bg-background/50 border-border/50 focus-visible:ring-primary/20",
+              "h-9 text-sm bg-background/50 border-cyan-400/30 focus-visible:ring-cyan-400/30 focus-visible:border-cyan-400/50",
               isPastDate && "border-destructive focus-visible:ring-destructive/20"
             )}
             error={isPastDate}
