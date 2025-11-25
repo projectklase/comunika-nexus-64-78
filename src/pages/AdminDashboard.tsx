@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Users, 
   GraduationCap, 
@@ -20,7 +21,8 @@ import {
   Calendar,
   MessageSquare,
   Award,
-  Activity
+  Activity,
+  Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -516,9 +518,57 @@ export default function AdminDashboard() {
               Atividades Recentes
             </h2>
           </div>
-          <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
-            {metrics.recentAudits.length} eventos
-          </Badge>
+          
+          {/* Container para Legenda + Badge */}
+          <div className="flex items-center gap-2">
+            {/* Botão Legenda - Pequeno e Discreto */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full 
+                  backdrop-blur-md bg-white/5 border border-white/10 
+                  text-muted-foreground hover:text-foreground hover:bg-white/10 
+                  transition-all duration-200">
+                  <Info className="h-3 w-3" />
+                  <span>Legenda</span>
+                </button>
+              </PopoverTrigger>
+              
+              <PopoverContent 
+                className="w-48 p-3 backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 
+                  border border-white/20 shadow-xl" 
+                align="end"
+              >
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-foreground mb-2 pb-1 border-b border-white/10">
+                    🏷️ Legenda dos Símbolos
+                  </h4>
+                  <div className="space-y-1.5 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400 text-sm">●</span>
+                      <span className="text-muted-foreground">Criar registro</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-blue-400 text-sm">◆</span>
+                      <span className="text-muted-foreground">Editar / Atribuir</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-400 text-sm">■</span>
+                      <span className="text-muted-foreground">Remover / Arquivar</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground text-sm">○</span>
+                      <span className="text-muted-foreground">Sistema / Segurança</span>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            {/* Badge contador existente */}
+            <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
+              {metrics.recentAudits.length} eventos
+            </Badge>
+          </div>
         </div>
         
         <ScrollArea className="h-[400px]">
