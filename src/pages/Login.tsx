@@ -9,10 +9,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
 import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
-import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, AlertCircle, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
+import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, AlertCircle, Clock, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
+import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
 import { ROUTES } from '@/constants/routes';
+import { cn } from '@/lib/utils';
 import { passwordResetStore } from '@/stores/password-reset-store';
 import type { UserRole } from '@/types/auth';
 
@@ -26,8 +28,10 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [remainingLockTime, setRemainingLockTime] = useState(0);
   const { user, login, isLoading, createDemoUser } = useAuth();
   const { toast } = useToast();
+  const { isLocked, getRemainingLockTime, recordFailedAttempt, resetAttempts, getAttemptsRemaining } = useLoginRateLimit();
   const formRef = useRef<HTMLFormElement>(null);
 
   // Form validation - computed values
@@ -119,6 +123,32 @@ const Login = () => {
     }
   };
 
+  // Atualizar countdown a cada segundo quando bloqueado
+  useEffect(() => {
+    if (email && isLocked(email)) {
+      const updateCountdown = () => {
+        const remaining = getRemainingLockTime(email);
+        setRemainingLockTime(remaining);
+        if (remaining <= 0) {
+          setFormError('');
+          setShowError(false);
+        }
+      };
+      
+      updateCountdown();
+      const interval = setInterval(updateCountdown, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setRemainingLockTime(0);
+    }
+  }, [email, isLocked, getRemainingLockTime]);
+  
+  const formatCountdown = (ms: number): string => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   if (user) {
     const redirectPath = getRoleBasedRoute(user.role);
     return <Navigate to={redirectPath} replace />;
@@ -129,6 +159,15 @@ const Login = () => {
     
     // Prevent double submission
     if (isFormSubmitting) {
+      return;
+    }
+    
+    // Verificar bloqueio ANTES de tentar login
+    if (email && isLocked(email)) {
+      const remaining = getRemainingLockTime(email);
+      setRemainingLockTime(remaining);
+      setFormError(`Conta temporariamente bloqueada. Tente novamente em ${formatCountdown(remaining)}.`);
+      setShowError(true);
       return;
     }
     
@@ -155,6 +194,9 @@ const Login = () => {
       const result = await login(email.trim(), password);
       
       if (result.success) {
+        // Limpar tentativas após sucesso
+        resetAttempts(email);
+        
         // Save email preference
         if (rememberEmail) {
           localStorage.setItem('comunika.loginSettings', JSON.stringify({
@@ -172,15 +214,42 @@ const Login = () => {
           description: "Bem-vindo ao Comunika.",
         });
       } else {
-        setFormError(result.error || "Email ou senha incorretos.");
-        setShowError(true);
+        // Registrar falha
+        recordFailedAttempt(email);
         
-        // Toast de erro
-        toast({
-          variant: "destructive",
-          title: "Falha no login",
-          description: result.error || "Email ou senha incorretos. Verifique suas credenciais.",
-        });
+        const attemptsRemaining = getAttemptsRemaining(email);
+        
+        // Verificar se atingiu limite após esta falha
+        if (isLocked(email)) {
+          const lockTime = getRemainingLockTime(email);
+          setRemainingLockTime(lockTime);
+          setFormError(`Muitas tentativas incorretas. Conta bloqueada por ${formatCountdown(lockTime)}.`);
+          
+          toast({
+            variant: "destructive",
+            title: "Conta bloqueada",
+            description: `Muitas tentativas falhadas. Tente novamente em ${formatCountdown(lockTime)}.`,
+          });
+        } else {
+          setFormError(result.error || "Email ou senha incorretos.");
+          
+          // Avisar se está próximo do limite
+          if (attemptsRemaining <= 2) {
+            toast({
+              variant: "destructive",
+              title: "Falha no login",
+              description: `Email ou senha incorretos. Restam ${attemptsRemaining} tentativa${attemptsRemaining > 1 ? 's' : ''} antes do bloqueio.`,
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Falha no login",
+              description: result.error || "Email ou senha incorretos. Verifique suas credenciais.",
+            });
+          }
+        }
+        
+        setShowError(true);
         
         // Focus first invalid field
         const emailInput = document.getElementById('email') as HTMLInputElement;
@@ -356,13 +425,37 @@ const Login = () => {
               <CardContent className="space-y-5 px-6 pb-6">
                 {formError && (
                   <div 
-                    className="flex items-center gap-2 py-3 px-4 bg-destructive/15 border border-destructive/30 rounded-lg text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300"
+                    className={cn(
+                      "flex items-center gap-2 py-3 px-4 rounded-lg text-sm animate-in fade-in slide-in-from-top-2 duration-300",
+                      email && isLocked(email)
+                        ? "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-pulse"
+                        : "bg-destructive/15 border border-destructive/30 text-destructive"
+                    )}
                     role="alert"
                     aria-live="assertive"
                     id="form-error"
                   >
-                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {email && isLocked(email) ? (
+                      <Clock className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                    )}
                     <span>{formError}</span>
+                  </div>
+                )}
+                
+                {email && !isLocked(email) && getAttemptsRemaining(email) < 5 && getAttemptsRemaining(email) > 0 && (
+                  <div 
+                    className="flex items-center gap-2 py-2 px-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-600 dark:text-amber-400"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    <span>
+                      {getAttemptsRemaining(email) === 1 
+                        ? "Última tentativa antes do bloqueio temporário."
+                        : `Restam ${getAttemptsRemaining(email)} tentativas antes do bloqueio.`}
+                    </span>
                   </div>
                 )}
                 
@@ -382,10 +475,10 @@ const Login = () => {
                         onChange={(e) => {
                           setEmail(e.target.value.trim());
                         }}
-                        className="pl-10 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                        className="pl-10 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
                         required
                         autoComplete="email"
-                        disabled={isFormSubmitting}
+                        disabled={isFormSubmitting || (email && isLocked(email))}
                         aria-invalid={!!formError}
                         aria-describedby={formError ? "form-error" : undefined}
                       />
@@ -407,10 +500,10 @@ const Login = () => {
                         onChange={(e) => {
                           setPassword(e.target.value);
                         }}
-                        className="pl-10 pr-11 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                        className="pl-10 pr-11 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
                         required
                         autoComplete="current-password"
-                        disabled={isFormSubmitting}
+                        disabled={isFormSubmitting || (email && isLocked(email))}
                         aria-invalid={!!formError}
                         aria-describedby={formError ? "form-error" : undefined}
                       />
@@ -460,11 +553,18 @@ const Login = () => {
                     loading={isFormSubmitting}
                     success={showSuccess}
                     error={showError}
-                    disabled={isFormSubmitting}
-                    ariaLabel={isFormSubmitting ? "Fazendo login..." : "Fazer login no Comunika"}
+                    disabled={isFormSubmitting || (email && isLocked(email))}
+                    ariaLabel={email && isLocked(email) ? `Bloqueado - ${formatCountdown(remainingLockTime)}` : (isFormSubmitting ? "Fazendo login..." : "Fazer login no Comunika")}
                     className="w-full h-12"
                   >
-                    {isFormSubmitting ? 'Entrando...' : 'Entrar'}
+                    {email && isLocked(email) ? (
+                      <>
+                        <Clock className="mr-2 h-5 w-5" />
+                        Bloqueado ({formatCountdown(remainingLockTime)})
+                      </>
+                    ) : (
+                      isFormSubmitting ? 'Entrando...' : 'Entrar'
+                    )}
                   </HoloCTA>
 
                   <div className="text-center pt-1">
