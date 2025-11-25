@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InputPhone } from '@/components/ui/input-phone';
 import { Label } from '@/components/ui/label';
-import { Loader2, RefreshCw, Eye, EyeOff, Shield, Info } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, RefreshCw, Eye, EyeOff, Shield, Info, Key, Building2, CheckCircle2 } from 'lucide-react';
 import { SecretariaFormData, Secretaria } from '@/types/secretaria';
 import {
   validateName, 
@@ -19,6 +22,8 @@ import { toast } from 'sonner';
 import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
 import { useSchool } from '@/contexts/SchoolContext';
+import { useSecretariaPermissions } from '@/hooks/useSecretariaPermissions';
+import { useAvailableSchools } from '@/hooks/useAvailableSchools';
 
 interface SecretariaFormModalProps {
   open: boolean;
@@ -64,6 +69,13 @@ export function SecretariaFormModal({
   const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
+  
+  // Permissões
+  const { grantSchoolAccess, revokeSchoolAccess, fetchSecretariaPermissions } = useSecretariaPermissions();
+  const { schools, loading: loadingSchools } = useAvailableSchools();
+  const [hasMultiSchoolAccess, setHasMultiSchoolAccess] = useState(false);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+  const [allSchools, setAllSchools] = useState(false);
 
   // Helper para mapear campos do backend para o DuplicateWarning
   const mapFieldType = (field: string): 'email' | 'name' | 'phone' | 'document' | 'enrollment' => {
@@ -90,6 +102,9 @@ export function SecretariaFormModal({
           password: '',
           phone: secretaria.phone || ''
         });
+        
+        // Carregar permissões existentes
+        loadExistingPermissions();
       } else {
         // Modo de criação: gerar nova senha
         const newPassword = generateSecurePassword();
@@ -106,6 +121,32 @@ export function SecretariaFormModal({
       }, 100);
     }
   }, [open, secretaria]);
+
+  // Carregar permissões existentes
+  const loadExistingPermissions = async () => {
+    if (!secretaria) return;
+    
+    const permissions = await fetchSecretariaPermissions(secretaria.id);
+    
+    if (permissions && permissions.length > 0) {
+      const manageAllSchoolsPerm = permissions.find(p => p.permission_key === 'manage_all_schools');
+      
+      if (manageAllSchoolsPerm) {
+        setHasMultiSchoolAccess(true);
+        
+        const permValue = manageAllSchoolsPerm.permission_value as any;
+        const schoolIds = permValue?.schools || [];
+        
+        if (schoolIds.includes('*') || schoolIds === '*') {
+          setAllSchools(true);
+          setSelectedSchools(schools.map(s => s.id));
+        } else {
+          setAllSchools(false);
+          setSelectedSchools(schoolIds);
+        }
+      }
+    }
+  };
 
   // Regenerar senha
   const handleRegeneratePassword = () => {
@@ -247,6 +288,8 @@ export function SecretariaFormModal({
         const success = await onUpdate(secretaria.id, updates);
         
         if (success) {
+          // Salvar permissões
+          await savePermissions(secretaria.id);
           toast.success('Alterações salvas com sucesso');
           handleClose();
         } else {
@@ -264,8 +307,11 @@ export function SecretariaFormModal({
               email: normalizedData.email,
               password: normalizedData.password
             });
-            setShowCredentials(true);
             
+            // Nota: permissões serão salvas após criar o usuário
+            // mas como não temos o ID ainda, isso será feito via modal de permissões
+            
+            setShowCredentials(true);
             toast.success(`${normalizedData.name} foi cadastrada no sistema`);
           }
         } catch (error: any) {
@@ -313,13 +359,56 @@ export function SecretariaFormModal({
     }
   };
 
+  // Salvar permissões
+  const savePermissions = async (secretariaId: string) => {
+    try {
+      if (!hasMultiSchoolAccess) {
+        // Remover permissões se desativado
+        await revokeSchoolAccess(secretariaId);
+      } else {
+        // Conceder permissões
+        const schoolIdsToGrant = allSchools ? '*' : selectedSchools;
+        
+        if (!allSchools && selectedSchools.length === 0) {
+          return; // Sem escolas selecionadas, não fazer nada
+        }
+        
+        await grantSchoolAccess(secretariaId, schoolIdsToGrant);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar permissões:', error);
+      toast.error('Erro ao salvar permissões');
+    }
+  };
+
   // Reset completo ao fechar
   const handleClose = () => {
     setFormData({ name: '', email: '', password: '', phone: '' });
     setErrors({});
     setTouched({});
     setShowPassword(false);
+    setHasMultiSchoolAccess(false);
+    setSelectedSchools([]);
+    setAllSchools(false);
     onOpenChange(false);
+  };
+
+  // Helpers para gerenciar escolas
+  const toggleSchool = (schoolId: string) => {
+    setSelectedSchools(prev => {
+      if (prev.includes(schoolId)) {
+        return prev.filter(id => id !== schoolId);
+      } else {
+        return [...prev, schoolId];
+      }
+    });
+  };
+
+  const toggleAllSchools = (checked: boolean) => {
+    setAllSchools(checked);
+    if (checked) {
+      setSelectedSchools(schools.map(s => s.id));
+    }
   };
 
   // Fechar tudo após ver credenciais
@@ -531,6 +620,90 @@ export function SecretariaFormModal({
                 Formato: (11) 99999-9999
               </p>
             </div>
+
+            {/* Permissões de Acesso (apenas para edição) */}
+            {isEditing && (
+              <Card className="glass-card border-primary/20">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Key className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Permissões de Acesso</h3>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/50">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="multi-school-access" className="text-sm font-medium">
+                        Acesso a Múltiplas Escolas
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Permitir gerenciar professores em outras escolas
+                      </p>
+                    </div>
+                    <Switch
+                      id="multi-school-access"
+                      checked={hasMultiSchoolAccess}
+                      onCheckedChange={setHasMultiSchoolAccess}
+                    />
+                  </div>
+
+                  {hasMultiSchoolAccess && (
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">Escolas Disponíveis</Label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="all-schools-form"
+                            checked={allSchools}
+                            onCheckedChange={toggleAllSchools}
+                          />
+                          <Label htmlFor="all-schools-form" className="text-sm cursor-pointer">
+                            Todas as escolas
+                          </Label>
+                        </div>
+                      </div>
+
+                      {loadingSchools ? (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        <div className="border border-border/50 rounded-lg p-3 space-y-2 max-h-[180px] overflow-y-auto">
+                          {schools.map((school) => (
+                            <div
+                              key={school.id}
+                              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent/50 transition-colors"
+                            >
+                              <Checkbox
+                                id={`school-form-${school.id}`}
+                                checked={selectedSchools.includes(school.id)}
+                                onCheckedChange={() => toggleSchool(school.id)}
+                                disabled={allSchools}
+                              />
+                              <Label
+                                htmlFor={`school-form-${school.id}`}
+                                className="flex-1 cursor-pointer flex items-center gap-2 text-sm"
+                              >
+                                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span>{school.name}</span>
+                              </Label>
+                              {selectedSchools.includes(school.id) && (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {!allSchools && selectedSchools.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {selectedSchools.length} escola(s) selecionada(s)
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Ações */}
             <div className="flex justify-end gap-2 pt-4">
