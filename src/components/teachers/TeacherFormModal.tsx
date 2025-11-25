@@ -22,7 +22,7 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { Person, TeacherExtra } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2 } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
@@ -30,6 +30,7 @@ import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
 import { useSchool } from '@/contexts/SchoolContext';
 import { onlyDigits } from '@/lib/validation';
 import { DuplicateWarning } from '@/components/forms/DuplicateWarning';
+import { useAvailableSchools } from '@/hooks/useAvailableSchools';
 
 const teacherSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(120, 'Nome muito longo'),
@@ -126,6 +127,8 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [userConfirmedDuplicates, setUserConfirmedDuplicates] = useState(false);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [isMultiSchool, setIsMultiSchool] = useState(false);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   
   const { createTeacher, updateTeacher } = useTeachers();
   const { classes, updateClass } = useClassStore();
@@ -133,6 +136,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const { toast } = useToast();
   const { currentSchool } = useSchool();
   const { checkDuplicates, isChecking } = useDuplicateCheck();
+  const { schools: availableSchools } = useAvailableSchools();
 
   // Função de validação preventiva por etapa
   const validateDuplicatesForStep = async (step: number): Promise<boolean> => {
@@ -211,6 +215,9 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   useEffect(() => {
     if (open) {
       setCurrentStep(0); // Reset step when modal opens
+      setIsMultiSchool(false);
+      setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+      
       if (teacher) {
         const teacherData = teacher.preferences?.teacher || {};
         form.reset({
@@ -243,7 +250,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         });
       }
     }
-  }, [teacher, open, form]);
+  }, [teacher, open, form, currentSchool]);
 
   const activeClasses = classes.filter(c => c.status === 'ATIVA')
     .sort((a, b) => {
@@ -333,10 +340,11 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           description: "As informações do professor foram atualizadas com sucesso.",
         });
       } else {
-        // Create new teacher - usando apenas os dados básicos
+        // Create new teacher com múltiplas escolas
         const result = await createTeacher({
           name: data.name,
           email: data.email,
+          schoolIds: isMultiSchool ? selectedSchools : [currentSchool!.id],
         });
 
         // Mostrar credenciais após criação
@@ -628,6 +636,91 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           </FormItem>
         )}
       />
+
+      {/* Múltiplas Escolas */}
+      {!teacher && availableSchools.length > 1 && (
+        <div className="space-y-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Professor em Múltiplas Escolas</Label>
+              <p className="text-xs text-muted-foreground">
+                Permite que este professor acesse mais de uma escola
+              </p>
+            </div>
+            <Switch
+              checked={isMultiSchool}
+              onCheckedChange={(checked) => {
+                setIsMultiSchool(checked);
+                if (!checked) {
+                  setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+                }
+              }}
+            />
+          </div>
+
+          {isMultiSchool && (
+            <div className="space-y-3 pt-3 border-t border-primary/10">
+              <Label className="text-sm font-medium">Selecione as Escolas</Label>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {availableSchools.map((school) => (
+                  <div
+                    key={school.id}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer",
+                      selectedSchools.includes(school.id)
+                        ? "bg-primary/10 border-primary/40 shadow-sm"
+                        : "bg-background/50 border-border/30 hover:bg-accent/5"
+                    )}
+                    onClick={() => {
+                      setSelectedSchools(prev => {
+                        if (prev.includes(school.id)) {
+                          // Não permite remover se for a única escola
+                          if (prev.length === 1) {
+                            toast({
+                              title: "Aviso",
+                              description: "Pelo menos uma escola deve estar selecionada",
+                              variant: "default"
+                            });
+                            return prev;
+                          }
+                          return prev.filter(id => id !== school.id);
+                        }
+                        return [...prev, school.id];
+                      });
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedSchools.includes(school.id)}
+                      onCheckedChange={() => {}}
+                      disabled={selectedSchools.includes(school.id) && selectedSchools.length === 1}
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                      {school.logo_url ? (
+                        <img
+                          src={school.logo_url}
+                          alt={school.name}
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{school.name}</p>
+                        <p className="text-xs text-muted-foreground">{school.slug}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {selectedSchools.length} escola(s) selecionada(s)
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {teacher && (
         <FormField
