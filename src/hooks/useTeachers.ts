@@ -294,7 +294,24 @@ export function useTeachers() {
         const schoolsToRemove = currentSchoolIds.filter(schoolId => 
           !updates.schoolIds!.includes(schoolId) && schoolId !== primarySchoolId
         );
+        
+        // Log de auditoria para cada escola removida
         for (const schoolId of schoolsToRemove) {
+          // Buscar dados da escola para log
+          const { data: schoolData } = await supabase
+            .from('schools')
+            .select('name')
+            .eq('id', schoolId)
+            .single();
+
+          // Buscar turmas afetadas para incluir no log
+          const { data: affectedClasses } = await supabase
+            .from('classes')
+            .select('id, name')
+            .eq('main_teacher_id', id)
+            .eq('school_id', schoolId)
+            .eq('status', 'Ativa');
+
           const { error: deleteError } = await supabase.from('school_memberships')
             .delete()
             .eq('user_id', id)
@@ -307,6 +324,21 @@ export function useTeachers() {
           }
           
           console.log('🗑️ [useTeachers] Removido membership:', schoolId);
+
+          // Registrar remoção no histórico de auditoria
+          await logAudit({
+            action: 'DELETE',
+            entity: 'TEACHER',
+            entity_id: id,
+            entity_label: `${updates.name || 'Professor'} removido de ${schoolData?.name || 'escola desconhecida'}`,
+            meta: {
+              removed_school_id: schoolId,
+              removed_school_name: schoolData?.name || 'Desconhecida',
+              affected_classes: affectedClasses?.map(c => ({ id: c.id, name: c.name })) || [],
+              affected_classes_count: affectedClasses?.length || 0
+            },
+            school_id: schoolId
+          });
         }
         
         console.log('✅ [useTeachers] Sincronização de memberships completa');
