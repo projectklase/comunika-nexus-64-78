@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { CalendarFilters } from '@/components/calendar/CalendarFilters';
 import { AdvancedCalendarFilters, AdvancedFilters } from '@/components/calendar/AdvancedCalendarFilters';
@@ -18,6 +20,9 @@ import { useUnifiedCalendarFocus } from '@/hooks/useUnifiedCalendarFocus';
 import { useStoreInitialization } from '@/hooks/useStoreInitialization';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { RESPONSIVE_CLASSES } from '@/lib/responsive-utils';
+import { cn } from '@/lib/utils';
 import { postStore } from '@/stores/post-store';
 import { PostInput, PostType } from '@/types/post';
 import { canAccessOperations } from '@/utils/auth-helpers';
@@ -35,6 +40,7 @@ export default function SecretariaCalendar() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   // Initialize stores once
   useStoreInitialization();
@@ -175,66 +181,113 @@ export default function SecretariaCalendar() {
     }
   };
 
+  // Calculate active filters count for mobile badge
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (!advancedFilters.events) count++;
+    if (!advancedFilters.deadlines) count++;
+    if (!advancedFilters.showHolidays) count++;
+    if (advancedFilters.postTypes.length > 0) count++;
+    if (advancedFilters.classIds.length > 0) count++;
+    if (advancedFilters.authorNames.length > 0) count++;
+    if (advancedFilters.searchQuery) count++;
+    return count;
+  }, [advancedFilters]);
+
   return (
     <CalendarModalProvider>
       <CalendarErrorBoundary>
-        <div className="container mx-auto p-6 space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+          {/* Header Responsivo */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold gradient-text">
+              <h1 className="text-2xl sm:text-3xl font-bold gradient-text">
                 Calendário da Secretaria
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground hidden sm:block mt-1">
                 Gerencie eventos, atividades e prazos de toda a escola
               </p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 onClick={goToToday}
                 variant="outline" 
-                size="sm"
-                className="glass border-primary/30 text-primary hover:bg-primary/10"
+                size={isMobile ? "sm" : "default"}
+                className={cn("glass border-primary/30", RESPONSIVE_CLASSES.iconButton)}
               >
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Hoje
+                <CalendarIcon className="h-4 w-4" />
+                <span className="ml-2">Hoje</span>
               </Button>
               
               <Button
                 onClick={() => setShowEventComposer(true)}
-                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg"
+                size={isMobile ? "sm" : "default"}
+                className={cn(
+                  "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg",
+                  RESPONSIVE_CLASSES.iconButton
+                )}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Post
+                <Plus className="h-4 w-4" />
+                <span className="ml-2">Novo Post</span>
               </Button>
             </div>
           </div>
 
-          {/* Filters */}
-          <Card className="glass border-primary/20">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
-                Filtros Avançados
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdvancedCalendarFilters
-                activeFilters={advancedFilters}
-                onFiltersChange={handleFiltersChange}
-                eventCount={calendarData.events.filter(e => e.type === 'event').length}
-                deadlineCount={calendarData.events.filter(e => e.type === 'deadline').length}
-                totalCount={calendarData.events.length}
-              />
-            </CardContent>
-          </Card>
+          {/* Filtros Avançados - Desktop Card, Mobile Sheet */}
+          {isMobile ? (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full gap-2">
+                  <Settings className="h-4 w-4" />
+                  Filtros Avançados
+                  {activeFiltersCount > 0 && (
+                    <Badge variant="secondary" className="ml-1">
+                      {activeFiltersCount}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[85vh]">
+                <SheetHeader>
+                  <SheetTitle>Filtros Avançados</SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="h-full pr-4 mt-4">
+                  <AdvancedCalendarFilters
+                    activeFilters={advancedFilters}
+                    onFiltersChange={handleFiltersChange}
+                    eventCount={calendarData.events.filter(e => e.type === 'event').length}
+                    deadlineCount={calendarData.events.filter(e => e.type === 'deadline').length}
+                    totalCount={calendarData.events.length}
+                  />
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <Card className="glass border-primary/20">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-primary" />
+                  Filtros Avançados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AdvancedCalendarFilters
+                  activeFilters={advancedFilters}
+                  onFiltersChange={handleFiltersChange}
+                  eventCount={calendarData.events.filter(e => e.type === 'event').length}
+                  deadlineCount={calendarData.events.filter(e => e.type === 'deadline').length}
+                  totalCount={calendarData.events.length}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Calendar Navigation and Grid */}
           <div className="space-y-4">
-            {/* Navigation Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            {/* Navigation Header Responsivo */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -244,7 +297,7 @@ export default function SecretariaCalendar() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
-                <h2 className="text-xl font-semibold text-foreground min-w-[200px] text-center">
+                <h2 className="text-base sm:text-xl font-semibold text-foreground min-w-[140px] sm:min-w-[200px] text-center">
                   {formatDateHeader()}
                 </h2>
                 
@@ -258,22 +311,22 @@ export default function SecretariaCalendar() {
                 </Button>
               </div>
 
-              {/* View Switcher */}
+              {/* View Switcher - compacto no mobile */}
               <Tabs value={view} onValueChange={handleViewChange}>
                 <TabsList className="glass border border-border/30">
-                  <TabsTrigger value="month" className="flex items-center gap-2">
+                  <TabsTrigger value="month" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
                     <Grid3X3 className="h-4 w-4" />
-                    Mês
+                    <span className="hidden sm:inline">Mês</span>
                   </TabsTrigger>
-                  <TabsTrigger value="week" className="flex items-center gap-2">
+                  <TabsTrigger value="week" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
                     <Rows4 className="h-4 w-4" />
-                    Semana
+                    <span className="hidden sm:inline">Semana</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
 
-            {/* Calendar Grid - Secretaria */}
+            {/* Calendar Grid */}
             <CalendarGrid
               currentDate={currentDate}
               view={view}
@@ -282,18 +335,24 @@ export default function SecretariaCalendar() {
                 events: advancedFilters.events,
                 deadlines: advancedFilters.deadlines
               }}
-              classId={undefined} // Secretaria vê todas as turmas
+              classId={undefined}
             />
           </div>
 
-          {/* Drag and Drop Instructions for Secretaria */}
-          <div className="glass p-4 rounded-lg border border-primary/30">
-            <p className="text-sm text-muted-foreground">
-              💡 <strong>Dica:</strong> Você pode arrastar eventos (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                📅 EVENTO
-              </span>
-              ) para mover suas datas. Clique em qualquer dia para ver todos os eventos e atividades em detalhes com opções de gerenciamento.
+          {/* Dica responsiva */}
+          <div className="glass p-3 sm:p-4 rounded-lg border border-primary/30">
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              💡 <strong>Dica:</strong> {isMobile 
+                ? "Arraste eventos para mover datas. Toque em um dia para detalhes." 
+                : (
+                  <>
+                    Você pode arrastar eventos (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      📅 EVENTO
+                    </span>
+                    ) para mover suas datas. Clique em qualquer dia para ver todos os eventos e atividades em detalhes com opções de gerenciamento.
+                  </>
+                )}
             </p>
           </div>
 
