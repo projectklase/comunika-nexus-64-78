@@ -22,7 +22,7 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { Person, TeacherExtra } from '@/types/class';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2, Building2 } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Loader2, Building2, School } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { validatePhone, validateEmail, validateBio } from '@/lib/validation';
 import { CredentialsDialog } from '@/components/students/CredentialsDialog';
@@ -47,7 +47,6 @@ const teacherSchema = z.object({
     if (!phones || phones.length === 0) return true;
     return phones.every(phone => validatePhone(phone) === null);
   }, 'Um ou mais telefones são inválidos'),
-  photoUrl: z.string().optional(),
   hiredAt: z.date().optional(),
   bio: z.string().optional().refine((bio) => {
     if (!bio) return true;
@@ -69,10 +68,6 @@ const teacherSchema = z.object({
     city: z.string().optional(),
     state: z.string().optional(),
     zip: z.string().optional(),
-  }).optional(),
-  consents: z.object({
-    image: z.boolean().optional(),
-    whatsapp: z.boolean().optional(),
   }).optional(),
   notes: z.string().optional(),
 }).refine((data) => {
@@ -208,7 +203,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       classIds: [],
       availability: { daysOfWeek: [] },
       address: {},
-      consents: { image: false, whatsapp: false },
     },
   });
 
@@ -226,7 +220,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           document: teacherData.document,
           email: teacher.email,
           phones: teacherData.phones || [],
-          photoUrl: teacherData.photoUrl,
           hiredAt: teacherData.hiredAt ? new Date(teacherData.hiredAt) : undefined,
           bio: teacherData.bio,
           qualifications: teacherData.qualifications || [],
@@ -235,7 +228,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           classIds: teacherData.classIds || [],
           availability: teacherData.availability || { daysOfWeek: [] },
           address: teacherData.address || {},
-          consents: teacherData.consents || { image: false, whatsapp: false },
           notes: teacherData.notes,
         });
 
@@ -262,7 +254,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
           classIds: [],
           availability: { daysOfWeek: [] },
           address: {},
-          consents: { image: false, whatsapp: false },
         });
       }
     }
@@ -289,14 +280,12 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         document: data.document,
         phones: data.phones,
         email: data.email,
-        photoUrl: data.photoUrl,
         bio: data.bio,
         qualifications: data.qualifications,
         specialties: data.specialties,
         workloadHours: data.workloadHours,
         availability: data.availability,
         address: data.address,
-        consents: data.consents,
         classIds: data.classIds,
         hiredAt: data.hiredAt ? data.hiredAt.toISOString() : undefined,
         notes: data.notes,
@@ -655,90 +644,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         )}
       />
 
-      {/* Múltiplas Escolas - FASE 1: Mostrar na edição também */}
-      {availableSchools.length > 1 && (
-        <div className="space-y-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-sm font-medium">Professor em Múltiplas Escolas</Label>
-              <p className="text-xs text-muted-foreground">
-                Permite que este professor acesse mais de uma escola
-              </p>
-            </div>
-            <Switch
-              checked={isMultiSchool}
-              onCheckedChange={(checked) => {
-                setIsMultiSchool(checked);
-                if (!checked) {
-                  setSelectedSchools(currentSchool ? [currentSchool.id] : []);
-                }
-              }}
-            />
-          </div>
-
-          {isMultiSchool && (
-            <div className="space-y-3 pt-3 border-t border-primary/10">
-              <Label className="text-sm font-medium">Selecione as Escolas</Label>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {availableSchools.map((school) => (
-                  <div
-                    key={school.id}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer",
-                      selectedSchools.includes(school.id)
-                        ? "bg-primary/10 border-primary/40 shadow-sm"
-                        : "bg-background/50 border-border/30 hover:bg-accent/5"
-                    )}
-                    onClick={() => {
-                      setSelectedSchools(prev => {
-                        if (prev.includes(school.id)) {
-                          // Não permite remover se for a única escola
-                          if (prev.length === 1) {
-                            toast({
-                              title: "Aviso",
-                              description: "Pelo menos uma escola deve estar selecionada",
-                              variant: "default"
-                            });
-                            return prev;
-                          }
-                          return prev.filter(id => id !== school.id);
-                        }
-                        return [...prev, school.id];
-                      });
-                    }}
-                  >
-                    <Checkbox
-                      checked={selectedSchools.includes(school.id)}
-                      onCheckedChange={() => {}}
-                      disabled={selectedSchools.includes(school.id) && selectedSchools.length === 1}
-                    />
-                    <div className="flex items-center gap-2 flex-1">
-                      {school.logo_url ? (
-                        <img
-                          src={school.logo_url}
-                          alt={school.name}
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Building2 className="h-4 w-4 text-primary" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">{school.name}</p>
-                        <p className="text-xs text-muted-foreground">{school.slug}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {selectedSchools.length} escola(s) selecionada(s)
-              </p>
-            </div>
-          )}
-        </div>
-      )}
 
       {teacher && (
         <FormField
@@ -822,19 +727,100 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
         </div>
       </div>
 
-      <FormField
-        control={form.control}
-        name="photoUrl"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>URL da Foto</FormLabel>
-            <FormControl>
-              <Input placeholder="https://exemplo.com/foto.jpg" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* Seção de Múltiplas Escolas */}
+      <Card className="p-6 space-y-4 glass">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <School className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold">Múltiplas Escolas</h3>
+            <p className="text-sm text-muted-foreground">
+              Configure se este professor atua em mais de uma unidade
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Professor em Múltiplas Escolas</p>
+                <p className="text-sm text-muted-foreground">
+                  Permite acesso a mais de uma unidade escolar
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={isMultiSchool}
+              onCheckedChange={(checked) => {
+                setIsMultiSchool(checked);
+                if (!checked) {
+                  setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+                }
+              }}
+            />
+          </div>
+
+          {isMultiSchool && (
+            <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+              <Label className="text-sm font-medium">
+                Selecione as escolas onde este professor atua:
+              </Label>
+              <div className="space-y-2">
+                {availableSchools.map((school) => (
+                  <div
+                    key={school.id}
+                    className="flex items-center space-x-2 p-3 rounded-lg border bg-background/50 hover:bg-accent/50 transition-colors"
+                  >
+                    <Checkbox
+                      id={`school-${school.id}`}
+                      checked={selectedSchools.includes(school.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedSchools([...selectedSchools, school.id]);
+                        } else {
+                          if (selectedSchools.length > 1 || school.id !== currentSchool?.id) {
+                            setSelectedSchools(selectedSchools.filter(id => id !== school.id));
+                          }
+                        }
+                      }}
+                      disabled={school.id === currentSchool?.id && selectedSchools.length === 1}
+                    />
+                    <Label
+                      htmlFor={`school-${school.id}`}
+                      className="flex-1 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        {school.logo_url && (
+                          <img src={school.logo_url} alt={school.name} className="h-6 w-6 rounded" />
+                        )}
+                        <span className="font-medium">{school.name}</span>
+                        {school.id === currentSchool?.id && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            Escola Atual
+                          </span>
+                        )}
+                      </div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {selectedSchools.length} escola(s) selecionada(s)
+              </p>
+            </div>
+          )}
+
+          {availableSchools.length === 1 && (
+            <p className="text-sm text-muted-foreground italic pl-4">
+              Apenas uma escola disponível. Para atribuir este professor a múltiplas escolas,
+              adicione mais escolas ao sistema ou solicite acesso a outras unidades.
+            </p>
+          )}
+        </div>
+      </Card>
 
       <FormField
         control={form.control}
@@ -1190,39 +1176,6 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
               )}
             />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Consentimentos</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <FormField
-            control={form.control}
-            name="consents.image"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormLabel>Consentimento para uso de imagem</FormLabel>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="consents.whatsapp"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormLabel>Consentimento para WhatsApp</FormLabel>
-              </FormItem>
-            )}
-          />
         </CardContent>
       </Card>
 
