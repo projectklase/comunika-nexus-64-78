@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-First Design Tokens */
+@import './styles/mobile-tokens.css';
+
 /* Comunika Design System - Dark High-Tech Theme */
 
 @layer base {
