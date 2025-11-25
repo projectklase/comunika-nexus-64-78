@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/Layout/AppLayout';
+import { PageLayout } from '@/components/ui/page-layout';
 import { TeacherFormModal } from '@/components/teachers/TeacherFormModal';
 import { TeacherCSVImportModal } from '@/components/teachers/TeacherCSVImportModal';
 import { TeacherBulkActions } from '@/components/teachers/TeacherBulkActions';
@@ -11,17 +12,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users, Loader2, Eye } from 'lucide-react';
+import { Search, Plus, FileDown, FileUp, MoreHorizontal, Edit, Archive, Trash2, Users, Loader2, Eye, Filter } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { RESPONSIVE_CLASSES } from '@/lib/responsive-utils';
+import { cn } from '@/lib/utils';
 
 export default function TeachersPage() {
+  const isMobile = useIsMobile();
   const { 
     teachers,
     loading,
@@ -65,12 +71,9 @@ export default function TeachersPage() {
       return [];
     }
     
-    // Buscar turmas onde o professor é o main_teacher
     const teacherClasses = classes.filter(cls => 
-      cls.teachers.includes(teacherId) // teachers é um array com [main_teacher_id]
+      cls.teachers.includes(teacherId)
     );
-    
-    console.log(`🏫 [TeachersPage] Professor ${teacherId}: ${teacherClasses.length} turma(s)`);
     
     return teacherClasses.map(cls => ({
       id: cls.id,
@@ -80,37 +83,28 @@ export default function TeachersPage() {
   };
 
   const getTeacherPhone = (teacher: any) => {
-    // Prioridade 1: Telefones em preferences.teacher.phones (array)
     const phonesArray = teacher.preferences?.teacher?.phones;
     if (phonesArray && phonesArray.length > 0) {
-      console.log(`📱 [TeachersPage] Professor ${teacher.name}: telefone de preferences:`, phonesArray[0]);
       return phonesArray[0];
     }
     
-    // Prioridade 2: Campo phone direto (fallback)
     if (teacher.phone) {
-      console.log(`📱 [TeachersPage] Professor ${teacher.name}: telefone direto:`, teacher.phone);
       return teacher.phone;
     }
     
-    console.log(`📱 [TeachersPage] Professor ${teacher.name}: sem telefone`);
     return '-';
   };
 
-  // Determina a rota correta baseada no role do usuário
   const getClassRoute = (classId: string): string => {
     if (!user) return `/secretaria/turmas/${classId}`;
     
-    // Professor vê sua própria visualização
     if (user.role === 'professor') {
       return `/professor/turma/${classId}`;
     }
     
-    // Secretaria e Admin veem a visualização de gestão
     return `/secretaria/turmas/${classId}`;
   };
 
-  // Handler para abrir modal de turmas
   const handleOpenClassesModal = (teacher: any) => {
     const teacherClasses = getTeacherClasses(teacher.id);
     setSelectedTeacherClasses(teacherClasses);
@@ -118,15 +112,13 @@ export default function TeachersPage() {
     setClassesModalOpen(true);
   };
 
-  // Handler para navegar para turma
   const handleNavigateToClass = (classId: string) => {
     const route = getClassRoute(classId);
     navigate(route);
-    setClassesModalOpen(false); // Fechar modal após navegação
+    setClassesModalOpen(false);
   };
 
   const handleArchiveTeacher = async (id: string) => {
-    // Archive functionality not implemented in this version
     console.log('Archive teacher:', id);
   };
 
@@ -210,222 +202,379 @@ export default function TeachersPage() {
     { value: 'Domingo', label: 'Domingo' },
   ];
 
-  return (
-    <AppLayout>
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold gradient-text">Professores</h1>
-            <p className="text-muted-foreground">Gerenciar cadastro de professores</p>
+  // Header Actions Component
+  const HeaderActions = () => (
+    <>
+      <Button 
+        variant="outline" 
+        size={isMobile ? "sm" : "default"}
+        onClick={() => setImportModalOpen(true)}
+        className={RESPONSIVE_CLASSES.iconButton}
+      >
+        <FileUp className="h-4 w-4" />
+        <span className="ml-2">Importar</span>
+      </Button>
+      <Button 
+        variant="outline" 
+        size={isMobile ? "sm" : "default"}
+        onClick={handleExportCSV}
+        className={RESPONSIVE_CLASSES.iconButton}
+      >
+        <FileDown className="h-4 w-4" />
+        <span className="ml-2">Exportar</span>
+      </Button>
+      <Button 
+        size={isMobile ? "sm" : "default"}
+        onClick={openNewTeacherModal}
+        className={RESPONSIVE_CLASSES.iconButton}
+      >
+        <Plus className="h-4 w-4" />
+        <span className="ml-2">Novo Professor</span>
+      </Button>
+    </>
+  );
+
+  // Filters Content Component
+  const FiltersContent = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Buscar</label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Nome ou e-mail"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Status</label>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="active">Ativo</SelectItem>
+            <SelectItem value="inactive">Arquivado</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Turma</label>
+        <Select value={classFilter} onValueChange={setClassFilter}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Dia da Semana</label>
+        <Select value={dayFilter} onValueChange={setDayFilter}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {daysOfWeek.map(day => (
+              <SelectItem key={day.value} value={day.value}>
+                {day.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  // Mobile Filters Sheet Component
+  const MobileFiltersSheet = () => {
+    const activeFiltersCount = [statusFilter, classFilter, dayFilter]
+      .filter(f => f !== 'all').length + (searchQuery ? 1 : 0);
+
+    return (
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Filter className="h-4 w-4" />
+            Filtros
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="h-[80vh]">
+          <SheetHeader>
+            <SheetTitle>Filtrar Professores</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <FiltersContent />
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setImportModalOpen(true)}>
-              <FileUp className="h-4 w-4 mr-2" />
-              Importar CSV
-            </Button>
-            <Button variant="outline" onClick={handleExportCSV}>
-              <FileDown className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
-            <Button onClick={openNewTeacherModal}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Professor
-            </Button>
+        </SheetContent>
+      </Sheet>
+    );
+  };
+
+  // Render Teacher Card for Mobile
+  const renderTeacherCard = (teacher: any) => {
+    const teacherClasses = getTeacherClasses(teacher.id);
+    
+    return (
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              checked={isTeacherSelected(teacher.id)}
+              onCheckedChange={(checked) => handleSelectTeacher(teacher, checked as boolean)}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold truncate">{teacher.name}</h3>
+              <p className="text-sm text-muted-foreground truncate">{teacher.email || '-'}</p>
+            </div>
           </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => openEditTeacherModal(teacher)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleArchiveTeacher(teacher.id)}>
+                <Archive className="h-4 w-4 mr-2" />
+                Arquivar
+              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir o professor "{teacher.name}"? 
+                      Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => handleDeleteTeacher(teacher.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Buscar</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Nome ou e-mail"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Arquivado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Turma</label>
-                <Select value={classFilter} onValueChange={setClassFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Dia da Semana</label>
-                <Select value={dayFilter} onValueChange={setDayFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {daysOfWeek.map(day => (
-                      <SelectItem key={day.value} value={day.value}>
-                        {day.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="mt-3 space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Telefone:</span>
+            <span>{getTeacherPhone(teacher)}</span>
+          </div>
+          
+          {teacherClasses.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-muted-foreground">Turmas:</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => handleOpenClassesModal(teacher)}
+                className="h-8 gap-1"
+              >
+                <Eye className="h-4 w-4" />
+                {teacherClasses.length}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          )}
+          
+          <Badge variant="default">Ativo</Badge>
+        </div>
+      </CardContent>
+    );
+  };
 
+  return (
+    <AppLayout>
+      <PageLayout
+        title="Professores"
+        subtitle="Gerenciar cadastro de professores"
+        actions={<HeaderActions />}
+        filters={
+          <div className="glass rounded-lg p-4">
+            <FiltersContent />
+          </div>
+        }
+        mobileFilters={<MobileFiltersSheet />}
+      >
         <TeacherBulkActions 
           selectedTeachers={selectedTeachers}
           onClearSelection={() => setSelectedTeachers([])}
         />
-
-        <Card className="glass">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">
-                    <Checkbox
-                      checked={filteredTeachers.length > 0 && selectedTeachers.length === filteredTeachers.length}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Turmas</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
+        
+        {isMobile ? (
+          <div className="space-y-3">
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Carregando professores...</span>
+              </div>
+            ) : filteredTeachers.length === 0 ? (
+              <div className="text-center p-8 text-muted-foreground">
+                Nenhum professor encontrado
+              </div>
+            ) : (
+              filteredTeachers.map((teacher) => (
+                <Card key={teacher.id} className="glass-card">
+                  {renderTeacherCard(teacher)}
+                </Card>
+              ))
+            )}
+          </div>
+        ) : (
+          <Card className="glass">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Carregando professores...</span>
-                      </div>
-                    </TableCell>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={filteredTeachers.length > 0 && selectedTeachers.length === filteredTeachers.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Turmas</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[100px]">Ações</TableHead>
                   </TableRow>
-                ) : filteredTeachers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Nenhum professor encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTeachers.map((teacher) => {
-                    const teacherClasses = getTeacherClasses(teacher.id);
-                    return (
-                      <TableRow key={teacher.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedTeachers.some(t => t.id === teacher.id)}
-                            onCheckedChange={(checked) => handleSelectTeacher(teacher, checked as boolean)}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">{teacher.name}</TableCell>
-                        <TableCell>{teacher.email || '-'}</TableCell>
-                        <TableCell>{getTeacherPhone(teacher)}</TableCell>
-                <TableCell>
-                  {teacherClasses.length > 0 ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleOpenClassesModal(teacher)}
-                      className="h-8 gap-2 hover:bg-accent"
-                    >
-                      <Eye className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">{teacherClasses.length}</span>
-                    </Button>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">-</span>
-                  )}
-                </TableCell>
-                        <TableCell>
-                          <Badge variant="default">
-                            Ativo
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditTeacherModal(teacher)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleArchiveTeacher(teacher.id)}>
-                                <Archive className="h-4 w-4 mr-2" />
-                                Arquivar
-                              </DropdownMenuItem>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Excluir
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza que deseja excluir o professor "{teacher.name}"? 
-                                      Esta ação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                      onClick={() => handleDeleteTeacher(teacher.id)}
-                                      className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Carregando professores...</span>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  ) : filteredTeachers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        Nenhum professor encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredTeachers.map((teacher) => {
+                      const teacherClasses = getTeacherClasses(teacher.id);
+                      return (
+                        <TableRow key={teacher.id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedTeachers.some(t => t.id === teacher.id)}
+                              onCheckedChange={(checked) => handleSelectTeacher(teacher, checked as boolean)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{teacher.name}</TableCell>
+                          <TableCell>{teacher.email || '-'}</TableCell>
+                          <TableCell>{getTeacherPhone(teacher)}</TableCell>
+                          <TableCell>
+                            {teacherClasses.length > 0 ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenClassesModal(teacher)}
+                                className="h-8 gap-2 hover:bg-accent"
+                              >
+                                <Eye className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium">{teacherClasses.length}</span>
+                              </Button>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="default">Ativo</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEditTeacherModal(teacher)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleArchiveTeacher(teacher.id)}>
+                                  <Archive className="h-4 w-4 mr-2" />
+                                  Arquivar
+                                </DropdownMenuItem>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir o professor "{teacher.name}"? 
+                                        Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => handleDeleteTeacher(teacher.id)}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                      >
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         <TeacherFormModal
           open={modalOpen}
@@ -433,8 +582,6 @@ export default function TeachersPage() {
             setModalOpen(open);
             if (!open) {
               setEditingTeacher(null);
-              // Refresh the list when modal closes
-              fetchTeachers();
             }
           }}
           teacher={editingTeacher}
@@ -442,50 +589,39 @@ export default function TeachersPage() {
 
         <TeacherCSVImportModal
           open={importModalOpen}
-          onOpenChange={setImportModalOpen}
+          onOpenChange={(open) => {
+            setImportModalOpen(open);
+            if (!open) {
+              fetchTeachers({});
+            }
+          }}
         />
 
-        {/* Modal de Turmas do Professor */}
         <Dialog open={classesModalOpen} onOpenChange={setClassesModalOpen}>
-          <DialogContent className="sm:max-w-[500px] backdrop-blur-xl bg-background/95 border border-white/20 shadow-2xl">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold">
-                Turmas de {selectedTeacherName}
-              </DialogTitle>
+              <DialogTitle>Turmas de {selectedTeacherName}</DialogTitle>
             </DialogHeader>
-            
-            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+            <div className="space-y-2">
               {selectedTeacherClasses.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Nenhuma turma encontrada</p>
-                </div>
+                <p className="text-muted-foreground">Este professor não está vinculado a nenhuma turma.</p>
               ) : (
                 selectedTeacherClasses.map((cls) => (
-                  <div
+                  <Button
                     key={cls.id}
-                    className="group flex items-center justify-between p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-accent/50 transition-all duration-200"
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleNavigateToClass(cls.id)}
                   >
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">{cls.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">{cls.code}</p>
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      onClick={() => handleNavigateToClass(cls.id)}
-                      className="ml-4 gap-2 shrink-0"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      Ver Turma
-                    </Button>
-                  </div>
+                    <Users className="h-4 w-4 mr-2" />
+                    {cls.name} {cls.code && `(${cls.code})`}
+                  </Button>
                 ))
               )}
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </PageLayout>
     </AppLayout>
   );
 }

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/Layout/AppLayout';
+import { PageLayout } from '@/components/ui/page-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   Table,
   TableBody,
@@ -29,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreVertical, Archive, RotateCcw, Shield, Trash2, Edit, Key } from 'lucide-react';
+import { Plus, Search, MoreVertical, Archive, RotateCcw, Trash2, Edit, Key, Filter } from 'lucide-react';
 import { useSecretarias } from '@/hooks/useSecretarias';
 import { SecretariaFormModal } from '@/components/admin/SecretariaFormModal';
 import { SecretariaPermissionsModal } from '@/components/admin/SecretariaPermissionsModal';
@@ -37,8 +39,12 @@ import { Secretaria } from '@/types/secretaria';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useSecretariaPermissions } from '@/hooks/useSecretariaPermissions';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { RESPONSIVE_CLASSES } from '@/lib/responsive-utils';
+import { cn } from '@/lib/utils';
 
 export default function SecretariasPage() {
+  const isMobile = useIsMobile();
   const {
     secretarias,
     loading,
@@ -95,7 +101,6 @@ export default function SecretariasPage() {
   const activeCount = secretarias.filter(s => s.is_active).length;
   const inactiveCount = secretarias.filter(s => !s.is_active).length;
 
-  // Carregar badges de permissões
   useEffect(() => {
     const loadPermissionsBadges = async () => {
       const idsWithPerms = new Set<string>();
@@ -115,226 +120,359 @@ export default function SecretariasPage() {
     }
   }, [secretarias, fetchSecretariaPermissions]);
 
+  // Header Actions Component
+  const HeaderActions = () => (
+    <Button 
+      size={isMobile ? "sm" : "default"}
+      onClick={() => setCreateModalOpen(true)}
+      className={RESPONSIVE_CLASSES.iconButton}
+    >
+      <Plus className="h-4 w-4" />
+      <span className="ml-2">Nova Secretaria</span>
+    </Button>
+  );
+
+  // Filters Content Component
+  const FiltersContent = () => (
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome ou email..."
+          value={filters.search}
+          onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+          className="pl-9"
+        />
+      </div>
+      
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={filters.status === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFilters({ ...filters, status: 'all' })}
+        >
+          Todos
+        </Button>
+        <Button
+          variant={filters.status === 'active' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFilters({ ...filters, status: 'active' })}
+        >
+          Ativos
+        </Button>
+        <Button
+          variant={filters.status === 'inactive' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFilters({ ...filters, status: 'inactive' })}
+        >
+          Inativos
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Mobile Filters Sheet Component
+  const MobileFiltersSheet = () => {
+    const activeFiltersCount = (filters.status !== 'all' ? 1 : 0) + (filters.search ? 1 : 0);
+
+    return (
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Filter className="h-4 w-4" />
+            Filtros
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="h-[60vh]">
+          <SheetHeader>
+            <SheetTitle>Filtrar Secretarias</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <FiltersContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  };
+
+  // Render Secretaria Card for Mobile
+  const renderSecretariaCard = (secretaria: Secretaria) => (
+    <CardContent className="p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={secretaria.avatar} />
+            <AvatarFallback>{getInitials(secretaria.name)}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold truncate">{secretaria.name}</h3>
+              {secretariasWithPermissions.has(secretaria.id) && (
+                <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                  <Key className="h-3 w-3 mr-1" />
+                  Permissões+
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground truncate">{secretaria.email}</p>
+          </div>
+        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedSecretaria(secretaria);
+                setEditModalOpen(true);
+              }}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedSecretaria(secretaria);
+                setPermissionsModalOpen(true);
+              }}
+            >
+              <Key className="mr-2 h-4 w-4" />
+              Gerenciar Permissões
+            </DropdownMenuItem>
+            {secretaria.is_active ? (
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedSecretaria(secretaria);
+                  setArchiveDialogOpen(true);
+                }}
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Arquivar
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedSecretaria(secretaria);
+                  setReactivateDialogOpen(true);
+                }}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Reativar
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedSecretaria(secretaria);
+                setDeleteDialogOpen(true);
+              }}
+              className="text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Tel:</span>
+        <span>{secretaria.phone || '—'}</span>
+        <span className="text-muted-foreground mx-1">•</span>
+        <span className="text-muted-foreground">Criado:</span>
+        <span>{format(new Date(secretaria.created_at), 'dd/MM/yy', { locale: ptBR })}</span>
+        <Badge variant={secretaria.is_active ? 'default' : 'secondary'} className="ml-auto">
+          {secretaria.is_active ? 'Ativo' : 'Inativo'}
+        </Badge>
+      </div>
+    </CardContent>
+  );
+
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Shield className="h-8 w-8 text-primary" />
-              Gerenciar Secretarias
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Gerencie usuários com acesso administrativo à secretaria
-            </p>
+      <PageLayout
+        title="Gerenciar Secretarias"
+        subtitle="Gerencie usuários com acesso administrativo à secretaria"
+        actions={<HeaderActions />}
+        filters={
+          <div className="glass rounded-lg p-4">
+            <FiltersContent />
           </div>
-          <Button onClick={() => setCreateModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Secretaria
-          </Button>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{secretarias.length}</div>
+        }
+        mobileFilters={<MobileFiltersSheet />}
+      >
+        {/* Stats Cards Responsivos */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <Card className="glass-card">
+            <CardContent className="p-3 sm:p-6 text-center">
+              <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
+              <p className="text-xl sm:text-3xl font-bold">{secretarias.length}</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Ativos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">{activeCount}</div>
+          <Card className="glass-card">
+            <CardContent className="p-3 sm:p-6 text-center">
+              <p className="text-xs sm:text-sm text-muted-foreground">Ativos</p>
+              <p className="text-xl sm:text-3xl font-bold text-green-600">{activeCount}</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Inativos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-muted-foreground">{inactiveCount}</div>
+          <Card className="glass-card">
+            <CardContent className="p-3 sm:p-6 text-center">
+              <p className="text-xs sm:text-sm text-muted-foreground">Inativos</p>
+              <p className="text-xl sm:text-3xl font-bold text-muted-foreground">{inactiveCount}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-            <CardDescription>
-              Busque e filtre as secretarias cadastradas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome ou email..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  className="pl-9"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={filters.status === 'all' ? 'default' : 'outline'}
-                  onClick={() => setFilters({ ...filters, status: 'all' })}
-                >
-                  Todos
-                </Button>
-                <Button
-                  variant={filters.status === 'active' ? 'default' : 'outline'}
-                  onClick={() => setFilters({ ...filters, status: 'active' })}
-                >
-                  Ativos
-                </Button>
-                <Button
-                  variant={filters.status === 'inactive' ? 'default' : 'outline'}
-                  onClick={() => setFilters({ ...filters, status: 'inactive' })}
-                >
-                  Inativos
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Secretarias</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {isMobile ? (
+          <div className="space-y-3">
             {loading ? (
-              <div className="flex justify-center py-8">
+              <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : secretarias.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center p-8 text-muted-foreground">
                 Nenhuma secretaria encontrada
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Usuário</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {secretarias.map((secretaria) => (
-                    <TableRow key={secretaria.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={secretaria.avatar} />
-                            <AvatarFallback>{getInitials(secretaria.name)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{secretaria.name}</span>
-                            {secretariasWithPermissions.has(secretaria.id) && (
-                              <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                <Key className="h-3 w-3 mr-1" />
-                                Permissões+
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{secretaria.email}</TableCell>
-                      <TableCell>{secretaria.phone || '—'}</TableCell>
-                      <TableCell>
-                        <Badge variant={secretaria.is_active ? 'default' : 'secondary'}>
-                          {secretaria.is_active ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(secretaria.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedSecretaria(secretaria);
-                                setEditModalOpen(true);
-                              }}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedSecretaria(secretaria);
-                                setPermissionsModalOpen(true);
-                              }}
-                            >
-                              <Key className="mr-2 h-4 w-4" />
-                              Gerenciar Permissões
-                            </DropdownMenuItem>
-                            {secretaria.is_active ? (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedSecretaria(secretaria);
-                                  setArchiveDialogOpen(true);
-                                }}
-                              >
-                                <Archive className="mr-2 h-4 w-4" />
-                                Arquivar
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedSecretaria(secretaria);
-                                  setReactivateDialogOpen(true);
-                                }}
-                              >
-                                <RotateCcw className="mr-2 h-4 w-4" />
-                                Reativar
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedSecretaria(secretaria);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              secretarias.map((sec) => (
+                <Card key={sec.id} className="glass-card">
+                  {renderSecretariaCard(sec)}
+                </Card>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista de Secretarias</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : secretarias.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhuma secretaria encontrada
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Usuário</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Criado em</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {secretarias.map((secretaria) => (
+                      <TableRow key={secretaria.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage src={secretaria.avatar} />
+                              <AvatarFallback>{getInitials(secretaria.name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{secretaria.name}</span>
+                              {secretariasWithPermissions.has(secretaria.id) && (
+                                <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                  <Key className="h-3 w-3 mr-1" />
+                                  Permissões+
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{secretaria.email}</TableCell>
+                        <TableCell>{secretaria.phone || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant={secretaria.is_active ? 'default' : 'secondary'}>
+                            {secretaria.is_active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(secretaria.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedSecretaria(secretaria);
+                                  setEditModalOpen(true);
+                                }}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedSecretaria(secretaria);
+                                  setPermissionsModalOpen(true);
+                                }}
+                              >
+                                <Key className="mr-2 h-4 w-4" />
+                                Gerenciar Permissões
+                              </DropdownMenuItem>
+                              {secretaria.is_active ? (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedSecretaria(secretaria);
+                                    setArchiveDialogOpen(true);
+                                  }}
+                                >
+                                  <Archive className="mr-2 h-4 w-4" />
+                                  Arquivar
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedSecretaria(secretaria);
+                                    setReactivateDialogOpen(true);
+                                  }}
+                                >
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Reativar
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedSecretaria(secretaria);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Modals */}
         <SecretariaFormModal
@@ -421,7 +559,7 @@ export default function SecretariasPage() {
           onOpenChange={setPermissionsModalOpen}
           secretaria={selectedSecretaria}
         />
-      </div>
+      </PageLayout>
     </AppLayout>
   );
 }
