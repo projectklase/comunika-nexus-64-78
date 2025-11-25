@@ -119,6 +119,7 @@ export function useTeachers() {
     email: string;
     password?: string;
     phone?: string;
+    schoolIds?: string[]; // NOVO: Array de escolas onde professor atua
   }) => {
     // ✅ Guard clause
     if (!currentSchool) {
@@ -168,6 +169,29 @@ export function useTeachers() {
       }
 
       console.log('✅ [useTeachers] Professor criado com sucesso');
+
+      // ✅ NOVO: Se professor atua em múltiplas escolas, criar memberships adicionais
+      if (teacherData.schoolIds && teacherData.schoolIds.length > 1) {
+        console.log('🏫 [useTeachers] Criando memberships em múltiplas escolas:', teacherData.schoolIds);
+        
+        const userId = responseData.user_id;
+        
+        // Criar membership em cada escola adicional (primeira já foi criada pela edge function)
+        const additionalSchools = teacherData.schoolIds.filter(id => id !== currentSchool.id);
+        
+        for (const schoolId of additionalSchools) {
+          await supabase
+            .from('school_memberships')
+            .insert({
+              user_id: userId,
+              school_id: schoolId,
+              role: 'professor',
+              is_primary: false, // Apenas a primeira é primary
+            });
+        }
+        
+        console.log('✅ [useTeachers] Memberships criados em', additionalSchools.length, 'escolas adicionais');
+      }
       
       // CORREÇÃO 4: Melhor feedback para o usuário
       toast.success(
