@@ -133,7 +133,7 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   
   const { createTeacher, updateTeacher } = useTeachers();
-  const { schools: availableSchools, refetch: refetchSchools } = useAvailableSchools();
+  const { schools: availableSchools, loading: loadingSchools, refetch: refetchSchools } = useAvailableSchools();
   const { classes, updateClass } = useClassStore();
   const { subjects } = useSubjects();
   const { toast } = useToast();
@@ -216,62 +216,73 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
   // Load teacher data for editing
   useEffect(() => {
     if (open) {
-      // Refetch escolas para garantir dados atualizados
-      refetchSchools();
-      
       setCurrentStep(0); // Reset step when modal opens
-      if (teacher) {
-        const teacherData = teacher.preferences?.teacher || {};
-        form.reset({
-          name: teacher.name,
-          document: teacherData.document,
-          email: teacher.email,
-          phones: teacherData.phones || [],
-          photoUrl: teacherData.photoUrl,
-          hiredAt: teacherData.hiredAt ? new Date(teacherData.hiredAt) : undefined,
-          bio: teacherData.bio,
-          qualifications: teacherData.qualifications || [],
-          specialties: teacherData.specialties || [],
-          workloadHours: teacherData.workloadHours,
-          classIds: teacherData.classIds || [],
-          availability: teacherData.availability || { daysOfWeek: [] },
-          address: teacherData.address || {},
-          consents: teacherData.consents || { image: false, whatsapp: false },
-          notes: teacherData.notes,
-        });
-        
-        // Buscar escolas do professor ao editar
-        const fetchTeacherSchools = async () => {
-          const { data } = await supabase
-            .from('school_memberships')
-            .select('school_id')
-            .eq('user_id', teacher.id);
-          
-          if (data && data.length > 1) {
-            setIsMultiSchool(true);
-            setSelectedSchools(data.map(m => m.school_id));
-          } else {
-            setIsMultiSchool(false);
-            setSelectedSchools(currentSchool ? [currentSchool.id] : []);
-          }
-        };
-        fetchTeacherSchools();
-      } else {
-        form.reset({
-          name: '',
-          phones: [],
-          qualifications: [],
-          specialties: [],
-          classIds: [],
-          availability: { daysOfWeek: [] },
-          address: {},
-          consents: { image: false, whatsapp: false },
-        });
-        setIsMultiSchool(false);
-        setSelectedSchools(currentSchool ? [currentSchool.id] : []);
-      }
+      
+      // Pequeno delay para garantir que user está disponível antes de refetch
+      const timer = setTimeout(() => {
+        console.log('🔄 [TeacherFormModal] Refetching schools...');
+        refetchSchools();
+      }, 150);
+      
+      const cleanup = () => clearTimeout(timer);
+      
+      return cleanup;
     }
-  }, [teacher, open, form, currentSchool]);
+  }, [open, refetchSchools]);
+
+  // Separate effect for loading teacher data
+  useEffect(() => {
+    if (open && teacher) {
+      const teacherData = teacher.preferences?.teacher || {};
+      form.reset({
+        name: teacher.name,
+        document: teacherData.document,
+        email: teacher.email,
+        phones: teacherData.phones || [],
+        photoUrl: teacherData.photoUrl,
+        hiredAt: teacherData.hiredAt ? new Date(teacherData.hiredAt) : undefined,
+        bio: teacherData.bio,
+        qualifications: teacherData.qualifications || [],
+        specialties: teacherData.specialties || [],
+        workloadHours: teacherData.workloadHours,
+        classIds: teacherData.classIds || [],
+        availability: teacherData.availability || { daysOfWeek: [] },
+        address: teacherData.address || {},
+        consents: teacherData.consents || { image: false, whatsapp: false },
+        notes: teacherData.notes,
+      });
+      
+      // Buscar escolas do professor ao editar
+      const fetchTeacherSchools = async () => {
+        const { data } = await supabase
+          .from('school_memberships')
+          .select('school_id')
+          .eq('user_id', teacher.id);
+        
+        if (data && data.length > 1) {
+          setIsMultiSchool(true);
+          setSelectedSchools(data.map(m => m.school_id));
+        } else {
+          setIsMultiSchool(false);
+          setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+        }
+      };
+      fetchTeacherSchools();
+    } else {
+      form.reset({
+        name: '',
+        phones: [],
+        qualifications: [],
+        specialties: [],
+        classIds: [],
+        availability: { daysOfWeek: [] },
+        address: {},
+        consents: { image: false, whatsapp: false },
+      });
+      setIsMultiSchool(false);
+      setSelectedSchools(currentSchool ? [currentSchool.id] : []);
+    }
+  }, [open, teacher, form, currentSchool, availableSchools]);
 
   const activeClasses = classes.filter(c => c.status === 'ATIVA')
     .sort((a, b) => {
@@ -826,7 +837,15 @@ export function TeacherFormModal({ open, onOpenChange, teacher }: TeacherFormMod
       </div>
 
       {/* Seção de Múltiplas Escolas */}
-      {availableSchools.length === 1 ? (
+      {loadingSchools ? (
+        // Loading state
+        <Card className="glass-card">
+          <CardContent className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+            <span className="text-muted-foreground">Carregando escolas disponíveis...</span>
+          </CardContent>
+        </Card>
+      ) : availableSchools.length === 1 ? (
         // Secretária SEM permissões - UI bloqueada
         <Card className="glass-card border-muted/30 opacity-80">
           <CardHeader className="pb-3">

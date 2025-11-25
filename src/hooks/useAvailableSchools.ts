@@ -19,9 +19,9 @@ export function useAvailableSchools() {
 
   const fetchAvailableSchools = useCallback(async () => {
     if (!user || !user.id) {
-      console.log('⚠️ [useAvailableSchools] User não disponível ainda');
+      console.log('⚠️ [useAvailableSchools] User não disponível ainda, aguardando...');
       setSchools([]);
-      setLoading(false);
+      // NÃO setar loading false aqui - manter loading até ter user
       return;
     }
 
@@ -29,7 +29,7 @@ export function useAvailableSchools() {
     setError(null);
 
     try {
-      console.log('🏫 [useAvailableSchools] Buscando escolas disponíveis para:', user.email, 'ID:', user.id);
+      console.log('🏫 [useAvailableSchools] Iniciando busca para:', user.email, 'ID:', user.id);
 
       // 1. Buscar escolas via school_memberships (normal)
       const { data: memberships, error: memberError } = await supabase
@@ -59,10 +59,17 @@ export function useAvailableSchools() {
         console.warn('⚠️ [useAvailableSchools] Erro ao buscar permissões (ignorável):', permError);
       }
 
+      console.log('📊 [useAvailableSchools] Resultado das permissões:', {
+        encontradas: permissions?.length || 0,
+        userId: user.id,
+        userEmail: user.email,
+        permissoes: permissions
+      });
+
       let additionalSchools: School[] = [];
 
       if (permissions && permissions.length > 0) {
-        console.log('🔑 [useAvailableSchools] Permissões encontradas:', permissions);
+        console.log('🔑 [useAvailableSchools] Processando permissões:', permissions);
 
         // Coletar IDs de escolas adicionais das permissões
         const additionalSchoolIds: string[] = [];
