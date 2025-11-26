@@ -260,6 +260,10 @@ export function NotificationPanel() {
             )}
           </div>
           
+          {/* Chips */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {getNotificationChips(notification)}
+          </div>
           
           {/* Contact Phone */}
           {notification.meta?.contactPhone && (
@@ -277,7 +281,7 @@ export function NotificationPanel() {
           )}
           
           {/* Meta info */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground/80 mb-3 overflow-hidden">
+          <div className="flex items-center justify-between text-xs text-muted-foreground/80 mb-3">
             <span className="font-medium">
               {formatDistanceToNow(new Date(notification.createdAt), { 
                 addSuffix: true, 
@@ -286,7 +290,7 @@ export function NotificationPanel() {
             </span>
             
               {notification.meta?.authorName && (
-                <span className="text-primary/70 truncate max-w-[80px] min-w-0 flex-shrink">por {notification.meta.authorName}</span>
+                <span className="text-primary/70 truncate max-w-[100px]">por {notification.meta.authorName}</span>
               )}
           </div>
           
@@ -398,7 +402,7 @@ export function NotificationPanel() {
       return (
         <div className="space-y-3 pb-4 w-full max-w-full overflow-hidden">
           {/* Tab actions */}
-          <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm p-3 mb-4 border-b border-border/20 rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm p-3 mb-4 border-b border-border/20 rounded-lg">
             <div className="flex items-center gap-2">
               {tabUnreadCount > 0 ? (
                 <>
