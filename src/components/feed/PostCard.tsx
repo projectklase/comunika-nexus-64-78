@@ -548,12 +548,6 @@ export function PostCard({
                 {isPostSaved ? "Salvo" : "Salvar"}
               </Button>
 
-              {/* Go to Calendar - generic */}
-              {!isActivity && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Ver no calendário">
-                  <CalendarPlus className="h-3 w-3 mr-1" />
-                  Ver no Calendário
-                </Button>}
-
               {/* View Invitations - for EVENTO with invitations enabled (Secretaria only) */}
               {post.type === "EVENTO" && post.allowInvitations && canEdit && onViewInvitations && <Button size="sm" variant="outline" onClick={() => onViewInvitations(post)} className="text-xs text-purple-400 border-purple-500/50 hover:bg-purple-500/10 focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2" aria-label="Ver convites recebidos">
                   <Users className="h-3 w-3 mr-1" />
