@@ -10,9 +10,10 @@ import { ptBR } from 'date-fns/locale';
 interface SmartFeedInsightsProps {
   posts: Post[];
   className?: string;
+  compact?: boolean; // FASE 4: Modo compacto para mobile
 }
 
-export function SmartFeedInsights({ posts, className }: SmartFeedInsightsProps) {
+export function SmartFeedInsights({ posts, className, compact = false }: SmartFeedInsightsProps) {
   const insights = useMemo(() => {
     const todaysPosts = SmartPostFilters.getTodaysPosts(posts);
     const upcomingPosts = SmartPostFilters.getUpcomingPosts(posts, 7);
@@ -45,8 +46,8 @@ export function SmartFeedInsights({ posts, className }: SmartFeedInsightsProps) 
   if (insights.totalActive === 0) {
     return (
       <Card className={`glass-card border-border/50 ${className}`}>
-        <CardContent className="p-4 text-center">
-          <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto mb-2" />
+        <CardContent className={compact ? "p-3 text-center" : "p-4 text-center"}>
+          <CheckCircle2 className={`${compact ? 'h-6 w-6' : 'h-8 w-8'} text-emerald-400 mx-auto mb-2`} />
           <p className="text-sm text-muted-foreground">
             Nenhuma atividade pendente! 🎉
           </p>
@@ -55,6 +56,37 @@ export function SmartFeedInsights({ posts, className }: SmartFeedInsightsProps) 
     );
   }
 
+  // FASE 4: Versão compacta sticky para mobile
+  if (compact) {
+    return (
+      <Card className={`glass-card border-border/50 sticky top-4 z-10 ${className}`}>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Quick badges horizontalmente */}
+            <div className="flex items-center gap-3 flex-1">
+              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs flex items-center gap-1 px-2">
+                <Clock className="h-3 w-3" />
+                {insights.today}
+              </Badge>
+              <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 text-xs flex items-center gap-1 px-2">
+                <AlertTriangle className="h-3 w-3" />
+                {insights.urgent}
+              </Badge>
+              <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs flex items-center gap-1 px-2">
+                <Calendar className="h-3 w-3" />
+                {insights.upcoming}
+              </Badge>
+            </div>
+            <div className="text-xs text-muted-foreground whitespace-nowrap">
+              {insights.totalActive} ativos
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // FASE 4: Versão desktop completa
   return (
     <Card className={`glass-card border-border/50 ${className}`}>
       <CardContent className="p-4 space-y-3">
