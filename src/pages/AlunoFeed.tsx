@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Rss } from 'lucide-react';
 import { FilterBar } from '@/components/feed/FilterBar';
 import { PostList } from '@/components/feed/PostList';
 import { SmartFilterStatus } from '@/components/feed/SmartFilterStatus';
@@ -116,19 +117,21 @@ export default function AlunoFeed() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-6 space-y-6" role="main">
-        <header className="text-center space-y-2">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Feed do Aluno
-          </h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
+          <Rss className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold gradient-text">Feed do Aluno</h1>
           <p className="text-muted-foreground">
             Acompanhe as últimas atualizações da escola
           </p>
-        </header>
+        </div>
+      </div>
 
-        <div className="space-y-6">
-          <FilterBar onFilterChange={setFilter} />
+      <FilterBar onFilterChange={setFilter} />
           
           <SmartFilterStatus
             totalPosts={allPosts.length}
@@ -145,8 +148,6 @@ export default function AlunoFeed() {
             pageSize={preferences.pageSize}
             onInviteFriend={handleInviteFriend}
           />
-        </div>
-      </div>
       
       {/* Invite Friends Modal */}
       {selectedEventForInvite && user && (
