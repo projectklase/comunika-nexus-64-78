@@ -12,9 +12,11 @@ export type NotificationType =
   | "KOIN_BONUS"
   | "REDEMPTION_REQUESTED"
   | "REDEMPTION_APPROVED"
-  | "REDEMPTION_REJECTED";
+  | "REDEMPTION_REJECTED"
+  | "PASSWORD_CHANGE_REQUEST"
+  | "PASSWORD_CHANGED";
 
-export type RoleTarget = "SECRETARIA" | "PROFESSOR" | "ALUNO";
+export type RoleTarget = "SECRETARIA" | "PROFESSOR" | "ALUNO" | "ADMINISTRADOR";
 
 export interface Notification {
   id: string;

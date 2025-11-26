@@ -17,7 +17,7 @@ export const PasswordResetTester = () => {
   const createTestRequest = () => {
     try {
       const email = testEmail || `teste-${Date.now()}@comunika.com`;
-      const request = passwordResetStore.createRequest(email);
+      const request = await passwordResetStore.createRequest(email, 'test-id', 'Test User', 'aluno', undefined);
       
       console.log('🧪 Test password reset created:', {
         id: request.id,

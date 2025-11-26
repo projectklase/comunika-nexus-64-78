@@ -31,10 +31,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreVertical, Archive, RotateCcw, Trash2, Edit, Key, Filter } from 'lucide-react';
+import { Plus, Search, MoreVertical, Archive, RotateCcw, Trash2, Edit, Key, Filter, Shield } from 'lucide-react';
 import { useSecretarias } from '@/hooks/useSecretarias';
 import { SecretariaFormModal } from '@/components/admin/SecretariaFormModal';
 import { SecretariaPermissionsModal } from '@/components/admin/SecretariaPermissionsModal';
+import { PermissionsDashboard } from '@/components/admin/PermissionsDashboard';
 import { Secretaria } from '@/types/secretaria';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -63,6 +64,7 @@ export default function SecretariasPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
+  const [permissionsDashboardOpen, setPermissionsDashboardOpen] = useState(false);
   const [selectedSecretaria, setSelectedSecretaria] = useState<Secretaria | null>(null);
   
   const { fetchSecretariaPermissions } = useSecretariaPermissions();
@@ -122,14 +124,25 @@ export default function SecretariasPage() {
 
   // Header Actions Component
   const HeaderActions = () => (
-    <Button 
-      size={isMobile ? "sm" : "default"}
-      onClick={() => setCreateModalOpen(true)}
-      className={RESPONSIVE_CLASSES.iconButton}
-    >
-      <Plus className="h-4 w-4" />
-      <span className="ml-2">Nova Secretaria</span>
-    </Button>
+    <div className="flex gap-2">
+      <Button 
+        size={isMobile ? "sm" : "default"}
+        variant="outline"
+        onClick={() => setPermissionsDashboardOpen(true)}
+        className={RESPONSIVE_CLASSES.iconButton}
+      >
+        <Shield className="h-4 w-4" />
+        <span className="ml-2">Permissões</span>
+      </Button>
+      <Button 
+        size={isMobile ? "sm" : "default"}
+        onClick={() => setCreateModalOpen(true)}
+        className={RESPONSIVE_CLASSES.iconButton}
+      >
+        <Plus className="h-4 w-4" />
+        <span className="ml-2">Nova Secretaria</span>
+      </Button>
+    </div>
   );
 
   // Filters Content Component
@@ -558,6 +571,17 @@ export default function SecretariasPage() {
           open={permissionsModalOpen}
           onOpenChange={setPermissionsModalOpen}
           secretaria={selectedSecretaria}
+        />
+
+        {/* Permissions Dashboard */}
+        <PermissionsDashboard
+          open={permissionsDashboardOpen}
+          onOpenChange={(open) => {
+            setPermissionsDashboardOpen(open);
+            if (!open) {
+              // Refresh list when dashboard closes
+            }
+          }}
         />
       </PageLayout>
     </AppLayout>
