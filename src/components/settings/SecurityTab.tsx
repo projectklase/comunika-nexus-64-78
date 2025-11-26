@@ -258,7 +258,7 @@ export function SecurityTab() {
               <AlertDialogTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="w-full whitespace-nowrap"
+                  className="whitespace-nowrap"
                   disabled={isEndingSessions}
                 >
                   <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
