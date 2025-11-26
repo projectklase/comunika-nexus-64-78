@@ -4,6 +4,7 @@ import { PostCard } from './PostCard';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { a11y, useReducedMotion } from '@/utils/accessibility';
+import { useIsMobile } from '@/hooks/use-mobile'; // FASE 2: Detectar mobile
 
 interface PostListProps {
   posts: Post[];
@@ -21,6 +22,7 @@ interface PostListProps {
 export function PostList({ posts, canEdit, onArchive, onDuplicate, onEdit, onDelete, onUpdate, pageSize = 10, onInviteFriend, onViewInvitations }: PostListProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const reduceMotion = useReducedMotion();
+  const isMobile = useIsMobile(); // FASE 2: Detectar mobile para modo compacto
   
   // Memoize pagination calculations
   const paginationData = useMemo(() => {
@@ -72,7 +74,8 @@ export function PostList({ posts, canEdit, onArchive, onDuplicate, onEdit, onDel
 
   return (
     <div className="space-y-6" role="feed" aria-label="Lista de posts">
-      <div className="space-y-4" role="list">
+      {/* FASE 2: Espaçamento menor em mobile */}
+      <div className={`${isMobile ? 'space-y-3' : 'space-y-4'}`} role="list">
         {visiblePosts.map((post, index) => (
           <div key={post.id} role="listitem">
             <PostCard
@@ -85,6 +88,7 @@ export function PostList({ posts, canEdit, onArchive, onDuplicate, onEdit, onDel
               onUpdate={onUpdate}
               onInviteFriend={onInviteFriend}
               onViewInvitations={onViewInvitations}
+              compact={isMobile} // FASE 2: Passa modo compacto para mobile
             />
           </div>
         ))}
