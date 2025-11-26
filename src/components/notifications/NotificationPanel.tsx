@@ -444,7 +444,7 @@ export function NotificationPanel() {
   const panelContent = (
     <div
       ref={focusRef as React.RefObject<HTMLDivElement>}
-      className="w-full"
+      className="w-full h-full flex flex-col overflow-hidden"
       id="notifications-popover"
       role="dialog"
       aria-labelledby="notifications-title"
@@ -496,7 +496,7 @@ export function NotificationPanel() {
       <Tabs 
         value={activeTab} 
         onValueChange={(value) => setActiveTab(value as NotificationTab)}
-        className="w-full"
+        className="w-full flex-1 flex flex-col overflow-hidden"
       >
         <div className="px-6 pt-4">
           <TabsList className="grid w-full grid-cols-2 h-12 bg-glass/50 backdrop-blur-sm border border-border/20 p-1">
@@ -533,14 +533,14 @@ export function NotificationPanel() {
           </TabsList>
         </div>
         
-        <TabsContent value="novidades" className="mt-0">
-        <ScrollArea className="h-[500px] px-6 overflow-hidden">
+        <TabsContent value="novidades" className="mt-0 flex-1 overflow-hidden">
+        <ScrollArea className="h-full px-6 overflow-hidden">
             {renderTabContent('novidades')}
           </ScrollArea>
         </TabsContent>
         
-        <TabsContent value="importantes" className="mt-0">
-          <ScrollArea className="h-[500px] px-6 overflow-hidden">
+        <TabsContent value="importantes" className="mt-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-full px-6 overflow-hidden">
             {renderTabContent('importantes')}
           </ScrollArea>
         </TabsContent>
@@ -595,7 +595,7 @@ export function NotificationPanel() {
           <DrawerTrigger asChild>
             {bellTrigger}
           </DrawerTrigger>
-          <DrawerContent className="max-h-[80vh] z-[100]">
+          <DrawerContent className="max-h-[80vh] overflow-hidden z-[100]">
             {panelContent}
           </DrawerContent>
         </Drawer>
