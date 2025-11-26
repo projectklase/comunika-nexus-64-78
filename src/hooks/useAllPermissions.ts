@@ -27,13 +27,12 @@ interface UseAllPermissionsFilters {
 export function useAllPermissions() {
   const { currentSchool } = useSchool();
   const [permissions, setPermissions] = useState<PermissionWithDetails[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<UseAllPermissionsFilters>({});
 
   const fetchPermissions = useCallback(async () => {
-    if (!currentSchool?.id) return;
-
     setLoading(true);
+    console.log('[useAllPermissions] Iniciando busca de permissões...');
     try {
       // Buscar permissões com join em profiles e schools
       let query = supabase
@@ -58,7 +57,12 @@ export function useAllPermissions() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useAllPermissions] Erro ao buscar permissões:', error);
+        throw error;
+      }
+      
+      console.log('[useAllPermissions] Permissões carregadas:', data?.length || 0);
 
       // Transformar dados e resolver nomes de escolas
       const transformed: PermissionWithDetails[] = [];
@@ -99,13 +103,14 @@ export function useAllPermissions() {
       }
 
       setPermissions(transformed);
+      console.log('[useAllPermissions] Permissões transformadas com sucesso');
     } catch (error: any) {
-      console.error('Erro ao buscar permissões:', error);
+      console.error('[useAllPermissions] Erro ao buscar permissões:', error);
       toast.error('Falha ao carregar permissões');
     } finally {
       setLoading(false);
     }
-  }, [currentSchool?.id]);
+  }, []);
 
   useEffect(() => {
     fetchPermissions();
