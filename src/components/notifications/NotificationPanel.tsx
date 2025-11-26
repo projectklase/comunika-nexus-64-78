@@ -289,9 +289,9 @@ export function NotificationPanel() {
               })}
             </span>
             
-            {notification.meta?.authorName && (
-              <span className="text-primary/70">por {notification.meta.authorName}</span>
-            )}
+              {notification.meta?.authorName && (
+                <span className="text-primary/70 truncate max-w-[100px]">por {notification.meta.authorName}</span>
+              )}
           </div>
           
             {/* Action buttons */}
@@ -400,9 +400,9 @@ export function NotificationPanel() {
     }
     
       return (
-        <div className="space-y-3 pb-4">
+        <div className="space-y-3 pb-4 w-full max-w-full overflow-hidden">
           {/* Tab actions */}
-          <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm p-3 -m-3 mb-4 border-b border-border/20 rounded-lg">
+          <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm p-3 mb-4 border-b border-border/20 rounded-lg">
             <div className="flex items-center gap-2">
               {tabUnreadCount > 0 ? (
                 <>
@@ -424,7 +424,7 @@ export function NotificationPanel() {
                 variant="outline"
                 size="sm"
                 onClick={() => markAllAsRead(tab)}
-                className="text-xs h-7 px-3 bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
+                className="text-xs h-7 px-3 bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 whitespace-nowrap flex-shrink-0"
               >
                 <CheckCheck className="w-3 h-3 mr-1.5" />
                 Marcar como lidas
@@ -540,7 +540,7 @@ export function NotificationPanel() {
         </TabsContent>
         
         <TabsContent value="importantes" className="mt-0">
-          <ScrollArea className="h-[500px] px-6">
+          <ScrollArea className="h-[500px] px-6 overflow-hidden">
             {renderTabContent('importantes')}
           </ScrollArea>
         </TabsContent>
