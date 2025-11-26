@@ -90,10 +90,9 @@ export default function AlunoFeed() {
     
     // Apply sorting
     if (preferences.sortBy === 'recent') {
-      // FASE 1: Usa ordenação cronológica inteligente (prioriza últimas 24h, depois urgentes, depois por data)
-      posts = SmartPostFilters.sortChronologicalFirst(posts);
+      posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } else if (preferences.sortBy === 'urgency') {
-      // Ordenação por urgência temporal
+      // New: Ordenação por urgência temporal
       posts = SmartPostFilters.sortByUrgency(posts);
     } else {
       // 'relevant' sorting - use smart relevance sorting
@@ -128,11 +127,6 @@ export default function AlunoFeed() {
           </p>
         </header>
 
-        {/* FASE 4: Insights sticky no topo em mobile */}
-        <div className="lg:hidden">
-          <SmartFeedInsights posts={allPosts} compact />
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3 space-y-6">
             <FilterBar onFilterChange={setFilter} />
@@ -153,8 +147,7 @@ export default function AlunoFeed() {
             />
           </div>
           
-          {/* Desktop insights sidebar */}
-          <div className="hidden lg:block lg:col-span-1">
+          <div className="lg:col-span-1">
             <SmartFeedInsights posts={allPosts} />
           </div>
         </div>

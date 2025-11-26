@@ -24,7 +24,7 @@ const FILTERS_KEY = 'aluno_feed_filters';
 const defaultPreferences: AlunoFeedPreferences = {
   hideRead: false,
   hideExpired: true,
-  sortBy: 'recent', // FASE 1: Prioriza posts recentes ao invés de urgência
+  sortBy: 'urgency',
   pageSize: 10
 };
 

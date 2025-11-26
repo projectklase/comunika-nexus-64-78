@@ -41,7 +41,6 @@ interface PostCardProps {
   onUpdate?: () => void;
   onInviteFriend?: (post: Post) => void;
   onViewInvitations?: (post: Post) => void;
-  compact?: boolean; // FASE 2: Modo compacto para mobile
 }
 export function PostCard({
   post,
@@ -52,8 +51,7 @@ export function PostCard({
   onDelete,
   onUpdate,
   onInviteFriend,
-  onViewInvitations,
-  compact = false // FASE 2: Modo compacto para mobile
+  onViewInvitations
 }: PostCardProps) {
   const {
     user
@@ -329,30 +327,12 @@ export function PostCard({
 
   // Check if post is marked as important
   const isImportant = post.meta?.important === true;
-  
-  // FASE 5: Borda lateral colorida por tipo de post
-  const getTypeBorderColor = (type: PostType) => {
-    switch (type) {
-      case "AVISO": return "border-l-orange-500";
-      case "COMUNICADO": return "border-l-blue-500";
-      case "EVENTO": return "border-l-purple-500";
-      case "ATIVIDADE": return "border-l-green-500";
-      case "TRABALHO": return "border-l-yellow-500";
-      case "PROVA": return "border-l-red-500";
-      default: return "border-l-gray-500";
-    }
-  };
-  
   return <>
       <Card className={cn(
-        "glass-card overflow-hidden transition-all duration-300 border",
-        // FASE 5: Borda lateral colorida por tipo
-        !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
+        "glass-card overflow-hidden hover:shadow-xl transition-all duration-300 border",
         isNewPost && "border-l-4 border-l-primary",
         isPostToday && "border-2 border-yellow-500/50 bg-yellow-500/5 shadow-yellow-500/20 shadow-lg",
         "border-border/50",
-        // Efeito hover apenas em desktop
-        !compact && "hover:shadow-xl",
         isImportant && [
           "relative overflow-hidden",
           "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
@@ -360,7 +340,7 @@ export function PostCard({
           "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
           "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none"
         ]
-      )}
+      )} 
       role="article" 
       aria-labelledby={`post-title-${post.id}`} 
       tabIndex={0} 
@@ -368,22 +348,18 @@ export function PostCard({
       id={`post-${post.id}`} 
       data-important={isImportant}
       data-today={isPostToday}>
-        <CardHeader className={cn("pb-3", compact && "pb-2 pt-3")} role="banner">
+        <CardHeader className="pb-3" role="banner">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3 flex-1">
-              {/* FASE 2: Menos badges em modo compacto */}
-              <div className={cn("flex items-center gap-2", compact ? "gap-1.5 flex-nowrap overflow-x-auto" : "flex-wrap")}>
-                <Badge variant="outline" className={`${getTypeColor(post.type)} ${compact ? 'text-xs px-2' : 'font-medium'}`}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className={`${getTypeColor(post.type)} font-medium`}>
                   <span className="mr-1">{getTypeIcon(post.type)}</span>
-                  {compact ? post.type.substring(0, 3) : post.type}
+                  {post.type}
                 </Badge>
-                {/* FASE 2: Ocultar status em modo compacto, exceto se for agendado */}
-                {(!compact || post.status === 'SCHEDULED') && (
-                  <Badge variant="outline" className={`${getStatusColor(post.status)} ${compact && 'text-xs px-2'}`}>
-                    {compact && post.status === 'SCHEDULED' ? '⏰' : getStatusLabel(post.status)}
-                  </Badge>
-                )}
-                {isNewPost && <Badge className={`bg-primary/20 text-primary border-primary/30 ${compact ? 'text-xs px-2' : 'text-xs'}`}>Novo</Badge>}
+                <Badge variant="outline" className={getStatusColor(post.status)}>
+                  {getStatusLabel(post.status)}
+                </Badge>
+                {isNewPost && <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">Novo</Badge>}
                 {isPostToday && (
                   <Badge className="bg-yellow-500 text-black border-0 shadow-lg shadow-yellow-500/50 animate-pulse">
                     <Star className="h-3 w-3 mr-1" />
@@ -439,22 +415,14 @@ export function PostCard({
               </DropdownMenu>}
           </div>
 
-          <h3 id={`post-title-${post.id}`} className={cn(
-            "font-semibold text-foreground leading-tight transition-colors",
-            compact ? "text-base mt-2" : "text-lg group-hover:text-primary"
-          )} data-post-title>
+          <h3 id={`post-title-${post.id}`} className="text-lg font-semibold text-foreground leading-tight group-hover:text-primary transition-colors" data-post-title>
             {post.title}
           </h3>
         </CardHeader>
 
-        <CardContent className={cn("space-y-4", compact && "space-y-2 pt-2")} role="main">
-          {/* FASE 2: Body preview - mais curto em modo compacto */}
-          {post.body && (
-            <p className={cn(
-              "text-muted-foreground text-sm leading-relaxed",
-              compact ? "line-clamp-2" : "line-clamp-3"
-            )}>{post.body}</p>
-          )}
+        <CardContent className="space-y-4" role="main">
+          {/* Body preview */}
+          {post.body && <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">{post.body}</p>}
 
           {/* Event details */}
           {post.type === "EVENTO" && (post.eventStartAt || post.eventLocation) && <div className="space-y-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
