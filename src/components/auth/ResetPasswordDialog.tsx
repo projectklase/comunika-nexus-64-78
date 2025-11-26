@@ -68,7 +68,7 @@ export const ResetPasswordDialog = ({ prefilledEmail, trigger }: ResetPasswordDi
 
     try {
       // Use the passwordResetStore to create the request - this will automatically create notifications
-      passwordResetStore.createRequest(email);
+      await passwordResetStore.createRequest(email, 'unknown', 'Usuário', 'aluno', undefined);
 
       toast({
         title: "Solicitação enviada",

@@ -1,71 +1,20 @@
-import { AuditService } from '@/services/audit-service';
+import { PasswordResetRequest, PasswordResetStatus } from '@/types/password-reset-request';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { notificationStore } from './notification-store';
 
-export type PasswordResetStatus = 'NEW' | 'IN_PROGRESS' | 'DONE' | 'CANCELED';
+// Re-export types for backward compatibility
+export type { PasswordResetRequest, PasswordResetStatus };
 
-export interface PasswordResetRequest {
-  id: string;
-  email: string;
-  userId?: string;
-  role?: 'ALUNO' | 'PROFESSOR' | 'SECRETARIA';
-  status: PasswordResetStatus;
-  createdAt: string;
-  processedAt?: string;
-  processedBy?: string;
-  requiresChangeOnNextLogin?: boolean;
-  notes?: string;
-}
+const STORAGE_KEY = 'password_reset_requests';
+const MAX_REQUESTS_PER_USER = 5;
 
 class PasswordResetStore {
-  private requests: PasswordResetRequest[] = [];
-  private storageKey = 'comunika.password_resets.v1';
   private subscribers: Set<() => void> = new Set();
-  private rateLimitMap = new Map<string, number>();
+  private requests: PasswordResetRequest[] = [];
 
   constructor() {
     this.loadFromStorage();
-  }
-
-  private loadFromStorage() {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        this.requests = JSON.parse(stored);
-      }
-    } catch (error) {
-      console.error('Error loading password resets from storage:', error);
-    }
-  }
-
-  private saveToStorage() {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.requests));
-      this.notifySubscribers();
-    } catch (error) {
-      console.error('Error saving password resets to storage:', error);
-    }
-  }
-
-  private notifySubscribers() {
-    this.subscribers.forEach(callback => {
-      try {
-        callback();
-      } catch (error) {
-        console.error('Error in password reset store subscriber:', error);
-      }
-    });
-  }
-
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }
-
-  private isRateLimited(email: string): boolean {
-    const lastRequest = this.rateLimitMap.get(email);
-    if (!lastRequest) return false;
-    
-    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-    return lastRequest > fiveMinutesAgo;
   }
 
   subscribe(callback: () => void): () => void {
@@ -75,39 +24,84 @@ class PasswordResetStore {
     };
   }
 
-  createRequest(email: string): PasswordResetRequest {
-    // Check rate limit
-    if (this.isRateLimited(email)) {
-      throw new Error('Aguarde 5 minutos antes de fazer uma nova solicitação para este email.');
+  private notifySubscribers() {
+    this.subscribers.forEach((callback) => callback());
+  }
+
+  private loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        this.requests = JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar solicitações:', error);
+    }
+  }
+
+  private saveToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.requests));
+    } catch (error) {
+      console.error('Erro ao salvar solicitações:', error);
+    }
+  }
+
+  async createRequest(email: string, requesterId: string, requesterName: string, requesterRole: string, reason?: string): Promise<PasswordResetRequest> {
+    const userPendingRequests = this.requests.filter(
+      r => r.requesterId === requesterId && r.status === 'NEW'
+    );
+
+    if (userPendingRequests.length >= MAX_REQUESTS_PER_USER) {
+      throw new Error('Você já possui solicitações pendentes. Aguarde o processamento.');
     }
 
-    const request: PasswordResetRequest = {
-      id: this.generateId(),
-      email: email.toLowerCase().trim(),
+    const newRequest: PasswordResetRequest = {
+      id: crypto.randomUUID(),
+      email,
+      requesterId,
+      requesterName,
+      requesterRole,
+      reason,
       status: 'NEW',
-      createdAt: new Date().toISOString()
+      createdAt: new Date(),
     };
 
-    this.requests.unshift(request);
-    this.rateLimitMap.set(email, Date.now());
+    this.requests.push(newRequest);
     this.saveToStorage();
+    this.notifySubscribers();
 
-    // Track telemetry
-    AuditService.track('passwordReset.requested', 'login-system', { email });
+    try {
+      const { data: admins } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'administrador');
 
-    // Create notification for Secretaria
-    // TODO: Get actual secretaria user IDs from the system
-    notificationStore.add({
-      type: 'RESET_REQUESTED',
-      title: 'Reset de senha solicitado',
-      message: `Solicitação de redefinição de senha para ${email}`,
-      roleTarget: 'SECRETARIA',
-      userId: 'system', // Temporary - should be secretaria user ID
-      link: `/secretaria/seguranca/resets?focus=${request.id}`,
-      meta: { email, requestId: request.id }
-    });
+      if (admins) {
+        for (const admin of admins) {
+          await notificationStore.add({
+            userId: admin.user_id,
+            type: 'PASSWORD_CHANGE_REQUEST',
+            title: '🔑 Nova Solicitação de Redefinição de Senha',
+            message: `${requesterName} (${requesterRole}) solicitou redefinição de senha`,
+            roleTarget: 'ADMINISTRADOR',
+            link: `/admin/dashboard`,
+            meta: {
+              requestId: newRequest.id,
+              requesterId,
+              requesterEmail: email,
+              requesterName,
+              requesterRole,
+              reason: reason || 'Sem motivo especificado',
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao notificar administradores:', error);
+    }
 
-    return request;
+    return newRequest;
   }
 
   list(filters?: { status?: PasswordResetStatus; email?: string }): PasswordResetRequest[] {
@@ -118,8 +112,9 @@ class PasswordResetStore {
     }
 
     if (filters?.email) {
-      const query = filters.email.toLowerCase();
-      filtered = filtered.filter(r => r.email.toLowerCase().includes(query));
+      filtered = filtered.filter(r => 
+        r.email.toLowerCase().includes(filters.email!.toLowerCase())
+      );
     }
 
     return filtered.sort((a, b) => 
@@ -131,107 +126,88 @@ class PasswordResetStore {
     return this.requests.find(r => r.id === id);
   }
 
-  setStatus(id: string, status: PasswordResetStatus): void {
+  setStatus(id: string, status: PasswordResetStatus) {
     const request = this.requests.find(r => r.id === id);
-    if (!request) return;
-
-    request.status = status;
-    if (status === 'IN_PROGRESS') {
-      // Track telemetry
-      AuditService.track('passwordReset.started', 'secretaria-user', { requestId: id });
-      
-      // Create notification for status update
-      notificationStore.add({
-        type: 'RESET_IN_PROGRESS',
-        title: 'Reset em andamento',
-        message: `Reset de senha iniciado para ${request.email}`,
-        roleTarget: 'SECRETARIA',
-        userId: 'system', // Temporary - should be secretaria user ID
-        link: `/secretaria/seguranca/resets?focus=${id}`,
-        meta: { email: request.email, requestId: id }
-      });
+    if (request) {
+      request.status = status;
+      this.saveToStorage();
+      this.notifySubscribers();
     }
-    this.saveToStorage();
   }
 
-  resolveUser(id: string, userId: string, role: 'ALUNO' | 'PROFESSOR' | 'SECRETARIA'): void {
-    const request = this.requests.find(r => r.id === id);
-    if (!request) return;
-
-    request.userId = userId;
-    request.role = role;
-    this.saveToStorage();
-  }
-
-  complete(id: string, options: { 
-    processedBy: string; 
-    requiresChangeOnNextLogin: boolean;
-    notes?: string;
-  }): void {
+  async complete(
+    id: string,
+    options: {
+      processedBy: string;
+      requiresChangeOnNextLogin: boolean;
+      notes?: string;
+    }
+  ) {
     const request = this.requests.find(r => r.id === id);
     if (!request) return;
 
     request.status = 'DONE';
-    request.processedAt = new Date().toISOString();
+    request.processedAt = new Date();
     request.processedBy = options.processedBy;
-    request.requiresChangeOnNextLogin = options.requiresChangeOnNextLogin;
     request.notes = options.notes;
+    request.requiresChangeOnNextLogin = options.requiresChangeOnNextLogin;
 
     this.saveToStorage();
+    this.notifySubscribers();
 
-    // Track telemetry
-    AuditService.track('passwordReset.completed', options.processedBy, {
-      requestId: id,
-      requiresChangeOnNextLogin: options.requiresChangeOnNextLogin,
-      userId: request.userId
-    });
-
-    // Create completion notification
-    notificationStore.add({
-      type: 'RESET_COMPLETED',
-      title: 'Reset concluído',
-      message: `Reset de senha concluído para ${request.email} por ${options.processedBy}`,
-      roleTarget: 'SECRETARIA',
-      userId: 'system', // Temporary - should be secretaria user ID
-      link: `/secretaria/seguranca/resets?focus=${id}`,
-      meta: { 
-        email: request.email, 
-        requestId: id, 
-        processedBy: options.processedBy,
-        requiresChangeOnNextLogin: options.requiresChangeOnNextLogin
-      }
-    });
+    try {
+      await notificationStore.add({
+        userId: request.requesterId,
+        type: 'PASSWORD_CHANGED',
+        title: '✅ Senha Redefinida com Sucesso',
+        message: 'Sua senha foi redefinida pelo administrador',
+        roleTarget: request.requesterRole === 'secretaria' ? 'SECRETARIA' : 'PROFESSOR',
+        meta: {
+          requestId: id,
+          requiresChangeOnNextLogin: options.requiresChangeOnNextLogin,
+          processedBy: options.processedBy,
+          notes: options.notes,
+        },
+      });
+    } catch (error) {
+      console.error('Erro ao notificar solicitante:', error);
+    }
   }
 
-  cancel(id: string, notes?: string): void {
+  cancel(id: string, notes?: string) {
     const request = this.requests.find(r => r.id === id);
-    if (!request) return;
-
-    request.status = 'CANCELED';
-    request.notes = notes;
-    this.saveToStorage();
-
-    // Create cancellation notification
-    notificationStore.add({
-      type: 'RESET_CANCELLED',
-      title: 'Reset cancelado',
-      message: `Reset de senha cancelado para ${request.email}`,
-      roleTarget: 'SECRETARIA',
-      userId: 'system', // Temporary - should be secretaria user ID
-      link: `/secretaria/seguranca/resets?focus=${id}`,
-      meta: { email: request.email, requestId: id, notes }
-    });
+    if (request) {
+      request.status = 'CANCELED';
+      request.processedAt = new Date();
+      request.notes = notes;
+      this.saveToStorage();
+      this.notifySubscribers();
+    }
   }
 
-  // Get statistics for dashboard
-  getStats() {
-    const total = this.requests.length;
-    const newRequests = this.requests.filter(r => r.status === 'NEW').length;
-    const inProgress = this.requests.filter(r => r.status === 'IN_PROGRESS').length;
-    const completed = this.requests.filter(r => r.status === 'DONE').length;
-    const canceled = this.requests.filter(r => r.status === 'CANCELED').length;
+  async resolveUser(id: string, userId: string) {
+    const request = this.requests.find(r => r.id === id);
+    if (request) {
+      request.requesterId = userId;
+      this.saveToStorage();
+      this.notifySubscribers();
+    }
+  }
 
-    return { total, newRequests, inProgress, completed, canceled };
+  getStats(): {
+    total: number;
+    newRequests: number;
+    inProgress: number;
+    completed: number;
+    canceled: number;
+  } {
+    return {
+      total: this.requests.length,
+      newRequests: this.requests.filter(r => r.status === 'NEW').length,
+      inProgress: this.requests.filter(r => r.status === 'IN_PROGRESS').length,
+      completed: this.requests.filter(r => r.status === 'DONE').length,
+      canceled: this.requests.filter(r => r.status === 'CANCELED').length,
+    };
   }
 }
 

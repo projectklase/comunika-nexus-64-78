@@ -190,7 +190,7 @@ export const ResetRequestModal = ({ request, isOpen, onClose, onComplete }: Rese
       });
       
       // Update the request with resolved user info
-      passwordResetStore.resolveUser(request.id, foundUser.id, foundUser.role as any);
+      await passwordResetStore.resolveUser(request.id, foundUser.id);
       
       // Log audit event
       logAudit({

@@ -575,7 +575,7 @@ const Login = () => {
                       disabled={isFormSubmitting}
                       onClick={() => {
                         try {
-                          const request = passwordResetStore.createRequest(email);
+                          const request = await passwordResetStore.createRequest(email, 'unknown', 'Usuário', 'aluno', undefined);
                           toast({
                             title: "Solicitação enviada",
                             description: `Solicitação de reset criada para ${email}. A secretaria foi notificada.`,

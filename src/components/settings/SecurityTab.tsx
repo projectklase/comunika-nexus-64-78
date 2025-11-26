@@ -15,7 +15,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Shield, Lock, LogOut, Eye, EyeOff } from "lucide-react";
+import { Shield, Lock, LogOut, Eye, EyeOff, KeyRound } from "lucide-react";
+import { PasswordResetRequestModal } from "@/components/settings/PasswordResetRequestModal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,11 @@ export function SecurityTab() {
   
   // Verificar se pode alterar senha (apenas administrador)
   const canChangePassword = user?.role === "administrador";
+  
+  // Verificar se pode solicitar redefinição (secretária ou professor)
+  const canRequestReset = user?.role === "secretaria" || user?.role === "professor";
+  
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
 
   const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
     if (!password) return { score: 0, label: "", color: "" };
@@ -151,6 +157,36 @@ export function SecurityTab() {
 
   return (
     <div className="space-y-6">
+      {/* Password Reset Request - Para Secretárias e Professores */}
+      {canRequestReset && (
+        <Card className="glass-card border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Redefinição de Senha
+            </CardTitle>
+            <CardDescription>
+              Solicite aos administradores a redefinição da sua senha
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Como você não pode alterar sua senha diretamente, você pode enviar uma solicitação aos
+              administradores da escola. Eles redefinirão sua senha e você receberá uma notificação
+              com instruções.
+            </p>
+            <Button
+              onClick={() => setRequestModalOpen(true)}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              <KeyRound className="mr-2 h-4 w-4" />
+              Solicitar Redefinição de Senha
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Change Password - Apenas para administradores */}
       {canChangePassword && (
         <Card>
@@ -287,6 +323,12 @@ export function SecurityTab() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Modal de Solicitação */}
+      <PasswordResetRequestModal
+        open={requestModalOpen}
+        onOpenChange={setRequestModalOpen}
+      />
     </div>
   );
 }
