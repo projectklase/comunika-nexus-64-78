@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { a11y, useReducedMotion } from '@/utils/accessibility';
 import { useIsMobile } from '@/hooks/use-mobile'; // FASE 2: Detectar mobile
+import { FeedLoadingSkeleton } from './FeedLoadingSkeleton';
 
 interface PostListProps {
   posts: Post[];
+  isLoading?: boolean;
   canEdit?: boolean;
   onArchive?: (id: string) => void;
   onDuplicate?: (id: string) => void;
@@ -19,10 +21,15 @@ interface PostListProps {
   onViewInvitations?: (post: Post) => void;
 }
 
-export function PostList({ posts, canEdit, onArchive, onDuplicate, onEdit, onDelete, onUpdate, pageSize = 10, onInviteFriend, onViewInvitations }: PostListProps) {
+export function PostList({ posts, isLoading = false, canEdit, onArchive, onDuplicate, onEdit, onDelete, onUpdate, pageSize = 10, onInviteFriend, onViewInvitations }: PostListProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const reduceMotion = useReducedMotion();
   const isMobile = useIsMobile(); // FASE 2: Detectar mobile para modo compacto
+  
+  // Show loading state first
+  if (isLoading) {
+    return <FeedLoadingSkeleton />;
+  }
   
   // Memoize pagination calculations
   const paginationData = useMemo(() => {
