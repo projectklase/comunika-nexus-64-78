@@ -14,6 +14,8 @@ export interface PermissionWithDetails {
   schoolName: string | null;
   grantedAt: string;
   grantedBy: string | null;
+  authorizedSchoolNames?: string[]; // Lista de nomes de escolas autorizadas
+  hasAllSchools?: boolean; // Indica se tem acesso a todas as escolas
 }
 
 interface UseAllPermissionsFilters {
@@ -58,19 +60,43 @@ export function useAllPermissions() {
 
       if (error) throw error;
 
-      // Transformar dados
-      const transformed: PermissionWithDetails[] = (data || []).map((row: any) => ({
-        id: row.id,
-        secretariaId: row.secretaria_id,
-        secretariaName: row.profiles?.name || 'Desconhecido',
-        secretariaEmail: row.profiles?.email || '',
-        permissionKey: row.permission_key,
-        permissionValue: row.permission_value,
-        schoolId: row.school_id,
-        schoolName: row.schools?.name || 'Todas as Escolas',
-        grantedAt: row.granted_at,
-        grantedBy: row.granted_by,
-      }));
+      // Transformar dados e resolver nomes de escolas
+      const transformed: PermissionWithDetails[] = [];
+      
+      for (const row of data || []) {
+        const permValue = row.permission_value as any;
+        const schools = permValue?.schools || [];
+        const hasAllSchools = schools === '*' || schools.includes('*');
+        
+        let authorizedSchoolNames: string[] = [];
+        
+        // Resolver nomes de escolas se houver UUIDs específicos
+        if (!hasAllSchools && Array.isArray(schools) && schools.length > 0) {
+          const { data: schoolsData } = await supabase
+            .from('schools')
+            .select('id, name')
+            .in('id', schools);
+          
+          authorizedSchoolNames = schoolsData?.map(s => s.name) || [];
+        }
+        
+        const rowData = row as any;
+        
+        transformed.push({
+          id: rowData.id,
+          secretariaId: rowData.secretaria_id,
+          secretariaName: rowData.profiles?.name || 'Desconhecido',
+          secretariaEmail: rowData.profiles?.email || '',
+          permissionKey: rowData.permission_key,
+          permissionValue: rowData.permission_value,
+          schoolId: rowData.school_id,
+          schoolName: rowData.schools?.name || 'Todas as Escolas',
+          grantedAt: rowData.granted_at,
+          grantedBy: rowData.granted_by,
+          authorizedSchoolNames,
+          hasAllSchools,
+        });
+      }
 
       setPermissions(transformed);
     } catch (error: any) {
