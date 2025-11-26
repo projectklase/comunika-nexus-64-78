@@ -9,6 +9,7 @@ import { Shield, Lock, LogOut, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface PasswordForm {
   currentPassword: string;
@@ -255,16 +256,23 @@ export function SecurityTab() {
             </p>
             
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full whitespace-nowrap"
-                  disabled={isEndingSessions}
-                >
-                  <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
-                  {isEndingSessions ? 'Encerrando...' : 'Sair de Todos os Dispositivos'}
-                </Button>
-              </AlertDialogTrigger>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                className={cn(
+                  "w-full whitespace-nowrap",
+                  "bg-primary/5 backdrop-blur-md",
+                  "border border-primary/30",
+                  "shadow-lg shadow-primary/5",
+                  "hover:bg-primary/10 hover:border-primary/40",
+                  "transition-all duration-300"
+                )}
+                disabled={isEndingSessions}
+              >
+                <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
+                {isEndingSessions ? 'Encerrando...' : 'Sair de Todos os Dispositivos'}
+              </Button>
+            </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Encerrar todas as sessões?</AlertDialogTitle>
