@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { FilterBar } from '@/components/feed/FilterBar';
 import { PostList } from '@/components/feed/PostList';
-import { SmartFeedInsights } from '@/components/feed/SmartFeedInsights';
 import { SmartFilterStatus } from '@/components/feed/SmartFilterStatus';
 import { InviteFriendsModal } from '@/components/aluno/InviteFriendsModal';
 import { usePosts } from '@/hooks/usePosts';
@@ -128,36 +127,24 @@ export default function AlunoFeed() {
           </p>
         </header>
 
-        {/* FASE 4: Insights sticky no topo em mobile */}
-        <div className="lg:hidden">
-          <SmartFeedInsights posts={allPosts} compact />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3 space-y-6">
-            <FilterBar onFilterChange={setFilter} />
-            
-            <SmartFilterStatus
-              totalPosts={allPosts.length}
-              filteredPosts={processedPosts.length}
-              hideExpired={preferences.hideExpired !== false}
-              onToggleExpired={handleToggleExpired}
-            />
-            
-            <PostList
-              key={updateKey}
-              posts={processedPosts}
-              isLoading={isLoading}
-              onUpdate={handleUpdate}
-              pageSize={preferences.pageSize}
-              onInviteFriend={handleInviteFriend}
-            />
-          </div>
+        <div className="space-y-6">
+          <FilterBar onFilterChange={setFilter} />
           
-          {/* Desktop insights sidebar */}
-          <div className="hidden lg:block lg:col-span-1">
-            <SmartFeedInsights posts={allPosts} />
-          </div>
+          <SmartFilterStatus
+            totalPosts={allPosts.length}
+            filteredPosts={processedPosts.length}
+            hideExpired={preferences.hideExpired !== false}
+            onToggleExpired={handleToggleExpired}
+          />
+          
+          <PostList
+            key={updateKey}
+            posts={processedPosts}
+            isLoading={isLoading}
+            onUpdate={handleUpdate}
+            pageSize={preferences.pageSize}
+            onInviteFriend={handleInviteFriend}
+          />
         </div>
       </div>
       
