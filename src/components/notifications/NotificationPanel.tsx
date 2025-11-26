@@ -290,7 +290,7 @@ export function NotificationPanel() {
             </span>
             
               {notification.meta?.authorName && (
-                <span className="text-primary/70 truncate max-w-[100px]">por {notification.meta.authorName}</span>
+                <span className="text-primary/70  ">por {notification.meta.authorName}</span>
               )}
           </div>
           
