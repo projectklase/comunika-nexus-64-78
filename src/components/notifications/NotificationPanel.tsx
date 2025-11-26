@@ -260,11 +260,6 @@ export function NotificationPanel() {
             )}
           </div>
           
-          {/* Chips */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {getNotificationChips(notification)}
-          </div>
-          
           {/* Contact Phone */}
           {notification.meta?.contactPhone && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
