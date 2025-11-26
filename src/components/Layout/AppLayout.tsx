@@ -57,23 +57,23 @@ export function AppLayout({ children }: AppLayoutProps) {
         
         <div className="flex-1 flex flex-col">
           {/* Top Header */}
-          <header className="h-16 glass-card border-b border-border/50 flex items-center justify-between px-6">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="lg:hidden" />
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">
+          <header className="h-16 glass-card border-b border-border/50 flex items-center justify-between px-4 lg:px-6">
+            <div className="flex items-center gap-2 lg:gap-4 min-w-0 flex-1">
+              <SidebarTrigger className="lg:hidden flex-shrink-0" />
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-base lg:text-lg font-semibold text-foreground truncate">
                   Bem-vindo, {user.name}
                 </h1>
-                <div className="flex items-center gap-4">
-                  <p className="text-sm text-muted-foreground capitalize">
+                <div className="flex items-center gap-2 lg:gap-4 flex-wrap">
+                  <p className="text-xs lg:text-sm text-muted-foreground capitalize">
                     {user.role}
                   </p>
                   {user.role === 'aluno' && studentClass && (
-                    <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-lg border border-primary/20">
-                      <BookOpen className="h-4 w-4 text-primary" />
-                      <div className="text-sm">
-                        <span className="font-medium text-foreground">{studentClass.name}</span>
-                        <span className="text-muted-foreground ml-2">{studentClass.schedule}</span>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 rounded-md border border-primary/20">
+                      <BookOpen className="h-3 w-3 lg:h-4 lg:w-4 text-primary flex-shrink-0" />
+                      <div className="text-xs lg:text-sm min-w-0">
+                        <span className="font-medium text-foreground truncate">{studentClass.name}</span>
+                        <span className="text-muted-foreground ml-1 lg:ml-2 hidden sm:inline">{studentClass.schedule}</span>
                       </div>
                     </div>
                   )}
@@ -81,15 +81,17 @@ export function AppLayout({ children }: AppLayoutProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <SchoolSwitcher />
+            <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+              <div className="hidden md:block">
+                <SchoolSwitcher />
+              </div>
               <NotificationPanel />
               
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+                <Avatar className="cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all h-8 w-8 lg:h-10 lg:w-10">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-primary/20 text-primary">
+                  <AvatarFallback className="bg-primary/20 text-primary text-xs lg:text-sm">
                     {user.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
