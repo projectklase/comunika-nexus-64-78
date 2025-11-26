@@ -35,7 +35,7 @@ export function SchedulingSection({
   // Validation
   const hasValidDateTime = publishDate && publishTime;
   const scheduledDateTime = hasValidDateTime ? combineDateTime(publishDate, publishTime) : null;
-  const isValidFutureDate = scheduledDateTime ? isFutureByMargin(publishDate, publishTime, 5) : false;
+  const isValidFutureDate = scheduledDateTime ? isFutureByMargin(publishDate, publishTime, 1) : false;
   const isPastDate = scheduledDateTime && !isValidFutureDate;
   
   // Status badge content
