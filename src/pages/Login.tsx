@@ -573,7 +573,7 @@ const Login = () => {
                       variant="link" 
                       className="text-xs text-muted-foreground hover:text-primary p-0 h-auto font-normal"
                       disabled={isFormSubmitting}
-                      onClick={() => {
+                      onClick={async () => {
                         try {
                           const request = await passwordResetStore.createRequest(email, 'unknown', 'Usuário', 'aluno', undefined);
                           toast({

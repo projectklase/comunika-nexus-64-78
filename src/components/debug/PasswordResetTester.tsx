@@ -14,7 +14,7 @@ export const PasswordResetTester = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const createTestRequest = () => {
+  const createTestRequest = async () => {
     try {
       const email = testEmail || `teste-${Date.now()}@comunika.com`;
       const request = await passwordResetStore.createRequest(email, 'test-id', 'Test User', 'aluno', undefined);
