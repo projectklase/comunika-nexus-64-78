@@ -7,6 +7,8 @@ import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Shield, Lock, LogOut, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PasswordForm {
   currentPassword: string;
@@ -15,8 +17,10 @@ interface PasswordForm {
 }
 
 export function SecurityTab() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isEndingSessions, setIsEndingSessions] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -27,6 +31,9 @@ export function SecurityTab() {
     newPassword: '',
     confirmPassword: '',
   });
+
+  // Verificar se é aluno
+  const isStudent = user?.role === 'aluno';
 
   const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
     if (!password) return { score: 0, label: '', color: '' };
@@ -95,20 +102,28 @@ export function SecurityTab() {
   };
 
   const handleEndAllSessions = async () => {
+    setIsEndingSessions(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Usar API REAL do Supabase para encerrar outras sessões
+      const { error } = await supabase.auth.signOut({ scope: 'others' });
+      
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: 'Sucesso',
-        description: 'Todas as sessões foram encerradas com sucesso!',
+        description: 'Todas as outras sessões foram encerradas!',
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erro ao encerrar sessões:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao encerrar sessões. Tente novamente.',
+        description: error.message || 'Erro ao encerrar sessões. Tente novamente.',
         variant: 'destructive',
       });
+    } finally {
+      setIsEndingSessions(false);
     }
   };
 
@@ -122,7 +137,8 @@ export function SecurityTab() {
 
   return (
     <div className="space-y-6">
-      {/* Change Password */}
+      {/* Change Password - Oculto para alunos */}
+      {!isStudent && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -219,6 +235,7 @@ export function SecurityTab() {
           </Button>
         </CardContent>
       </Card>
+      )}
 
       {/* Session Management */}
       <Card>
@@ -239,9 +256,13 @@ export function SecurityTab() {
             
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" className="w-full">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair de Todos os Dispositivos
+                <Button 
+                  variant="outline" 
+                  className="w-full whitespace-nowrap"
+                  disabled={isEndingSessions}
+                >
+                  <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
+                  {isEndingSessions ? 'Encerrando...' : 'Sair de Todos os Dispositivos'}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
