@@ -5,13 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   Select,
   SelectContent,
@@ -19,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Key, Building2, Users, FileText, Search, Edit, XCircle, Loader2 } from 'lucide-react';
+import { Key, Building2, Users, FileText, Search, Edit, XCircle, Loader2, CheckCircle2, Mail, Calendar } from 'lucide-react';
 import { useAllPermissions, PermissionWithDetails } from '@/hooks/useAllPermissions';
 import { useAvailableSchools } from '@/hooks/useAvailableSchools';
 import { useSecretarias } from '@/hooks/useSecretarias';
@@ -89,20 +87,29 @@ export function PermissionsDashboard({
     }
   };
 
-  const getSchoolsDisplay = (permValue: any) => {
-    if (!permValue) return '—';
-    
-    const schools = permValue.schools || [];
-    
-    if (schools === '*' || schools.includes('*')) {
-      return <Badge variant="default">Todas as Escolas</Badge>;
+  // Agrupar permissões por secretária
+  const groupedPermissions = permissions.reduce((acc, perm) => {
+    if (!acc[perm.secretariaId]) {
+      acc[perm.secretariaId] = {
+        secretaria: {
+          id: perm.secretariaId,
+          name: perm.secretariaName,
+          email: perm.secretariaEmail,
+        },
+        permissions: [],
+      };
     }
-    
-    if (Array.isArray(schools)) {
-      return <Badge variant="secondary">{schools.length} escola(s)</Badge>;
+    acc[perm.secretariaId].permissions.push(perm);
+    return acc;
+  }, {} as Record<string, { secretaria: { id: string; name: string; email: string }; permissions: PermissionWithDetails[] }>);
+
+  const getPermissionDescription = (key: string) => {
+    switch (key) {
+      case 'manage_all_schools':
+        return 'Pode atribuir professores a múltiplas escolas';
+      default:
+        return key;
     }
-    
-    return '—';
   };
 
   return (
@@ -115,7 +122,7 @@ export function PermissionsDashboard({
               Dashboard de Permissões
             </DialogTitle>
             <DialogDescription>
-              Visão geral de todas as permissões concedidas às secretárias
+              Visão detalhada de todas as permissões concedidas às secretárias
             </DialogDescription>
           </DialogHeader>
 
@@ -211,71 +218,125 @@ export function PermissionsDashboard({
             </Select>
           </div>
 
-          {/* Tabela de Permissões */}
-          <Card>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : permissions.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Key className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                  <p>Nenhuma permissão concedida ainda</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Secretária</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Tipo de Permissão</TableHead>
-                      <TableHead>Escolas</TableHead>
-                      <TableHead>Concedido em</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {permissions.map((perm) => (
-                      <TableRow key={perm.id}>
-                        <TableCell className="font-medium">{perm.secretariaName}</TableCell>
-                        <TableCell className="text-muted-foreground">{perm.secretariaEmail}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {perm.permissionKey === 'manage_all_schools' ? 'Múltiplas Escolas' : perm.permissionKey}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getSchoolsDisplay(perm.permissionValue)}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(perm.grantedAt), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(perm)}
-                              title="Editar permissões"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRevokeClick(perm)}
-                              title="Revogar permissões"
-                            >
-                              <XCircle className="h-4 w-4 text-destructive" />
-                            </Button>
+          {/* Lista de Permissões com Accordion */}
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : Object.keys(groupedPermissions).length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="text-center py-12">
+                <Key className="h-12 w-12 mx-auto mb-4 opacity-20 text-muted-foreground" />
+                <p className="text-muted-foreground">Nenhuma permissão concedida ainda</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Accordion type="single" collapsible className="space-y-4">
+              {Object.values(groupedPermissions).map(({ secretaria, permissions: perms }) => (
+                <AccordionItem key={secretaria.id} value={secretaria.id} className="border-0">
+                  <Card className="glass-card border-primary/20">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                      <div className="flex items-center gap-4 flex-1 text-left">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-base">{secretaria.name}</p>
+                            {perms.some(p => p.hasAllSchools) && (
+                              <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                                Acesso Total
+                              </Badge>
+                            )}
+                            {!perms.some(p => p.hasAllSchools) && perms[0]?.authorizedSchoolNames && (
+                              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                                {perms[0].authorizedSchoolNames.length} {perms[0].authorizedSchoolNames.length === 1 ? 'Escola Autorizada' : 'Escolas Autorizadas'}
+                              </Badge>
+                            )}
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="h-3 w-3" />
+                            <span>{secretaria.email}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-4">
+                      <div className="space-y-4 pt-2">
+                        {perms.map((perm) => (
+                          <Card key={perm.id} className="border-border/50 bg-card/50">
+                            <CardContent className="p-4 space-y-3">
+                              {/* Cabeçalho da Permissão */}
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-2 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <Key className="h-4 w-4 text-primary" />
+                                    <span className="font-medium">PERMISSÃO: {getPermissionDescription(perm.permissionKey)}</span>
+                                  </div>
+                                  
+                                  {/* Lista de Escolas Autorizadas */}
+                                  <div className="pl-6 space-y-2">
+                                    {perm.hasAllSchools ? (
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                        <span className="text-green-700 dark:text-green-400 font-medium">
+                                          Pode atribuir professores a todas as escolas do sistema
+                                        </span>
+                                      </div>
+                                    ) : perm.authorizedSchoolNames && perm.authorizedSchoolNames.length > 0 ? (
+                                      <>
+                                        <p className="text-sm font-medium text-muted-foreground">
+                                          ✅ Pode atribuir professores em:
+                                        </p>
+                                        <ul className="space-y-1 pl-4">
+                                          {perm.authorizedSchoolNames.map((schoolName, idx) => (
+                                            <li key={idx} className="flex items-center gap-2 text-sm">
+                                              <Building2 className="h-3 w-3 text-primary" />
+                                              <span>{schoolName}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </>
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground italic">Nenhuma escola específica configurada</p>
+                                    )}
+                                  </div>
+
+                                  {/* Data de Concessão */}
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground pl-6 pt-2 border-t border-border/50">
+                                    <Calendar className="h-3 w-3" />
+                                    <span>Concedido em {format(new Date(perm.grantedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                                  </div>
+                                </div>
+
+                                {/* Botões de Ação */}
+                                <div className="flex gap-2 ml-4">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(perm)}
+                                    title="Editar permissões"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRevokeClick(perm)}
+                                    title="Revogar permissões"
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </Card>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
 
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
