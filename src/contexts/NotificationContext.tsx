@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotificationPanel } from '@/hooks/useNotificationPanel';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 interface NotificationContextType {
   // State
@@ -34,9 +33,6 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   
   // Get panel data from hook
   const panelData = useNotificationPanel();
-  
-  // Enable real-time notifications
-  useRealtimeNotifications();
   
   // Actions
   const open = () => {
