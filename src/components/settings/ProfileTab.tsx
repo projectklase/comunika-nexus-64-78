@@ -26,6 +26,9 @@ export function ProfileTab() {
     avatar: user?.avatar || '',
   });
 
+  // Only secretaria and administrador can edit profile data
+  const canEditProfile = user?.role === 'secretaria' || user?.role === 'administrador';
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -140,7 +143,14 @@ export function ProfileTab() {
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
             placeholder="Digite seu nome completo"
+            disabled={!canEditProfile}
+            className={!canEditProfile ? "bg-muted/50" : ""}
           />
+          {!canEditProfile && (
+            <p className="text-xs text-muted-foreground">
+              Para alterar seu nome, entre em contato com a secretaria
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -163,7 +173,14 @@ export function ProfileTab() {
             value={formData.phone}
             onChange={(e) => handleInputChange('phone', e.target.value)}
             placeholder="(11) 99999-9999"
+            disabled={!canEditProfile}
+            className={!canEditProfile ? "bg-muted/50" : ""}
           />
+          {!canEditProfile && (
+            <p className="text-xs text-muted-foreground">
+              Para alterar seu telefone, entre em contato com a secretaria
+            </p>
+          )}
         </div>
       </div>
 
