@@ -39,7 +39,7 @@ export default function AlunoFeed() {
     ? { ...filter, saved: undefined } // Remove saved from the base filter
     : filter;
     
-  const { posts: allPosts } = usePosts(baseFilter);
+  const { posts: allPosts, isLoading } = usePosts(baseFilter);
   
   // Deep link navigation and focus functionality with auto-filter adjustment
   const { targetPostId, shouldFocus } = useScrollToFeedPost({
@@ -147,6 +147,7 @@ export default function AlunoFeed() {
             <PostList
               key={updateKey}
               posts={processedPosts}
+              isLoading={isLoading}
               onUpdate={handleUpdate}
               pageSize={preferences.pageSize}
               onInviteFriend={handleInviteFriend}
