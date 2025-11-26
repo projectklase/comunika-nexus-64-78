@@ -258,15 +258,8 @@ export function SecurityTab() {
             <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
-                variant="outline" 
-                className={cn(
-                  "w-full whitespace-nowrap",
-                  "bg-primary/5 backdrop-blur-md",
-                  "border border-primary/30",
-                  "shadow-lg shadow-primary/5",
-                  "hover:bg-primary/10 hover:border-primary/40",
-                  "transition-all duration-300"
-                )}
+                variant="default" 
+                className="w-full"
                 disabled={isEndingSessions}
               >
                 <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
