@@ -215,10 +215,11 @@ export function NotificationPanel() {
                        notification.meta?.postId; // All posts are clickable now
     
     return (
-    <div
-      key={notification.id}
-      className={cn(
-        "group relative p-4 rounded-lg border transition-all duration-300",
+        <div
+          key={notification.id}
+          className={cn(
+            "group relative p-4 rounded-lg border transition-all duration-300",
+            "w-full max-w-full overflow-hidden",
         "bg-gradient-glass backdrop-blur-sm border-border/30",
         isClickable && "cursor-pointer hover:bg-gradient-card hover:border-primary/30 hover:shadow-glow",
         !notification.isRead && [
@@ -240,7 +241,7 @@ export function NotificationPanel() {
         
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 overflow-hidden">
               <p className={cn(
                 "text-sm font-medium leading-tight",
                 !notification.isRead
@@ -432,7 +433,7 @@ export function NotificationPanel() {
           </div>
           
           {/* Notifications list */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full max-w-full">
             {tabNotifications.map(renderNotification)}
           </div>
         </div>
@@ -533,7 +534,7 @@ export function NotificationPanel() {
         </div>
         
         <TabsContent value="novidades" className="mt-0">
-          <ScrollArea className="h-[500px] px-6">
+        <ScrollArea className="h-[500px] px-6 overflow-hidden">
             {renderTabContent('novidades')}
           </ScrollArea>
         </TabsContent>
