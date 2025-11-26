@@ -26,11 +26,6 @@ export function PostList({ posts, isLoading = false, canEdit, onArchive, onDupli
   const reduceMotion = useReducedMotion();
   const isMobile = useIsMobile(); // FASE 2: Detectar mobile para modo compacto
   
-  // Show loading state first
-  if (isLoading) {
-    return <FeedLoadingSkeleton />;
-  }
-  
   // Memoize pagination calculations
   const paginationData = useMemo(() => {
     const totalPages = Math.ceil(posts.length / pageSize);
@@ -62,6 +57,11 @@ export function PostList({ posts, isLoading = false, canEdit, onArchive, onDupli
       a11y.announce(`Lista atualizada com ${posts.length} posts`, 'polite');
     }
   }, [posts.length]);
+  
+  // Show loading state after all hooks have been called
+  if (isLoading) {
+    return <FeedLoadingSkeleton />;
+  }
   
   if (posts.length === 0) {
     return (
