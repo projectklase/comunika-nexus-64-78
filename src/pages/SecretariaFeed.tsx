@@ -69,8 +69,8 @@ export default function SecretariaFeed() {
       filteredPosts = filteredPosts.filter(post => savedIds.includes(post.id));
     }
     
-    // Ordenar posts por urgência temporal
-    filteredPosts = SmartPostFilters.sortByUrgency(filteredPosts);
+    // Ordenar posts com prioridade para recentes (últimas 24h primeiro)
+    filteredPosts = SmartPostFilters.sortChronologicalFirst(filteredPosts);
     
     return filteredPosts;
   }, [allPosts, filters, savedIds]);
