@@ -260,6 +260,11 @@ export function NotificationPanel() {
             )}
           </div>
           
+          {/* Chips */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {getNotificationChips(notification)}
+          </div>
+          
           {/* Contact Phone */}
           {notification.meta?.contactPhone && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
@@ -615,7 +620,7 @@ export function NotificationPanel() {
             className="absolute top-[70px] right-8 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-[440px] max-h-[80vh] p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70] overflow-hidden flex flex-col">
+            <div className="w-[440px] p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70] overflow-hidden">
               {panelContent}
             </div>
           </div>
