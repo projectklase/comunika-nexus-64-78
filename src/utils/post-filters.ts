@@ -244,6 +244,56 @@ export class SmartPostFilters {
   }
 
   /**
+   * Sort posts chronologically with recency as primary factor
+   * Perfect for administrative feeds where recent posts matter most
+   * 
+   * Priority:
+   * 1. Posts created in last 24 hours (newest first)
+   * 2. Urgent items due TODAY (provas, atividades, trabalhos)
+   * 3. All other posts by creation date (newest first)
+   */
+  static sortChronologicalFirst(posts: Post[]): Post[] {
+    const now = new Date();
+    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const today = startOfDay(now);
+    const tomorrow = addDays(today, 1);
+
+    return [...posts].sort((a, b) => {
+      const aCreatedAt = new Date(a.createdAt);
+      const bCreatedAt = new Date(b.createdAt);
+      
+      // Check if posts are from last 24 hours
+      const aIsRecent = aCreatedAt >= last24h;
+      const bIsRecent = bCreatedAt >= last24h;
+      
+      // PRIORITY 1: Recent posts (last 24h) - always first, newest first
+      if (aIsRecent && !bIsRecent) return -1;
+      if (!aIsRecent && bIsRecent) return 1;
+      if (aIsRecent && bIsRecent) {
+        return bCreatedAt.getTime() - aCreatedAt.getTime(); // newest first
+      }
+      
+      // PRIORITY 2: Check for TODAY's urgent items
+      const aDate = this.getPostDate(a);
+      const bDate = this.getPostDate(b);
+      
+      const aIsToday = aDate && aDate >= today && aDate < tomorrow;
+      const bIsToday = bDate && bDate >= today && bDate < tomorrow;
+      
+      // Urgent types due today
+      const urgentTypes = ['PROVA', 'TRABALHO', 'ATIVIDADE'];
+      const aIsUrgentToday = aIsToday && urgentTypes.includes(a.type);
+      const bIsUrgentToday = bIsToday && urgentTypes.includes(b.type);
+      
+      if (aIsUrgentToday && !bIsUrgentToday) return -1;
+      if (!aIsUrgentToday && bIsUrgentToday) return 1;
+      
+      // PRIORITY 3: All other posts by creation date (newest first)
+      return bCreatedAt.getTime() - aCreatedAt.getTime();
+    });
+  }
+
+  /**
    * Sort posts by relevance and urgency (legacy method)
    */
   static sortByRelevance(posts: Post[]): Post[] {
