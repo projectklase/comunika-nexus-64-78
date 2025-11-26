@@ -34,76 +34,81 @@ export function useAllPermissions() {
     setLoading(true);
     console.log('[useAllPermissions] Iniciando busca de permissões...');
     try {
-      // Buscar permissões com join em profiles e schools
-      let query = supabase
+      // 1. Buscar permissões SEM joins automáticos (FK aponta para auth.users, não profiles)
+      const { data: permissionsData, error: permError } = await supabase
         .from('secretaria_permissions')
-        .select(`
-          id,
-          secretaria_id,
-          permission_key,
-          permission_value,
-          school_id,
-          granted_at,
-          granted_by,
-          profiles!secretaria_permissions_secretaria_id_fkey (
-            name,
-            email
-          ),
-          schools (
-            name
-          )
-        `)
+        .select('id, secretaria_id, permission_key, permission_value, school_id, granted_at, granted_by')
         .order('granted_at', { ascending: false });
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('[useAllPermissions] Erro ao buscar permissões:', error);
-        throw error;
+      if (permError) {
+        console.error('[useAllPermissions] Erro ao buscar permissões:', permError);
+        throw permError;
       }
       
-      console.log('[useAllPermissions] Permissões carregadas:', data?.length || 0);
+      console.log('[useAllPermissions] Permissões carregadas:', permissionsData?.length || 0);
 
-      // Transformar dados e resolver nomes de escolas
-      const transformed: PermissionWithDetails[] = [];
+      if (!permissionsData?.length) {
+        setPermissions([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Buscar profiles das secretárias (resolvendo manualmente)
+      const secretariaIds = [...new Set(permissionsData.map(p => p.secretaria_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', secretariaIds);
       
-      for (const row of data || []) {
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      console.log('[useAllPermissions] Profiles carregados:', profilesMap.size);
+
+      // 3. Buscar nomes das escolas (resolvendo manualmente)
+      const schoolIds = [...new Set(permissionsData.filter(p => p.school_id).map(p => p.school_id!))];
+      const { data: schoolsData } = await supabase
+        .from('schools')
+        .select('id, name')
+        .in('id', schoolIds);
+      
+      const schoolsMap = new Map(schoolsData?.map(s => [s.id, s]) || []);
+      console.log('[useAllPermissions] Schools carregados:', schoolsMap.size);
+
+      // 4. Transformar e combinar os dados
+      const transformed = await Promise.all(permissionsData.map(async (row) => {
+        const profile = profilesMap.get(row.secretaria_id);
+        const school = row.school_id ? schoolsMap.get(row.school_id) : null;
         const permValue = row.permission_value as any;
         const schools = permValue?.schools || [];
         const hasAllSchools = schools === '*' || schools.includes('*');
         
+        // Resolver nomes de escolas autorizadas
         let authorizedSchoolNames: string[] = [];
-        
-        // Resolver nomes de escolas se houver UUIDs específicos
         if (!hasAllSchools && Array.isArray(schools) && schools.length > 0) {
-          const { data: schoolsData } = await supabase
+          const { data: authSchools } = await supabase
             .from('schools')
-            .select('id, name')
+            .select('name')
             .in('id', schools);
-          
-          authorizedSchoolNames = schoolsData?.map(s => s.name) || [];
+          authorizedSchoolNames = authSchools?.map(s => s.name) || [];
         }
-        
-        const rowData = row as any;
-        
-        transformed.push({
-          id: rowData.id,
-          secretariaId: rowData.secretaria_id,
-          secretariaName: rowData.profiles?.name || 'Desconhecido',
-          secretariaEmail: rowData.profiles?.email || '',
-          permissionKey: rowData.permission_key,
-          permissionValue: rowData.permission_value,
-          schoolId: rowData.school_id,
-          schoolName: rowData.schools?.name || 'Todas as Escolas',
-          grantedAt: rowData.granted_at,
-          grantedBy: rowData.granted_by,
+
+        return {
+          id: row.id,
+          secretariaId: row.secretaria_id,
+          secretariaName: profile?.name || 'Desconhecido',
+          secretariaEmail: profile?.email || '',
+          permissionKey: row.permission_key,
+          permissionValue: row.permission_value,
+          schoolId: row.school_id,
+          schoolName: school?.name || 'Todas as Escolas',
+          grantedAt: row.granted_at,
+          grantedBy: row.granted_by,
           authorizedSchoolNames,
           hasAllSchools,
-        });
-      }
+        };
+      }));
 
       setPermissions(transformed);
-      console.log('[useAllPermissions] Permissões transformadas com sucesso');
+      console.log('[useAllPermissions] Permissões transformadas com sucesso:', transformed.length);
     } catch (error: any) {
       console.error('[useAllPermissions] Erro ao buscar permissões:', error);
       toast.error('Falha ao carregar permissões');
