@@ -82,7 +82,9 @@ export default function SettingsPage() {
                 Segurança da Conta
               </CardTitle>
               <CardDescription>
-                Altere sua senha e gerencie a segurança da sua conta
+                {user?.role === 'aluno' 
+                  ? 'Gerencie a segurança da sua conta'
+                  : 'Altere sua senha e gerencie a segurança da sua conta'}
               </CardDescription>
             </CardHeader>
             <CardContent>
