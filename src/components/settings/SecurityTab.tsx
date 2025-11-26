@@ -45,6 +45,9 @@ export function SecurityTab() {
 
   // Verificar se é aluno
   const isStudent = user?.role === "aluno";
+  
+  // Verificar se pode alterar senha (apenas administrador)
+  const canChangePassword = user?.role === "administrador";
 
   const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
     if (!password) return { score: 0, label: "", color: "" };
@@ -148,8 +151,8 @@ export function SecurityTab() {
 
   return (
     <div className="space-y-6">
-      {/* Change Password - Oculto para alunos */}
-      {!isStudent && (
+      {/* Change Password - Apenas para administradores */}
+      {canChangePassword && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
