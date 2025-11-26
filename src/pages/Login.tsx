@@ -13,6 +13,7 @@ import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTrian
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
+import { useUserSettingsStore } from '@/stores/user-settings-store';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 import { passwordResetStore } from '@/stores/password-reset-store';
@@ -32,27 +33,20 @@ const Login = () => {
   const { user, login, isLoading, createDemoUser } = useAuth();
   const { toast } = useToast();
   const { isLocked, getRemainingLockTime, recordFailedAttempt, resetAttempts, getAttemptsRemaining } = useLoginRateLimit();
+  const { rememberEmail: savedRememberEmail, lastEmail, setLastEmail, updateSetting } = useUserSettingsStore();
   const formRef = useRef<HTMLFormElement>(null);
 
   // Form validation - computed values
   const isFormValid = email.includes('@') && password.length > 0;
   const isFormSubmitting = isSubmitting || isLoading;
 
-  // Load saved email on mount
+  // Load saved email from user settings store
   useEffect(() => {
-    const savedSettings = localStorage.getItem('comunika.loginSettings');
-    if (savedSettings) {
-      try {
-        const settings = JSON.parse(savedSettings);
-        if (settings.rememberEmail && settings.email) {
-          setEmail(atob(settings.email)); // Simple decode
-          setRememberEmail(true);
-        }
-      } catch {
-        // Ignore parsing errors
-      }
+    if (savedRememberEmail && lastEmail) {
+      setEmail(lastEmail);
+      setRememberEmail(true);
     }
-  }, []);
+  }, [savedRememberEmail, lastEmail]);
 
   // Caps Lock detector
   useEffect(() => {
@@ -197,14 +191,13 @@ const Login = () => {
         // Limpar tentativas após sucesso
         resetAttempts(email);
         
-        // Save email preference
+        // Save email preference to user settings store
         if (rememberEmail) {
-          localStorage.setItem('comunika.loginSettings', JSON.stringify({
-            rememberEmail: true,
-            email: btoa(email.trim())
-          }));
+          setLastEmail(email.trim());
+          updateSetting('rememberEmail', true);
         } else {
-          localStorage.removeItem('comunika.loginSettings');
+          setLastEmail('');
+          updateSetting('rememberEmail', false);
         }
 
         setShowSuccess(true);
