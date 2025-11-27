@@ -21,8 +21,8 @@ const rarityStyles = {
   COMMON: 'ring-1 ring-gray-400 dark:ring-gray-500',
   UNCOMMON: 'ring-1 ring-green-500 shadow-[0_0_6px_rgba(34,197,94,0.4)]',
   RARE: 'ring-1 ring-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]',
-  EPIC: 'ring-2 ring-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.6)] animate-pulse',
-  LEGENDARY: 'ring-2 ring-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.7)] animate-glow',
+  EPIC: 'ring-2 ring-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.6)]',
+  LEGENDARY: 'ring-2 ring-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.7)] animate-shimmer',
 };
 
 export function AchievementBadge({ unlockable, size = 'md' }: AchievementBadgeProps) {
