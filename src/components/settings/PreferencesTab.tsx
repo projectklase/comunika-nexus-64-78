@@ -1,10 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Palette } from 'lucide-react';
+import { Palette, Check } from 'lucide-react';
 import { useTheme, THEME_OPTIONS } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ThemeGalleryModal } from '@/components/gamification/ThemeGalleryModal';
 
 export function PreferencesTab() {
   const { currentTheme, setTheme } = useTheme();
+  const [showPremiumGallery, setShowPremiumGallery] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -73,6 +77,21 @@ export function PreferencesTab() {
               ))}
             </div>
 
+            {/* Premium Themes Button */}
+            <div className="pt-4 border-t border-border/50">
+              <Button
+                onClick={() => setShowPremiumGallery(true)}
+                variant="outline"
+                className="w-full bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/30"
+              >
+                <Palette className="mr-2 h-4 w-4" />
+                Desbloquear Temas Premium
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Complete desafios e ganhe XP para desbloquear temas exclusivos!
+              </p>
+            </div>
+
             {/* WCAG Compliance Notice */}
             <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/50">
               <span className="text-lg">ℹ️</span>
@@ -83,6 +102,8 @@ export function PreferencesTab() {
           </div>
         </CardContent>
       </Card>
+
+      <ThemeGalleryModal open={showPremiumGallery} onOpenChange={setShowPremiumGallery} />
     </div>
   );
 }
