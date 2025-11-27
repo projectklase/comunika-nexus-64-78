@@ -101,7 +101,7 @@ export function UnlockableCard({
             <h3 className="font-bold text-lg leading-tight">{unlockable.name}</h3>
             <p className="text-sm text-muted-foreground">{unlockable.description}</p>
           </div>
-          <UnlockBadge rarity={unlockable.rarity} isLocked={!isUnlocked} size="sm" />
+          <UnlockBadge rarity={unlockable.rarity as any} isLocked={!isUnlocked} size="sm" />
         </div>
 
         {/* Preview (Para temas) */}

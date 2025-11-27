@@ -14,7 +14,7 @@ export interface Unlockable {
   required_challenges_completed?: number;
   required_koins_earned?: number;
   preview_data?: Record<string, any>;
-  rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
   is_active: boolean;
 }
 
@@ -148,6 +148,19 @@ export const useUnlockables = () => {
     return unlockables.filter((u) => u.type === type);
   };
 
+  // Obter URL/emoji do avatar equipado
+  const getEquippedAvatarData = () => {
+    const equippedAvatar = getEquippedItem('AVATAR');
+    if (!equippedAvatar?.unlockable) return null;
+    
+    return {
+      emoji: equippedAvatar.unlockable.preview_data?.emoji || '👤',
+      color: equippedAvatar.unlockable.preview_data?.color || '#6B7280',
+      rarity: equippedAvatar.unlockable.rarity,
+      name: equippedAvatar.unlockable.name,
+    };
+  };
+
   return {
     unlockables,
     userUnlocks,
@@ -159,5 +172,6 @@ export const useUnlockables = () => {
     isUnlocked,
     getEquippedItem,
     getUnlocksByType,
+    getEquippedAvatarData,
   };
 };
