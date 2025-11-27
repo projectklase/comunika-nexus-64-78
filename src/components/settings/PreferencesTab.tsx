@@ -5,12 +5,24 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ThemeGalleryModal } from '@/components/gamification/ThemeGalleryModal';
+import { useUnlockables } from '@/hooks/useUnlockables';
 export function PreferencesTab() {
   const {
     currentTheme,
     setTheme
   } = useTheme();
   const [showPremiumGallery, setShowPremiumGallery] = useState(false);
+  const { unequipTheme } = useUnlockables();
+
+  const handleThemeSelect = async (themeValue: string) => {
+    // Aplicar tema
+    setTheme(themeValue as any);
+    
+    // Se for um tema grátis (não começa com "theme_"), desequipar qualquer tema premium
+    if (!themeValue.startsWith('theme_')) {
+      await unequipTheme();
+    }
+  };
   return <div className="space-y-6">
       {/* Appearance */}
       <Card>
@@ -26,7 +38,7 @@ export function PreferencesTab() {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {THEME_OPTIONS.map(theme => <button key={theme.value} onClick={() => setTheme(theme.value)} className={cn("relative rounded-lg border-2 p-4 text-left transition-all hover:shadow-md", currentTheme === theme.value ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/50")}>
+              {THEME_OPTIONS.map(theme => <button key={theme.value} onClick={() => handleThemeSelect(theme.value)} className={cn("relative rounded-lg border-2 p-4 text-left transition-all hover:shadow-md", currentTheme === theme.value ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/50")}>
                   {/* Visual Preview */}
                   <div className="flex items-start gap-3 mb-3">
                     <div className="text-2xl">{theme.icon}</div>
