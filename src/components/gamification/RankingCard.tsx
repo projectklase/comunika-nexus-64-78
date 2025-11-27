@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PremiumAvatar } from './PremiumAvatar';
 import { cn } from '@/lib/utils';
 
 interface RankedStudent {
@@ -9,6 +10,9 @@ interface RankedStudent {
   koins: number;
   current_streak_days: number;
   rank_position: number;
+  equipped_avatar_emoji: string | null;
+  equipped_avatar_rarity: string | null;
+  equipped_avatar_image_url: string | null;
 }
 
 interface RankingCardProps {
@@ -50,12 +54,21 @@ export function RankingCard({ student, type, isCurrentUser = false, onClick }: R
         {getMedalEmoji(position)}
       </div>
       
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={student.avatar || undefined} />
-        <AvatarFallback className="bg-primary/10">
-          {student.student_name.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
+      {student.equipped_avatar_emoji ? (
+        <PremiumAvatar 
+          emoji={student.equipped_avatar_emoji}
+          rarity={(student.equipped_avatar_rarity as any) || 'COMMON'}
+          size="sm"
+          imageUrl={student.equipped_avatar_image_url || undefined}
+        />
+      ) : (
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={student.avatar || undefined} />
+          <AvatarFallback className="bg-primary/10">
+            {student.student_name.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+      )}
 
       <div className="flex-1 min-w-0">
         <p className={cn(

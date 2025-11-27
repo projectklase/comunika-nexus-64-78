@@ -1735,6 +1735,20 @@ export type Database = {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
       }
+      get_public_student_profile: {
+        Args: { student_id_param: string }
+        Returns: {
+          best_streak_days: number
+          current_streak_days: number
+          equipped_avatar_emoji: string
+          equipped_avatar_image_url: string
+          equipped_avatar_rarity: string
+          id: string
+          koins: number
+          name: string
+          total_xp: number
+        }[]
+      }
       get_school_rankings: {
         Args: {
           limit_param?: number
@@ -1744,6 +1758,9 @@ export type Database = {
         Returns: {
           avatar: string
           current_streak_days: number
+          equipped_avatar_emoji: string
+          equipped_avatar_image_url: string
+          equipped_avatar_rarity: string
           koins: number
           rank_position: number
           student_id: string
