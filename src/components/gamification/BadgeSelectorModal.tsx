@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUnlockables } from '@/hooks/useUnlockables';
@@ -61,6 +61,9 @@ export function BadgeSelectorModal({ open, onOpenChange, currentBadges, onSave }
       <DialogContent className="max-w-2xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Selecione até 5 Badges Favoritos</DialogTitle>
+          <DialogDescription>
+            Escolha os badges que serão exibidos no seu perfil público
+          </DialogDescription>
         </DialogHeader>
 
         <div className="text-sm text-muted-foreground mb-4">
