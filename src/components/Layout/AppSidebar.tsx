@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -100,10 +101,23 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const [cadastrosModalOpen, setCadastrosModalOpen] = useState(false);
+  const { getKoinsEnabled } = useSchoolSettings();
+  const koinsEnabled = getKoinsEnabled();
 
   if (!user) return null;
 
-  const items = menuItems[user.role as keyof typeof menuItems] || [];
+  const baseItems = menuItems[user.role as keyof typeof menuItems] || [];
+  
+  // Filter menu items based on feature flags
+  const items = baseItems.filter(item => {
+    // Hide "Loja de Recompensas" if Koins are disabled
+    if (item.url.includes('loja-recompensas') && !koinsEnabled) return false;
+    // Hide "Recompensas" (management) if Koins are disabled
+    if (item.url.includes('gerenciar-recompensas') && !koinsEnabled) return false;
+    // Hide "Desafios" if Koins are disabled (challenges give Koins)
+    if (item.url.includes('gerenciar-desafios') && !koinsEnabled) return false;
+    return true;
+  });
   const cadastrosItems = (user.role === 'secretaria' || user.role === 'administrador') 
     ? menuItems[`${user.role}Cadastros` as keyof typeof menuItems] || []
     : [];
