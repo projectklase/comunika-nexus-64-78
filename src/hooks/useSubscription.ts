@@ -21,6 +21,7 @@ export interface SubscriptionLimits {
 export function useSubscription() {
   const { user } = useAuth();
 
+  // Fetch subscription limits
   const { data: limits, isLoading, refetch } = useQuery({
     queryKey: ['subscription-limits', user?.id],
     queryFn: async (): Promise<SubscriptionLimits> => {
@@ -53,6 +54,32 @@ export function useSubscription() {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
+
+  // Fetch all active subscription plans
+  const { data: allPlans } = useQuery({
+    queryKey: ['subscription-plans'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('price_cents');
+      
+      if (error) {
+        console.error('[useSubscription] Error fetching plans:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    staleTime: 1000 * 60 * 10, // 10 minutes cache for plans
+  });
+
+  // Calculate next plan for upgrade
+  const nextPlan = allPlans?.find(plan => 
+    plan.max_students > (limits?.max_students || 0) || 
+    plan.included_schools > (limits?.max_schools || 0)
+  );
 
   const validateStudentCreation = async (schoolId: string): Promise<{
     can_create: boolean;
@@ -92,5 +119,7 @@ export function useSubscription() {
     canAddStudents: limits?.can_add_students ?? false,
     canAddSchools: limits?.can_add_schools ?? false,
     hasSubscription: limits?.has_subscription ?? false,
+    allPlans,
+    nextPlan,
   };
 }
