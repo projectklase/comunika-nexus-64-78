@@ -17,6 +17,116 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Building2, Search, Plus, Settings, Edit, MoreVertical, Trash2, Users, BookOpen, UserCog, Loader2 } from 'lucide-react';
 
+// Component for individual school card
+function SchoolCard({
+  school,
+  stats,
+  onEdit,
+  onFeatures,
+  onDelete
+}: {
+  school: School;
+  stats: any;
+  onEdit: (school: School) => void;
+  onFeatures: (school: School) => void;
+  onDelete: (school: School) => void;
+}) {
+  // ✅ Hook called at component level, not inside map()
+  const { features } = useSchoolFeatures(school.id);
+  const activeFeatures = features.filter(f => f.enabled);
+
+  return (
+    <Card key={school.id} className="glass-card p-6 hover:border-primary/50 transition-all">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl">🏫</span>
+            <div>
+              <h3 className="text-xl font-bold">{school.name}</h3>
+              <p className="text-sm text-muted-foreground">slug: {school.slug}</p>
+            </div>
+            {school.is_active && (
+              <Badge variant="outline" className="border-green-500/50 text-green-500">
+                ✅ Ativa
+              </Badge>
+            )}
+          </div>
+
+          {stats ? (
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span>{stats.totalStudents} alunos</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <UserCog className="h-4 w-4" />
+                <span>{stats.totalTeachers} professores</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <BookOpen className="h-4 w-4" />
+                <span>{stats.totalClasses} turmas</span>
+              </div>
+            </div>
+          ) : (
+            <div className="h-6 mb-3" />
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {activeFeatures.length > 0 ? (
+              activeFeatures.map(feature => (
+                <Badge key={feature.key} variant="secondary" className="glass-badge">
+                  {feature.icon} {feature.label}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                Nenhuma funcionalidade ativada
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => onFeatures(school)}
+            variant="outline"
+            className="glass-button"
+            size="sm"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Funcionalidades
+          </Button>
+          <Button
+            onClick={() => onEdit(school)}
+            variant="outline"
+            className="glass-button"
+            size="sm"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="glass-card">
+              <DropdownMenuItem
+                onClick={() => onDelete(school)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function SchoolsManagementPage() {
   const { schools, isLoading, createSchool, updateSchool, getSchoolStats, refetch } = useSchools();
   const [searchTerm, setSearchTerm] = useState('');
@@ -135,102 +245,16 @@ export default function SchoolsManagementPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredSchools.map((school) => {
-            const stats = schoolStats[school.id];
-            const { features } = useSchoolFeatures(school.id);
-            const activeFeatures = features.filter(f => f.enabled);
-
-            return (
-              <Card key={school.id} className="glass-card p-6 hover:border-primary/50 transition-all">
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-3xl">🏫</span>
-                      <div>
-                        <h3 className="text-xl font-bold">{school.name}</h3>
-                        <p className="text-sm text-muted-foreground">slug: {school.slug}</p>
-                      </div>
-                      {school.is_active && (
-                        <Badge variant="outline" className="border-green-500/50 text-green-500">
-                          ✅ Ativa
-                        </Badge>
-                      )}
-                    </div>
-
-                    {stats ? (
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          <span>{stats.totalStudents} alunos</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <UserCog className="h-4 w-4" />
-                          <span>{stats.totalTeachers} professores</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <BookOpen className="h-4 w-4" />
-                          <span>{stats.totalClasses} turmas</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-6 mb-3" />
-                    )}
-
-                    <div className="flex flex-wrap gap-2">
-                      {activeFeatures.length > 0 ? (
-                        activeFeatures.map(feature => (
-                          <Badge key={feature.key} variant="secondary" className="glass-badge">
-                            {feature.icon} {feature.label}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          Nenhuma funcionalidade ativada
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => handleFeatures(school)}
-                      variant="outline"
-                      className="glass-button"
-                      size="sm"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Funcionalidades
-                    </Button>
-                    <Button
-                      onClick={() => handleEdit(school)}
-                      variant="outline"
-                      className="glass-button"
-                      size="sm"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="glass-card">
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(school)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {filteredSchools.map((school) => (
+            <SchoolCard
+              key={school.id}
+              school={school}
+              stats={schoolStats[school.id]}
+              onEdit={handleEdit}
+              onFeatures={handleFeatures}
+              onDelete={handleDelete}
+            />
+          ))}
         </div>
       )}
 
