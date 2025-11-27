@@ -31,7 +31,7 @@ const RARITY_CONFIG = {
   LEGENDARY: {
     ring: 'ring-4 ring-yellow-400',
     glow: 'shadow-[0_0_20px_rgba(250,204,21,0.8)]',
-    animation: 'animate-pulse',
+    animation: 'animate-shimmer',
   },
 };
 
@@ -61,7 +61,14 @@ export function PremiumAvatar({ emoji, rarity, size = 'md', className }: Premium
       <span className="select-none">{emoji}</span>
       
       {rarity === 'LEGENDARY' && (
-        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-yellow-400/20 via-amber-500/20 to-yellow-400/20 animate-spin" style={{ animationDuration: '3s' }} />
+        <div 
+          className="absolute inset-0 rounded-full overflow-hidden pointer-events-none"
+          style={{
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 4s ease-in-out infinite'
+          }}
+        />
       )}
     </div>
   );
