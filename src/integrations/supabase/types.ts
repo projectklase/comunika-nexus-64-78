@@ -1540,6 +1540,57 @@ export type Database = {
         }
         Relationships: []
       }
+      unlockables: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          identifier: string
+          is_active: boolean | null
+          name: string
+          preview_data: Json | null
+          rarity: string
+          required_challenges_completed: number | null
+          required_koins_earned: number | null
+          required_streak_days: number | null
+          required_xp: number | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          identifier: string
+          is_active?: boolean | null
+          name: string
+          preview_data?: Json | null
+          rarity?: string
+          required_challenges_completed?: number | null
+          required_koins_earned?: number | null
+          required_streak_days?: number | null
+          required_xp?: number | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          identifier?: string
+          is_active?: boolean | null
+          name?: string
+          preview_data?: Json | null
+          rarity?: string
+          required_challenges_completed?: number | null
+          required_koins_earned?: number | null
+          required_streak_days?: number | null
+          required_xp?: number | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1560,6 +1611,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_unlocks: {
+        Row: {
+          id: string
+          is_equipped: boolean | null
+          unlock_context: Json | null
+          unlockable_id: string
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_equipped?: boolean | null
+          unlock_context?: Json | null
+          unlockable_id: string
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_equipped?: boolean | null
+          unlock_context?: Json | null
+          unlockable_id?: string
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_unlocks_unlockable_id_fkey"
+            columns: ["unlockable_id"]
+            isOneToOne: false
+            referencedRelation: "unlockables"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1603,6 +1689,10 @@ export type Database = {
         Returns: number
       }
       can_create_notifications: { Args: { _user_id: string }; Returns: boolean }
+      check_and_unlock_achievements: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       cleanup_old_system_logs: {
         Args: { days_to_keep?: number }
         Returns: number
