@@ -168,6 +168,7 @@ export const useUnlockables = () => {
       color: equippedAvatar.unlockable.preview_data?.color || '#6B7280',
       rarity: equippedAvatar.unlockable.rarity,
       name: equippedAvatar.unlockable.name,
+      imageUrl: equippedAvatar.unlockable.preview_data?.imageUrl,
     };
   };
 
