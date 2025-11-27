@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Lock, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { useUnlockables } from '@/hooks/useUnlockables';
 import { PremiumAvatar } from './PremiumAvatar';
 import { UnlockBadge } from './UnlockBadge';
+import { LockedAvatarModal } from './LockedAvatarModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStudentGamification } from '@/stores/studentGamification';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AvatarGalleryModalProps {
   open: boolean;
@@ -33,8 +36,33 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
     getEquippedItem,
   } = useUnlockables();
 
+  const gamification = useStudentGamification();
+  const [selectedLockedAvatar, setSelectedLockedAvatar] = useState<any>(null);
+  const [challengesCompleted, setChallengesCompleted] = useState(0);
+
   const equippedAvatar = getEquippedItem('AVATAR');
   const avatars = unlockables.filter((u) => u.type === 'AVATAR');
+
+  // Fetch challenges completed for student
+  useEffect(() => {
+    const fetchChallengesCompleted = async () => {
+      if (!user?.id || user.role !== 'aluno') return;
+      
+      const { count, error } = await supabase
+        .from('student_challenges')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', user.id)
+        .eq('status', 'COMPLETED');
+
+      if (!error && count !== null) {
+        setChallengesCompleted(count);
+      }
+    };
+
+    if (open) {
+      fetchChallengesCompleted();
+    }
+  }, [user?.id, user?.role, open]);
 
   // Determine which avatars are available based on role
   const isAvatarAvailable = (avatar: any) => {
@@ -61,6 +89,13 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
   const handleSelectAvatar = (avatarId: string, avatarName: string, avatar: any) => {
     // Check if avatar is available for this user
     if (!isAvatarAvailable(avatar)) {
+      // For students, open detailed modal
+      if (user?.role === 'aluno') {
+        setSelectedLockedAvatar(avatar);
+        return;
+      }
+      
+      // For non-students, show simple toast
       toast.error('Avatar bloqueado', {
         description: getRequirementText(avatar),
       });
@@ -127,18 +162,18 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
                         <button
                           key={avatar.id}
                           onClick={() => {
-                            if (available && !isEquipped) {
+                            if (!isEquipped) {
                               handleSelectAvatar(avatar.id, avatar.name, avatar);
                             }
                           }}
-                          disabled={!available || isEquipped || isEquipping}
+                          disabled={isEquipped || isEquipping}
                           className={cn(
                             'relative p-4 rounded-xl border-2 transition-all',
-                            'hover:scale-105 active:scale-95',
+            'hover:scale-105 active:scale-95 cursor-pointer',
                             available
-                              ? 'border-border bg-card hover:bg-accent cursor-pointer'
-                              : 'border-muted bg-muted/50 cursor-not-allowed opacity-60',
-                            isEquipped && 'ring-2 ring-primary ring-offset-2'
+                              ? 'border-border bg-card hover:bg-accent'
+                              : 'border-muted bg-muted/50 opacity-60',
+                            isEquipped && 'ring-2 ring-primary ring-offset-2 cursor-default'
                           )}
                         >
                           <div className="flex flex-col items-center gap-3">
@@ -199,6 +234,17 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
           </div>
         </ScrollArea>
       </DialogContent>
+
+      <LockedAvatarModal
+        open={!!selectedLockedAvatar}
+        onOpenChange={(open) => !open && setSelectedLockedAvatar(null)}
+        avatar={selectedLockedAvatar}
+        currentProgress={{
+          xp: gamification.xp,
+          streak: gamification.streak,
+          challengesCompleted,
+        }}
+      />
     </Dialog>
   );
 }
