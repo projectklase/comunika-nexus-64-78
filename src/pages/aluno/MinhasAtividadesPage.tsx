@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudentClasses } from '@/hooks/useStudentClasses';
 import { usePosts } from '@/hooks/usePosts';
+import { useStudentDeliveries } from '@/hooks/useStudentDeliveries';
 import { PostCard } from '@/components/feed/PostCard';
+import { ActivityFiltersBar } from '@/components/aluno/ActivityFiltersBar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
+import { DeliveryStatus } from '@/types/delivery';
+import { ActivityType } from '@/types/post';
 
 export function MinhasAtividadesPage() {
   const { user } = useAuth();
   const { classes, loading: classesLoading } = useStudentClasses();
   const { posts, isLoading: postsLoading } = usePosts();
+  
+  // Estados de filtro
+  const [selectedStatus, setSelectedStatus] = useState<DeliveryStatus | 'ALL'>('ALL');
+  const [selectedType, setSelectedType] = useState<ActivityType | 'ALL'>('ALL');
 
   const studentClassIds = React.useMemo(() => {
     return classes.map((c) => c.id);
@@ -33,7 +41,27 @@ export function MinhasAtividadesPage() {
       });
   }, [posts, studentClassIds]);
 
-  const isLoading = classesLoading || postsLoading;
+  // Buscar entregas do aluno
+  const { activitiesWithDelivery, isLoading: deliveriesLoading, counters } = useStudentDeliveries(relevantActivities);
+
+  // Filtrar atividades baseado nos filtros selecionados
+  const filteredActivities = useMemo(() => {
+    let filtered = activitiesWithDelivery;
+
+    // Filtrar por status
+    if (selectedStatus !== 'ALL') {
+      filtered = filtered.filter(a => a.deliveryStatus === selectedStatus);
+    }
+
+    // Filtrar por tipo
+    if (selectedType !== 'ALL') {
+      filtered = filtered.filter(a => a.post.type === selectedType);
+    }
+
+    return filtered;
+  }, [activitiesWithDelivery, selectedStatus, selectedType]);
+
+  const isLoading = classesLoading || postsLoading || deliveriesLoading;
 
   if (isLoading) {
     return (
@@ -56,6 +84,51 @@ export function MinhasAtividadesPage() {
     );
   }
 
+  // Mensagens de estado vazio baseadas nos filtros ativos
+  const getEmptyStateMessage = () => {
+    if (selectedStatus !== 'ALL' && selectedType !== 'ALL') {
+      return {
+        title: 'Nenhuma atividade encontrada',
+        description: 'Não há atividades que correspondam aos filtros selecionados.'
+      };
+    }
+    
+    if (selectedStatus === 'NAO_ENTREGUE') {
+      return {
+        title: 'Parabéns! 🎉',
+        description: 'Você não tem atividades pendentes no momento.'
+      };
+    }
+    
+    if (selectedStatus === 'AGUARDANDO') {
+      return {
+        title: 'Nenhuma atividade em análise',
+        description: 'Você não tem atividades aguardando correção no momento.'
+      };
+    }
+    
+    if (selectedStatus === 'APROVADA') {
+      return {
+        title: 'Nenhuma atividade aprovada ainda',
+        description: 'Continue entregando suas atividades para receber aprovações.'
+      };
+    }
+    
+    if (selectedStatus === 'DEVOLVIDA') {
+      return {
+        title: 'Nenhuma atividade devolvida',
+        description: 'Você não tem atividades que precisam ser refeitas.'
+      };
+    }
+
+    return {
+      title: 'Nenhuma atividade encontrada',
+      description: 'Quando seus professores publicarem novas atividades, elas aparecerão aqui.'
+    };
+  };
+
+  const emptyState = getEmptyStateMessage();
+
   return (
     <div className="flex flex-col h-full">
       <header className="p-6 border-b border-border/50 glass">
@@ -65,20 +138,41 @@ export function MinhasAtividadesPage() {
         </p>
       </header>
       <ScrollArea className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto">
-          {relevantActivities.length > 0 ? (
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Barra de Filtros */}
+          {relevantActivities.length > 0 && (
+            <ActivityFiltersBar
+              selectedStatus={selectedStatus}
+              selectedType={selectedType}
+              onStatusChange={setSelectedStatus}
+              onTypeChange={setSelectedType}
+              counters={counters}
+            />
+          )}
+
+          {/* Lista de Atividades */}
+          {filteredActivities.length > 0 ? (
             <div className="space-y-4">
-              {relevantActivities.map((post) => (
-                <PostCard post={post} key={post.id} />
+              {filteredActivities.map((activity) => (
+                <PostCard post={activity.post} key={activity.post.id} />
               ))}
             </div>
-          ) : (
+          ) : relevantActivities.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 p-8 text-center glass rounded-lg border border-border/50">
               <p className="text-lg font-medium text-muted-foreground">
                 Nenhuma atividade encontrada.
               </p>
               <p className="text-sm text-muted-foreground mt-2">
                 Quando seus professores publicarem novas atividades, elas aparecerão aqui.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 p-8 text-center glass rounded-lg border border-border/50">
+              <p className="text-lg font-medium text-muted-foreground">
+                {emptyState.title}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {emptyState.description}
               </p>
             </div>
           )}
