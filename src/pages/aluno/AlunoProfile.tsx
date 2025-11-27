@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchool } from '@/contexts/SchoolContext';
 import { useStudentRankings } from '@/hooks/useStudentRankings';
@@ -32,6 +33,49 @@ export default function AlunoProfile() {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   const koinsEnabled = getWeightsEnabled();
+
+  // Query para contar entregas do aluno
+  const { data: deliveriesCount = 0 } = useQuery({
+    queryKey: ['student-deliveries-count', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      
+      const { count, error } = await supabase
+        .from('deliveries')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', user.id);
+      
+      if (error) {
+        console.error('Error fetching deliveries count:', error);
+        return 0;
+      }
+      
+      return count || 0;
+    },
+    enabled: !!user?.id
+  });
+
+  // Query para buscar best_streak do profile
+  const { data: profileStats } = useQuery({
+    queryKey: ['student-profile-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('best_streak_days, current_streak_days')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile stats:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id
+  });
 
   // Badges equipados (até 5)
   const equippedBadges = userUnlocks?.filter(unlock => 
@@ -162,9 +206,9 @@ export default function AlunoProfile() {
         {/* Estatísticas Detalhadas */}
         <ProfileStats
           totalXP={gamification.xp}
-          recentXPGain={150}
-          activitiesCompleted={0}
-          bestStreak={(user as any).best_streak_days || 0}
+          recentXPGain={0}
+          activitiesCompleted={deliveriesCount}
+          bestStreak={profileStats?.best_streak_days || 0}
         />
 
         {/* Rankings */}
