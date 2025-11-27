@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useRewardsStore } from './rewards-store';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GamificationData {
   lastCheckIn: string; // YYYY-MM-DD
@@ -11,30 +12,19 @@ interface GamificationData {
     lastReset: string; // YYYY-MM-DD of last Monday
   };
   week: Record<string, boolean>; // date -> checked in
-  dailyMission: {
-    id: string;
-    date: string;
-    done: boolean;
-  };
   activityXP: Record<string, boolean>; // activityId -> rewarded
 }
 
 interface GamificationStore extends GamificationData {
   checkIn: () => { success: boolean; xpGained: number; streakCount: number };
   useForgiveness: () => boolean;
-  completeDailyMission: () => number;
   addActivityXP: (activityId: string) => number;
   addFocusXP: (type: 'start' | 'complete') => number;
   resetIfNeeded: () => void;
+  syncToDatabase: (userId: string) => Promise<void>;
   // Integration with Koins system
   syncWithKoins: (studentId: string) => void;
 }
-
-const MISSIONS = [
-  { id: 'openDayFocus', label: 'Abrir Dia em Foco' },
-  { id: 'markOneDelivered', label: 'Marcar uma atividade como entregue' },
-  { id: 'startFocus25', label: 'Iniciar um foco de 25 min' }
-];
 
 const getToday = () => new Date().toISOString().split('T')[0];
 const getLastMonday = () => {
@@ -43,6 +33,17 @@ const getLastMonday = () => {
   const diff = today.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(today.setDate(diff));
   return monday.toISOString().split('T')[0];
+};
+
+const getWeekDates = () => {
+  const today = new Date();
+  const dates = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    dates.push(date.toISOString().split('T')[0]);
+  }
+  return dates;
 };
 
 const diffDays = (date1: string, date2: string) => {
@@ -62,11 +63,6 @@ export const useStudentGamification = create<GamificationStore>()(
         lastReset: getLastMonday()
       },
       week: {},
-      dailyMission: {
-        id: '',
-        date: '',
-        done: false
-      },
       activityXP: {},
 
       resetIfNeeded: () => {
@@ -84,16 +80,17 @@ export const useStudentGamification = create<GamificationStore>()(
           }));
         }
 
-        // Set daily mission if needed
-        if (state.dailyMission.date !== today) {
-          const randomMission = MISSIONS[Math.floor(Math.random() * MISSIONS.length)];
-          set(state => ({
-            dailyMission: {
-              id: randomMission.id,
-              date: today,
-              done: false
-            }
-          }));
+        // Clean old week entries (keep only last 7 days)
+        const weekDates = getWeekDates();
+        const cleanedWeek: Record<string, boolean> = {};
+        weekDates.forEach(date => {
+          if (state.week[date]) {
+            cleanedWeek[date] = true;
+          }
+        });
+        
+        if (Object.keys(cleanedWeek).length !== Object.keys(state.week).length) {
+          set({ week: cleanedWeek });
         }
       },
 
@@ -133,6 +130,28 @@ export const useStudentGamification = create<GamificationStore>()(
         return { success: true, xpGained, streakCount: newStreak };
       },
 
+      syncToDatabase: async (userId: string) => {
+        const state = get();
+        
+        try {
+          const { error } = await supabase
+            .from('profiles')
+            .update({
+              total_xp: state.xp,
+              current_streak_days: state.streak,
+              best_streak_days: Math.max(state.streak, 0), // Will be compared with DB value
+              last_activity_date: getToday()
+            })
+            .eq('id', userId);
+
+          if (error) {
+            console.error('[syncToDatabase] Error syncing to database:', error);
+          }
+        } catch (err) {
+          console.error('[syncToDatabase] Exception syncing to database:', err);
+        }
+      },
+
       useForgiveness: () => {
         const state = get();
         const today = getToday();
@@ -152,22 +171,6 @@ export const useStudentGamification = create<GamificationStore>()(
         }));
 
         return true;
-      },
-
-      completeDailyMission: () => {
-        const state = get();
-        if (state.dailyMission.done) return 0;
-
-        const xpGained = 20;
-        set(state => ({
-          xp: state.xp + xpGained,
-          dailyMission: {
-            ...state.dailyMission,
-            done: true
-          }
-        }));
-
-        return xpGained;
       },
 
       addActivityXP: (activityId: string) => {

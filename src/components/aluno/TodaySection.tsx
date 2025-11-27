@@ -7,10 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Clock, Calendar, Bell, AlertTriangle } from 'lucide-react';
 import { Post } from '@/types/post';
 import { useReads } from '@/hooks/useReads';
-import { useStudentGamification } from '@/stores/studentGamification';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostViews } from '@/stores/post-views.store';
-import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface TodaySectionProps {
@@ -28,25 +26,6 @@ export function TodaySection({ posts, onOpenPost, onGoToCalendar }: TodaySection
     // Record post view
     if (user) {
       recordPostView(post.id, user, 'dashboard', user.classId);
-    }
-    
-    // Verificação de role: gamificação só para alunos
-    if (user && user.role === 'aluno') {
-      // Trigger gamification mission completion for "openDayFocus" when opening an item
-      try {
-        const { dailyMission, completeDailyMission } = useStudentGamification.getState();
-        if (dailyMission.id === 'openDayFocus' && !dailyMission.done) {
-          const xpGained = completeDailyMission();
-          if (xpGained > 0) {
-            toast({
-              title: `Missão completa! +${xpGained} XP ⭐`,
-              description: 'Você abriu um item da sua agenda!'
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error completing daily mission:', error);
-      }
     }
     
     onOpenPost(post);
