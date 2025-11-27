@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSchools } from '@/hooks/useSchools';
 import { useSchoolFeatures } from '@/hooks/useSchoolFeatures';
+import { useSubscription } from '@/hooks/useSubscription';
 import { School } from '@/types/school';
 import { SchoolFormModal } from '@/components/admin/SchoolFormModal';
 import { SchoolFeaturesModal } from '@/components/admin/SchoolFeaturesModal';
 import { DeleteSchoolModal } from '@/components/admin/DeleteSchoolModal';
+import { UpgradeSchoolModal } from '@/components/admin/UpgradeSchoolModal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -129,6 +131,7 @@ function SchoolCard({
 
 export default function SchoolsManagementPage() {
   const { schools, isLoading, createSchool, updateSchool, getSchoolStats, refetch } = useSchools();
+  const { canAddSchools } = useSubscription();
   const [searchTerm, setSearchTerm] = useState('');
   const [formModal, setFormModal] = useState<{ open: boolean; school: School | null }>({
     open: false,
@@ -142,6 +145,7 @@ export default function SchoolsManagementPage() {
     open: false,
     school: null
   });
+  const [upgradeModal, setUpgradeModal] = useState(false);
   const [schoolStats, setSchoolStats] = useState<Record<string, any>>({});
   const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
 
@@ -163,6 +167,11 @@ export default function SchoolsManagementPage() {
   );
 
   const handleCreate = () => {
+    // Check if user can add more schools
+    if (!canAddSchools) {
+      setUpgradeModal(true);
+      return;
+    }
     setFormModal({ open: true, school: null });
   };
 
@@ -277,6 +286,11 @@ export default function SchoolsManagementPage() {
         onOpenChange={(open) => setDeleteModal({ open, school: null })}
         school={deleteModal.school}
         onSuccess={refetch}
+      />
+
+      <UpgradeSchoolModal
+        open={upgradeModal}
+        onOpenChange={setUpgradeModal}
       />
     </div>
   );
