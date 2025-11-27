@@ -19,6 +19,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import SecretariaFeed from "./pages/SecretariaFeed";
+import AlunoProfile from "@/pages/aluno/AlunoProfile";
 import HistoricoPage from "./pages/HistoricoPage";
 import ClassesPage from "./pages/ClassesPage";
 import ClassDetailPage from "./pages/ClassDetailPage";
@@ -168,6 +169,13 @@ const App = () => (
               <RoleGuard allowedRoles={['aluno']}>
                 <AppLayout>
                   <AlunoNexus />
+                </AppLayout>
+              </RoleGuard>
+            } />
+            <Route path="/aluno/perfil" element={
+              <RoleGuard allowedRoles={['aluno']}>
+                <AppLayout>
+                  <AlunoProfile />
                 </AppLayout>
               </RoleGuard>
             } />

@@ -1735,6 +1735,22 @@ export type Database = {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
       }
+      get_school_rankings: {
+        Args: {
+          limit_param?: number
+          ranking_type?: string
+          school_id_param: string
+        }
+        Returns: {
+          avatar: string
+          current_streak_days: number
+          koins: number
+          rank_position: number
+          student_id: string
+          student_name: string
+          total_xp: number
+        }[]
+      }
       get_student_challenges_with_progress: {
         Args: { p_student_id: string }
         Returns: {
