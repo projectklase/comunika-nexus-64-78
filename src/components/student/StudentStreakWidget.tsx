@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Flame, Gift, Target, CheckCircle2, Calendar } from 'lucide-react';
+import { Flame, Gift, CheckCircle2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useStudentGamification } from '@/stores/studentGamification';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -31,11 +30,6 @@ const getWeekDates = () => {
   return weekDates;
 };
 
-const MISSION_LABELS = {
-  openDayFocus: 'Abrir Dia em Foco',
-  markOneDelivered: 'Marcar uma atividade como entregue',
-  startFocus25: 'Iniciar um foco de 25 min'
-};
 
 export function StudentStreakWidget() {
   const { user } = useAuth();
@@ -45,11 +39,10 @@ export function StudentStreakWidget() {
     lastCheckIn,
     forgiveness,
     week,
-    dailyMission,
     checkIn,
     useForgiveness,
-    completeDailyMission,
-    resetIfNeeded
+    resetIfNeeded,
+    syncToDatabase
   } = useStudentGamification();
 
   const [showConfetti, setShowConfetti] = useState(false);
@@ -73,10 +66,15 @@ export function StudentStreakWidget() {
   const canUseForgiveness = gap === 2 && forgiveness.available;
   const weekDates = getWeekDates();
 
-  const handleCheckIn = () => {
+  const handleCheckIn = async () => {
     const result = checkIn();
     
     if (result.success) {
+      // Sync to database
+      if (user?.id) {
+        await syncToDatabase(user.id);
+      }
+
       toast({
         title: `+${result.xpGained} XP! 🎉`,
         description: `Streak: ${result.streakCount} dias`
@@ -99,22 +97,6 @@ export function StudentStreakWidget() {
     }
   };
 
-  const handleCompleteMission = () => {
-    const xpGained = completeDailyMission();
-    if (xpGained > 0) {
-      toast({
-        title: `Missão completa! +${xpGained} XP ⭐`,
-        description: 'Continue assim!'
-      });
-    }
-  };
-
-  const getMissionStatus = () => {
-    if (dailyMission.done) return { icon: CheckCircle2, text: 'Missão completa!', color: 'text-green-500' };
-    return { icon: Target, text: 'Ver missão do dia', color: 'text-muted-foreground' };
-  };
-
-  const missionStatus = getMissionStatus();
 
   return (
     <Card className="glass-card border-border/50 relative overflow-hidden">
@@ -226,58 +208,6 @@ export function StudentStreakWidget() {
           </div>
         </div>
 
-        {/* Daily Mission */}
-        <div className="pt-2 border-t border-border/30">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-xs p-2"
-                aria-label="Ver missão do dia"
-              >
-                <missionStatus.icon className={cn("h-3 w-3 mr-2", missionStatus.color)} />
-                {missionStatus.text}
-              </Button>
-            </DialogTrigger>
-            
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Missão do Dia
-                </DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="text-2xl mb-2">🎯</div>
-                  <h3 className="font-medium mb-1">
-                    {MISSION_LABELS[dailyMission.id as keyof typeof MISSION_LABELS] || 'Missão especial'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Complete para ganhar +20 XP
-                  </p>
-                </div>
-
-                {dailyMission.done ? (
-                  <div className="text-center text-green-500">
-                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
-                    <p className="font-medium">Missão completa!</p>
-                  </div>
-                ) : (
-                  <Button 
-                    onClick={handleCompleteMission}
-                    className="w-full"
-                    aria-label="Marcar missão como completa"
-                  >
-                    Completei!
-                  </Button>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
       </CardContent>
 
       <style>{`

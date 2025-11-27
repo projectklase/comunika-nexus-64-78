@@ -225,25 +225,6 @@ export default function AlunoHome() {
       source: 'mini_calendar'
     });
     
-    // Verificação de role: gamificação só para alunos
-    if (user && user.role === 'aluno') {
-      // Trigger gamification mission completion for "openDayFocus"
-      try {
-        const { dailyMission, completeDailyMission } = useStudentGamification.getState();
-        if (dailyMission.id === 'openDayFocus' && !dailyMission.done) {
-          const xpGained = completeDailyMission();
-          if (xpGained > 0) {
-            toast({
-              title: `Missão completa! +${xpGained} XP ⭐`,
-              description: 'Você abriu o Dia em Foco!'
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error completing daily mission:', error);
-      }
-    }
-    
     // Navigate to calendar with the selected date focused
     const dateParam = date.toISOString().split('T')[0];
     navigate(`/aluno/calendario?d=${dateParam}`);

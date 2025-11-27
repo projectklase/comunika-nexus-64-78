@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Flame, Target, Calendar, Star, Gift } from 'lucide-react';
+import { Flame, Calendar, Gift, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useStudentGamification } from '@/stores/studentGamification';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -11,10 +12,10 @@ export function StreakDashboard() {
   const { 
     streak, 
     xp, 
-    dailyMission, 
     checkIn, 
     resetIfNeeded,
-    week 
+    week,
+    syncToDatabase
   } = useStudentGamification();
   const { toast } = useToast();
 
@@ -23,10 +24,16 @@ export function StreakDashboard() {
     resetIfNeeded();
   }, [resetIfNeeded]);
 
-  const handleCheckIn = () => {
+  const handleCheckIn = async () => {
     const result = checkIn();
     
     if (result.success) {
+      // Sync to database
+      const user = (await supabase.auth.getUser()).data.user;
+      if (user) {
+        await syncToDatabase(user.id);
+      }
+
       if (result.xpGained > 0) {
         toast({
           title: `Check-in realizado! +${result.xpGained} XP`,
@@ -66,7 +73,20 @@ export function StreakDashboard() {
     return { label: 'Iniciante', icon: '🌟', color: 'blue' };
   };
 
-  const weekProgress = Object.keys(week).length;
+  // Calculate only last 7 days for week progress
+  const getWeekDates = () => {
+    const today = new Date();
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+  };
+
+  const weekDates = getWeekDates();
+  const weekProgress = weekDates.filter(date => week[date]).length;
   const today = new Date().toISOString().split('T')[0];
   const hasCheckedInToday = week[today];
 
@@ -126,7 +146,7 @@ export function StreakDashboard() {
         >
           {hasCheckedInToday ? (
             <>
-              <Target className="h-4 w-4 mr-2" />
+              <CheckCircle2 className="h-4 w-4 mr-2" />
               Check-in feito hoje!
             </>
           ) : (
@@ -137,27 +157,6 @@ export function StreakDashboard() {
           )}
         </Button>
 
-        {/* Daily Mission */}
-        {dailyMission.id && (
-          <div className="border-t border-border/50 pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">Missão do Dia</span>
-              {dailyMission.done && (
-                <Badge variant="secondary" className="text-xs">
-                  Completa ✅
-                </Badge>
-              )}
-            </div>
-            
-            <div className="text-sm text-muted-foreground bg-muted/10 p-2 rounded-lg">
-              {dailyMission.id === 'openDayFocus' && 'Abrir Dia em Foco no calendário'}
-              {dailyMission.id === 'markOneDelivered' && 'Marcar uma atividade como entregue'}
-              {dailyMission.id === 'startFocus25' && 'Iniciar um foco de 25 minutos'}
-            </div>
-          </div>
-        )}
-
         {/* Weekly Progress */}
         <div className="border-t border-border/50 pt-4">
           <div className="flex items-center justify-between mb-2">
@@ -166,13 +165,14 @@ export function StreakDashboard() {
           </div>
           
           <div className="grid grid-cols-7 gap-1">
-            {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, index) => {
-              const dayKey = Object.keys(week)[index];
-              const isComplete = week[dayKey];
+            {weekDates.map((date, index) => {
+              const dayLabels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+              const dayOfWeek = new Date(date).getDay();
+              const isComplete = week[date];
               
               return (
                 <div
-                  key={index}
+                  key={date}
                   className={cn(
                     "aspect-square flex items-center justify-center text-xs rounded border",
                     isComplete
@@ -180,7 +180,7 @@ export function StreakDashboard() {
                       : "bg-muted/20 border-border text-muted-foreground"
                   )}
                 >
-                  {day}
+                  {dayLabels[dayOfWeek]}
                 </div>
               );
             })}
