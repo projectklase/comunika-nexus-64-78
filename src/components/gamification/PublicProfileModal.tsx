@@ -14,8 +14,8 @@ interface PublicProfileModalProps {
 }
 
 export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProfileModalProps) {
-  const { getWeightsEnabled } = useSchoolSettings();
-  const koinsEnabled = getWeightsEnabled();
+  const { getKoinsEnabled } = useSchoolSettings();
+  const koinsEnabled = getKoinsEnabled();
 
   // Fetch profile data using public RPC
   const { data: profile, isLoading } = useQuery({
