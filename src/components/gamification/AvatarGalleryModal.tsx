@@ -147,6 +147,7 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
                                 emoji={avatar.preview_data?.emoji || '👤'}
                                 rarity={avatar.rarity as any}
                                 size="lg"
+                                imageUrl={avatar.preview_data?.imageUrl}
                               />
                               
                               {isEquipped && (
