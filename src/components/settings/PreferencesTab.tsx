@@ -60,8 +60,13 @@ export function PreferencesTab() {
 
             {/* Premium Themes Button */}
             <div className="pt-4 border-t border-border/50">
-              <Button onClick={() => setShowPremiumGallery(true)} variant="outline" className="w-full bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/30">TemasPremium<Palette className="mr-2 h-4 w-4" />
-                Desbloquear Temas Premium
+              <Button 
+                onClick={() => setShowPremiumGallery(true)} 
+                variant="outline" 
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/30"
+              >
+                <Palette className="h-5 w-5" />
+                <span className="text-white font-medium">Temas Premium</span>
               </Button>
               <p className="text-xs text-muted-foreground text-center mt-2">
                 Complete desafios e ganhe XP para desbloquear temas exclusivos!
