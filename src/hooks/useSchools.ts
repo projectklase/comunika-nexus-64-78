@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { School } from '@/types/school';
+import { useSubscription } from './useSubscription';
 
 interface CreateSchoolData {
   name: string;
@@ -25,6 +26,7 @@ export function useSchools() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { canAddSchools, limits } = useSubscription();
 
   const loadSchools = useCallback(async () => {
     if (!user) return;
@@ -72,6 +74,16 @@ export function useSchools() {
     if (!user) throw new Error('Usuário não autenticado');
 
     try {
+      // ✅ VALIDAR LIMITES DE ASSINATURA PRIMEIRO
+      if (!canAddSchools) {
+        toast({
+          variant: "destructive",
+          title: "Limite de escolas atingido",
+          description: `Você atingiu o limite de ${limits?.max_schools || 0} escolas do seu plano. Faça upgrade para adicionar mais unidades.`
+        });
+        throw new Error('School limit reached');
+      }
+
       // Check if slug is unique
       const { data: existing } = await supabase
         .from('schools')

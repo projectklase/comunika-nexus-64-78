@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_subscriptions: {
+        Row: {
+          addon_schools_count: number
+          admin_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_id: string
+          started_at: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          addon_schools_count?: number
+          admin_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id: string
+          started_at?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          addon_schools_count?: number
+          admin_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string
+          started_at?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -1519,6 +1572,48 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          addon_school_price_cents: number
+          created_at: string
+          features: Json | null
+          id: string
+          included_schools: number
+          is_active: boolean
+          max_students: number
+          name: string
+          price_cents: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          addon_school_price_cents?: number
+          created_at?: string
+          features?: Json | null
+          id?: string
+          included_schools?: number
+          is_active?: boolean
+          max_students: number
+          name: string
+          price_cents: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          addon_school_price_cents?: number
+          created_at?: string
+          features?: Json | null
+          id?: string
+          included_schools?: number
+          is_active?: boolean
+          max_students?: number
+          name?: string
+          price_cents?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_logs: {
         Row: {
           context: Json | null
@@ -1709,6 +1804,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      check_subscription_limits: { Args: { p_admin_id: string }; Returns: Json }
       cleanup_old_system_logs: {
         Args: { days_to_keep?: number }
         Returns: number
@@ -1816,6 +1912,10 @@ export type Database = {
       user_has_school_access: {
         Args: { _school_id: string; _user_id: string }
         Returns: boolean
+      }
+      validate_student_creation: {
+        Args: { p_school_id: string }
+        Returns: Json
       }
     }
     Enums: {
