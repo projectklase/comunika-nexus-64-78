@@ -10,6 +10,9 @@ interface RankedStudent {
   koins: number;
   current_streak_days: number;
   rank_position: number;
+  equipped_avatar_emoji: string | null;
+  equipped_avatar_rarity: string | null;
+  equipped_avatar_image_url: string | null;
 }
 
 interface RankingListProps {

@@ -17,45 +17,16 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
   const { getWeightsEnabled } = useSchoolSettings();
   const koinsEnabled = getWeightsEnabled();
 
+  // Fetch profile data using public RPC
   const { data: profile, isLoading } = useQuery({
     queryKey: ['public-profile', studentId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, avatar, total_xp, koins, current_streak_days, best_streak_days')
-        .eq('id', studentId)
+        .rpc('get_public_student_profile', { student_id_param: studentId })
         .maybeSingle();
       
       if (error) throw error;
       return data;
-    },
-    enabled: open && !!studentId,
-  });
-
-  // Avatar equipado do outro aluno
-  const { data: equippedAvatar } = useQuery({
-    queryKey: ['public-avatar', studentId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_unlocks')
-        .select('*, unlockable:unlockables(*)')
-        .eq('user_id', studentId)
-        .eq('is_equipped', true)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      // Filtrar apenas avatares
-      if (data?.unlockable?.type === 'AVATAR') {
-        const unlockable = data.unlockable as any;
-        return {
-          emoji: unlockable.preview_data?.emoji || '👤',
-          rarity: unlockable.rarity || 'COMMON',
-          name: unlockable.name,
-          imageUrl: unlockable.preview_data?.imageUrl
-        };
-      }
-      return null;
     },
     enabled: open && !!studentId,
   });
@@ -92,7 +63,24 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
     );
   }
 
-  if (!profile) return null;
+  // Show friendly message if profile not found
+  if (!profile) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Perfil não encontrado</DialogTitle>
+            <DialogDescription>
+              Não foi possível carregar o perfil deste aluno.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-center py-8 text-muted-foreground">
+            Este aluno pode não existir ou você não tem permissão para visualizar o perfil.
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,12 +97,12 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
         {/* Header com Avatar e Nome */}
         <div className="flex flex-col items-center gap-4 pt-2">
           <div className="relative">
-            {equippedAvatar ? (
+            {profile.equipped_avatar_emoji ? (
               <PremiumAvatar 
-                emoji={equippedAvatar.emoji}
-                rarity={equippedAvatar.rarity as any}
+                emoji={profile.equipped_avatar_emoji}
+                rarity={(profile.equipped_avatar_rarity as any) || 'COMMON'}
                 size="xl"
-                imageUrl={equippedAvatar.imageUrl}
+                imageUrl={profile.equipped_avatar_image_url || undefined}
                 className="h-32 w-32"
               />
             ) : (
