@@ -15,27 +15,31 @@ const initializeSchoolSettings = () => {
   }
 };
 
-// Inicializar tema do usuário (inclui temas premium)
+// Inicializar apenas temas gratuitos do localStorage
 const initializeTheme = () => {
   const { currentTheme } = useUserSettingsStore.getState();
   const root = document.documentElement;
   
+  // Premium themes should NOT be loaded from localStorage to prevent user leakage
+  // They will be loaded from database after authentication in AppLayout
+  const isPremiumTheme = currentTheme.startsWith('theme_');
+  
+  if (isPremiumTheme) {
+    // If localStorage has premium theme from previous session, reset to default
+    console.log('[initializeTheme] Premium theme detected in localStorage, resetting to default');
+    root.classList.add('dark'); // Default dark-neon theme
+    useUserSettingsStore.getState().updateSetting('currentTheme', 'dark-neon');
+    return;
+  }
+  
+  // Apply free themes normally
   if (currentTheme === 'dark-neon') {
     root.classList.add('dark');
   } else {
     root.setAttribute('data-theme', currentTheme);
     
-    // Lista de todos os temas escuros (incluindo premium)
-    const darkThemes = [
-      'dark-serene',
-      'high-contrast',
-      'theme_cyberpunk_neon',
-      'theme_ocean_breeze',
-      'theme_sunset_gradient',
-      'theme_forest_mystic',
-      'theme_midnight_aurora',
-      'theme_volcanic_fire'
-    ];
+    // Lista de temas escuros gratuitos
+    const darkThemes = ['dark-serene', 'high-contrast'];
     
     if (darkThemes.includes(currentTheme)) {
       root.classList.add('dark');

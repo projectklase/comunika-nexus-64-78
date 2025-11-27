@@ -36,13 +36,24 @@ export function AppLayout({ children }: AppLayoutProps) {
   const activityDrawerState = useActivityDrawerState();
   const { loadPeople } = usePeopleStore();
   const studentClass = useStudentClass();
-  const { getEquippedAvatarData } = useUnlockables();
+  const { getEquippedAvatarData, getEquippedItem, userUnlocks } = useUnlockables();
   const equippedAvatar = getEquippedAvatarData();
 
   // Ensure stores are loaded
   React.useEffect(() => {
     loadPeople();
   }, [loadPeople]);
+
+  // Load user's equipped premium theme from database after login
+  React.useEffect(() => {
+    const equippedTheme = getEquippedItem('THEME');
+    if (equippedTheme?.unlockable?.identifier) {
+      // Dynamically import to avoid circular dependency
+      import('@/hooks/use-theme').then(({ applyPremiumTheme }) => {
+        applyPremiumTheme(equippedTheme.unlockable.identifier);
+      });
+    }
+  }, [userUnlocks, getEquippedItem]);
 
   const handleLogout = () => {
     logout();

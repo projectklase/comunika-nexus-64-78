@@ -132,7 +132,6 @@ export function applyPremiumTheme(identifier: string) {
   root.setAttribute('data-theme', identifier);
   root.classList.add('dark'); // All premium themes are dark
   
-  // Also update the user settings store to keep everything in sync
-  const { updateSetting } = useUserSettingsStore.getState();
-  updateSetting('currentTheme', identifier as ThemeOption);
+  // Do NOT save to localStorage - premium themes are per-user from database only
+  // This prevents theme leakage between different users on the same browser
 }

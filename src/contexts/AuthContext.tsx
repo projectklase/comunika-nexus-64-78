@@ -283,6 +283,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      // Reset theme to default before logout to prevent theme leakage
+      const root = document.documentElement;
+      root.removeAttribute('data-theme');
+      root.classList.remove('dark');
+      root.classList.add('dark'); // Default theme is dark-neon
+      
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
