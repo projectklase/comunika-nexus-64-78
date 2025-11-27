@@ -1,7 +1,17 @@
 import { useEffect } from 'react';
 import { useUserSettingsStore } from '@/stores/user-settings-store';
 
-export type ThemeOption = 'dark-neon' | 'dark-serene' | 'light' | 'high-contrast';
+export type ThemeOption = 
+  | 'dark-neon' 
+  | 'dark-serene' 
+  | 'light' 
+  | 'high-contrast'
+  | 'theme_cyberpunk_neon'
+  | 'theme_ocean_breeze'
+  | 'theme_sunset_gradient'
+  | 'theme_forest_mystic'
+  | 'theme_midnight_aurora'
+  | 'theme_volcanic_fire';
 
 export interface ThemeConfig {
   value: ThemeOption;
@@ -94,9 +104,35 @@ function applyTheme(theme: ThemeOption) {
     root.classList.add('dark');
   } else {
     root.setAttribute('data-theme', theme);
-    // Add dark class for dark-serene and high-contrast
-    if (theme === 'dark-serene' || theme === 'high-contrast') {
+    // Add dark class for all dark themes (including all premium themes)
+    const darkThemes = [
+      'dark-serene', 
+      'high-contrast',
+      'theme_cyberpunk_neon',
+      'theme_ocean_breeze',
+      'theme_sunset_gradient',
+      'theme_forest_mystic',
+      'theme_midnight_aurora',
+      'theme_volcanic_fire'
+    ];
+    if (darkThemes.includes(theme)) {
       root.classList.add('dark');
     }
   }
+}
+
+/**
+ * Apply a premium theme by its identifier
+ * Used by the gamification system when equipping premium themes
+ */
+export function applyPremiumTheme(identifier: string) {
+  const root = document.documentElement;
+  root.removeAttribute('data-theme');
+  root.classList.remove('dark');
+  root.setAttribute('data-theme', identifier);
+  root.classList.add('dark'); // All premium themes are dark
+  
+  // Also update the user settings store to keep everything in sync
+  const { updateSetting } = useUserSettingsStore.getState();
+  updateSetting('currentTheme', identifier as ThemeOption);
 }

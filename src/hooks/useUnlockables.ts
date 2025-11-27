@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { applyPremiumTheme } from './use-theme';
 
 export interface Unlockable {
   id: string;
@@ -131,9 +132,20 @@ export const useUnlockables = () => {
         );
 
       if (error) throw error;
+      
+      return { unlockId, type };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-unlocks', user?.id] });
+      
+      // Se for um tema, aplicar visualmente
+      if (data.type === 'THEME') {
+        const theme = unlockables.find(u => u.id === data.unlockId);
+        if (theme?.identifier) {
+          applyPremiumTheme(theme.identifier);
+        }
+      }
+      
       toast.success('Item equipado com sucesso!');
     },
     onError: () => {
