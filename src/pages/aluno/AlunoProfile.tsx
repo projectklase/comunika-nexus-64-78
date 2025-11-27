@@ -156,7 +156,7 @@ export default function AlunoProfile() {
                 {koinsEnabled && (
                   <div className="flex items-center gap-2 bg-background/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-border/50">
                     <Coins className="h-5 w-5 text-amber-500" />
-                    <span className="font-bold">{(user as any).koins?.toLocaleString() || 0} Koins</span>
+                    <span className="font-bold">{user.koins?.toLocaleString() || 0} Koins</span>
                   </div>
                 )}
               </div>

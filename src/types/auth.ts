@@ -29,6 +29,7 @@ export interface User {
   preferences: UserPreferences;
   mustChangePassword?: boolean;
   passwordHash?: string;
+  koins?: number;
 }
 
 export interface AuthContextType {
