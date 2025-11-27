@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 export default function AlunoProfile() {
   const { user } = useAuth();
   const { currentSchool } = useSchool();
-  const { getWeightsEnabled } = useSchoolSettings();
+  const { getKoinsEnabled } = useSchoolSettings();
   const gamification = useStudentGamification();
   const { userUnlocks, isLoading: isLoadingUnlocks, getEquippedAvatarData } = useUnlockables();
   const rankings = useStudentRankings(user?.id, 10);
@@ -32,7 +32,7 @@ export default function AlunoProfile() {
   const [badgeSelectorOpen, setBadgeSelectorOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
-  const koinsEnabled = getWeightsEnabled();
+  const koinsEnabled = getKoinsEnabled();
 
   // Query para contar entregas do aluno
   const { data: deliveriesCount = 0 } = useQuery({

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
+import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { deliveryService } from '@/services/delivery-service';
 import { useClassStore } from '@/stores/class-store';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +42,8 @@ export default function ActivityDetail() {
   const { classId, postId } = useParams<{ classId: string; postId: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { getKoinsEnabled } = useSchoolSettings();
+  const koinsEnabled = getKoinsEnabled();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -405,7 +408,7 @@ export default function ActivityDetail() {
                   </div>
                 )}
 
-                {activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0 && (
+                {koinsEnabled && activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0 && (
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-yellow-600 dark:text-yellow-400">
                       💰 {activity.activityMeta.koinReward} Koins

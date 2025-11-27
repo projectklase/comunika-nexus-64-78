@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WeightToggleField } from '@/components/activities/WeightToggleField';
+import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import { Coins } from 'lucide-react';
@@ -34,6 +35,8 @@ const durationPresets = [30, 50, 60, 90];
 
 export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
   const [customFormat, setCustomFormat] = useState('');
+  const { getKoinsEnabled } = useSchoolSettings();
+  const koinsEnabled = getKoinsEnabled();
 
   const updateMeta = (updates: Partial<ActivityMeta & { usePeso?: boolean }>) => {
     onChange({ ...meta, ...updates });
@@ -95,25 +98,27 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           onChange={handleWeightChange}
         />
 
-        <div className="space-y-2">
-          <Label htmlFor="koin-reward">Recompensa em Koins</Label>
-          <div className="relative">
-            <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="koin-reward"
-              type="number"
-              min="0"
-              max="100"
-              value={meta.koinReward || ''}
-              onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
-              placeholder="0"
-              className="pl-10"
-            />
+        {koinsEnabled && (
+          <div className="space-y-2">
+            <Label htmlFor="koin-reward">Recompensa em Koins</Label>
+            <div className="relative">
+              <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="koin-reward"
+                type="number"
+                min="0"
+                max="100"
+                value={meta.koinReward || ''}
+                onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
+                placeholder="0"
+                className="pl-10"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Koins que o aluno receberá ao concluir esta atividade
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Koins que o aluno receberá ao concluir esta atividade
-          </p>
-        </div>
+        )}
 
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
           <Switch
@@ -161,25 +166,27 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           onChange={handleWeightChange}
         />
 
-        <div className="space-y-2">
-          <Label htmlFor="koin-reward">Recompensa em Koins</Label>
-          <div className="relative">
-            <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="koin-reward"
-              type="number"
-              min="0"
-              max="100"
-              value={meta.koinReward || ''}
-              onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
-              placeholder="0"
-              className="pl-10"
-            />
+        {koinsEnabled && (
+          <div className="space-y-2">
+            <Label htmlFor="koin-reward">Recompensa em Koins</Label>
+            <div className="relative">
+              <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="koin-reward"
+                type="number"
+                min="0"
+                max="100"
+                value={meta.koinReward || ''}
+                onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
+                placeholder="0"
+                className="pl-10"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Koins que o aluno receberá ao concluir este trabalho
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Koins que o aluno receberá ao concluir este trabalho
-          </p>
-        </div>
+        )}
 
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
           <Switch
@@ -272,25 +279,27 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           onChange={handleWeightChange}
         />
 
-        <div className="space-y-2">
-          <Label htmlFor="koin-reward">Recompensa em Koins</Label>
-          <div className="relative">
-            <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="koin-reward"
-              type="number"
-              min="0"
-              max="100"
-              value={meta.koinReward || ''}
-              onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
-              placeholder="0"
-              className="pl-10"
-            />
+        {koinsEnabled && (
+          <div className="space-y-2">
+            <Label htmlFor="koin-reward">Recompensa em Koins</Label>
+            <div className="relative">
+              <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="koin-reward"
+                type="number"
+                min="0"
+                max="100"
+                value={meta.koinReward || ''}
+                onChange={(e) => updateMeta({ koinReward: e.target.value ? parseInt(e.target.value) : undefined })}
+                placeholder="0"
+                className="pl-10"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Koins que o aluno receberá ao concluir esta prova
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Koins que o aluno receberá ao concluir esta prova
-          </p>
-        </div>
+        )}
 
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
           <Switch

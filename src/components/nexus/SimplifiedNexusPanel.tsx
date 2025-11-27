@@ -5,9 +5,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 
 export function SimplifiedNexusPanel() {
   const { user } = useAuth();
+  const { getKoinsEnabled } = useSchoolSettings();
+  const koinsEnabled = getKoinsEnabled();
 
   // QOL 1: Contador de Koins pendentes
   const { data: pendingKoins } = useQuery({
@@ -52,7 +55,7 @@ export function SimplifiedNexusPanel() {
   return (
     <div className="space-y-6">
       {/* QOL 1: Alert de Koins pendentes */}
-      {pendingKoins && pendingKoins.count > 0 && (
+      {koinsEnabled && pendingKoins && pendingKoins.count > 0 && (
         <Alert className="border-yellow-500/50 bg-yellow-500/10">
           <Sparkles className="h-4 w-4 text-yellow-500" />
           <AlertDescription className="text-sm">
