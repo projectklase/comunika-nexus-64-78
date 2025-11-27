@@ -10,7 +10,7 @@ export interface UserPreferences {
     reminders: boolean;
   };
   ui: {
-    theme: 'light' | 'dark';
+    theme: 'dark-neon' | 'dark-serene' | 'light' | 'high-contrast';
     language: string;
     timezone: string;
     dateFormat: string;

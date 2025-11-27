@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { useSchoolSettingsStore } from '@/stores/school-settings-store';
+import { useUserSettingsStore } from '@/stores/user-settings-store';
 
 // Inicializar configurações da escola no carregamento da aplicação
 const initializeSchoolSettings = () => {
@@ -14,8 +15,24 @@ const initializeSchoolSettings = () => {
   }
 };
 
+// Inicializar tema do usuário
+const initializeTheme = () => {
+  const { currentTheme } = useUserSettingsStore.getState();
+  const root = document.documentElement;
+  
+  if (currentTheme === 'dark-neon') {
+    root.classList.add('dark');
+  } else {
+    root.setAttribute('data-theme', currentTheme);
+    if (currentTheme === 'dark-serene' || currentTheme === 'high-contrast') {
+      root.classList.add('dark');
+    }
+  }
+};
+
 // Inicializar na primeira execução
 initializeSchoolSettings();
+initializeTheme();
 
 const container = document.getElementById("root");
 if (!container) {
