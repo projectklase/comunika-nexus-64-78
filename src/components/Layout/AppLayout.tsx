@@ -46,6 +46,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   // Load user's equipped premium theme from database after login
   React.useEffect(() => {
+    // Only apply premium theme if user is authenticated
+    if (!user) return;
+    
     const equippedTheme = getEquippedItem('THEME');
     if (equippedTheme?.unlockable?.identifier) {
       // Dynamically import to avoid circular dependency
@@ -53,7 +56,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         applyPremiumTheme(equippedTheme.unlockable.identifier);
       });
     }
-  }, [userUnlocks, getEquippedItem]);
+  }, [user, userUnlocks, getEquippedItem]);
 
   const handleLogout = () => {
     logout();

@@ -40,6 +40,23 @@ const Login = () => {
   const isFormValid = email.includes('@') && password.length > 0;
   const isFormSubmitting = isSubmitting || isLoading;
 
+  // Force default theme on login screen to prevent premium theme leakage
+  useEffect(() => {
+    const root = document.documentElement;
+    
+    // If premium theme is applied, remove it
+    if (root.hasAttribute('data-theme')) {
+      const currentTheme = root.getAttribute('data-theme');
+      const isPremiumTheme = currentTheme?.startsWith('theme_');
+      
+      if (isPremiumTheme) {
+        console.log('[Login] Removing leaked premium theme:', currentTheme);
+        root.removeAttribute('data-theme');
+        root.classList.add('dark'); // Apply default dark-neon theme
+      }
+    }
+  }, []); // Run only once on mount
+
   // Load saved email from user settings store
   useEffect(() => {
     if (savedRememberEmail && lastEmail) {
