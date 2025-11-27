@@ -38,6 +38,7 @@ import {
   Shield,
   BarChart3,
   User,
+  Building2,
 } from 'lucide-react';
 
 const menuItems = {
@@ -45,6 +46,7 @@ const menuItems = {
     { title: 'Dashboard Admin', url: '/admin/dashboard', icon: LayoutDashboard },
     { title: 'Inteligência', url: '/admin/analytics', icon: BarChart3 },
     { title: 'Gerenciar Secretarias', url: '/admin/gerenciar-secretarias', icon: Shield },
+    { title: 'Gerenciar Escolas', url: '/admin/gerenciar-escolas', icon: Building2 },
     { title: 'Histórico', url: '/secretaria/historico', icon: History },
     { title: 'Calendário', url: '/secretaria/calendario', icon: Calendar },
     { title: 'Eventos', url: '/secretaria/eventos', icon: Calendar },

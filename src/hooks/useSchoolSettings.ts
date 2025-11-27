@@ -110,6 +110,12 @@ export function useSchoolSettings() {
     );
   };
 
+  // Specific helper for koins feature
+  const getKoinsEnabled = () => {
+    const koinsSetting = getSetting('koins_enabled', { enabled: true }); // Default true for backwards compatibility
+    return koinsSetting?.enabled === true;
+  };
+
   useEffect(() => {
     loadSettings();
   }, [currentSchool?.id]);
@@ -121,6 +127,7 @@ export function useSchoolSettings() {
     updateSetting,
     getWeightsEnabled,
     setWeightsEnabled,
+    getKoinsEnabled,
     refetch: loadSettings
   };
 }

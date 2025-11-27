@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { RewardCard } from '@/components/rewards/RewardCard';
 import { RewardDetailModal } from '@/components/rewards/RewardDetailModal';
@@ -18,6 +19,8 @@ import { Badge } from '@/components/ui/badge';
 export default function RewardsStore() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { getKoinsEnabled } = useSchoolSettings();
+  const koinsEnabled = getKoinsEnabled();
   
   const {
     getFilteredItems,
@@ -179,6 +182,22 @@ export default function RewardsStore() {
         <div className="text-center">
           <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">Acesso restrito a alunos</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if Koins are enabled for current school
+  if (!koinsEnabled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <Coins className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Sistema de Koins Desabilitado</h2>
+          <p className="text-muted-foreground">
+            O sistema de Koins não está ativo para esta escola no momento.
+            Entre em contato com a secretaria para mais informações.
+          </p>
         </div>
       </div>
     );
