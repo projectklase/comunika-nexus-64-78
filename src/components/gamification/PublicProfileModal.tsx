@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trophy, Flame, Coins } from 'lucide-react';
@@ -80,7 +80,10 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Carregando perfil...</DialogTitle>
+          </DialogHeader>
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
@@ -98,6 +101,9 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
           <DialogTitle className="text-center text-2xl">
             Perfil de {profile.name}
           </DialogTitle>
+          <DialogDescription className="text-center text-muted-foreground">
+            Estatísticas e conquistas do aluno
+          </DialogDescription>
         </DialogHeader>
 
         {/* Header com Avatar e Nome */}
