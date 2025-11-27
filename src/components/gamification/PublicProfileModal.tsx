@@ -1,9 +1,9 @@
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trophy, Flame, Coins } from 'lucide-react';
 import { AchievementBadge } from './AchievementBadge';
+import { PremiumAvatar } from './PremiumAvatar';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { cn } from '@/lib/utils';
 
@@ -24,10 +24,38 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
         .from('profiles')
         .select('id, name, avatar, total_xp, koins, current_streak_days, best_streak_days')
         .eq('id', studentId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
+    },
+    enabled: open && !!studentId,
+  });
+
+  // Avatar equipado do outro aluno
+  const { data: equippedAvatar } = useQuery({
+    queryKey: ['public-avatar', studentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_unlocks')
+        .select('*, unlockable:unlockables(*)')
+        .eq('user_id', studentId)
+        .eq('is_equipped', true)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      // Filtrar apenas avatares
+      if (data?.unlockable?.type === 'AVATAR') {
+        const unlockable = data.unlockable as any;
+        return {
+          emoji: unlockable.preview_data?.emoji || '👤',
+          rarity: unlockable.rarity || 'COMMON',
+          name: unlockable.name,
+          imageUrl: unlockable.preview_data?.imageUrl
+        };
+      }
+      return null;
     },
     enabled: open && !!studentId,
   });
@@ -66,23 +94,28 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader className="sr-only">
-          Perfil de {profile.name}
+        <DialogHeader>
+          <DialogTitle className="text-center text-2xl">
+            Perfil de {profile.name}
+          </DialogTitle>
         </DialogHeader>
 
         {/* Header com Avatar e Nome */}
-        <div className="flex flex-col items-center gap-4 pt-6">
+        <div className="flex flex-col items-center gap-4 pt-2">
           <div className="relative">
-            <Avatar className="h-32 w-32 border-4 border-primary/30 shadow-lg shadow-primary/20">
-              <AvatarImage src={profile.avatar || undefined} />
-              <AvatarFallback className="text-4xl bg-primary/10">
+            {equippedAvatar ? (
+              <PremiumAvatar 
+                emoji={equippedAvatar.emoji}
+                rarity={equippedAvatar.rarity as any}
+                size="xl"
+                imageUrl={equippedAvatar.imageUrl}
+                className="h-32 w-32"
+              />
+            ) : (
+              <div className="h-32 w-32 rounded-full bg-primary/20 flex items-center justify-center text-4xl border-4 border-primary/30 shadow-lg shadow-primary/20">
                 {profile.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">{profile.name}</h2>
+              </div>
+            )}
           </div>
         </div>
 

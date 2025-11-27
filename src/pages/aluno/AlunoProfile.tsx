@@ -5,13 +5,13 @@ import { useStudentRankings } from '@/hooks/useStudentRankings';
 import { useUnlockables } from '@/hooks/useUnlockables';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { useStudentGamification } from '@/stores/studentGamification';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RankingList } from '@/components/gamification/RankingList';
 import { ProfileStats } from '@/components/gamification/ProfileStats';
 import { AchievementBadge } from '@/components/gamification/AchievementBadge';
 import { BadgeSelectorModal } from '@/components/gamification/BadgeSelectorModal';
 import { PublicProfileModal } from '@/components/gamification/PublicProfileModal';
+import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Edit2, Trophy, Flame, Coins } from 'lucide-react';
@@ -22,8 +22,11 @@ export default function AlunoProfile() {
   const { currentSchool } = useSchool();
   const { getWeightsEnabled } = useSchoolSettings();
   const gamification = useStudentGamification();
-  const { userUnlocks, isLoading: isLoadingUnlocks } = useUnlockables();
+  const { userUnlocks, isLoading: isLoadingUnlocks, getEquippedAvatarData } = useUnlockables();
   const rankings = useStudentRankings(user?.id, 10);
+  
+  // Avatar gamificado equipado
+  const equippedAvatar = getEquippedAvatarData();
   
   const [badgeSelectorOpen, setBadgeSelectorOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -68,16 +71,21 @@ export default function AlunoProfile() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
           
           <div className="relative flex flex-col md:flex-row gap-8 items-center md:items-start">
-            {/* Avatar Grande */}
+            {/* Avatar Grande Gamificado */}
             <div className="relative group">
-              <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-primary shadow-2xl shadow-primary/30">
-                <AvatarImage src={user.avatar || undefined} />
-                <AvatarFallback className="text-4xl md:text-5xl bg-primary/20">
+              {equippedAvatar ? (
+                <PremiumAvatar 
+                  emoji={equippedAvatar.emoji}
+                  rarity={equippedAvatar.rarity as any}
+                  size="xl"
+                  imageUrl={equippedAvatar.imageUrl}
+                  className="h-32 w-32 md:h-40 md:w-40"
+                />
+              ) : (
+                <div className="h-32 w-32 md:h-40 md:w-40 rounded-full bg-primary/20 flex items-center justify-center text-4xl md:text-5xl border-4 border-primary/30">
                   {user.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              {/* Efeito de brilho para LEGENDARY */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 animate-shimmer" />
+                </div>
+              )}
             </div>
 
             {/* Info do Aluno */}
