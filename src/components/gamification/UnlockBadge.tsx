@@ -2,7 +2,7 @@ import { Crown, Lock, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UnlockBadgeProps {
-  rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
   isLocked?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -14,6 +14,12 @@ const RARITY_CONFIG = {
     icon: Sparkles,
     gradient: 'from-slate-400 to-slate-600',
     glow: 'shadow-slate-500/20',
+  },
+  UNCOMMON: {
+    label: 'Incomum',
+    icon: Sparkles,
+    gradient: 'from-green-400 to-green-600',
+    glow: 'shadow-green-500/30',
   },
   RARE: {
     label: 'Raro',
