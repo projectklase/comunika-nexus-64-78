@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, CheckCircle2, Clock, Target } from 'lucide-react';
+import { TrendingUp, CheckCircle2, Clock, Target, Zap, Flame } from 'lucide-react';
 import { Post } from '@/types/post';
 import { useAuth } from '@/contexts/AuthContext';
 import { deliveryStore } from '@/stores/delivery-store';
+import { useStudentGamification } from '@/stores/studentGamification';
 import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
 
 interface ProgressStripDashboardProps {
@@ -14,68 +15,82 @@ interface ProgressStripDashboardProps {
 
 export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
   const { user } = useAuth();
-  // deliveryStore is imported directly
+  const { xp, streak } = useStudentGamification();
+  
+  const [monthlyProgress, setMonthlyProgress] = useState({ delivered: 0, total: 0, percentage: 0 });
+  const [weeklyProgress, setWeeklyProgress] = useState({ completed: 0, pending: 0 });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const monthlyProgress = useMemo(() => {
-    if (!user) return { delivered: 0, total: 0, percentage: 0 };
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
-    const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-
-    // Get activities from this month
-    const monthlyActivities = posts.filter(post => {
-      if (!['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) return false;
-      if (!post.dueAt) return false;
+    const fetchProgress = async () => {
+      setIsLoading(true);
       
-      const dueDate = new Date(post.dueAt);
-      return isWithinInterval(dueDate, { start: monthStart, end: monthEnd });
-    });
+      try {
+        // Fetch all student deliveries once (efficient)
+        const allDeliveries = await deliveryStore.list({ studentId: user.id });
+        
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const total = monthlyActivities.length;
-    // Calculate delivered count asynchronously
-    let delivered = 0;
-    const checkDeliveries = async () => {
-      for (const post of monthlyActivities) {
-        const del = await deliveryStore.getByStudentAndPost(user.id, post.id);
-        if (del) delivered++;
+        // Filter monthly activities
+        const monthlyActivities = posts.filter(post => {
+          if (!['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) return false;
+          if (!post.dueAt) return false;
+          
+          const dueDate = new Date(post.dueAt);
+          return isWithinInterval(dueDate, { start: monthStart, end: monthEnd });
+        });
+
+        // Filter weekly activities
+        const weeklyActivities = posts.filter(post => {
+          if (!['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) return false;
+          if (!post.dueAt) return false;
+          
+          const dueDate = new Date(post.dueAt);
+          return isWithinInterval(dueDate, { start: oneWeekAgo, end: now });
+        });
+
+        // Calculate monthly delivered count
+        const deliveredMonthly = monthlyActivities.filter(post =>
+          allDeliveries.some(delivery => delivery.postId === post.id)
+        ).length;
+
+        const totalMonthly = monthlyActivities.length;
+        const percentageMonthly = totalMonthly > 0 ? Math.round((deliveredMonthly / totalMonthly) * 100) : 0;
+
+        // Calculate weekly completed count
+        const completedWeekly = weeklyActivities.filter(post =>
+          allDeliveries.some(delivery => delivery.postId === post.id)
+        ).length;
+
+        const pendingWeekly = weeklyActivities.length - completedWeekly;
+
+        setMonthlyProgress({
+          delivered: deliveredMonthly,
+          total: totalMonthly,
+          percentage: percentageMonthly
+        });
+
+        setWeeklyProgress({
+          completed: completedWeekly,
+          pending: pendingWeekly
+        });
+      } catch (error) {
+        console.error('Error fetching progress:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    checkDeliveries();
 
-    const percentage = total > 0 ? Math.round((delivered / total) * 100) : 0;
-
-    return { delivered, total, percentage };
-  }, [posts, user, deliveryStore]);
-
-  const weeklyProgress = useMemo(() => {
-    if (!user) return { completed: 0, pending: 0 };
-
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    const recentActivities = posts.filter(post => {
-      if (!['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) return false;
-      if (!post.dueAt) return false;
-      
-      const dueDate = new Date(post.dueAt);
-      return isWithinInterval(dueDate, { start: oneWeekAgo, end: now });
-    });
-
-    // Calculate completed count asynchronously
-    let completed = 0;
-    const checkCompleted = async () => {
-      for (const post of recentActivities) {
-        const del = await deliveryStore.getByStudentAndPost(user.id, post.id);
-        if (del) completed++;
-      }
-    };
-    checkCompleted();
-
-    const pending = recentActivities.length - completed;
-
-    return { completed, pending };
-  }, [posts, user, deliveryStore]);
+    fetchProgress();
+  }, [posts, user?.id]);
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return 'text-success';
@@ -89,6 +104,28 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
     return 'destructive';
   };
 
+  if (isLoading) {
+    return (
+      <Card className="glass-card border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Progresso do Mês
+          </CardTitle>
+          <CardDescription>
+            Acompanhe suas entregas de {format(new Date(), 'MMMM yyyy')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="py-4">
+          <div className="text-center text-muted-foreground">
+            <div className="h-8 w-8 mx-auto mb-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-sm">Carregando progresso...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (monthlyProgress.total === 0) {
     return (
       <Card className="glass-card border-border/50">
@@ -98,7 +135,7 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
             Progresso do Mês
           </CardTitle>
           <CardDescription>
-            Acompanhe suas entregas de {format(new Date(), 'MMMM')}
+            Acompanhe suas entregas de {format(new Date(), 'MMMM yyyy')}
           </CardDescription>
         </CardHeader>
         <CardContent className="py-4">
@@ -175,6 +212,31 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
                 {weeklyProgress.pending}
               </div>
               <div className="text-xs text-muted-foreground">Pendentes</div>
+            </div>
+          </div>
+        </div>
+
+        {/* XP and Streak Section */}
+        <div className="border-t border-border/50 pt-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium text-muted-foreground">XP Total</span>
+              </div>
+              <div className="text-xl font-bold text-primary">
+                {xp}
+              </div>
+            </div>
+            
+            <div className="text-center p-3 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Flame className="h-4 w-4 text-orange-500" />
+                <span className="text-xs font-medium text-muted-foreground">Sequência</span>
+              </div>
+              <div className="text-xl font-bold text-orange-500">
+                {streak} {streak === 1 ? 'dia' : 'dias'}
+              </div>
             </div>
           </div>
         </div>
