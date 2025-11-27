@@ -9,11 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useUnlockables } from '@/hooks/useUnlockables';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
 import { AvatarGalleryModal } from '@/components/gamification/AvatarGalleryModal';
+import { AchievementBadge } from '@/components/gamification/AchievementBadge';
 
 export function ProfileTab() {
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
-  const { getEquippedAvatarData } = useUnlockables();
+  const { getEquippedAvatarData, getEquippedBadges, getUnlocksByType } = useUnlockables();
   const [isLoading, setIsLoading] = useState(false);
   const [showAvatarGallery, setShowAvatarGallery] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,6 +24,8 @@ export function ProfileTab() {
   });
 
   const equippedAvatar = getEquippedAvatarData();
+  const equippedBadges = getEquippedBadges();
+  const allBadges = getUnlocksByType('BADGE');
 
   // Only secretaria and administrador can edit profile data
   const canEditProfile = user?.role === 'secretaria' || user?.role === 'administrador';
@@ -111,6 +114,52 @@ export function ProfileTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Seção de Conquistas - apenas para alunos */}
+      {user?.role === 'aluno' && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <span className="text-lg">🏅</span>
+                </div>
+                <h3 className="text-lg font-semibold">Minhas Conquistas</h3>
+              </div>
+              
+              {equippedBadges.length > 0 ? (
+                <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
+                  <div className="flex flex-wrap gap-4">
+                    {equippedBadges.map((unlock) => {
+                      if (!unlock.unlockable) return null;
+                      return (
+                        <div key={unlock.id} className="flex flex-col items-center gap-1.5">
+                          <AchievementBadge
+                            unlockable={unlock.unlockable}
+                            size="lg"
+                          />
+                          <span className="text-xs text-muted-foreground max-w-[80px] text-center line-clamp-2">
+                            {unlock.unlockable.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-4 text-center">
+                    {equippedBadges.length} {equippedBadges.length === 1 ? 'conquista desbloqueada' : 'conquistas desbloqueadas'}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Complete desafios, mantenha streaks e ganhe XP para desbloquear conquistas!
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Form Fields */}
       <div className="grid gap-6 md:grid-cols-2">

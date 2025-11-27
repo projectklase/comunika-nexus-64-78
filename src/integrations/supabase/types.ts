@@ -1037,9 +1037,11 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string | null
+          best_streak_days: number | null
           class_id: string | null
           created_at: string | null
           current_school_id: string | null
+          current_streak_days: number | null
           default_school_slug: string | null
           dob: string | null
           email: string
@@ -1047,18 +1049,22 @@ export type Database = {
           id: string
           is_active: boolean | null
           koins: number
+          last_activity_date: string | null
           must_change_password: boolean | null
           name: string
           phone: string | null
           preferences: Json | null
           student_notes: string | null
+          total_xp: number | null
           updated_at: string | null
         }
         Insert: {
           avatar?: string | null
+          best_streak_days?: number | null
           class_id?: string | null
           created_at?: string | null
           current_school_id?: string | null
+          current_streak_days?: number | null
           default_school_slug?: string | null
           dob?: string | null
           email: string
@@ -1066,18 +1072,22 @@ export type Database = {
           id: string
           is_active?: boolean | null
           koins?: number
+          last_activity_date?: string | null
           must_change_password?: boolean | null
           name: string
           phone?: string | null
           preferences?: Json | null
           student_notes?: string | null
+          total_xp?: number | null
           updated_at?: string | null
         }
         Update: {
           avatar?: string | null
+          best_streak_days?: number | null
           class_id?: string | null
           created_at?: string | null
           current_school_id?: string | null
+          current_streak_days?: number | null
           default_school_slug?: string | null
           dob?: string | null
           email?: string
@@ -1085,11 +1095,13 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           koins?: number
+          last_activity_date?: string | null
           must_change_password?: boolean | null
           name?: string
           phone?: string | null
           preferences?: Json | null
           student_notes?: string | null
+          total_xp?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1656,9 +1668,11 @@ export type Database = {
         Args: { amount_in: number; user_id_in: string }
         Returns: {
           avatar: string | null
+          best_streak_days: number | null
           class_id: string | null
           created_at: string | null
           current_school_id: string | null
+          current_streak_days: number | null
           default_school_slug: string | null
           dob: string | null
           email: string
@@ -1666,11 +1680,13 @@ export type Database = {
           id: string
           is_active: boolean | null
           koins: number
+          last_activity_date: string | null
           must_change_password: boolean | null
           name: string
           phone: string | null
           preferences: Json | null
           student_notes: string | null
+          total_xp: number | null
           updated_at: string | null
         }[]
         SetofOptions: {

@@ -1609,4 +1609,20 @@
     background: hsl(var(--card) / 0.7);
     border-color: hsl(var(--border) / 0.8);
   }
+
+  /* Achievement Badge Animations */
+  @keyframes glow {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.7);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.9);
+    }
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
 }

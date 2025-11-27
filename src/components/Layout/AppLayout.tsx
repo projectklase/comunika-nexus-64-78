@@ -22,6 +22,9 @@ import { useActivityDrawerState } from '@/hooks/useActivityDrawerState';
 import { closeActivityDrawer } from '@/utils/activity-drawer-handler';
 import { useStudentClass } from '@/hooks/useStudentClass';
 import { usePeopleStore } from '@/stores/people-store';
+import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
+import { useUnlockables } from '@/hooks/useUnlockables';
+import { BadgeDisplay } from '@/components/gamification/BadgeDisplay';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -33,6 +36,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const activityDrawerState = useActivityDrawerState();
   const { loadPeople } = usePeopleStore();
   const studentClass = useStudentClass();
+  const { getEquippedAvatarData } = useUnlockables();
+  const equippedAvatar = getEquippedAvatarData();
 
   // Ensure stores are loaded
   React.useEffect(() => {
@@ -89,12 +94,19 @@ export function AppLayout({ children }: AppLayoutProps) {
               
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all h-8 w-8 lg:h-10 lg:w-10">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-primary/20 text-primary text-xs lg:text-sm">
-                    {user.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
+                <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  <div className="flex items-center gap-1.5">
+                    <PremiumAvatar 
+                      emoji={equippedAvatar?.emoji || '🐱'}
+                      rarity={equippedAvatar?.rarity as any || 'COMMON'}
+                      size="sm"
+                      className="cursor-pointer"
+                    />
+                    {user?.role === 'aluno' && user?.id && (
+                      <BadgeDisplay userId={user.id} maxDisplay={3} />
+                    )}
+                  </div>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass-card border border-border/50">
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>

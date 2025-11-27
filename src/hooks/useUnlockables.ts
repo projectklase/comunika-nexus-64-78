@@ -161,6 +161,29 @@ export const useUnlockables = () => {
     };
   };
 
+  // Obter badges equipados (até 3 mais recentes)
+  const getEquippedBadges = () => {
+    return userUnlocks
+      .filter((unlock) => unlock.is_equipped && unlock.unlockable?.type === 'BADGE')
+      .sort((a, b) => new Date(b.unlocked_at).getTime() - new Date(a.unlocked_at).getTime());
+  };
+
+  // Obter todos os badges disponíveis mas bloqueados
+  const getLockedBadges = () => {
+    return unlockables.filter(
+      (u) => u.type === 'BADGE' && !isUnlocked(u.id)
+    );
+  };
+
+  // Verificar se possui badge específico
+  const hasBadge = (badgeIdentifier: string) => {
+    return userUnlocks.some(
+      (unlock) =>
+        unlock.unlockable?.type === 'BADGE' &&
+        unlock.unlockable?.identifier === badgeIdentifier
+    );
+  };
+
   return {
     unlockables,
     userUnlocks,
@@ -173,5 +196,8 @@ export const useUnlockables = () => {
     getEquippedItem,
     getUnlocksByType,
     getEquippedAvatarData,
+    getEquippedBadges,
+    getLockedBadges,
+    hasBadge,
   };
 };
