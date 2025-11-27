@@ -6,6 +6,7 @@ interface UserSettings {
   lastEmail: string;
   reduceMotion: boolean;
   calendarDensity: 'compact' | 'comfortable' | 'spacious';
+  currentTheme: 'dark-neon' | 'dark-serene' | 'light' | 'high-contrast';
   nexusPreferences: {
     defaultFocusDuration: number;
     enableMorningWindow: boolean;
@@ -29,6 +30,7 @@ const defaultSettings: UserSettings = {
   lastEmail: '',
   reduceMotion: false,
   calendarDensity: 'comfortable',
+  currentTheme: 'dark-neon',
   nexusPreferences: {
     defaultFocusDuration: 25,
     enableMorningWindow: true,

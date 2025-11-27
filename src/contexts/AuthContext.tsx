@@ -18,7 +18,7 @@ const defaultPreferences: UserPreferences = {
     reminders: true,
   },
   ui: {
-    theme: 'dark',
+    theme: 'dark-neon',
     language: 'pt-BR',
     timezone: 'America/Sao_Paulo',
     dateFormat: 'DD/MM/YYYY',
