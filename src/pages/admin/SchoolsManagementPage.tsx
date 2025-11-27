@@ -45,7 +45,7 @@ function SchoolCard({
             <span className="text-3xl">🏫</span>
             <div>
               <h3 className="text-xl font-bold">{school.name}</h3>
-              <p className="text-sm text-muted-foreground">slug: {school.slug}</p>
+              <p className="text-sm text-muted-foreground">Identificador: {school.slug}</p>
             </div>
             {school.is_active && (
               <Badge variant="outline" className="border-green-500/50 text-green-500">
