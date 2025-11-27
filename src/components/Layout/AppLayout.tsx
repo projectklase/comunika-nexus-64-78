@@ -25,6 +25,7 @@ import { usePeopleStore } from '@/stores/people-store';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
 import { useUnlockables } from '@/hooks/useUnlockables';
 import { BadgeDisplay } from '@/components/gamification/BadgeDisplay';
+import { useUserSettingsStore } from '@/stores/user-settings-store';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -48,6 +49,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   React.useEffect(() => {
     // Only apply premium theme if user is authenticated
     if (!user) return;
+    
+    // Verificar se o usuário tem tema grátis explicitamente selecionado no localStorage
+    const localTheme = useUserSettingsStore.getState().currentTheme;
+    const isFreeThemeSelected = !localTheme.startsWith('theme_');
+    
+    // Só aplicar tema premium se não houver tema grátis explicitamente selecionado
+    if (isFreeThemeSelected) return;
     
     const equippedTheme = getEquippedItem('THEME');
     if (equippedTheme?.unlockable?.identifier) {

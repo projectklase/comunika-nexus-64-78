@@ -153,6 +153,28 @@ export const useUnlockables = () => {
     },
   });
 
+  // Desequipar todos os temas premium (quando usuário seleciona tema grátis)
+  const unequipTheme = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) return;
+
+      const themeIds = unlockables
+        .filter(u => u.type === 'THEME')
+        .map(u => u.id);
+
+      if (themeIds.length > 0) {
+        await supabase
+          .from('user_unlocks')
+          .update({ is_equipped: false })
+          .eq('user_id', user.id)
+          .in('unlockable_id', themeIds);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-unlocks', user?.id] });
+    },
+  });
+
   // Helpers para verificar se um item está desbloqueado
   const isUnlocked = (unlockableId: string) => {
     // Administradores têm acesso a todos os itens desbloqueáveis
@@ -219,6 +241,7 @@ export const useUnlockables = () => {
     isCheckingAchievements: checkAchievements.isPending,
     equipItem: equipItem.mutate,
     isEquipping: equipItem.isPending,
+    unequipTheme: unequipTheme.mutate,
     isUnlocked,
     getEquippedItem,
     getUnlocksByType,
