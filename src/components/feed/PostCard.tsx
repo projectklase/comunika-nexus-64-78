@@ -471,6 +471,56 @@ export function PostCard({
                 </div>}
             </div>}
 
+          {/* Activity Due Date - Para ATIVIDADE, TRABALHO, PROVA */}
+          {isActivity && post.dueAt && (
+            <div className={cn(
+              "p-3 rounded-lg border flex items-center gap-3",
+              // Cores por tipo de atividade
+              post.type === "PROVA" && "bg-red-500/10 border-red-500/20",
+              post.type === "TRABALHO" && "bg-yellow-500/10 border-yellow-500/20",
+              post.type === "ATIVIDADE" && "bg-green-500/10 border-green-500/20",
+              // Destaque adicional se vencido
+              isOverdue && "bg-red-500/20 border-red-500/40"
+            )}>
+              <div className={cn(
+                "flex items-center justify-center h-10 w-10 rounded-full shrink-0",
+                post.type === "PROVA" && "bg-red-500/20",
+                post.type === "TRABALHO" && "bg-yellow-500/20", 
+                post.type === "ATIVIDADE" && "bg-green-500/20",
+                isOverdue && "bg-red-500/30"
+              )}>
+                <Clock className={cn(
+                  "h-5 w-5",
+                  post.type === "PROVA" && "text-red-400",
+                  post.type === "TRABALHO" && "text-yellow-400",
+                  post.type === "ATIVIDADE" && "text-green-400",
+                  isOverdue && "text-red-400"
+                )} />
+              </div>
+              
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                  {isOverdue ? "Prazo Encerrado" : "Prazo de Entrega"}
+                </span>
+                <span className={cn(
+                  "text-sm font-semibold",
+                  post.type === "PROVA" && "text-red-300",
+                  post.type === "TRABALHO" && "text-yellow-300",
+                  post.type === "ATIVIDADE" && "text-green-300",
+                  isOverdue && "text-red-400 line-through"
+                )}>
+                  {formatEventDate(post.dueAt)}
+                </span>
+                {/* Tempo restante (se não vencido) */}
+                {!isOverdue && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(post.dueAt), { addSuffix: true, locale: ptBR })}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Contact Phone */}
           {post.meta?.contactPhone && <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
               <div className="flex items-center gap-2 text-sm">
