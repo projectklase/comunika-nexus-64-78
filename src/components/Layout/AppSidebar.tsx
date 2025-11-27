@@ -37,6 +37,7 @@ import {
   Sparkles,
   Shield,
   BarChart3,
+  User,
 } from 'lucide-react';
 
 const menuItems = {
@@ -84,6 +85,7 @@ const menuItems = {
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     { title: 'Feed', url: '/aluno/feed', icon: Rss },
     { title: 'Nexus', url: '/aluno/nexus', icon: Sparkles },
+    { title: 'Perfil', url: '/aluno/perfil', icon: User },
     { title: 'Minhas Atividades', url: '/minhas-atividades', icon: ListTodo },
     { title: 'Calendário', url: '/aluno/calendario', icon: Calendar },
     { title: 'Loja de Recompensas', url: '/aluno/loja-recompensas', icon: Store },
