@@ -8,6 +8,7 @@ import { PremiumAvatar } from './PremiumAvatar';
 import { UnlockBadge } from './UnlockBadge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AvatarGalleryModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ const RARITY_LABELS = {
 };
 
 export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalProps) {
+  const { user } = useAuth();
   const { 
     unlockables, 
     isUnlocked, 
@@ -34,6 +36,20 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
   const equippedAvatar = getEquippedItem('AVATAR');
   const avatars = unlockables.filter((u) => u.type === 'AVATAR');
 
+  // Determine which avatars are available based on role
+  const isAvatarAvailable = (avatar: any) => {
+    // Admins have all avatars
+    if (user?.role === 'administrador') return true;
+    
+    // Staff (secretaria, professor) get COMMON and UNCOMMON free
+    if (user?.role === 'secretaria' || user?.role === 'professor') {
+      return avatar.rarity === 'COMMON' || avatar.rarity === 'UNCOMMON';
+    }
+    
+    // Students use gamification system
+    return isUnlocked(avatar.id);
+  };
+
   const avatarsByRarity = {
     COMMON: avatars.filter((a) => a.rarity === 'COMMON'),
     UNCOMMON: avatars.filter((a) => a.rarity === 'UNCOMMON'),
@@ -42,7 +58,15 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
     LEGENDARY: avatars.filter((a) => a.rarity === 'LEGENDARY'),
   };
 
-  const handleSelectAvatar = (avatarId: string, avatarName: string) => {
+  const handleSelectAvatar = (avatarId: string, avatarName: string, avatar: any) => {
+    // Check if avatar is available for this user
+    if (!isAvatarAvailable(avatar)) {
+      toast.error('Avatar bloqueado', {
+        description: getRequirementText(avatar),
+      });
+      return;
+    }
+
     equipItem(
       { unlockId: avatarId, type: 'AVATAR' },
       {
@@ -96,22 +120,22 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {avatarList.map((avatar) => {
-                      const unlocked = isUnlocked(avatar.id);
+                      const available = isAvatarAvailable(avatar);
                       const isEquipped = equippedAvatar?.unlockable_id === avatar.id;
 
                       return (
                         <button
                           key={avatar.id}
                           onClick={() => {
-                            if (unlocked && !isEquipped) {
-                              handleSelectAvatar(avatar.id, avatar.name);
+                            if (available && !isEquipped) {
+                              handleSelectAvatar(avatar.id, avatar.name, avatar);
                             }
                           }}
-                          disabled={!unlocked || isEquipped || isEquipping}
+                          disabled={!available || isEquipped || isEquipping}
                           className={cn(
                             'relative p-4 rounded-xl border-2 transition-all',
                             'hover:scale-105 active:scale-95',
-                            unlocked
+                            available
                               ? 'border-border bg-card hover:bg-accent cursor-pointer'
                               : 'border-muted bg-muted/50 cursor-not-allowed opacity-60',
                             isEquipped && 'ring-2 ring-primary ring-offset-2'
@@ -131,7 +155,7 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
                                 </div>
                               )}
                               
-                              {!unlocked && (
+                              {!available && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
                                   <Lock className="w-8 h-8 text-muted-foreground" />
                                 </div>
@@ -143,7 +167,7 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
                                 {avatar.name}
                               </p>
                               
-                              {!unlocked && (
+                              {!available && user?.role === 'aluno' && (
                                 <p className="text-xs text-muted-foreground line-clamp-2">
                                   {getRequirementText(avatar)}
                                 </p>
@@ -160,7 +184,7 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
                           <div className="absolute top-2 left-2">
                             <UnlockBadge
                               rarity={avatar.rarity as any}
-                              isLocked={!unlocked}
+                              isLocked={!available}
                               size="sm"
                             />
                           </div>

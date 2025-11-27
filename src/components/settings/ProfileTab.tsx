@@ -3,9 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, X, Save, RotateCcw, Sparkles } from 'lucide-react';
+import { Save, RotateCcw, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnlockables } from '@/hooks/useUnlockables';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
@@ -21,7 +20,6 @@ export function ProfileTab() {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    avatar: user?.avatar || '',
   });
 
   const equippedAvatar = getEquippedAvatarData();
@@ -31,22 +29,6 @@ export function ProfileTab() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setFormData(prev => ({ ...prev, avatar: result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveAvatar = () => {
-    setFormData(prev => ({ ...prev, avatar: '' }));
   };
 
   const handleSave = async () => {
@@ -68,7 +50,6 @@ export function ProfileTab() {
       updateUser({
         name: formData.name,
         phone: formData.phone,
-        avatar: formData.avatar,
       });
 
       toast({
@@ -91,7 +72,6 @@ export function ProfileTab() {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      avatar: user?.avatar || '',
     });
   };
 
@@ -100,62 +80,34 @@ export function ProfileTab() {
       {/* Avatar Section */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-4">
-            {user?.role === 'aluno' && equippedAvatar ? (
-              // Avatar Premium para Alunos
-              <>
-                <PremiumAvatar
-                  emoji={equippedAvatar.emoji}
-                  rarity={equippedAvatar.rarity as any}
-                  size="lg"
-                />
-                <div className="space-y-2 flex-1">
-                  <p className="text-sm font-medium">{equippedAvatar.name}</p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowAvatarGallery(true)}
-                    className="gap-2"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Trocar Avatar
-                  </Button>
-                </div>
-              </>
-            ) : (
-              // Upload Tradicional para Outros Roles
-              <>
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={formData.avatar} alt={formData.name} />
-                  <AvatarFallback className="text-lg bg-primary/20 text-primary">
-                    {formData.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="relative overflow-hidden">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Fazer upload
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </Button>
-                    {formData.avatar && (
-                      <Button size="sm" variant="ghost" onClick={handleRemoveAvatar}>
-                        <X className="h-4 w-4 mr-2" />
-                        Remover
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    JPG, PNG ou GIF. Máximo 2MB.
-                  </p>
-                </div>
-              </>
-            )}
+          <div className="flex items-center gap-6">
+            <PremiumAvatar
+              emoji={equippedAvatar?.emoji || '🐱'}
+              rarity={equippedAvatar?.rarity as any || 'COMMON'}
+              size="xl"
+            />
+            <div className="flex-1 space-y-2">
+              <div>
+                <p className="font-semibold text-lg">{equippedAvatar?.name || 'Avatar Padrão'}</p>
+                <p className="text-sm text-muted-foreground">
+                  {equippedAvatar?.rarity === 'COMMON' && '⚪ Comum'}
+                  {equippedAvatar?.rarity === 'UNCOMMON' && '🟢 Incomum'}
+                  {equippedAvatar?.rarity === 'RARE' && '🔵 Raro'}
+                  {equippedAvatar?.rarity === 'EPIC' && '🟣 Épico'}
+                  {equippedAvatar?.rarity === 'LEGENDARY' && '🟡 Lendário'}
+                  {!equippedAvatar && '⚪ Comum'}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowAvatarGallery(true)}
+                className="gap-2 bg-primary/5 border-primary/30 hover:bg-primary/10 backdrop-blur-sm"
+              >
+                <Sparkles className="h-4 w-4" />
+                Escolher Avatar
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -222,13 +174,11 @@ export function ProfileTab() {
         </Button>
       </div>
 
-      {/* Avatar Gallery Modal for Students */}
-      {user?.role === 'aluno' && (
-        <AvatarGalleryModal
-          open={showAvatarGallery}
-          onOpenChange={setShowAvatarGallery}
-        />
-      )}
+      {/* Avatar Gallery Modal for All Users */}
+      <AvatarGalleryModal
+        open={showAvatarGallery}
+        onOpenChange={setShowAvatarGallery}
+      />
     </div>
   );
 }
