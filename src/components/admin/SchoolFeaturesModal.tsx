@@ -7,6 +7,7 @@ import { School } from '@/types/school';
 import { useSchoolFeatures } from '@/hooks/useSchoolFeatures';
 import { Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 interface SchoolFeaturesModalProps {
   open: boolean;
@@ -18,6 +19,7 @@ export function SchoolFeaturesModal({ open, onOpenChange, school }: SchoolFeatur
   const { features, isLoading, toggleFeature, refetch } = useSchoolFeatures(school?.id);
   const [pendingChanges, setPendingChanges] = useState<Record<string, boolean>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open && school) {
@@ -44,9 +46,21 @@ export function SchoolFeaturesModal({ open, onOpenChange, school }: SchoolFeatur
       }
       
       setPendingChanges({});
+      
+      // Toast de confirmação informando atualização automática
+      toast({
+        title: "✓ Configurações salvas",
+        description: "A barra lateral será atualizada automaticamente em instantes.",
+      });
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Error saving features:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as configurações."
+      });
     } finally {
       setIsSaving(false);
     }
