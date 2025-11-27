@@ -61,6 +61,7 @@ import SecretariasPage from "./pages/admin/SecretariasPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
+import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
 
 const queryClient = new QueryClient();
 
@@ -117,6 +118,15 @@ const App = () => (
               <ProtectedRoute allowedRoles={['administrador']}>
                 <AppLayout>
                   <FamilyRelationsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin - Gerenciar Escolas */}
+            <Route path="/admin/gerenciar-escolas" element={
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <AppLayout>
+                  <SchoolsManagementPage />
                 </AppLayout>
               </ProtectedRoute>
             } />
