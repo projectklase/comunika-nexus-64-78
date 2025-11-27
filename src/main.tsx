@@ -15,7 +15,7 @@ const initializeSchoolSettings = () => {
   }
 };
 
-// Inicializar tema do usuário
+// Inicializar tema do usuário (inclui temas premium)
 const initializeTheme = () => {
   const { currentTheme } = useUserSettingsStore.getState();
   const root = document.documentElement;
@@ -24,7 +24,20 @@ const initializeTheme = () => {
     root.classList.add('dark');
   } else {
     root.setAttribute('data-theme', currentTheme);
-    if (currentTheme === 'dark-serene' || currentTheme === 'high-contrast') {
+    
+    // Lista de todos os temas escuros (incluindo premium)
+    const darkThemes = [
+      'dark-serene',
+      'high-contrast',
+      'theme_cyberpunk_neon',
+      'theme_ocean_breeze',
+      'theme_sunset_gradient',
+      'theme_forest_mystic',
+      'theme_midnight_aurora',
+      'theme_volcanic_fire'
+    ];
+    
+    if (darkThemes.includes(currentTheme)) {
       root.classList.add('dark');
     }
   }

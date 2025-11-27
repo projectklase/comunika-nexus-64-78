@@ -6,7 +6,17 @@ interface UserSettings {
   lastEmail: string;
   reduceMotion: boolean;
   calendarDensity: 'compact' | 'comfortable' | 'spacious';
-  currentTheme: 'dark-neon' | 'dark-serene' | 'light' | 'high-contrast';
+  currentTheme: 
+    | 'dark-neon' 
+    | 'dark-serene' 
+    | 'light' 
+    | 'high-contrast'
+    | 'theme_cyberpunk_neon'
+    | 'theme_ocean_breeze'
+    | 'theme_sunset_gradient'
+    | 'theme_forest_mystic'
+    | 'theme_midnight_aurora'
+    | 'theme_volcanic_fire';
   nexusPreferences: {
     defaultFocusDuration: number;
     enableMorningWindow: boolean;
