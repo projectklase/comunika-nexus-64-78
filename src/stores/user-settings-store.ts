@@ -88,6 +88,34 @@ export const useUserSettingsStore = create<UserSettingsStore>()(
     {
       name: 'user-settings-storage',
       version: 1,
+      onRehydrateStorage: () => (state) => {
+        // Apply theme after localStorage hydration
+        if (state?.currentTheme) {
+          const root = document.documentElement;
+          const theme = state.currentTheme;
+          
+          // Clear previous classes
+          root.removeAttribute('data-theme');
+          root.classList.remove('dark');
+          
+          // Don't apply premium themes here (loaded from database in AppLayout)
+          if (theme.startsWith('theme_')) {
+            root.classList.add('dark');
+            return;
+          }
+          
+          // Apply free themes
+          if (theme === 'dark-neon') {
+            root.classList.add('dark');
+          } else {
+            root.setAttribute('data-theme', theme);
+            const darkThemes = ['dark-serene', 'high-contrast'];
+            if (darkThemes.includes(theme)) {
+              root.classList.add('dark');
+            }
+          }
+        }
+      },
     }
   )
 );
