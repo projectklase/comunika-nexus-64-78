@@ -5,6 +5,7 @@ import { useSchool } from '@/contexts/SchoolContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { logAudit } from '@/stores/audit-store';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSubscription } from './useSubscription';
 
 // As interfaces e a estrutura geral do hook permanecem as mesmas.
 interface Guardian {
@@ -57,6 +58,7 @@ export function useStudents() {
   const { currentSchool } = useSchool();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { validateStudentCreation } = useSubscription();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -282,6 +284,17 @@ export function useStudents() {
       throw new Error('Escola não selecionada');
     }
 
+    // ✅ VALIDAR LIMITES DE ASSINATURA ANTES DE CRIAR
+    const validation = await validateStudentCreation(currentSchool.id);
+    if (!validation.can_create) {
+      toast.error(validation.message, {
+        description: validation.max_students 
+          ? `Você já cadastrou ${validation.current_students} de ${validation.max_students} alunos permitidos.`
+          : undefined
+      });
+      throw new Error('Student limit reached');
+    }
+
     setLoading(true);
     try {
       const password = studentData.password || `Aluno${Math.floor(Math.random() * 10000)}!`;
@@ -338,7 +351,7 @@ export function useStudents() {
     } finally {
       setLoading(false);
     }
-  }, [fetchStudents, currentSchool?.id]);
+  }, [fetchStudents, currentSchool?.id, validateStudentCreation]);
 
   const updateStudent = useCallback(async (id: string, updates: Partial<Student> & { password?: string; student_notes?: string }) => {
     // A lógica de atualização de perfil está correta e será mantida.
