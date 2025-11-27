@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType, UserPreferences } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   // CORREÇÃO 2 e 5: Helper function com retry e validação completa
   const getUserProfile = async (userId: string, retryCount = 0): Promise<User | null> => {
@@ -288,6 +290,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       root.removeAttribute('data-theme');
       root.classList.remove('dark');
       root.classList.add('dark'); // Default theme is dark-neon
+      
+      // Invalidate React Query cache to prevent re-applying cached theme
+      queryClient.removeQueries({ queryKey: ['user-unlocks'] });
+      queryClient.removeQueries({ queryKey: ['unlockables'] });
       
       await supabase.auth.signOut();
       setUser(null);
