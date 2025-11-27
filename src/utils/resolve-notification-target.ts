@@ -15,6 +15,14 @@ export function resolveNotificationTarget(
   currentRole: UserRole
 ): NotificationTarget {
   
+  // Delivery submissions - go directly to activity deliveries tab
+  if (notification.type === 'DELIVERY_SUBMITTED') {
+    return {
+      destination: 'feed',
+      url: `/professor/turma/${notification.meta?.classId}/atividade/${notification.meta?.postId}?tab=entregas`
+    };
+  }
+
   // Holiday notifications always go to calendar
   if (notification.type === 'HOLIDAY' && notification.meta?.holidayDate) {
     return {

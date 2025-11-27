@@ -28,10 +28,22 @@ export class DeliveryService {
       throw new Error('Entrega já existe para este aluno nesta atividade');
     }
 
+    // Buscar post para obter school_id e título
+    const { data: post, error: postError } = await supabase
+      .from('posts')
+      .select('school_id, title')
+      .eq('id', input.postId)
+      .single();
+
+    if (postError || !post) {
+      console.error('Error fetching post:', postError);
+      throw new Error('Post não encontrado');
+    }
+
     const now = new Date().toISOString();
     const isLate = dueAt ? new Date(now) > new Date(dueAt) : false;
 
-    // Inserir entrega
+    // Inserir entrega COM school_id
     const { data: delivery, error } = await supabase
       .from('deliveries')
       .insert({
@@ -39,6 +51,7 @@ export class DeliveryService {
         student_id: input.studentId,
         student_name: input.studentName,
         class_id: input.classId,
+        school_id: post.school_id,
         notes: input.notes,
         is_late: isLate,
         submitted_at: now
@@ -47,6 +60,24 @@ export class DeliveryService {
       .single();
 
     if (error) throw error;
+
+    // Criar notificação para professor(es)
+    try {
+      await supabase.functions.invoke('create-delivery-notification', {
+        body: {
+          deliveryId: delivery.id,
+          postId: input.postId,
+          classId: input.classId,
+          studentId: input.studentId,
+          studentName: input.studentName,
+          activityTitle: post.title
+        }
+      });
+      console.log('✅ Delivery notification sent');
+    } catch (notifError) {
+      // Não falhar a entrega se a notificação falhar
+      console.error('⚠️ Failed to send delivery notification:', notifError);
+    }
 
     // Inserir anexos se existirem
     if (input.attachments && input.attachments.length > 0) {
