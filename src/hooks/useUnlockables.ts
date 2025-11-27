@@ -143,6 +143,10 @@ export const useUnlockables = () => {
 
   // Helpers para verificar se um item está desbloqueado
   const isUnlocked = (unlockableId: string) => {
+    // Administradores têm acesso a todos os itens desbloqueáveis
+    if (user?.role === 'administrador') {
+      return true;
+    }
     return userUnlocks.some((unlock) => unlock.unlockable_id === unlockableId);
   };
 
