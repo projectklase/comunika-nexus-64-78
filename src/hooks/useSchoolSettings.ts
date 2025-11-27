@@ -118,6 +118,34 @@ export function useSchoolSettings() {
 
   useEffect(() => {
     loadSettings();
+
+    // Supabase Realtime subscription para detectar mudanças em school_settings
+    if (currentSchool?.id) {
+      console.log('[useSchoolSettings] Setting up realtime subscription for school:', currentSchool.id);
+      
+      const subscription = supabase
+        .channel(`school_settings_changes_${currentSchool.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // INSERT, UPDATE, DELETE
+            schema: 'public',
+            table: 'school_settings',
+            filter: `school_id=eq.${currentSchool.id}`
+          },
+          (payload) => {
+            console.log('[useSchoolSettings] Realtime update detected:', payload);
+            // Recarrega automaticamente quando features são alteradas
+            loadSettings();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        console.log('[useSchoolSettings] Cleaning up realtime subscription');
+        subscription.unsubscribe();
+      };
+    }
   }, [currentSchool?.id]);
 
   return {
