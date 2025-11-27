@@ -5,6 +5,7 @@ interface PremiumAvatarProps {
   rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  imageUrl?: string;
 }
 
 const RARITY_CONFIG = {
@@ -42,14 +43,14 @@ const SIZE_CONFIG = {
   xl: 'w-32 h-32 text-7xl',
 };
 
-export function PremiumAvatar({ emoji, rarity, size = 'md', className }: PremiumAvatarProps) {
+export function PremiumAvatar({ emoji, rarity, size = 'md', className, imageUrl }: PremiumAvatarProps) {
   const config = RARITY_CONFIG[rarity];
   const sizeClass = SIZE_CONFIG[size];
 
   return (
     <div
       className={cn(
-        'relative rounded-full bg-background flex items-center justify-center',
+        'relative rounded-full bg-background flex items-center justify-center overflow-hidden',
         sizeClass,
         config.ring,
         config.glow,
@@ -58,7 +59,15 @@ export function PremiumAvatar({ emoji, rarity, size = 'md', className }: Premium
         className
       )}
     >
-      <span className="select-none">{emoji}</span>
+      {imageUrl ? (
+        <img 
+          src={imageUrl} 
+          alt={emoji}
+          className="w-full h-full object-cover select-none"
+        />
+      ) : (
+        <span className="select-none">{emoji}</span>
+      )}
       
       {rarity === 'LEGENDARY' && (
         <div 
