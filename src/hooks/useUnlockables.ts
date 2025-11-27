@@ -113,12 +113,22 @@ export const useUnlockables = () => {
         .eq('user_id', user.id)
         .in('unlockable_id', unlockables.filter(u => u.type === type).map(u => u.id));
 
-      // Equipar o novo item
+      // Equipar o novo item - usar UPSERT para criar registro se não existir
       const { error } = await supabase
         .from('user_unlocks')
-        .update({ is_equipped: true })
-        .eq('user_id', user.id)
-        .eq('unlockable_id', unlockId);
+        .upsert(
+          {
+            user_id: user.id,
+            unlockable_id: unlockId,
+            is_equipped: true,
+            unlocked_at: new Date().toISOString(),
+            unlock_context: { equipped_by_role: true }
+          },
+          {
+            onConflict: 'user_id,unlockable_id',
+            ignoreDuplicates: false
+          }
+        );
 
       if (error) throw error;
     },
