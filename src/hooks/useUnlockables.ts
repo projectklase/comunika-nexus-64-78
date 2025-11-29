@@ -181,6 +181,17 @@ export const useUnlockables = () => {
     if (user?.role === 'administrador') {
       return true;
     }
+    
+    // COMMON avatars/items without requirements are always unlocked
+    const unlockable = unlockables.find(u => u.id === unlockableId);
+    if (unlockable && 
+        unlockable.rarity === 'COMMON' && 
+        !unlockable.required_xp && 
+        !unlockable.required_streak_days && 
+        !unlockable.required_challenges_completed) {
+      return true;
+    }
+    
     return userUnlocks.some((unlock) => unlock.unlockable_id === unlockableId);
   };
 

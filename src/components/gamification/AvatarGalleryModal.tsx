@@ -74,7 +74,15 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
       return avatar.rarity === 'COMMON' || avatar.rarity === 'UNCOMMON';
     }
     
-    // Students use gamification system
+    // Students: COMMON avatars without requirements are always free
+    if (avatar.rarity === 'COMMON' && 
+        !avatar.required_xp && 
+        !avatar.required_streak_days && 
+        !avatar.required_challenges_completed) {
+      return true;
+    }
+    
+    // For COMMON with requirements or other rarities, check unlock status
     return isUnlocked(avatar.id);
   };
 
