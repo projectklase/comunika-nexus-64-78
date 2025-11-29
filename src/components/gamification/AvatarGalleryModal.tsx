@@ -34,6 +34,7 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
     equipItem, 
     isEquipping,
     getEquippedItem,
+    checkAchievements,
   } = useUnlockables();
 
   const gamification = useStudentGamification();
@@ -43,7 +44,7 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
   const equippedAvatar = getEquippedItem('AVATAR');
   const avatars = unlockables.filter((u) => u.type === 'AVATAR');
 
-  // Fetch challenges completed for student
+  // Fetch challenges completed for student and check achievements
   useEffect(() => {
     const fetchChallengesCompleted = async () => {
       if (!user?.id || user.role !== 'aluno') return;
@@ -61,8 +62,13 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
 
     if (open) {
       fetchChallengesCompleted();
+      
+      // Check and unlock achievements automatically when gallery opens
+      if (user?.role === 'aluno') {
+        checkAchievements();
+      }
     }
-  }, [user?.id, user?.role, open]);
+  }, [user?.id, user?.role, open, checkAchievements]);
 
   // Determine which avatars are available based on role
   const isAvatarAvailable = (avatar: any) => {
@@ -82,8 +88,20 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
       return true;
     }
     
-    // For COMMON with requirements or other rarities, check unlock status
-    return isUnlocked(avatar.id);
+    // Check if already unlocked in database
+    if (isUnlocked(avatar.id)) return true;
+    
+    // ✨ Check requirements in real-time against current student progress
+    if (user?.role === 'aluno') {
+      const meetsXpReq = !avatar.required_xp || gamification.xp >= avatar.required_xp;
+      const meetsStreakReq = !avatar.required_streak_days || gamification.streak >= avatar.required_streak_days;
+      const meetsChallengesReq = !avatar.required_challenges_completed || challengesCompleted >= avatar.required_challenges_completed;
+      
+      // Avatar is available if user meets ALL requirements that exist
+      return meetsXpReq && meetsStreakReq && meetsChallengesReq;
+    }
+    
+    return false;
   };
 
   const avatarsByRarity = {
