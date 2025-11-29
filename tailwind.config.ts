@@ -165,6 +165,46 @@ export default {
 						transform: 'translateX(0)',
 						opacity: '1'
 					}
+				},
+				// Unlock Celebration Animations
+				'unlock-common': {
+					'0%': { transform: 'scale(0.5)', opacity: '0' },
+					'50%': { transform: 'scale(1.1)' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
+				},
+				'unlock-uncommon': {
+					'0%': { transform: 'scale(0.3)', opacity: '0' },
+					'40%': { transform: 'scale(1.2)' },
+					'60%': { transform: 'scale(0.95)' },
+					'80%': { transform: 'scale(1.05)' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
+				},
+				'unlock-rare': {
+					'0%': { transform: 'rotate(-180deg) scale(0)', opacity: '0' },
+					'50%': { transform: 'rotate(15deg) scale(1.2)' },
+					'100%': { transform: 'rotate(0deg) scale(1)', opacity: '1' }
+				},
+				'unlock-epic': {
+					'0%': { transform: 'perspective(1000px) rotateX(90deg) scale(0)', opacity: '0' },
+					'30%': { transform: 'perspective(1000px) rotateX(-20deg) scale(1.3)' },
+					'60%': { transform: 'perspective(1000px) rotateX(10deg) scale(0.9)' },
+					'100%': { transform: 'perspective(1000px) rotateX(0deg) scale(1)', opacity: '1' }
+				},
+				'unlock-legendary': {
+					'0%': { transform: 'scale(0) rotate(-180deg)', opacity: '0' },
+					'40%': { transform: 'scale(1.5) rotate(20deg)' },
+					'70%': { transform: 'scale(0.9) rotate(-5deg)' },
+					'100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' }
+				},
+				'golden-rays': {
+					'0%': { transform: 'rotate(0deg)', opacity: '0.8' },
+					'100%': { transform: 'rotate(360deg)', opacity: '0.8' }
+				},
+				'float-particle': {
+					'0%, 100%': { transform: 'translateY(0) translateX(0) rotate(0deg)', opacity: '1' },
+					'25%': { transform: 'translateY(-15px) translateX(10px) rotate(90deg)', opacity: '0.8' },
+					'50%': { transform: 'translateY(-20px) translateX(-5px) rotate(180deg)', opacity: '0.6' },
+					'75%': { transform: 'translateY(-10px) translateX(-10px) rotate(270deg)', opacity: '0.9' }
 				}
 			},
 			animation: {
@@ -174,7 +214,15 @@ export default {
 				'slide-in': 'slide-in 0.3s ease-out',
 				'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
 				'tilt-in': 'tilt-in 0.4s ease-out',
-				'slide-in-right': 'slide-in-right 0.3s ease-out'
+				'slide-in-right': 'slide-in-right 0.3s ease-out',
+				// Unlock Celebrations
+				'unlock-common': 'unlock-common 0.6s ease-out',
+				'unlock-uncommon': 'unlock-uncommon 0.8s ease-out',
+				'unlock-rare': 'unlock-rare 1s ease-out',
+				'unlock-epic': 'unlock-epic 1.2s ease-out',
+				'unlock-legendary': 'unlock-legendary 1.5s ease-out',
+				'golden-rays': 'golden-rays 8s linear infinite',
+				'float-particle': 'float-particle 3s ease-in-out infinite'
 			},
 			spacing: {
 				'safe': 'env(safe-area-inset-bottom)'

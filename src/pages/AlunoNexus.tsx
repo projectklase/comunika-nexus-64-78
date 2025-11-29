@@ -4,10 +4,18 @@ import { ArrowLeft, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SimplifiedNexusPanel } from '@/components/nexus/SimplifiedNexusPanel';
 import { useUnlockables } from '@/hooks/useUnlockables';
+import { UnlockCelebrationModal } from '@/components/gamification/UnlockCelebrationModal';
 
 export default function AlunoNexus() {
   const navigate = useNavigate();
-  const { checkAchievements, isCheckingAchievements } = useUnlockables();
+  const { 
+    checkAchievements, 
+    isCheckingAchievements,
+    celebrationModalOpen,
+    setCelebrationModalOpen,
+    currentCelebration,
+    isFirstUnlock,
+  } = useUnlockables();
 
   // One-time cleanup of legacy Nexus data from localStorage
   useEffect(() => {
@@ -69,6 +77,14 @@ export default function AlunoNexus() {
           <SimplifiedNexusPanel />
         </main>
       </div>
+
+      {/* Unlock Celebration Modal */}
+      <UnlockCelebrationModal
+        open={celebrationModalOpen}
+        onOpenChange={setCelebrationModalOpen}
+        unlockedItem={currentCelebration}
+        isFirstUnlock={isFirstUnlock}
+      />
     </div>
   );
 }

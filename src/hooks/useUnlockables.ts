@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { applyPremiumTheme } from './use-theme';
+import { triggerCelebration } from '@/utils/celebration-effects';
+import { useState } from 'react';
 
 export interface Unlockable {
   id: string;
@@ -32,6 +34,17 @@ export interface UserUnlock {
 export const useUnlockables = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Estado para controlar modal de celebração
+  const [celebrationModalOpen, setCelebrationModalOpen] = useState(false);
+  const [currentCelebration, setCurrentCelebration] = useState<{
+    id: string;
+    name: string;
+    type: 'AVATAR' | 'THEME' | 'BADGE';
+    rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+    preview_data?: Record<string, any>;
+  } | null>(null);
+  const [isFirstUnlock, setIsFirstUnlock] = useState(false);
 
   // Fetch todos os unlockables disponíveis
   const { data: unlockables = [], isLoading: loadingUnlockables } = useQuery({
@@ -78,26 +91,63 @@ export const useUnlockables = () => {
       });
 
       if (error) throw error;
-      return data as Array<{ id: string; type: string; name: string; rarity: string }>;
+      return data as Array<{ 
+        id: string; 
+        type: 'AVATAR' | 'THEME' | 'BADGE';
+        name: string; 
+        rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+        preview_data?: Record<string, any>;
+      }>;
     },
-    onSuccess: (newlyUnlocked) => {
+    onSuccess: async (newlyUnlocked) => {
       if (newlyUnlocked && newlyUnlocked.length > 0) {
         queryClient.invalidateQueries({ queryKey: ['user-unlocks', user?.id] });
         
-        // Mostrar toast para cada item desbloqueado
-        newlyUnlocked.forEach((item) => {
+        // Verificar se é o primeiro desbloqueio do aluno
+        const totalUnlocks = userUnlocks.length;
+        const firstUnlock = totalUnlocks === 0;
+        setIsFirstUnlock(firstUnlock);
+        
+        // Ordenar por raridade (mostrar o mais raro primeiro)
+        const rarityOrder = { 
+          LEGENDARY: 5, 
+          EPIC: 4, 
+          RARE: 3, 
+          UNCOMMON: 2, 
+          COMMON: 1 
+        };
+        const sortedByRarity = [...newlyUnlocked].sort((a, b) => {
+          return (rarityOrder[a.rarity] || 0) - (rarityOrder[b.rarity] || 0);
+        });
+        
+        // Mostrar celebração para cada item com delay progressivo
+        for (let i = 0; i < sortedByRarity.length; i++) {
+          const item = sortedByRarity[i];
+          
+          // Delay entre celebrações (3s para cada)
+          await new Promise(resolve => setTimeout(resolve, i * 3000));
+          
+          // Disparar confetti baseado na raridade
+          triggerCelebration(item.rarity);
+          
+          // Abrir modal de celebração
+          setCurrentCelebration(item);
+          setCelebrationModalOpen(true);
+          
+          // Toast adicional para feedback
           const rarityEmoji = {
-            COMMON: '⭐',
-            RARE: '💎',
-            EPIC: '🏆',
             LEGENDARY: '👑',
+            EPIC: '🏆',
+            RARE: '💎',
+            UNCOMMON: '⭐',
+            COMMON: '🎉',
           }[item.rarity] || '🎉';
 
           toast.success(`${rarityEmoji} Conquista Desbloqueada!`, {
-            description: `Você desbloqueou: ${item.name}`,
-            duration: 5000,
+            description: `${item.name}`,
+            duration: 3000,
           });
-        });
+        }
       }
     },
   });
@@ -260,5 +310,10 @@ export const useUnlockables = () => {
     getEquippedBadges,
     getLockedBadges,
     hasBadge,
+    // Celebration modal state
+    celebrationModalOpen,
+    setCelebrationModalOpen,
+    currentCelebration,
+    isFirstUnlock,
   };
 };
