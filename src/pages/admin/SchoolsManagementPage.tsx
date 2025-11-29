@@ -17,7 +17,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, Search, Plus, Settings, Edit, MoreVertical, Trash2, Users, BookOpen, UserCog, Loader2 } from 'lucide-react';
+import { Building2, Search, Plus, Settings, Edit, MoreVertical, Trash2, Users, BookOpen, UserCog, Loader2, Wrench } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Component for individual school card
 function SchoolCard({
@@ -148,6 +150,7 @@ export default function SchoolsManagementPage() {
   const [upgradeModal, setUpgradeModal] = useState(false);
   const [schoolStats, setSchoolStats] = useState<Record<string, any>>({});
   const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
+  const [isFixingAvatars, setIsFixingAvatars] = useState(false);
 
   // Load stats for all schools
   useEffect(() => {
@@ -196,6 +199,28 @@ export default function SchoolsManagementPage() {
     refetch();
   };
 
+  const handleFixAvatars = async () => {
+    setIsFixingAvatars(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fix-avatar-unlocks', {
+        method: 'POST',
+      });
+
+      if (error) throw error;
+
+      toast.success('Avatares corrigidos com sucesso!', {
+        description: `Aline: ${data.results.aline.unlocked_avatars} avatares | Karen: ${data.results.karen.unlocked_avatars} avatares`,
+      });
+    } catch (error) {
+      console.error('Error fixing avatars:', error);
+      toast.error('Erro ao corrigir avatares', {
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+      });
+    } finally {
+      setIsFixingAvatars(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
@@ -221,10 +246,25 @@ export default function SchoolsManagementPage() {
               className="glass-input pl-10"
             />
           </div>
-          <Button onClick={handleCreate} className="glass-button w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Escola
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button 
+              onClick={handleFixAvatars} 
+              disabled={isFixingAvatars}
+              variant="outline"
+              className="glass-button flex-1 sm:flex-initial"
+            >
+              {isFixingAvatars ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Wrench className="h-4 w-4 mr-2" />
+              )}
+              Corrigir Avatares
+            </Button>
+            <Button onClick={handleCreate} className="glass-button flex-1 sm:flex-initial">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Escola
+            </Button>
+          </div>
         </div>
       </Card>
 
