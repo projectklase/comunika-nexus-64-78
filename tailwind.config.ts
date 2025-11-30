@@ -205,6 +205,31 @@ export default {
 					'25%': { transform: 'translateY(-15px) translateX(10px) rotate(90deg)', opacity: '0.8' },
 					'50%': { transform: 'translateY(-20px) translateX(-5px) rotate(180deg)', opacity: '0.6' },
 					'75%': { transform: 'translateY(-10px) translateX(-10px) rotate(270deg)', opacity: '0.9' }
+				},
+				// Battle Animations
+				'damage-shake': {
+					'0%, 100%': { transform: 'translateX(0)' },
+					'10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-4px)' },
+					'20%, 40%, 60%, 80%': { transform: 'translateX(4px)' }
+				},
+				'card-fly-in': {
+					'0%': { transform: 'translateY(100px) scale(0.5) rotateX(45deg)', opacity: '0' },
+					'60%': { transform: 'translateY(-10px) scale(1.1) rotateX(-5deg)', opacity: '1' },
+					'100%': { transform: 'translateY(0) scale(1) rotateX(0deg)', opacity: '1' }
+				},
+				'shine': {
+					'0%': { transform: 'translateX(-100%)' },
+					'100%': { transform: 'translateX(200%)' }
+				},
+				'gradient-shift': {
+					'0%, 100%': { backgroundPosition: '0% 50%' },
+					'50%': { backgroundPosition: '100% 50%' }
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0) translateX(0)' },
+					'25%': { transform: 'translateY(-30px) translateX(10px)' },
+					'50%': { transform: 'translateY(-60px) translateX(-10px)' },
+					'75%': { transform: 'translateY(-30px) translateX(10px)' }
 				}
 			},
 			animation: {
@@ -222,7 +247,13 @@ export default {
 				'unlock-epic': 'unlock-epic 1.2s ease-out',
 				'unlock-legendary': 'unlock-legendary 1.5s ease-out',
 				'golden-rays': 'golden-rays 8s linear infinite',
-				'float-particle': 'float-particle 3s ease-in-out infinite'
+				'float-particle': 'float-particle 3s ease-in-out infinite',
+				// Battle Animations
+				'damage-shake': 'damage-shake 0.5s ease-in-out',
+				'card-fly-in': 'card-fly-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+				'shine': 'shine 3s ease-in-out infinite',
+				'gradient-shift': 'gradient-shift 8s ease infinite',
+				'float': 'float 6s ease-in-out infinite'
 			},
 			spacing: {
 				'safe': 'env(safe-area-inset-bottom)'
