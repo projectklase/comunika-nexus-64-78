@@ -40,6 +40,7 @@ import {
   BarChart3,
   User,
   Building2,
+  Package,
 } from 'lucide-react';
 
 const menuItems = {
@@ -89,6 +90,7 @@ const menuItems = {
     { title: 'Perfil', url: '/aluno/perfil', icon: User }, // Perfil gamificado com rankings
     { title: 'Feed', url: '/aluno/feed', icon: Rss },
     { title: 'Nexus', url: '/aluno/nexus', icon: Sparkles },
+    { title: 'Cartas', url: '/aluno/cartas', icon: Package },
     { title: 'Minhas Atividades', url: '/minhas-atividades', icon: ListTodo },
     { title: 'Calendário', url: '/aluno/calendario', icon: Calendar },
     { title: 'Loja de Recompensas', url: '/aluno/loja-recompensas', icon: Store },

@@ -101,6 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         preferences: (profile.preferences as unknown as UserPreferences) || defaultPreferences,
         mustChangePassword: profile.must_change_password,
         koins: profile.koins || 0,
+        total_xp: profile.total_xp || 0,
       };
     } catch (error) {
       console.error('[getUserProfile] Erro crítico:', error);
