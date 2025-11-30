@@ -103,12 +103,13 @@ export const useCards = () => {
 
   // Abrir pacote de cartas
   const openPack = useMutation({
-    mutationFn: async (packType: PackType) => {
+    mutationFn: async ({ packType, isFree = false }: { packType: PackType; isFree?: boolean }) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase.rpc('open_card_pack', {
         p_user_id: user.id,
         p_pack_type: packType,
+        p_is_free: isFree,
       });
 
       if (error) throw error;
