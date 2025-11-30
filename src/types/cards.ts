@@ -104,3 +104,48 @@ export const CATEGORY_LABELS: Record<CardCategory, string> = {
   ESPORTES: 'Esportes',
   ESPECIAL: 'Especial',
 };
+
+export const CATEGORY_ICONS: Record<CardCategory, string> = {
+  MATEMATICA: 'Calculator',
+  CIENCIAS: 'FlaskConical',
+  HISTORIA: 'Scroll',
+  ARTES: 'Palette',
+  ESPORTES: 'Dumbbell',
+  ESPECIAL: 'Sparkles',
+};
+
+export const CATEGORY_COLORS: Record<CardCategory, string> = {
+  MATEMATICA: 'from-blue-600 to-blue-900',
+  CIENCIAS: 'from-emerald-600 to-emerald-900',
+  HISTORIA: 'from-amber-600 to-amber-900',
+  ARTES: 'from-pink-600 to-pink-900',
+  ESPORTES: 'from-orange-600 to-orange-900',
+  ESPECIAL: 'from-yellow-400 to-yellow-700',
+};
+
+export const RARITY_FRAME_COLORS: Record<CardRarity, {
+  outer: string;
+  inner: string;
+  glow: string;
+}> = {
+  COMMON: {
+    outer: 'from-gray-400 to-gray-600',
+    inner: 'border-gray-500',
+    glow: '',
+  },
+  RARE: {
+    outer: 'from-blue-400 to-blue-700',
+    inner: 'border-blue-500',
+    glow: 'shadow-[0_0_15px_rgba(59,130,246,0.4)]',
+  },
+  EPIC: {
+    outer: 'from-purple-400 via-purple-600 to-purple-900',
+    inner: 'border-purple-500',
+    glow: 'shadow-[0_0_20px_rgba(168,85,247,0.5)]',
+  },
+  LEGENDARY: {
+    outer: 'from-yellow-300 via-yellow-500 to-amber-600',
+    inner: 'border-yellow-400',
+    glow: 'shadow-[0_0_30px_rgba(234,179,8,0.6)] animate-legendary-glow',
+  },
+};

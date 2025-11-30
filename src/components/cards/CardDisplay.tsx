@@ -1,7 +1,8 @@
-import { Card, RARITY_COLORS, RARITY_LABELS } from '@/types/cards';
+import { Card, RARITY_COLORS, RARITY_LABELS, CATEGORY_COLORS, RARITY_FRAME_COLORS, CATEGORY_ICONS } from '@/types/cards';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Shield, Zap } from 'lucide-react';
+import { Shield, Zap, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import * as LucideIcons from 'lucide-react';
 
 interface CardDisplayProps {
   card: Card;
@@ -21,81 +22,147 @@ export const CardDisplay = ({
   size = 'md'
 }: CardDisplayProps) => {
   const sizeClasses = {
-    sm: 'w-32 h-44',
-    md: 'w-40 h-56',
-    lg: 'w-48 h-64'
+    sm: 'w-32 h-48',
+    md: 'w-44 h-64',
+    lg: 'w-52 h-72'
   };
 
-  const getRarityGlow = () => {
-    switch (card.rarity) {
-      case 'LEGENDARY':
-        return 'shadow-lg shadow-yellow-500/50 animate-pulse';
-      case 'EPIC':
-        return 'shadow-lg shadow-purple-500/30';
-      case 'RARE':
-        return 'shadow-md shadow-blue-500/20';
-      default:
-        return '';
-    }
-  };
+  const frameColors = RARITY_FRAME_COLORS[card.rarity];
+  const categoryGradient = CATEGORY_COLORS[card.category];
+  
+  // Get category icon dynamically
+  const CategoryIcon = (LucideIcons as any)[CATEGORY_ICONS[card.category]] || LucideIcons.Sparkles;
+  
+  // Calculate level stars (1-5 based on required_level)
+  const levelStars = Math.min(5, Math.max(1, Math.ceil(card.required_level / 20)));
 
   return (
     <div
       onClick={onClick}
       className={cn(
-        'relative rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-105',
+        'relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300',
+        'hover:scale-105 hover:-translate-y-2',
         sizeClasses[size],
-        getRarityGlow(),
-        `border-2 ${RARITY_COLORS[card.rarity]}`,
+        frameColors.glow,
         className
       )}
     >
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-background" />
-      
-      {/* Image */}
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        {card.image_url ? (
-          <img src={card.image_url} alt={card.name} className="w-full h-full object-contain" />
-        ) : (
-          <Sparkles className="w-16 h-16 text-muted-foreground" />
-        )}
-      </div>
+      {/* Outer Frame (Rarity Border) */}
+      <div className={cn(
+        'absolute inset-0 rounded-xl p-[3px]',
+        'bg-gradient-to-br',
+        frameColors.outer
+      )}>
+        {/* Inner Frame */}
+        <div className={cn(
+          'relative w-full h-full rounded-lg overflow-hidden',
+          'bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900',
+          'border-2',
+          frameColors.inner
+        )}>
+          {/* Holographic Effect for LEGENDARY */}
+          {card.rarity === 'LEGENDARY' && (
+            <div className="absolute inset-0 opacity-30 bg-gradient-to-r from-transparent via-white to-transparent animate-card-shine" 
+                 style={{ backgroundSize: '200% 100%' }} />
+          )}
 
-      {/* Quantity Badge */}
-      {quantity !== undefined && quantity > 1 && (
-        <div className="absolute top-2 right-2 bg-background/90 rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm border-2 border-primary">
-          {quantity}
-        </div>
-      )}
+          {/* Floating Particles for EPIC */}
+          {card.rarity === 'EPIC' && (
+            <>
+              <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full opacity-60 animate-float-particles" />
+              <div className="absolute top-1/2 right-1/4 w-1.5 h-1.5 bg-purple-300 rounded-full opacity-70 animate-float-particles" style={{ animationDelay: '0.5s' }} />
+              <div className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-purple-500 rounded-full opacity-50 animate-float-particles" style={{ animationDelay: '1s' }} />
+            </>
+          )}
 
-      {/* Card Info */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm p-2 border-t-2 border-border">
-        <div className="flex items-center justify-between gap-1">
-          <p className="font-semibold text-xs truncate">{card.name}</p>
-          <Badge variant="secondary" className={cn('text-[10px] px-1', RARITY_COLORS[card.rarity])}>
-            {RARITY_LABELS[card.rarity]}
-          </Badge>
-        </div>
-        
-        {showStats && (
-          <div className="flex items-center justify-between mt-1 text-xs">
-            <div className="flex items-center gap-1">
-              <Zap className="w-3 h-3 text-orange-500" />
-              <span className="font-bold">{card.atk}</span>
+          {/* Header with Category Icon and Name */}
+          <div className={cn(
+            'relative px-2 py-1.5 bg-gradient-to-r',
+            categoryGradient,
+            'border-b-2 border-white/20'
+          )}>
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                <CategoryIcon className="w-4 h-4 text-white flex-shrink-0" />
+                <span className="font-bold text-white text-xs truncate uppercase tracking-wide">
+                  {card.name}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Shield className="w-3 h-3 text-blue-500" />
-              <span className="font-bold">{card.def}</span>
-            </div>
-            {card.effects.length > 0 && (
-              <div className="flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-purple-500" />
-                <span className="font-bold">{card.effects.length}</span>
+          </div>
+
+          {/* Illustration Area */}
+          <div className="relative h-[45%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10">
+            {card.image_url ? (
+              <img 
+                src={card.image_url} 
+                alt={card.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className={cn(
+                'w-full h-full flex items-center justify-center',
+                'bg-gradient-to-br',
+                categoryGradient,
+                'opacity-40'
+              )}>
+                <CategoryIcon className="w-16 h-16 text-white/30" />
               </div>
             )}
           </div>
-        )}
+
+          {/* Level Stars and Rarity Badge */}
+          <div className="relative px-2 py-1 bg-black/40 border-b border-white/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: levelStars }).map((_, i) => (
+                  <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', RARITY_COLORS[card.rarity])}>
+                {RARITY_LABELS[card.rarity]}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Stats Section */}
+          {showStats && (
+            <div className="relative px-2 py-2 space-y-1.5">
+              {/* ATK / DEF */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-orange-600/20 to-orange-900/20 rounded border border-orange-500/30">
+                  <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                  <span className="text-xs font-bold text-orange-300">ATK</span>
+                  <span className="text-sm font-bold text-white">{card.atk}</span>
+                </div>
+                <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-600/20 to-blue-900/20 rounded border border-blue-500/30">
+                  <Shield className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
+                  <span className="text-xs font-bold text-blue-300">DEF</span>
+                  <span className="text-sm font-bold text-white">{card.def}</span>
+                </div>
+              </div>
+
+              {/* Effects */}
+              {card.effects.length > 0 && (
+                <div className="px-2 py-1 bg-purple-900/20 rounded border border-purple-500/30">
+                  <div className="flex items-center gap-1">
+                    <LucideIcons.Sparkles className="w-3 h-3 text-purple-400" />
+                    <span className="text-[10px] font-semibold text-purple-300 uppercase">
+                      {card.effects[0].type}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Quantity Badge */}
+          {quantity !== undefined && quantity > 1 && (
+            <div className="absolute top-2 right-2 bg-black/90 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-yellow-400 text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]">
+              {quantity}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
