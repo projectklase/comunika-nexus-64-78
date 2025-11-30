@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useCards } from '@/hooks/useCards';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card as UICard, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,54 +31,12 @@ export default function CartasPage() {
   const [showPackOpening, setShowPackOpening] = useState(false);
   const [showDeckBuilder, setShowDeckBuilder] = useState(false);
   const [lastOpenedCards, setLastOpenedCards] = useState<any>(null);
-  const [hasCheckedStarterPack, setHasCheckedStarterPack] = useState(false);
 
   const userCardsMap = new Map(userCards.map(uc => [uc.card_id, uc.quantity]));
   const collectionProgress = getCollectionProgress();
 
-  // Verificar e conceder pacote inicial
-  useEffect(() => {
-    const checkAndGrantStarterPack = async () => {
-      if (!user?.id || hasCheckedStarterPack) return;
-
-      try {
-        // Verificar se já recebeu starter pack
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('has_received_starter_pack')
-          .eq('id', user.id)
-          .single();
-
-        if (profile && !profile.has_received_starter_pack) {
-          // Abrir pacote BASIC gratuito
-          openPack({ packType: 'BASIC', isFree: true }, {
-            onSuccess: (result) => {
-              setLastOpenedCards(result.cards_received);
-              setShowPackOpening(true);
-              
-              // Marcar como recebido
-              supabase
-                .from('profiles')
-                .update({ has_received_starter_pack: true })
-                .eq('id', user.id)
-                .then(() => {
-                  toast.success('🎁 Pacote inicial gratuito recebido! Bem-vindo ao jogo de cartas!');
-                });
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Erro ao verificar starter pack:', error);
-      } finally {
-        setHasCheckedStarterPack(true);
-      }
-    };
-
-    checkAndGrantStarterPack();
-  }, [user?.id, hasCheckedStarterPack]);
-
   const handleOpenPack = (packType: any) => {
-    openPack({ packType, isFree: false }, {
+    openPack(packType, {
       onSuccess: (result) => {
         setLastOpenedCards(result.cards_received);
       }
