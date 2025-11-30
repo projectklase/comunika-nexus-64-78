@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Card Game Animations */
+@keyframes card-shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float-particles {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+    opacity: 0.6; 
+  }
+  50% { 
+    transform: translateY(-10px) rotate(180deg); 
+    opacity: 1; 
+  }
+}
+
+@keyframes legendary-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.4), 0 0 40px rgba(234, 179, 8, 0.2); 
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(234, 179, 8, 0.8), 0 0 60px rgba(234, 179, 8, 0.4); 
+  }
+}
+
 /* Mobile-First Design Tokens */
 @import './styles/mobile-tokens.css';
 
@@ -870,6 +896,19 @@
 
   .animate-fade-in {
     animation: fade-in 0.2s ease-out;
+  }
+
+  /* Card Game Animations */
+  .animate-card-shine {
+    animation: card-shine 3s linear infinite;
+  }
+
+  .animate-float-particles {
+    animation: float-particles 3s ease-in-out infinite;
+  }
+
+  .animate-legendary-glow {
+    animation: legendary-glow 2s ease-in-out infinite;
   }
   
   /* Gradient text */
