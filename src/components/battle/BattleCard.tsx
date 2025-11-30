@@ -1,15 +1,21 @@
 import { Card } from '@/types/cards';
+import { CardInPlay } from '@/hooks/useBattle';
 import { motion } from 'framer-motion';
 import { Swords, Shield, Zap } from 'lucide-react';
 import { RARITY_COLORS, RARITY_FRAME_COLORS } from '@/types/cards';
 
 interface BattleCardProps {
-  card: Card;
+  card: Card | CardInPlay;
   onClick?: () => void;
   isSelectable?: boolean;
   isSelected?: boolean;
   showEffects?: boolean;
 }
+
+// Type guard to check if card is full Card type
+const isFullCard = (card: Card | CardInPlay): card is Card => {
+  return 'category' in card && 'rarity' in card;
+};
 
 export const BattleCard = ({ 
   card, 
@@ -18,11 +24,16 @@ export const BattleCard = ({
   isSelected = false,
   showEffects = true 
 }: BattleCardProps) => {
-  const rarityColor = RARITY_COLORS[card.rarity];
-  const frameColors = RARITY_FRAME_COLORS[card.rarity];
+  // Use defaults for CardInPlay (simple cards in battle)
+  const fullCard = isFullCard(card);
+  const rarity = fullCard ? card.rarity : 'COMMON';
+  const rarityColor = RARITY_COLORS[rarity];
+  const frameColors = RARITY_FRAME_COLORS[rarity];
   
-  const isLegendary = card.rarity === 'LEGENDARY';
-  const isEpic = card.rarity === 'EPIC';
+  const isLegendary = rarity === 'LEGENDARY';
+  const isEpic = rarity === 'EPIC';
+  const imageUrl = fullCard ? card.image_url : undefined;
+  const effects = fullCard ? card.effects : [];
 
   return (
     <motion.div
@@ -44,9 +55,9 @@ export const BattleCard = ({
     >
       {/* Card image/background */}
       <div className="absolute inset-0">
-        {card.image_url ? (
+        {imageUrl ? (
           <img 
-            src={card.image_url} 
+            src={imageUrl} 
             alt={card.name}
             className="w-full h-full object-cover"
           />
@@ -97,7 +108,7 @@ export const BattleCard = ({
         </div>
         
         {/* Effects indicator */}
-        {card.effects && card.effects.length > 0 && showEffects && (
+        {effects && effects.length > 0 && showEffects && (
           <div className="absolute top-1 right-1">
             <div className="bg-accent/80 rounded-full p-1">
               <Zap className="w-3 h-3 text-accent-foreground" />

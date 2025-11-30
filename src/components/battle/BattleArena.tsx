@@ -5,10 +5,12 @@ import { BattleLine } from './BattleLine';
 import { BattleBackground } from './BattleBackground';
 import { BattlePlayerInfo } from './BattlePlayerInfo';
 import { BattleCard } from './BattleCard';
+import { BattleTurnIndicator } from './BattleTurnIndicator';
+import { CardPlayEffect } from './BattleEffects';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loader2, Swords } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Card as CardType } from '@/types/cards';
 
 interface BattleArenaProps {
@@ -20,6 +22,8 @@ export function BattleArena({ battleId }: BattleArenaProps) {
   const { userCards } = useCards();
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
+  const [playingCard, setPlayingCard] = useState<{ name: string; line: number } | null>(null);
+  const [attackingLines, setAttackingLines] = useState<number[]>([]);
 
   if (!battle) {
     return (
@@ -36,9 +40,16 @@ export function BattleArena({ battleId }: BattleArenaProps) {
 
   const handlePlayCard = () => {
     if (!selectedCard || selectedLine === null) return;
-    playCard({ battleId, line: selectedLine, cardId: selectedCard.id });
-    setSelectedCard(null);
-    setSelectedLine(null);
+    
+    // Show card play effect
+    setPlayingCard({ name: selectedCard.name, line: selectedLine });
+    
+    // Play card after animation starts
+    setTimeout(() => {
+      playCard({ battleId, line: selectedLine, cardId: selectedCard.id });
+      setSelectedCard(null);
+      setSelectedLine(null);
+    }, 300);
   };
 
   const handleLineClick = (line: number) => {
@@ -91,27 +102,11 @@ export function BattleArena({ battleId }: BattleArenaProps) {
             />
           </div>
           
-          {/* Turn indicator */}
+          {/* Turn indicator - Pulsante */}
           {battle.status === 'IN_PROGRESS' && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-4 max-w-md mx-auto"
-            >
-              <div className={`p-3 rounded-lg border-2 ${
-                isMyTurn 
-                  ? 'bg-primary/20 border-primary' 
-                  : 'bg-muted border-border'
-              }`}>
-                <p className="text-center text-sm font-medium">
-                  {isMyTurn ? (
-                    <span className="text-primary">⚔️ É sua vez de jogar!</span>
-                  ) : (
-                    <span className="text-muted-foreground">⏳ Aguardando oponente...</span>
-                  )}
-                </p>
-              </div>
-            </motion.div>
+            <div className="mt-4">
+              <BattleTurnIndicator isMyTurn={isMyTurn} />
+            </div>
           )}
         </motion.div>
 
@@ -139,6 +134,7 @@ export function BattleArena({ battleId }: BattleArenaProps) {
                 isMyTurn={isMyTurn}
                 canPlayOnLine={!!selectedCard}
                 onCardClick={() => handleLineClick(1)}
+                isAttacking={attackingLines.includes(1)}
               />
 
               <BattleLine
@@ -156,6 +152,7 @@ export function BattleArena({ battleId }: BattleArenaProps) {
                 isMyTurn={isMyTurn}
                 canPlayOnLine={!!selectedCard}
                 onCardClick={() => handleLineClick(2)}
+                isAttacking={attackingLines.includes(2)}
               />
 
               <BattleLine
@@ -173,6 +170,7 @@ export function BattleArena({ battleId }: BattleArenaProps) {
                 isMyTurn={isMyTurn}
                 canPlayOnLine={!!selectedCard}
                 onCardClick={() => handleLineClick(3)}
+                isAttacking={attackingLines.includes(3)}
               />
             </>
           )}
@@ -239,7 +237,14 @@ export function BattleArena({ battleId }: BattleArenaProps) {
           >
             <Button
               variant="outline"
-              onClick={() => finishRound(battleId)}
+              onClick={() => {
+                // Trigger attack animations
+                setAttackingLines([1, 2, 3]);
+                setTimeout(() => {
+                  setAttackingLines([]);
+                  finishRound(battleId);
+                }, 2000);
+              }}
               disabled={isPlaying}
               className="border-primary/50 hover:bg-primary/20"
             >
@@ -247,6 +252,17 @@ export function BattleArena({ battleId }: BattleArenaProps) {
             </Button>
           </motion.div>
         )}
+        
+        {/* Card play effect */}
+        <AnimatePresence>
+          {playingCard && (
+            <CardPlayEffect
+              cardName={playingCard.name}
+              lineNumber={playingCard.line}
+              onComplete={() => setPlayingCard(null)}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
