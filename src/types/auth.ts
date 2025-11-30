@@ -30,6 +30,7 @@ export interface User {
   mustChangePassword?: boolean;
   passwordHash?: string;
   koins?: number;
+  total_xp?: number;
 }
 
 export interface AuthContextType {

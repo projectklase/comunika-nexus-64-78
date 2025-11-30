@@ -62,6 +62,7 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
+import CartasPage from "./pages/aluno/CartasPage";
 
 const queryClient = new QueryClient();
 
@@ -196,6 +197,11 @@ const App = () => (
                     <AlunoCalendario />
                   </CalendarProviders>
                 </AppLayout>
+              </RoleGuard>
+            } />
+            <Route path="/aluno/cartas" element={
+              <RoleGuard allowedRoles={['aluno']}>
+                <CartasPage />
               </RoleGuard>
             } />
             {/* Legacy calendar redirects */}
