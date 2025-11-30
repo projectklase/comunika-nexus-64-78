@@ -1,7 +1,7 @@
 export type CardRarity = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
 export type CardCategory = 'MATEMATICA' | 'CIENCIAS' | 'HISTORIA' | 'ARTES' | 'ESPORTES' | 'ESPECIAL';
 export type CardEffectType = 'BURN' | 'SHIELD' | 'BOOST' | 'HEAL' | 'FREEZE' | 'DOUBLE';
-export type PackType = 'BASIC' | 'RARE' | 'EPIC' | 'LEGENDARY';
+export type PackType = 'BASIC' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'FREE';
 export type UnlockSource = 'PACK' | 'REWARD' | 'EVENT' | 'TRADE';
 
 export interface CardEffect {
@@ -71,6 +71,7 @@ export const PACK_COSTS: Record<PackType, number> = {
   RARE: 500,
   EPIC: 1500,
   LEGENDARY: 5000,
+  FREE: 0,
 };
 
 export const PACK_SIZES: Record<PackType, number> = {
@@ -78,6 +79,7 @@ export const PACK_SIZES: Record<PackType, number> = {
   RARE: 5,
   EPIC: 5,
   LEGENDARY: 7,
+  FREE: 5,
 };
 
 export const RARITY_COLORS: Record<CardRarity, string> = {

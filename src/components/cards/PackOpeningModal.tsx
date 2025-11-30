@@ -11,18 +11,22 @@ interface PackOpeningModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenPack: (packType: PackType) => void;
+  onClaimFreePack?: () => void;
   isOpening: boolean;
   userXP: number;
   lastOpenedCards?: Card[];
+  hasClaimedFreePack?: boolean;
 }
 
 export const PackOpeningModal = ({ 
   isOpen, 
   onClose, 
-  onOpenPack, 
+  onOpenPack,
+  onClaimFreePack,
   isOpening,
   userXP,
-  lastOpenedCards 
+  lastOpenedCards,
+  hasClaimedFreePack = true
 }: PackOpeningModalProps) => {
   const [selectedPack, setSelectedPack] = useState<PackType | null>(null);
   const [revealing, setRevealing] = useState(false);
@@ -93,6 +97,40 @@ export const PackOpeningModal = ({
                 {userXP} XP
               </p>
             </div>
+
+            {/* Pacote Inicial Gratuito */}
+            {!hasClaimedFreePack && onClaimFreePack && (
+              <div
+                className="relative p-6 rounded-lg border-4 border-green-500 bg-gradient-to-br from-green-500/20 to-emerald-500/20 cursor-pointer hover:scale-105 transition-all animate-pulse"
+                onClick={onClaimFreePack}
+              >
+                <div className="absolute -top-3 -right-3">
+                  <Badge className="bg-green-500 text-white border-0 px-3 py-1 text-sm font-bold">
+                    GRÁTIS
+                  </Badge>
+                </div>
+                
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-4 mx-auto shadow-lg shadow-green-500/50">
+                  <Gift className="w-10 h-10 text-white" />
+                </div>
+                
+                <h3 className="text-xl font-bold text-center mb-2 text-green-400">
+                  🎁 Pacote Inicial Gratuito!
+                </h3>
+                <p className="text-sm text-center mb-3 text-muted-foreground">
+                  5 cartas para começar sua jornada
+                </p>
+                
+                <div className="text-center">
+                  <p className="text-lg font-bold text-green-400">
+                    Reivindique agora!
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Disponível apenas uma vez
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="grid sm:grid-cols-2 gap-4">
               {packs.map(pack => {
