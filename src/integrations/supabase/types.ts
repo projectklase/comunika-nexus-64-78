@@ -136,6 +136,103 @@ export type Database = {
           },
         ]
       }
+      card_packs: {
+        Row: {
+          cards_received: string[]
+          id: string
+          opened_at: string | null
+          pack_type: string
+          user_id: string
+          xp_cost: number | null
+        }
+        Insert: {
+          cards_received: string[]
+          id?: string
+          opened_at?: string | null
+          pack_type: string
+          user_id: string
+          xp_cost?: number | null
+        }
+        Update: {
+          cards_received?: string[]
+          id?: string
+          opened_at?: string | null
+          pack_type?: string
+          user_id?: string
+          xp_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_packs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cards: {
+        Row: {
+          atk: number
+          category: string
+          created_at: string | null
+          def: number
+          description: string | null
+          effects: Json | null
+          id: string
+          image_prompt: string | null
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          rarity: string
+          required_level: number | null
+          school_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          atk?: number
+          category: string
+          created_at?: string | null
+          def?: number
+          description?: string | null
+          effects?: Json | null
+          id?: string
+          image_prompt?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          rarity: string
+          required_level?: number | null
+          school_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          atk?: number
+          category?: string
+          created_at?: string | null
+          def?: number
+          description?: string | null
+          effects?: Json | null
+          id?: string
+          image_prompt?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          rarity?: string
+          required_level?: number | null
+          school_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           action_count: number
@@ -328,6 +425,50 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decks: {
+        Row: {
+          card_ids: string[]
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_favorite: boolean | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          card_ids?: string[]
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          card_ids?: string[]
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_favorite?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1698,6 +1839,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_cards: {
+        Row: {
+          card_id: string
+          id: string
+          quantity: number
+          unlock_source: string | null
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          id?: string
+          quantity?: number
+          unlock_source?: string | null
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          id?: string
+          quantity?: number
+          unlock_source?: string | null
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_cards_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1900,6 +2083,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      open_card_pack: {
+        Args: { p_pack_type: string; p_user_id: string }
+        Returns: Json
       }
       reject_redemption: {
         Args: { p_admin_id: string; p_reason: string; p_redemption_id: string }
