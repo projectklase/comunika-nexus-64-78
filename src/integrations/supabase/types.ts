@@ -136,6 +136,102 @@ export type Database = {
           },
         ]
       }
+      battles: {
+        Row: {
+          created_at: string | null
+          current_round: number | null
+          current_turn: string | null
+          finished_at: string | null
+          id: string
+          last_action_at: string | null
+          player1_deck_id: string
+          player1_id: string
+          player1_rounds_won: number | null
+          player2_deck_id: string
+          player2_id: string
+          player2_rounds_won: number | null
+          rounds_data: Json | null
+          started_at: string | null
+          status: string
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_round?: number | null
+          current_turn?: string | null
+          finished_at?: string | null
+          id?: string
+          last_action_at?: string | null
+          player1_deck_id: string
+          player1_id: string
+          player1_rounds_won?: number | null
+          player2_deck_id: string
+          player2_id: string
+          player2_rounds_won?: number | null
+          rounds_data?: Json | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_round?: number | null
+          current_turn?: string | null
+          finished_at?: string | null
+          id?: string
+          last_action_at?: string | null
+          player1_deck_id?: string
+          player1_id?: string
+          player1_rounds_won?: number | null
+          player2_deck_id?: string
+          player2_id?: string
+          player2_rounds_won?: number | null
+          rounds_data?: Json | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battles_player1_deck_id_fkey"
+            columns: ["player1_deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battles_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battles_player2_deck_id_fkey"
+            columns: ["player2_deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battles_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battles_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       card_packs: {
         Row: {
           cards_received: string[]
@@ -2001,6 +2097,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      finish_battle_round: { Args: { p_battle_id: string }; Returns: Json }
       get_class_performance_analytics: {
         Args: { days_filter?: number; p_class_id: string }
         Returns: Json
@@ -2086,6 +2183,15 @@ export type Database = {
       }
       open_card_pack: {
         Args: { p_pack_type: string; p_user_id: string }
+        Returns: Json
+      }
+      play_battle_turn: {
+        Args: {
+          p_battle_id: string
+          p_card_id: string
+          p_line: number
+          p_player_id: string
+        }
         Returns: Json
       }
       reject_redemption: {

@@ -41,6 +41,7 @@ import {
   User,
   Building2,
   Package,
+  Sword,
 } from 'lucide-react';
 
 const menuItems = {
@@ -91,6 +92,7 @@ const menuItems = {
     { title: 'Feed', url: '/aluno/feed', icon: Rss },
     { title: 'Nexus', url: '/aluno/nexus', icon: Sparkles },
     { title: 'Cartas', url: '/aluno/cartas', icon: Package },
+    { title: 'Arena', url: '/aluno/batalha', icon: Sword },
     { title: 'Minhas Atividades', url: '/minhas-atividades', icon: ListTodo },
     { title: 'Calendário', url: '/aluno/calendario', icon: Calendar },
     { title: 'Loja de Recompensas', url: '/aluno/loja-recompensas', icon: Store },

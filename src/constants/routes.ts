@@ -7,7 +7,9 @@ export const ROUTES = {
     FEED: '/aluno/feed',
     DASHBOARD: '/aluno/dashboard',
     NEXUS: '/aluno/nexus',
-    REWARDS: '/aluno/loja-recompensas'
+    REWARDS: '/aluno/loja-recompensas',
+    CARTAS: '/aluno/cartas',
+    BATALHA: '/aluno/batalha'
   },
   PROFESSOR: {
     CALENDARIO: '/professor/calendario',
