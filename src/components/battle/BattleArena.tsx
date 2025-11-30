@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useBattle } from '@/hooks/useBattle';
+import { useBattleResult } from '@/hooks/useBattleResult';
 import { useCards } from '@/hooks/useCards';
 import { BattleLine } from './BattleLine';
 import { BattleBackground } from './BattleBackground';
@@ -7,12 +8,18 @@ import { BattlePlayerInfo } from './BattlePlayerInfo';
 import { BattleCard } from './BattleCard';
 import { BattleTurnIndicator } from './BattleTurnIndicator';
 import { CardPlayEffect } from './BattleEffects';
+import { BattleVictoryModal } from './BattleVictoryModal';
+import { BattleDefeatModal } from './BattleDefeatModal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loader2, Swords } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Card as CardType } from '@/types/cards';
 import { useScreenShake } from '@/hooks/useScreenShake';
+import { useAuth } from '@/contexts/AuthContext';
+import { useStudentGamification } from '@/stores/studentGamification';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface BattleArenaProps {
@@ -22,15 +29,52 @@ interface BattleArenaProps {
 export function BattleArena({ battleId }: BattleArenaProps) {
   const { battle, currentRound, isMyTurn, myPlayerNumber, playCard, finishRound, isPlaying } = useBattle(battleId);
   const { userCards } = useCards();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const battleResult = useBattleResult(battle, user?.id);
+  
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const [playingCard, setPlayingCard] = useState<{ name: string; line: number } | null>(null);
   const [attackingLines, setAttackingLines] = useState<number[]>([]);
+  const [showVictoryModal, setShowVictoryModal] = useState(false);
+  const [showDefeatModal, setShowDefeatModal] = useState(false);
   const { shakeClass, triggerShake } = useScreenShake();
   
   // Track HP changes to trigger screen shake
   const [prevPlayer1HP, setPrevPlayer1HP] = useState<number | null>(null);
   const [prevPlayer2HP, setPrevPlayer2HP] = useState<number | null>(null);
+
+  // Handle battle finish - update XP and show modal
+  useEffect(() => {
+    if (battle?.status === 'FINISHED' && battleResult && !showVictoryModal && !showDefeatModal) {
+      const { isVictory, xpGained, streakInfo } = battleResult;
+      const totalXP = xpGained + streakInfo.bonusXP;
+
+      // Update XP in gamification store directly
+      const currentState = useStudentGamification.getState();
+      useStudentGamification.setState({ 
+        xp: currentState.xp + totalXP 
+      });
+
+      // Sync to database
+      if (user?.id) {
+        currentState.syncToDatabase(user.id).catch(console.error);
+      }
+
+      // Invalidate rankings to reflect new XP
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+
+      // Show appropriate modal
+      if (isVictory) {
+        setShowVictoryModal(true);
+      } else {
+        setShowDefeatModal(true);
+      }
+    }
+  }, [battle?.status, battleResult, user?.id, showVictoryModal, showDefeatModal, queryClient]);
 
   if (!battle) {
     return (
@@ -291,6 +335,37 @@ export function BattleArena({ battleId }: BattleArenaProps) {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Victory Modal */}
+      {battleResult && (
+        <BattleVictoryModal
+          open={showVictoryModal}
+          onOpenChange={setShowVictoryModal}
+          xpGained={battleResult.xpGained}
+          streakBonus={battleResult.streakInfo.bonusXP}
+          stats={battleResult.stats}
+          onPlayAgain={() => {
+            setShowVictoryModal(false);
+            navigate('/aluno/batalha');
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {/* Defeat Modal */}
+      {battleResult && (
+        <BattleDefeatModal
+          open={showDefeatModal}
+          onOpenChange={setShowDefeatModal}
+          xpGained={battleResult.xpGained}
+          stats={battleResult.stats}
+          onTryAgain={() => {
+            setShowDefeatModal(false);
+            navigate('/aluno/batalha');
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

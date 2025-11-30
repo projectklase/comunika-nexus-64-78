@@ -205,11 +205,12 @@ export const useBattle = (battleId?: string) => {
       if (error) throw error;
       return result;
     },
-    onSuccess: (result: any) => {
+    onSuccess: async (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
       
       if (result?.battle_finished) {
-        toast.success(`Batalha finalizada! Vencedor: ${result.winner}`);
+        // Battle ended - XP and ranking updates will be handled in BattleArena
+        toast.success(`Batalha finalizada!`);
       } else {
         toast.info(`Round ${result?.next_round} começando...`);
       }
