@@ -3,6 +3,8 @@ import { CardInPlay } from '@/hooks/useBattle';
 import { motion } from 'framer-motion';
 import { Swords, Shield, Zap } from 'lucide-react';
 import { RARITY_COLORS, RARITY_FRAME_COLORS } from '@/types/cards';
+import { RarityEffects } from './RarityEffects';
+import { CardEffectOverlay } from './CardEffectOverlay';
 
 interface BattleCardProps {
   card: Card | CardInPlay;
@@ -69,19 +71,11 @@ export const BattleCard = ({
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
       </div>
       
-      {/* Legendary rays effect */}
-      {isLegendary && showEffects && (
-        <div className="absolute inset-0 animate-golden-rays opacity-30">
-          <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,#fbbf24,transparent,#fbbf24,transparent)]" />
-        </div>
-      )}
+      {/* Rarity-based visual effects */}
+      {showEffects && <RarityEffects rarity={rarity} />}
       
-      {/* Epic glow effect */}
-      {isEpic && showEffects && (
-        <div className="absolute inset-0 animate-glow-pulse opacity-50">
-          <div className="absolute inset-0 bg-gradient-radial from-purple-500/30 to-transparent" />
-        </div>
-      )}
+      {/* Card effect overlays */}
+      {showEffects && <CardEffectOverlay effects={effects} />}
       
       {/* Card content */}
       <div className="relative h-full flex flex-col justify-between p-2">

@@ -230,6 +230,49 @@ export default {
 					'25%': { transform: 'translateY(-30px) translateX(10px)' },
 					'50%': { transform: 'translateY(-60px) translateX(-10px)' },
 					'75%': { transform: 'translateY(-30px) translateX(10px)' }
+				},
+				// Card Effect Animations
+				'fire-flicker': {
+					'0%, 100%': { opacity: '1', transform: 'scale(1)' },
+					'25%': { opacity: '0.9', transform: 'scale(1.05)' },
+					'50%': { opacity: '0.95', transform: 'scale(0.98)' },
+					'75%': { opacity: '0.92', transform: 'scale(1.02)' }
+				},
+				'shield-pulse': {
+					'0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+					'50%': { opacity: '0.6', transform: 'scale(1.05)' }
+				},
+				'ice-shimmer': {
+					'0%': { opacity: '0.2', transform: 'rotate(0deg)' },
+					'50%': { opacity: '0.4', transform: 'rotate(180deg)' },
+					'100%': { opacity: '0.2', transform: 'rotate(360deg)' }
+				},
+				'screen-shake-light': {
+					'0%, 100%': { transform: 'translate(0, 0)' },
+					'10%, 30%, 50%, 70%, 90%': { transform: 'translate(-2px, 1px)' },
+					'20%, 40%, 60%, 80%': { transform: 'translate(2px, -1px)' }
+				},
+				'screen-shake-medium': {
+					'0%, 100%': { transform: 'translate(0, 0)' },
+					'10%, 30%, 50%, 70%, 90%': { transform: 'translate(-4px, 2px)' },
+					'20%, 40%, 60%, 80%': { transform: 'translate(4px, -2px)' }
+				},
+				'screen-shake-heavy': {
+					'0%, 100%': { transform: 'translate(0, 0)' },
+					'10%': { transform: 'translate(-8px, 4px)' },
+					'20%': { transform: 'translate(8px, -4px)' },
+					'30%': { transform: 'translate(-8px, -4px)' },
+					'40%': { transform: 'translate(8px, 4px)' },
+					'50%': { transform: 'translate(-6px, 3px)' },
+					'60%': { transform: 'translate(6px, -3px)' },
+					'70%': { transform: 'translate(-4px, 2px)' },
+					'80%': { transform: 'translate(4px, -2px)' },
+					'90%': { transform: 'translate(-2px, 1px)' }
+				},
+				'legendary-burst': {
+					'0%': { transform: 'scale(0.8)', opacity: '0' },
+					'40%': { transform: 'scale(1.3)', opacity: '1' },
+					'100%': { transform: 'scale(1)', opacity: '0.8' }
 				}
 			},
 			animation: {
@@ -253,7 +296,15 @@ export default {
 				'card-fly-in': 'card-fly-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
 				'shine': 'shine 3s ease-in-out infinite',
 				'gradient-shift': 'gradient-shift 8s ease infinite',
-				'float': 'float 6s ease-in-out infinite'
+				'float': 'float 6s ease-in-out infinite',
+				// Card Effect Animations
+				'fire-flicker': 'fire-flicker 0.3s ease-in-out infinite',
+				'shield-pulse': 'shield-pulse 1.5s ease-in-out infinite',
+				'ice-shimmer': 'ice-shimmer 4s linear infinite',
+				'screen-shake-light': 'screen-shake-light 0.5s ease-in-out',
+				'screen-shake-medium': 'screen-shake-medium 0.5s ease-in-out',
+				'screen-shake-heavy': 'screen-shake-heavy 0.6s ease-in-out',
+				'legendary-burst': 'legendary-burst 1s ease-out'
 			},
 			spacing: {
 				'safe': 'env(safe-area-inset-bottom)'

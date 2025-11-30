@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBattle } from '@/hooks/useBattle';
 import { useCards } from '@/hooks/useCards';
 import { BattleLine } from './BattleLine';
@@ -12,6 +12,8 @@ import { Card } from '@/components/ui/card';
 import { Loader2, Swords } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Card as CardType } from '@/types/cards';
+import { useScreenShake } from '@/hooks/useScreenShake';
+import { cn } from '@/lib/utils';
 
 interface BattleArenaProps {
   battleId: string;
@@ -24,6 +26,11 @@ export function BattleArena({ battleId }: BattleArenaProps) {
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const [playingCard, setPlayingCard] = useState<{ name: string; line: number } | null>(null);
   const [attackingLines, setAttackingLines] = useState<number[]>([]);
+  const { shakeClass, triggerShake } = useScreenShake();
+  
+  // Track HP changes to trigger screen shake
+  const [prevPlayer1HP, setPrevPlayer1HP] = useState<number | null>(null);
+  const [prevPlayer2HP, setPrevPlayer2HP] = useState<number | null>(null);
 
   if (!battle) {
     return (
@@ -37,6 +44,26 @@ export function BattleArena({ battleId }: BattleArenaProps) {
   // Mock HP values (will be managed by backend later)
   const player1HP = 100 - (battle.player2_rounds_won * 30);
   const player2HP = 100 - (battle.player1_rounds_won * 30);
+  
+  // Detect HP changes and trigger screen shake
+  useEffect(() => {
+    if (prevPlayer1HP !== null && player1HP < prevPlayer1HP) {
+      const damage = prevPlayer1HP - player1HP;
+      triggerShake({ 
+        intensity: damage > 20 ? 'heavy' : damage > 10 ? 'medium' : 'light',
+        duration: damage > 20 ? 600 : 500
+      });
+    }
+    if (prevPlayer2HP !== null && player2HP < prevPlayer2HP) {
+      const damage = prevPlayer2HP - player2HP;
+      triggerShake({ 
+        intensity: damage > 20 ? 'heavy' : damage > 10 ? 'medium' : 'light',
+        duration: damage > 20 ? 600 : 500
+      });
+    }
+    setPrevPlayer1HP(player1HP);
+    setPrevPlayer2HP(player2HP);
+  }, [player1HP, player2HP, prevPlayer1HP, prevPlayer2HP, triggerShake]);
 
   const handlePlayCard = () => {
     if (!selectedCard || selectedLine === null) return;
@@ -61,7 +88,7 @@ export function BattleArena({ battleId }: BattleArenaProps) {
   const playerHand = userCards.slice(0, 6);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className={cn("relative min-h-screen overflow-hidden", shakeClass)}>
       <BattleBackground />
       
       <div className="container mx-auto py-8 px-4 relative z-10">
