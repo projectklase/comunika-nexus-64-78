@@ -20,6 +20,9 @@ export default function CartasPage() {
     decks,
     openPack, 
     isOpeningPack,
+    claimFreePack,
+    isClaimingFreePack,
+    hasClaimedFreePack,
     createDeck,
     updateDeck,
     getTotalCards,
@@ -227,9 +230,17 @@ export default function CartasPage() {
           setLastOpenedCards(null);
         }}
         onOpenPack={handleOpenPack}
-        isOpening={isOpeningPack}
+        onClaimFreePack={() => {
+          claimFreePack(undefined, {
+            onSuccess: (result) => {
+              setLastOpenedCards(result.cards_received);
+            },
+          });
+        }}
+        isOpening={isOpeningPack || isClaimingFreePack}
         userXP={user?.total_xp || 0}
         lastOpenedCards={lastOpenedCards}
+        hasClaimedFreePack={hasClaimedFreePack}
       />
 
       <DeckBuilderModal

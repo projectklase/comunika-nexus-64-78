@@ -101,6 +101,43 @@ export const useCards = () => {
     enabled: !!user?.id,
   });
 
+  // Verificar se já reivindicou pacote grátis
+  const hasClaimedFreePack = packHistory.some(p => p.pack_type === 'FREE');
+
+  // Reivindicar pacote grátis inicial
+  const claimFreePack = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase.rpc('claim_free_starter_pack', {
+        p_user_id: user.id,
+      });
+
+      if (error) throw error;
+
+      const result = data as any;
+      return {
+        success: result.success,
+        pack_type: result.pack_type,
+        xp_spent: result.xp_spent,
+        cards_received: result.cards_received?.map((card: any) => ({
+          ...card,
+          effects: card.effects || [],
+        })) || [],
+      } as OpenPackResult;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['user-cards', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['card-packs', user?.id] });
+      
+      const cardCount = result.cards_received?.length || 0;
+      toast.success(`🎁 Pacote inicial gratuito reivindicado! ${cardCount} cartas recebidas!`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao reivindicar pacote');
+    },
+  });
+
   // Abrir pacote de cartas
   const openPack = useMutation({
     mutationFn: async (packType: PackType) => {
@@ -269,11 +306,14 @@ export const useCards = () => {
   };
 
   const canOpenPack = (packType: PackType): boolean => {
+    if (packType === 'FREE') return !hasClaimedFreePack;
+    
     const costs: Record<PackType, number> = {
       BASIC: 100,
       RARE: 500,
       EPIC: 1500,
       LEGENDARY: 5000,
+      FREE: 0,
     };
     const userXp = (user as any)?.total_xp || 0;
     return userXp >= costs[packType];
@@ -285,6 +325,7 @@ export const useCards = () => {
       RARE: 500,
       EPIC: 1500,
       LEGENDARY: 5000,
+      FREE: 0,
     };
     return costs[packType];
   };
@@ -306,6 +347,7 @@ export const useCards = () => {
     userCards,
     decks,
     packHistory,
+    hasClaimedFreePack,
     
     // Loading states
     isLoading: loadingCards || loadingUserCards || loadingDecks || loadingPacks,
@@ -314,6 +356,8 @@ export const useCards = () => {
     loadingDecks,
     
     // Mutations
+    claimFreePack: claimFreePack.mutate,
+    isClaimingFreePack: claimFreePack.isPending,
     openPack: openPack.mutate,
     isOpeningPack: openPack.isPending,
     createDeck: createDeck.mutate,

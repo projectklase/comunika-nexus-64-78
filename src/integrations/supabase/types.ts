@@ -1336,6 +1336,7 @@ export type Database = {
           dob: string | null
           email: string
           enrollment_number: string | null
+          has_received_starter_pack: boolean | null
           id: string
           is_active: boolean | null
           koins: number
@@ -1359,6 +1360,7 @@ export type Database = {
           dob?: string | null
           email: string
           enrollment_number?: string | null
+          has_received_starter_pack?: boolean | null
           id: string
           is_active?: boolean | null
           koins?: number
@@ -1382,6 +1384,7 @@ export type Database = {
           dob?: string | null
           email?: string
           enrollment_number?: string | null
+          has_received_starter_pack?: boolean | null
           id?: string
           is_active?: boolean | null
           koins?: number
@@ -2051,6 +2054,7 @@ export type Database = {
           dob: string | null
           email: string
           enrollment_number: string | null
+          has_received_starter_pack: boolean | null
           id: string
           is_active: boolean | null
           koins: number
@@ -2084,6 +2088,7 @@ export type Database = {
         Returns: Json
       }
       check_subscription_limits: { Args: { p_admin_id: string }; Returns: Json }
+      claim_free_starter_pack: { Args: { p_user_id: string }; Returns: Json }
       cleanup_old_system_logs: {
         Args: { days_to_keep?: number }
         Returns: number
@@ -2181,10 +2186,16 @@ export type Database = {
         }
         Returns: boolean
       }
-      open_card_pack: {
-        Args: { p_pack_type: string; p_user_id: string }
-        Returns: Json
-      }
+      open_card_pack:
+        | {
+            Args: {
+              p_is_free?: boolean
+              p_pack_type: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | { Args: { p_pack_type: string; p_user_id: string }; Returns: Json }
       play_battle_turn: {
         Args: {
           p_battle_id: string
