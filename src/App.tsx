@@ -28,6 +28,8 @@ import LevelsPage from "./pages/LevelsPage";
 import SubjectsPage from "./pages/SubjectsPage";
 import ModalitiesPage from "./pages/ModalitiesPage";
 import StudentsPage from "./pages/StudentsPage";
+import CartasPage from './pages/aluno/CartasPage';
+import BatalhaPage from './pages/aluno/BatalhaPage';
 // Removed ClassTemplatesPage import
 import CatalogoPage from "./pages/CatalogoPage";
 import { MANAGEMENT_ROLES, OPERATIONAL_ROLES } from "./utils/auth-helpers";
@@ -62,7 +64,6 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
-import CartasPage from "./pages/aluno/CartasPage";
 
 const queryClient = new QueryClient();
 
@@ -202,6 +203,11 @@ const App = () => (
             <Route path="/aluno/cartas" element={
               <RoleGuard allowedRoles={['aluno']}>
                 <CartasPage />
+              </RoleGuard>
+            } />
+            <Route path="/aluno/batalha" element={
+              <RoleGuard allowedRoles={['aluno']}>
+                <BatalhaPage />
               </RoleGuard>
             } />
             {/* Legacy calendar redirects */}
