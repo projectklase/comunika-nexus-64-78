@@ -2,7 +2,7 @@ import { CardInPlay } from '@/hooks/useBattle';
 import { BattleCard } from './BattleCard';
 import { motion } from 'framer-motion';
 import { Swords } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 
 interface BattleLineProps {
   lineNumber: 1 | 2 | 3;
@@ -14,7 +14,7 @@ interface BattleLineProps {
   isAttacking?: boolean;
 }
 
-export const BattleLine = ({
+export const BattleLine = memo(({
   lineNumber,
   playerCards,
   opponentCards,
@@ -72,7 +72,7 @@ export const BattleLine = ({
         scale: { duration: 0.5, repeat: isAttacking ? 3 : 0 },
       }}
       className={`
-        relative rounded-xl border-2 p-4 backdrop-blur-sm
+        battle-line-${lineNumber} relative rounded-xl border-2 p-2 sm:p-3 lg:p-4 backdrop-blur-sm
         bg-gradient-to-r ${lineColors.bg}
         ${lineColors.border}
         ${canPlayOnLine && isMyTurn ? 'shadow-lg ' + lineColors.glow : ''}
@@ -81,8 +81,8 @@ export const BattleLine = ({
       `}
     >
       {/* Line number badge */}
-      <div className="absolute -top-3 left-4 px-3 py-1 bg-background border-2 border-current rounded-lg">
-        <span className={`text-sm font-bold ${lineColors.accent}`}>
+      <div className="absolute -top-2 sm:-top-3 left-2 sm:left-4 px-2 sm:px-3 py-0.5 sm:py-1 bg-background border-2 border-current rounded-lg">
+        <span className={`text-xs sm:text-sm font-bold ${lineColors.accent}`}>
           Linha {lineNumber}
         </span>
       </div>
@@ -108,22 +108,22 @@ export const BattleLine = ({
         </motion.div>
       )}
 
-      <div className="grid grid-cols-2 gap-8 mt-2">
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-8 mt-2">
         {/* Opponent side */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase">
+            <span className="text-[0.65rem] sm:text-xs font-medium text-muted-foreground uppercase">
               Oponente
             </span>
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-destructive/20 rounded border border-destructive/30">
-              <Swords className="w-3 h-3 text-destructive" />
-              <span className="text-sm font-bold text-destructive">
+            <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-destructive/20 rounded border border-destructive/30">
+              <Swords className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-destructive" />
+              <span className="text-xs sm:text-sm font-bold text-destructive">
                 {opponentPower}
               </span>
             </div>
           </div>
           
-          <div className="flex gap-2 min-h-[140px] items-center justify-center">
+          <div className="flex gap-1 sm:gap-2 min-h-[100px] sm:min-h-[120px] lg:min-h-[140px] items-center justify-center">
             {opponentCards.length > 0 ? (
               opponentCards.map((card, idx) => (
                 <motion.div
@@ -136,7 +136,7 @@ export const BattleLine = ({
                 </motion.div>
               ))
             ) : (
-              <div className="text-xs text-muted-foreground/50 italic">
+              <div className="text-[0.65rem] sm:text-xs text-muted-foreground/50 italic">
                 Nenhuma carta
               </div>
             )}
@@ -144,22 +144,22 @@ export const BattleLine = ({
         </div>
 
         {/* Player side */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase">
+            <span className="text-[0.65rem] sm:text-xs font-medium text-muted-foreground uppercase">
               Você
             </span>
-            <div className={`flex items-center gap-1.5 px-2 py-1 rounded border ${
+            <div className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border ${
               isWinning 
                 ? 'bg-success/20 border-success/30'
                 : isLosing
                 ? 'bg-destructive/20 border-destructive/30'
                 : 'bg-primary/20 border-primary/30'
             }`}>
-              <Swords className={`w-3 h-3 ${
+              <Swords className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
                 isWinning ? 'text-success' : isLosing ? 'text-destructive' : 'text-primary'
               }`} />
-              <span className={`text-sm font-bold ${
+              <span className={`text-xs sm:text-sm font-bold ${
                 isWinning ? 'text-success' : isLosing ? 'text-destructive' : 'text-primary'
               }`}>
                 {playerPower}
@@ -172,7 +172,7 @@ export const BattleLine = ({
             whileHover={canPlayOnLine && isMyTurn ? { scale: 1.02 } : {}}
             onClick={canPlayOnLine && isMyTurn ? onCardClick : undefined}
             className={`
-              flex gap-2 min-h-[140px] items-center justify-center rounded-lg border-2 border-dashed
+              flex gap-1 sm:gap-2 min-h-[100px] sm:min-h-[120px] lg:min-h-[140px] items-center justify-center rounded-lg border-2 border-dashed
               ${canPlayOnLine && isMyTurn
                 ? 'border-primary bg-primary/10 cursor-pointer hover:bg-primary/20'
                 : 'border-border/30 bg-background/5'
@@ -198,11 +198,11 @@ export const BattleLine = ({
                 </motion.div>
               ))
             ) : canPlayOnLine && isMyTurn ? (
-              <div className="text-xs text-primary/70 font-medium">
+              <div className="text-[0.65rem] sm:text-xs text-primary/70 font-medium">
                 Clique para jogar carta aqui
               </div>
             ) : (
-              <div className="text-xs text-muted-foreground/50 italic">
+              <div className="text-[0.65rem] sm:text-xs text-muted-foreground/50 italic">
                 Nenhuma carta
               </div>
             )}
@@ -211,4 +211,4 @@ export const BattleLine = ({
       </div>
     </motion.div>
   );
-};
+});

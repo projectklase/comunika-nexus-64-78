@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useBattle } from '@/hooks/useBattle';
 import { useBattleResult } from '@/hooks/useBattleResult';
 import { useCards } from '@/hooks/useCards';
@@ -10,6 +10,7 @@ import { BattleTurnIndicator } from './BattleTurnIndicator';
 import { CardPlayEffect } from './BattleEffects';
 import { BattleVictoryModal } from './BattleVictoryModal';
 import { BattleDefeatModal } from './BattleDefeatModal';
+import { BattleTutorial } from './BattleTutorial';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loader2, Swords } from 'lucide-react';
@@ -21,6 +22,7 @@ import { useStudentGamification } from '@/stores/studentGamification';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useBattleSounds } from '@/hooks/useBattleSounds';
 
 interface BattleArenaProps {
   battleId: string;
@@ -32,6 +34,7 @@ export function BattleArena({ battleId }: BattleArenaProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { playSwooshSound, playAttackSound } = useBattleSounds();
   const battleResult = useBattleResult(battle, user?.id);
   
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
@@ -112,6 +115,9 @@ export function BattleArena({ battleId }: BattleArenaProps) {
   const handlePlayCard = () => {
     if (!selectedCard || selectedLine === null) return;
     
+    // Play swoosh sound
+    playSwooshSound();
+    
     // Show card play effect
     setPlayingCard({ name: selectedCard.name, line: selectedLine });
     
@@ -128,54 +134,64 @@ export function BattleArena({ battleId }: BattleArenaProps) {
     setSelectedLine(line);
   };
 
-  // Get available cards for player's hand (first 6 cards from user collection)
-  const playerHand = userCards.slice(0, 6);
+  // Get available cards for player's hand (optimize with useMemo)
+  const playerHand = useMemo(() => {
+    if (!userCards) return [];
+    return userCards.slice(0, 6);
+  }, [userCards]);
 
   return (
-    <div className={cn("relative min-h-screen overflow-hidden", shakeClass)}>
+    <div className={cn("battle-arena relative min-h-screen overflow-hidden", shakeClass)}>
       <BattleBackground />
       
-      <div className="container mx-auto py-8 px-4 relative z-10">
+      {/* Tutorial Overlay */}
+      <BattleTutorial />
+      
+      <div className="container mx-auto py-3 sm:py-6 lg:py-8 px-2 sm:px-4 relative z-10">
         {/* Battle Header with HP bars */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-4 sm:mb-6 lg:mb-8"
         >
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between max-w-4xl mx-auto gap-3 sm:gap-4">
             {/* Player 1 (You) */}
-            <BattlePlayerInfo
-              playerName="Você"
-              currentHP={player1HP}
-              maxHP={100}
-              isPlayer={true}
-            />
+            <div className="battle-hp-player w-full sm:w-auto">
+              <BattlePlayerInfo
+                playerName="Você"
+                currentHP={player1HP}
+                maxHP={100}
+                isPlayer={true}
+              />
+            </div>
             
             {/* Round indicator */}
-            <div className="text-center px-6">
-              <div className="bg-background/80 backdrop-blur-sm border border-primary/50 rounded-lg p-4 shadow-lg">
-                <Swords className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold text-primary">
+            <div className="text-center px-3 sm:px-6 flex-shrink-0">
+              <div className="bg-background/80 backdrop-blur-sm border border-primary/50 rounded-lg p-2 sm:p-4 shadow-lg">
+                <Swords className="w-6 h-6 sm:w-8 sm:h-8 text-primary mx-auto mb-1 sm:mb-2" />
+                <p className="text-lg sm:text-2xl font-bold text-primary">
                   {battle.player1_rounds_won} - {battle.player2_rounds_won}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-[0.65rem] sm:text-xs text-muted-foreground mt-1">
                   Round {battle.current_round}/3
                 </p>
               </div>
             </div>
             
             {/* Player 2 (Opponent) */}
-            <BattlePlayerInfo
-              playerName="Oponente"
-              currentHP={player2HP}
-              maxHP={100}
-              isPlayer={false}
-            />
+            <div className="w-full sm:w-auto">
+              <BattlePlayerInfo
+                playerName="Oponente"
+                currentHP={player2HP}
+                maxHP={100}
+                isPlayer={false}
+              />
+            </div>
           </div>
           
           {/* Turn indicator - Pulsante */}
           {battle.status === 'IN_PROGRESS' && (
-            <div className="mt-4">
+            <div className="mt-3 sm:mt-4">
               <BattleTurnIndicator isMyTurn={isMyTurn} />
             </div>
           )}
@@ -186,7 +202,7 @@ export function BattleArena({ battleId }: BattleArenaProps) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="space-y-4 mb-8"
+          className="space-y-3 sm:space-y-4 mb-4 sm:mb-6 lg:mb-8"
         >
           {currentRound && (
             <>
@@ -247,56 +263,68 @@ export function BattleArena({ battleId }: BattleArenaProps) {
           )}
         </motion.div>
 
-        {/* Mão do jogador */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="bg-background/80 backdrop-blur-sm border-primary/30 p-6">
-            <h3 className="text-lg font-semibold mb-4 text-center">Sua Mão</h3>
-            <div className="flex gap-4 justify-center overflow-x-auto pb-2">
-              {playerHand.map((userCard, index) => (
-                <motion.div
-                  key={userCard.card.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                >
-                  <BattleCard
-                    card={userCard.card}
-                    isSelectable={isMyTurn}
-                    isSelected={selectedCard?.id === userCard.card.id}
-                    onClick={() => setSelectedCard(userCard.card)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            {selectedCard && selectedLine && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mt-4 flex items-center justify-between p-3 bg-primary/20 border border-primary rounded-lg"
+      {/* Mão do jogador */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="battle-hand px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4 lg:pb-6"
+      >
+        <Card className="bg-background/80 backdrop-blur-sm border-primary/30 p-3 sm:p-4 lg:p-6">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold mb-3 sm:mb-4 text-center">Sua Mão</h3>
+          <div className="flex gap-2 sm:gap-3 lg:gap-4 justify-start sm:justify-center overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-primary/50 scrollbar-track-transparent">
+            {playerHand.map((userCard, index) => (
+              <motion.div
+                key={userCard.card.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + index * 0.1 }}
+                className="flex-shrink-0"
               >
-                <span className="text-sm font-semibold text-primary">
-                  {selectedCard.name} → Linha {selectedLine}
-                </span>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => {
+                <BattleCard
+                  card={userCard.card}
+                  isSelectable={isMyTurn}
+                  isSelected={selectedCard?.id === userCard.card.id}
+                  onClick={() => setSelectedCard(userCard.card)}
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {selectedCard && selectedLine && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 p-2 sm:p-3 bg-primary/20 border border-primary rounded-lg"
+            >
+              <span className="text-xs sm:text-sm font-semibold text-primary text-center sm:text-left">
+                {selectedCard.name} → Linha {selectedLine}
+              </span>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
                     setSelectedCard(null);
                     setSelectedLine(null);
-                  }}>
-                    Cancelar
-                  </Button>
-                  <Button size="sm" onClick={handlePlayCard} disabled={isPlaying}>
-                    Confirmar Jogada
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </Card>
-        </motion.div>
+                  }}
+                  className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handlePlayCard} 
+                  disabled={isPlaying}
+                  className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
+                  Confirmar Jogada
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </Card>
+      </motion.div>
 
         {/* Botão para passar turno/finalizar round */}
         {isMyTurn && (
@@ -304,11 +332,14 @@ export function BattleArena({ battleId }: BattleArenaProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="flex justify-center mt-6"
+            className="flex justify-center mt-4 sm:mt-6"
           >
             <Button
               variant="outline"
               onClick={() => {
+                // Play attack sound
+                playAttackSound();
+                
                 // Trigger attack animations
                 setAttackingLines([1, 2, 3]);
                 setTimeout(() => {
@@ -317,7 +348,7 @@ export function BattleArena({ battleId }: BattleArenaProps) {
                 }, 2000);
               }}
               disabled={isPlaying}
-              className="border-primary/50 hover:bg-primary/20"
+              className="border-primary/50 hover:bg-primary/20 text-xs sm:text-sm"
             >
               Passar Turno / Finalizar Round
             </Button>
