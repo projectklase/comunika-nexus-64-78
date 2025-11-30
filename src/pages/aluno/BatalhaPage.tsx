@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { BattleArena } from '@/components/battle/BattleArena';
 import { useBattle } from '@/hooks/useBattle';
@@ -10,12 +10,18 @@ import { Badge } from '@/components/ui/badge';
 import { Sword, Trophy, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DeckSelectionSheet } from '@/components/battle/DeckSelectionSheet';
+import { MatchmakingModal } from '@/components/battle/MatchmakingModal';
 
 export default function BatalhaPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const battleId = searchParams.get('id');
   const { userBattles, isLoading } = useBattle();
   const { decks } = useCards();
+  const [showDeckSelection, setShowDeckSelection] = useState(false);
+  const [showMatchmaking, setShowMatchmaking] = useState(false);
+  const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
 
   if (battleId) {
     return (
@@ -39,7 +45,11 @@ export default function BatalhaPage() {
               Desafie outros alunos e prove suas habilidades!
             </p>
           </div>
-          <Button size="lg" disabled={!decks.length}>
+          <Button 
+            size="lg" 
+            disabled={!decks.length}
+            onClick={() => setShowDeckSelection(true)}
+          >
             <Sword className="w-5 h-5 mr-2" />
             Nova Batalha
           </Button>
@@ -169,6 +179,30 @@ export default function BatalhaPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Deck Selection Sheet */}
+        <DeckSelectionSheet
+          open={showDeckSelection}
+          onClose={() => setShowDeckSelection(false)}
+          onSelectDeck={(deckId) => {
+            setSelectedDeckId(deckId);
+            setShowDeckSelection(false);
+            setShowMatchmaking(true);
+          }}
+        />
+
+        {/* Matchmaking Modal */}
+        <MatchmakingModal
+          open={showMatchmaking}
+          deckId={selectedDeckId}
+          onClose={() => {
+            setShowMatchmaking(false);
+            setSelectedDeckId(null);
+          }}
+          onMatchFound={(battleId) => {
+            navigate(`/aluno/batalha?id=${battleId}`);
+          }}
+        />
       </div>
     </AppLayout>
   );
