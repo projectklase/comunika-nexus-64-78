@@ -136,6 +136,78 @@ export type Database = {
           },
         ]
       }
+      battle_queue: {
+        Row: {
+          battle_id: string | null
+          created_at: string | null
+          deck_id: string
+          id: string
+          matched_with: string | null
+          school_id: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          battle_id?: string | null
+          created_at?: string | null
+          deck_id: string
+          id?: string
+          matched_with?: string | null
+          school_id: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          battle_id?: string | null
+          created_at?: string | null
+          deck_id?: string
+          id?: string
+          matched_with?: string | null
+          school_id?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_queue_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "battles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_queue_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_queue_matched_with_fkey"
+            columns: ["matched_with"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_queue_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       battles: {
         Row: {
           created_at: string | null
@@ -2130,6 +2202,7 @@ export type Database = {
           total_xp: number
         }[]
       }
+      get_queue_position: { Args: { p_user_id: string }; Returns: number }
       get_school_rankings: {
         Args: {
           limit_param?: number
@@ -2186,6 +2259,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      join_battle_queue: {
+        Args: { p_deck_id: string; p_school_id: string; p_user_id: string }
+        Returns: Json
+      }
+      leave_battle_queue: { Args: { p_user_id: string }; Returns: undefined }
       open_card_pack:
         | {
             Args: {
