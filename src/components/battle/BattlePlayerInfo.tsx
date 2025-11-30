@@ -17,11 +17,11 @@ export const BattlePlayerInfo = ({
   isPlayer = false,
 }: BattlePlayerInfoProps) => {
   return (
-    <div className={`flex items-center gap-4 ${isPlayer ? 'flex-row' : 'flex-row-reverse'}`}>
+    <div className={`flex items-center gap-2 sm:gap-3 lg:gap-4 ${isPlayer ? 'flex-row' : 'flex-row-reverse'}`}>
       {/* Avatar */}
-      <Avatar className="w-16 h-16 border-4 border-primary shadow-lg shadow-primary/50">
+      <Avatar className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 border-2 sm:border-3 lg:border-4 border-primary shadow-lg shadow-primary/50">
         <AvatarImage src={playerAvatar} alt={playerName} />
-        <AvatarFallback className="bg-primary/20 text-primary font-bold text-xl">
+        <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm sm:text-base lg:text-xl">
           {playerName.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
