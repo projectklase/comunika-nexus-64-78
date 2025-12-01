@@ -180,23 +180,23 @@ export const useCards = () => {
     mutationFn: async (data: { name: string; description?: string; card_ids: string[] }) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      // Validações
-      if (data.card_ids.length < 10) {
-        throw new Error('Deck deve ter no mínimo 10 cartas');
+      // Validações para Duelo Direto
+      if (data.card_ids.length < 5) {
+        throw new Error('Deck deve ter no mínimo 5 cartas');
       }
-      if (data.card_ids.length > 25) {
-        throw new Error('Deck deve ter no máximo 25 cartas');
+      if (data.card_ids.length > 15) {
+        throw new Error('Deck deve ter no máximo 15 cartas');
       }
 
-      // Verificar máximo 3 cópias da mesma carta
+      // Verificar máximo 2 cópias da mesma carta
       const cardCounts = data.card_ids.reduce((acc, id) => {
         acc[id] = (acc[id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const hasInvalidCount = Object.values(cardCounts).some(count => count > 3);
+      const hasInvalidCount = Object.values(cardCounts).some(count => count > 2);
       if (hasInvalidCount) {
-        throw new Error('Máximo 3 cópias da mesma carta por deck');
+        throw new Error('Máximo 2 cópias da mesma carta por deck');
       }
 
       const { error } = await supabase.from('decks').insert({
@@ -226,13 +226,13 @@ export const useCards = () => {
       card_ids?: string[];
       is_favorite?: boolean;
     }) => {
-      // Validações se card_ids for atualizado
+      // Validações para Duelo Direto se card_ids for atualizado
       if (data.card_ids) {
-        if (data.card_ids.length < 10) {
-          throw new Error('Deck deve ter no mínimo 10 cartas');
+        if (data.card_ids.length < 5) {
+          throw new Error('Deck deve ter no mínimo 5 cartas');
         }
-        if (data.card_ids.length > 25) {
-          throw new Error('Deck deve ter no máximo 25 cartas');
+        if (data.card_ids.length > 15) {
+          throw new Error('Deck deve ter no máximo 15 cartas');
         }
 
         const cardCounts = data.card_ids.reduce((acc, id) => {
@@ -240,9 +240,9 @@ export const useCards = () => {
           return acc;
         }, {} as Record<string, number>);
 
-        const hasInvalidCount = Object.values(cardCounts).some(count => count > 3);
+        const hasInvalidCount = Object.values(cardCounts).some(count => count > 2);
         if (hasInvalidCount) {
-          throw new Error('Máximo 3 cópias da mesma carta por deck');
+          throw new Error('Máximo 2 cópias da mesma carta por deck');
         }
       }
 

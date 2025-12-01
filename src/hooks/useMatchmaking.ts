@@ -105,6 +105,7 @@ export function useMatchmaking(): MatchmakingResult {
         // Get queue position
         const { data: positionData } = await supabase.rpc('get_queue_position', {
           p_user_id: user.id,
+          p_school_id: currentSchool.id,
         });
 
         if (positionData !== null) {
