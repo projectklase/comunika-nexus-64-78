@@ -2161,6 +2161,7 @@ export type Database = {
         Returns: Json
       }
       check_subscription_limits: { Args: { p_admin_id: string }; Returns: Json }
+      check_turn_timeout: { Args: { p_battle_id: string }; Returns: Json }
       claim_free_starter_pack: { Args: { p_user_id: string }; Returns: Json }
       cleanup_old_system_logs: {
         Args: { days_to_keep?: number }

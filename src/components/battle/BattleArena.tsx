@@ -7,6 +7,7 @@ import { useScreenShake } from '@/hooks/useScreenShake';
 import { useBattleSounds } from '@/hooks/useBattleSounds';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { BattleBackground } from './BattleBackground';
 import { BattleField } from './BattleField';
 import { BattlePlayerInfo } from './BattlePlayerInfo';
@@ -29,7 +30,7 @@ interface BattleArenaProps {
 export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { battle, isLoading, playCard, attack, abandonBattle, isMyTurn, myPlayerNumber } = useBattle(battleId);
+  const { battle, isLoading, playCard, attack, abandonBattle, forceTimeoutTurn, isMyTurn, myPlayerNumber } = useBattle(battleId);
   const { userCards } = useCards();
   const battleResult = useBattleResult(battle, user?.id);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const [showBattleLog, setShowBattleLog] = useState(false);
   const [player1Profile, setPlayer1Profile] = useState<{ name: string; avatar?: string } | null>(null);
   const [player2Profile, setPlayer2Profile] = useState<{ name: string; avatar?: string } | null>(null);
+  const [prevTurn, setPrevTurn] = useState<string | null>(null);
   
   const { triggerShake } = useScreenShake();
   const { playAttackSound, playSwooshSound, playWinSound, playLoseSound } = useBattleSounds();
@@ -57,28 +59,55 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   
   useEffect(() => {
     const fetchProfiles = async () => {
-      if (!battle) return;
+      if (!battle?.player1_id || !battle?.player2_id) return;
       
       setIsLoadingProfiles(true);
       
-      const { data: profiles } = await supabase
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('id, name, avatar')
         .in('id', [battle.player1_id, battle.player2_id]);
+      
+      if (error) {
+        console.error('Erro ao carregar perfis:', error);
+        setIsLoadingProfiles(false);
+        return;
+      }
       
       if (profiles) {
         const p1 = profiles.find(p => p.id === battle.player1_id);
         const p2 = profiles.find(p => p.id === battle.player2_id);
         
-        if (p1) setPlayer1Profile({ name: p1.name, avatar: p1.avatar || undefined });
-        if (p2) setPlayer2Profile({ name: p2.name, avatar: p2.avatar || undefined });
+        setPlayer1Profile(p1 ? { name: p1.name, avatar: p1.avatar || undefined } : null);
+        setPlayer2Profile(p2 ? { name: p2.name, avatar: p2.avatar || undefined } : null);
       }
       
       setIsLoadingProfiles(false);
     };
     
     fetchProfiles();
-  }, [battle]);
+  }, [battle?.player1_id, battle?.player2_id]);
+
+  // Monitor turn changes and show feedback
+  useEffect(() => {
+    if (!battle?.current_turn || !prevTurn) {
+      setPrevTurn(battle?.current_turn || null);
+      return;
+    }
+    
+    if (battle.current_turn !== prevTurn) {
+      if (isMyTurn()) {
+        toast.info('🎯 Agora é seu turno!', {
+          duration: 2000,
+        });
+      } else {
+        toast.info('⏳ Turno do oponente...', {
+          duration: 2000,
+        });
+      }
+      setPrevTurn(battle.current_turn);
+    }
+  }, [battle?.current_turn, isMyTurn, prevTurn]);
 
   useEffect(() => {
     if (battle?.status === 'FINISHED' && battleResult) {
@@ -137,6 +166,11 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     if (!battle) return;
     await abandonBattle.mutateAsync(battle.id);
     navigate('/aluno/batalha');
+  };
+
+  const handleTurnTimeout = () => {
+    if (!battle || !isMyTurn()) return;
+    forceTimeoutTurn?.(battle.id);
   };
 
   if (isLoading || !battle) {
@@ -208,7 +242,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
       
       <div className="relative z-10 container mx-auto px-4 py-8 space-y-6 max-w-7xl">
         <BattlePlayerInfo
-          playerName={isPlayer1 ? player2Profile?.name || 'Oponente' : player1Profile?.name || 'Oponente'}
+          playerName={isLoadingProfiles ? 'Carregando...' : (isPlayer1 ? player2Profile?.name || 'Oponente' : player1Profile?.name || 'Oponente')}
           playerAvatar={isPlayer1 ? player2Profile?.avatar : player1Profile?.avatar}
           currentHP={opponentHP || 100}
           maxHP={100}
@@ -219,6 +253,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
           isMyTurn={isMyTurn()} 
           turnStartedAt={battle.turn_started_at || null}
           maxSeconds={15}
+          onTimeout={handleTurnTimeout}
         />
         
         <BattleField monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />

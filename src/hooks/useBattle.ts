@@ -157,7 +157,7 @@ export const useBattle = (battleId?: string) => {
         p_battle_id: data.battleId,
         p_player_id: user.id,
         p_card_id: data.cardId,
-        p_is_trap: data.isTrap || false,
+        p_position: data.isTrap ? 'TRAP' : 'MONSTER',
       });
 
       if (error) throw error;
@@ -222,6 +222,20 @@ export const useBattle = (battleId?: string) => {
     },
   });
 
+  // Force turn timeout
+  const forceTimeoutTurn = useMutation({
+    mutationFn: async (battleId: string) => {
+      const { error } = await supabase.rpc('check_turn_timeout', {
+        p_battle_id: battleId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['battle'] });
+      toast.info('Tempo esgotado! Turno passou automaticamente.');
+    },
+  });
+
   // Helpers
   const isMyTurnFn = () => {
     if (!battle || !user?.id) return false;
@@ -251,6 +265,7 @@ export const useBattle = (battleId?: string) => {
     playCard,
     attack,
     abandonBattle,
+    forceTimeoutTurn: forceTimeoutTurn.mutate,
     
     isCreating: createBattle.isPending,
     isPlaying: playCard.isPending,
