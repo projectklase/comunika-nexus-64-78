@@ -32,7 +32,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { battle, isLoading, playCard, attack, abandonBattle, forceTimeoutTurn, endTurn, isMyTurn, myPlayerNumber } = useBattle(battleId);
-  const { userCards } = useCards();
+  const { userCards, allCards } = useCards();
   const battleResult = useBattleResult(battle, user?.id);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -180,11 +180,15 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     const handCardIds = isPlayer1 ? gameState.player1_hand : gameState.player2_hand;
     if (!handCardIds || !Array.isArray(handCardIds)) return [];
     
-    // Filter userCards to match the hand card IDs from game_state
+    // Handle both formats: string UUID or {id: UUID}
     return handCardIds
-      .map((cardId: string) => userCards?.find(uc => uc.card?.id === cardId)?.card)
+      .map((cardEntry: any) => {
+        const cardId = typeof cardEntry === 'string' ? cardEntry : cardEntry?.id;
+        // Try userCards first, fallback to allCards
+        return userCards?.find(uc => uc.card?.id === cardId)?.card || allCards?.find(c => c.id === cardId);
+      })
       .filter((card): card is NonNullable<typeof card> => card !== undefined);
-  }, [battle, gameState, isPlayer1, userCards]);
+  }, [battle, gameState, isPlayer1, userCards, allCards]);
 
   const handleCardClick = (cardId: string) => {
     if (!isMyTurn()) return;
