@@ -83,6 +83,12 @@ export function BattleArena({ battleId }: BattleArenaProps) {
   const player1HP = battle ? 100 - (battle.player2_rounds_won * 30) : 100;
   const player2HP = battle ? 100 - (battle.player1_rounds_won * 30) : 100;
   
+  // Get available cards for player's hand (optimize with useMemo) - MOVED BEFORE EARLY RETURN
+  const playerHand = useMemo(() => {
+    if (!userCards) return [];
+    return userCards.slice(0, 6);
+  }, [userCards]);
+  
   // Detect HP changes and trigger screen shake
   useEffect(() => {
     if (!battle) return;
@@ -135,12 +141,6 @@ export function BattleArena({ battleId }: BattleArenaProps) {
     if (!isMyTurn || !selectedCard) return;
     setSelectedLine(line);
   };
-
-  // Get available cards for player's hand (optimize with useMemo)
-  const playerHand = useMemo(() => {
-    if (!userCards) return [];
-    return userCards.slice(0, 6);
-  }, [userCards]);
 
   return (
     <div className={cn("battle-arena relative min-h-screen overflow-hidden", shakeClass)}>
