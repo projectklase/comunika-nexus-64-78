@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scroll, Swords, Shield, Zap } from 'lucide-react';
+import { Scroll, Swords, Shield, Zap, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 
 interface LogEntry {
   action: string;
@@ -13,9 +14,10 @@ interface LogEntry {
 
 interface BattleLogProps {
   logs: LogEntry[];
+  onClose?: () => void;
 }
 
-export const BattleLog = ({ logs }: BattleLogProps) => {
+export const BattleLog = ({ logs, onClose }: BattleLogProps) => {
   const getLogIcon = (action: string) => {
     switch (action) {
       case 'ATTACK':
@@ -46,9 +48,21 @@ export const BattleLog = ({ logs }: BattleLogProps) => {
 
   return (
     <div className="bg-background/40 backdrop-blur-sm rounded-xl border border-border/50 p-4 h-full">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/30">
-        <Scroll className="w-5 h-5 text-primary" />
-        <h3 className="font-bold text-sm text-foreground">Histórico da Batalha</h3>
+      <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-border/30">
+        <div className="flex items-center gap-2">
+          <Scroll className="w-5 h-5 text-primary" />
+          <h3 className="font-bold text-sm text-foreground">Histórico da Batalha</h3>
+        </div>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       
       <ScrollArea className="h-[calc(100%-3rem)]">
