@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Star, TrendingUp, Swords } from 'lucide-react';
@@ -72,6 +72,10 @@ export function BattleVictoryModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg border-2 border-success/50 bg-gradient-to-br from-background via-success/5 to-background overflow-hidden">
+        <DialogTitle className="sr-only">Vitória na Batalha</DialogTitle>
+        <DialogDescription className="sr-only">
+          Você venceu a batalha e ganhou XP
+        </DialogDescription>
         <AnimatePresence>
           {open && (
             <>

@@ -82,12 +82,26 @@ export function useMatchmaking(): MatchmakingResult {
     };
   }, [user, status]);
 
-  // Poll queue position and players count
+  // Poll queue position, players count, AND match status (fallback)
   useEffect(() => {
     if (status !== 'searching' || !user || !currentSchool) return;
 
     const pollPosition = async () => {
       try {
+        // Check if we've been matched (fallback for realtime subscription)
+        const { data: queueData } = await supabase
+          .from('battle_queue')
+          .select('status, battle_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (queueData?.status === 'MATCHED' && queueData.battle_id) {
+          setFoundBattleId(queueData.battle_id);
+          setStatus('found');
+          toast.success('Oponente encontrado!');
+          return;
+        }
+
         // Get queue position
         const { data: positionData } = await supabase.rpc('get_queue_position', {
           p_user_id: user.id,
