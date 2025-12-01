@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Swords, Users, Clock } from 'lucide-react';
@@ -47,6 +47,15 @@ export function MatchmakingModal({ open, deckId, onClose, onMatchFound }: Matchm
   return (
     <Dialog open={open} onOpenChange={handleCancel}>
       <DialogContent className="sm:max-w-md bg-background/95 backdrop-blur-xl border-primary/20">
+        <DialogTitle className="sr-only">
+          {status === 'searching' ? 'Procurando Partida' : 
+           status === 'found' ? 'Oponente Encontrado!' : 
+           'Matchmaking'}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Tela de busca de partida para batalha de cartas
+        </DialogDescription>
+        
         {status === 'searching' && (
           <div className="space-y-6 py-6">
             {/* Header */}

@@ -79,21 +79,14 @@ export function BattleArena({ battleId }: BattleArenaProps) {
     }
   }, [battle?.status, battleResult, user?.id, showVictoryModal, showDefeatModal, queryClient]);
 
-  if (!battle) {
-    return (
-      <div className="relative flex items-center justify-center h-screen">
-        <BattleBackground />
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
   // Mock HP values (will be managed by backend later)
-  const player1HP = 100 - (battle.player2_rounds_won * 30);
-  const player2HP = 100 - (battle.player1_rounds_won * 30);
+  const player1HP = battle ? 100 - (battle.player2_rounds_won * 30) : 100;
+  const player2HP = battle ? 100 - (battle.player1_rounds_won * 30) : 100;
   
   // Detect HP changes and trigger screen shake
   useEffect(() => {
+    if (!battle) return;
+    
     if (prevPlayer1HP !== null && player1HP < prevPlayer1HP) {
       const damage = prevPlayer1HP - player1HP;
       triggerShake({ 
@@ -110,7 +103,16 @@ export function BattleArena({ battleId }: BattleArenaProps) {
     }
     setPrevPlayer1HP(player1HP);
     setPrevPlayer2HP(player2HP);
-  }, [player1HP, player2HP, prevPlayer1HP, prevPlayer2HP, triggerShake]);
+  }, [battle, player1HP, player2HP, prevPlayer1HP, prevPlayer2HP, triggerShake]);
+
+  if (!battle) {
+    return (
+      <div className="relative flex items-center justify-center h-screen">
+        <BattleBackground />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handlePlayCard = () => {
     if (!selectedCard || selectedLine === null) return;
