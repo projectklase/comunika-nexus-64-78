@@ -15,6 +15,7 @@ interface MatchmakingResult {
   playersInQueue: number;
   joinQueue: (deckId: string) => Promise<void>;
   leaveQueue: () => Promise<void>;
+  resetMatchmaking: () => Promise<void>;
 }
 
 export function useMatchmaking(): MatchmakingResult {
@@ -100,11 +101,26 @@ export function useMatchmaking(): MatchmakingResult {
           .single();
 
         if (queueData?.status === 'MATCHED' && queueData.battle_id) {
-          // Invalidate battle cache before setting new battle ID
-          queryClient.invalidateQueries({ queryKey: ['battle'] });
-          setFoundBattleId(queueData.battle_id);
-          setStatus('found');
-          toast.success('Oponente encontrado!');
+          // Validate that the battle is actually IN_PROGRESS
+          const { data: battleData } = await supabase
+            .from('battles')
+            .select('status')
+            .eq('id', queueData.battle_id)
+            .single();
+
+          if (battleData?.status === 'IN_PROGRESS') {
+            // Battle is active, proceed
+            queryClient.invalidateQueries({ queryKey: ['battle'] });
+            setFoundBattleId(queueData.battle_id);
+            setStatus('found');
+            toast.success('Oponente encontrado!');
+          } else {
+            // Old/finished battle - clean up and keep searching
+            await supabase
+              .from('battle_queue')
+              .delete()
+              .eq('user_id', user.id);
+          }
           return;
         }
 
@@ -148,6 +164,12 @@ export function useMatchmaking(): MatchmakingResult {
         setStatus('searching');
         setSearchTime(0);
 
+        // Clean up old queue entries before joining
+        await supabase
+          .from('battle_queue')
+          .delete()
+          .eq('user_id', user.id);
+
         const { data, error } = await supabase.rpc('join_battle_queue', {
           p_user_id: user.id,
           p_deck_id: deckId,
@@ -174,7 +196,7 @@ export function useMatchmaking(): MatchmakingResult {
         toast.error('Erro ao entrar na fila de batalha');
       }
     },
-    [user, currentSchool]
+    [user, currentSchool, queryClient]
   );
 
   const leaveQueue = useCallback(async () => {
@@ -196,6 +218,26 @@ export function useMatchmaking(): MatchmakingResult {
     }
   }, [user]);
 
+  const resetMatchmaking = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Clean queue entry
+      await supabase
+        .from('battle_queue')
+        .delete()
+        .eq('user_id', user.id);
+
+      // Reset local state
+      setStatus('idle');
+      setQueuePosition(null);
+      setFoundBattleId(null);
+      setPlayersInQueue(0);
+    } catch (error) {
+      console.error('Error resetting matchmaking:', error);
+    }
+  }, [user]);
+
   return {
     status,
     queuePosition,
@@ -204,5 +246,6 @@ export function useMatchmaking(): MatchmakingResult {
     playersInQueue,
     joinQueue,
     leaveQueue,
+    resetMatchmaking,
   };
 }

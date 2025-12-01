@@ -232,6 +232,16 @@ export const useBattle = (battleId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
       queryClient.invalidateQueries({ queryKey: ['user-battles'] });
+      
+      // Clean up queue entry
+      if (user?.id) {
+        supabase
+          .from('battle_queue')
+          .delete()
+          .eq('user_id', user.id)
+          .then(() => console.log('Queue cleaned after abandon'));
+      }
+      
       toast.warning('Você desistiu. Vitória concedida ao oponente.');
     },
     onError: (error: any) => {
@@ -250,9 +260,19 @@ export const useBattle = (battleId?: string) => {
     },
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
+      
       // Only show toast if turn actually passed (not if battle already finished)
       if (result?.turn_passed) {
         toast.info('Tempo esgotado! Turno passou automaticamente.');
+      }
+      
+      // Clean up queue if battle finished
+      if (result?.battle_finished && user?.id) {
+        supabase
+          .from('battle_queue')
+          .delete()
+          .eq('user_id', user.id)
+          .then(() => console.log('Queue cleaned after battle finished'));
       }
     },
   });
