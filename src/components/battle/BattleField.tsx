@@ -9,6 +9,8 @@ interface FieldMonster {
   atk: number;
   def: number;
   effects: any[];
+  image_url?: string;
+  rarity?: string;
 }
 
 interface FieldTrap {
