@@ -58,9 +58,15 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   }, [battle?.status, battleResult]);
 
   const playerHand = useMemo(() => {
-    if (!userCards || !battle) return [];
-    return userCards.filter(uc => uc.card?.id !== undefined).map(uc => uc.card!).slice(0, 5);
-  }, [userCards, battle]);
+    if (!battle || !gameState) return [];
+    const handCardIds = isPlayer1 ? gameState.player1_hand : gameState.player2_hand;
+    if (!handCardIds || !Array.isArray(handCardIds)) return [];
+    
+    // Filter userCards to match the hand card IDs from game_state
+    return handCardIds
+      .map((cardId: string) => userCards?.find(uc => uc.card?.id === cardId)?.card)
+      .filter((card): card is NonNullable<typeof card> => card !== undefined);
+  }, [battle, gameState, isPlayer1, userCards]);
 
   const handleCardClick = (cardId: string) => {
     if (!isMyTurn()) return;
