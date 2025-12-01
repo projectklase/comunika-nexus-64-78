@@ -1,7 +1,7 @@
 import { CardInPlay } from '@/hooks/useBattle';
 import { BattleCard } from './BattleCard';
 import { motion } from 'framer-motion';
-import { Swords } from 'lucide-react';
+import { Swords, Shield, Target } from 'lucide-react';
 import { useMemo, memo } from 'react';
 
 interface BattleLineProps {
@@ -13,6 +13,30 @@ interface BattleLineProps {
   canPlayOnLine: boolean;
   isAttacking?: boolean;
 }
+
+const LINE_TYPES = {
+  1: { 
+    name: 'Linha de Combate', 
+    icon: Swords, 
+    color: 'from-red-500/20 to-orange-500/20', 
+    borderColor: 'border-red-500/40',
+    glowColor: 'shadow-red-500/50',
+  },
+  2: { 
+    name: 'Linha de Alcance', 
+    icon: Target, 
+    color: 'from-blue-500/20 to-cyan-500/20', 
+    borderColor: 'border-blue-500/40',
+    glowColor: 'shadow-blue-500/50',
+  },
+  3: { 
+    name: 'Linha de Cerco', 
+    icon: Shield, 
+    color: 'from-purple-500/20 to-pink-500/20', 
+    borderColor: 'border-purple-500/40',
+    glowColor: 'shadow-purple-500/50',
+  },
+};
 
 export const BattleLine = memo(({
   lineNumber,
@@ -34,30 +58,8 @@ export const BattleLine = memo(({
     [opponentCards]
   );
 
-  // Determine line colors based on lineNumber
-  const lineColors = {
-    1: {
-      bg: 'from-red-950/20 to-red-900/10',
-      border: 'border-red-500/30',
-      glow: 'shadow-red-500/20',
-      accent: 'text-red-400',
-    },
-    2: {
-      bg: 'from-blue-950/20 to-blue-900/10',
-      border: 'border-blue-500/30',
-      glow: 'shadow-blue-500/20',
-      accent: 'text-blue-400',
-    },
-    3: {
-      bg: 'from-green-950/20 to-green-900/10',
-      border: 'border-green-500/30',
-      glow: 'shadow-green-500/20',
-      accent: 'text-green-400',
-    },
-  }[lineNumber];
-
-  const isWinning = playerPower > opponentPower;
-  const isLosing = playerPower < opponentPower;
+  const lineType = LINE_TYPES[lineNumber];
+  const LineIcon = lineType.icon;
 
   return (
     <motion.div
@@ -72,58 +74,32 @@ export const BattleLine = memo(({
         scale: { duration: 0.5, repeat: isAttacking ? 3 : 0 },
       }}
       className={`
-        battle-line-${lineNumber} relative rounded-xl border-2 p-2 sm:p-3 lg:p-4 backdrop-blur-sm
-        bg-gradient-to-r ${lineColors.bg}
-        ${lineColors.border}
-        ${canPlayOnLine && isMyTurn ? 'shadow-lg ' + lineColors.glow : ''}
-        ${isAttacking ? 'ring-4 ring-orange-500/50' : ''}
+        relative rounded-xl overflow-hidden border-2 backdrop-blur-sm
+        bg-gradient-to-r ${lineType.color}
+        ${lineType.borderColor}
+        ${canPlayOnLine && isMyTurn ? `shadow-lg ${lineType.glowColor} ring-2 ring-primary` : ''}
+        ${isAttacking ? 'ring-4 ring-orange-500/50 animate-pulse' : ''}
         transition-all duration-300
       `}
     >
-      {/* Line number badge */}
-      <div className="absolute -top-2 sm:-top-3 left-2 sm:left-4 px-2 sm:px-3 py-0.5 sm:py-1 bg-background border-2 border-current rounded-lg">
-        <span className={`text-xs sm:text-sm font-bold ${lineColors.accent}`}>
-          Linha {lineNumber}
-        </span>
+      {/* Header with line name */}
+      <div className="flex items-center justify-center gap-2 py-2 px-3 bg-background/60 border-b border-border/30">
+        <LineIcon className="w-4 h-4 lg:w-5 lg:h-5 text-foreground/80" />
+        <span className="text-xs lg:text-sm font-bold text-foreground/90">{lineType.name}</span>
       </div>
 
-      {/* Attack indicator */}
-      {isAttacking && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-        >
-          <motion.div
-            animate={{ 
-              rotate: [0, 360],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-            className="text-orange-500"
-          >
-            <Swords className="w-16 h-16" />
-          </motion.div>
-        </motion.div>
-      )}
-
-      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-8 mt-2">
-        {/* Opponent side */}
-        <div className="space-y-2 sm:space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[0.65rem] sm:text-xs font-medium text-muted-foreground uppercase">
-              Oponente
-            </span>
-            <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-destructive/20 rounded border border-destructive/30">
-              <Swords className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-destructive" />
-              <span className="text-xs sm:text-sm font-bold text-destructive">
-                {opponentPower}
-              </span>
+      {/* Horizontal Layout: Opponent (Left) vs Player (Right) */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 lg:gap-6 items-center p-3 lg:p-4">
+        
+        {/* Opponent Side (Left) */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-destructive/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-destructive/40 shadow-md">
+            <div className="flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-destructive" />
+              <span className="text-sm lg:text-base font-bold text-destructive">{opponentPower}</span>
             </div>
           </div>
-          
-          <div className="flex gap-1 sm:gap-2 min-h-[100px] sm:min-h-[120px] lg:min-h-[140px] items-center justify-center">
+          <div className="flex flex-wrap gap-1.5 lg:gap-2 justify-center min-h-[90px] lg:min-h-[110px] items-center">
             {opponentCards.length > 0 ? (
               opponentCards.map((card, idx) => (
                 <motion.div
@@ -136,79 +112,93 @@ export const BattleLine = memo(({
                 </motion.div>
               ))
             ) : (
-              <div className="text-[0.65rem] sm:text-xs text-muted-foreground/50 italic">
-                Nenhuma carta
+              <div className="text-xs text-muted-foreground/60 italic">
+                Vazio
               </div>
             )}
           </div>
         </div>
 
-        {/* Player side */}
-        <div className="space-y-2 sm:space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[0.65rem] sm:text-xs font-medium text-muted-foreground uppercase">
-              Você
-            </span>
-            <div className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border ${
-              isWinning 
-                ? 'bg-success/20 border-success/30'
-                : isLosing
-                ? 'bg-destructive/20 border-destructive/30'
-                : 'bg-primary/20 border-primary/30'
-            }`}>
-              <Swords className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
-                isWinning ? 'text-success' : isLosing ? 'text-destructive' : 'text-primary'
-              }`} />
-              <span className={`text-xs sm:text-sm font-bold ${
-                isWinning ? 'text-success' : isLosing ? 'text-destructive' : 'text-primary'
-              }`}>
-                {playerPower}
-              </span>
+        {/* Center Divider with Animated Icon */}
+        <div className="flex flex-col items-center">
+          <motion.div
+            animate={isAttacking ? { 
+              rotate: [0, 180, 360],
+              scale: [1, 1.3, 1]
+            } : {}}
+            transition={{ duration: 0.8 }}
+            className="bg-gradient-to-br from-primary/40 to-accent/40 rounded-full p-2 lg:p-3 border-2 border-primary/60 shadow-xl"
+          >
+            <Swords className="w-5 h-5 lg:w-7 lg:h-7 text-primary" />
+          </motion.div>
+        </div>
+
+        {/* Player Side (Right) */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-primary/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-primary/40 shadow-md">
+            <div className="flex items-center gap-1.5">
+              <Swords className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" />
+              <span className="text-sm lg:text-base font-bold text-primary">{playerPower}</span>
             </div>
           </div>
-
-          {/* Drop zone */}
+          
+          {/* Drop zone with click handler */}
           <motion.div
             whileHover={canPlayOnLine && isMyTurn ? { scale: 1.02 } : {}}
             onClick={canPlayOnLine && isMyTurn ? onCardClick : undefined}
             className={`
-              flex gap-1 sm:gap-2 min-h-[100px] sm:min-h-[120px] lg:min-h-[140px] items-center justify-center rounded-lg border-2 border-dashed
+              flex flex-wrap gap-1.5 lg:gap-2 justify-center min-h-[90px] lg:min-h-[110px] items-center
+              rounded-lg border-2 border-dashed p-2
               ${canPlayOnLine && isMyTurn
-                ? 'border-primary bg-primary/10 cursor-pointer hover:bg-primary/20'
+                ? 'border-primary bg-primary/10 cursor-pointer hover:bg-primary/20 animate-pulse'
                 : 'border-border/30 bg-background/5'
               }
-              transition-colors
+              transition-all duration-300
             `}
           >
             {playerCards.length > 0 ? (
               playerCards.map((card, idx) => (
                 <motion.div
                   key={`${card.id}-${idx}`}
-                  initial={{ opacity: 0, y: 100, scale: 0.5 }}
+                  initial={{ opacity: 0, y: 50, scale: 0.5 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ 
                     type: 'spring',
                     stiffness: 200,
-                    damping: 20,
+                    damping: 15,
                     delay: idx * 0.1,
                   }}
-                  className="animate-card-fly-in"
                 >
                   <BattleCard card={card} showEffects={true} />
                 </motion.div>
               ))
             ) : canPlayOnLine && isMyTurn ? (
-              <div className="text-[0.65rem] sm:text-xs text-primary/70 font-medium">
-                Clique para jogar carta aqui
-              </div>
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="text-xs lg:text-sm font-bold text-primary flex items-center gap-2"
+              >
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                Clique para jogar
+              </motion.div>
             ) : (
-              <div className="text-[0.65rem] sm:text-xs text-muted-foreground/50 italic">
-                Nenhuma carta
+              <div className="text-xs text-muted-foreground/60 italic">
+                Vazio
               </div>
             )}
           </motion.div>
         </div>
       </div>
+
+      {/* Attack effect overlay */}
+      {isAttacking && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.3, 0] }}
+          transition={{ duration: 0.8, repeat: 3 }}
+          className="absolute inset-0 bg-orange-500/30 pointer-events-none"
+        />
+      )}
     </motion.div>
   );
 });
