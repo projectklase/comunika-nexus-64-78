@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBattle } from '@/hooks/useBattle';
 import { useCards } from '@/hooks/useCards';
@@ -20,8 +20,9 @@ import { BattleLog } from './BattleLog';
 import { ActionButtons } from './ActionButtons';
 import { CardPlayEffect } from './CardPlayEffect';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ScrollText, AlertTriangle } from 'lucide-react';
+import { ScrollText, AlertTriangle, Flag } from 'lucide-react';
 
 interface BattleArenaProps {
   battleId: string;
@@ -30,7 +31,7 @@ interface BattleArenaProps {
 export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { battle, isLoading, playCard, attack, abandonBattle, forceTimeoutTurn, isMyTurn, myPlayerNumber } = useBattle(battleId);
+  const { battle, isLoading, playCard, attack, abandonBattle, forceTimeoutTurn, endTurn, isMyTurn, myPlayerNumber } = useBattle(battleId);
   const { userCards } = useCards();
   const battleResult = useBattleResult(battle, user?.id);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -41,6 +42,8 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const [player1Profile, setPlayer1Profile] = useState<{ name: string; avatar?: string } | null>(null);
   const [player2Profile, setPlayer2Profile] = useState<{ name: string; avatar?: string } | null>(null);
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
+  const [showForfeitDialog, setShowForfeitDialog] = useState(false);
+  const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const { triggerShake } = useScreenShake();
   const { playAttackSound, playSwooshSound, playWinSound, playLoseSound } = useBattleSounds();
@@ -97,17 +100,42 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     
     if (battle.current_turn !== prevTurn) {
       if (isMyTurn()) {
-        toast.info('🎯 Agora é seu turno!', {
-          duration: 2000,
-        });
+        toast.info('🎯 Agora é seu turno!', { duration: 2000 });
       } else {
-        toast.info('⏳ Turno do oponente...', {
-          duration: 2000,
-        });
+        toast.info('⏳ Turno do oponente...', { duration: 2000 });
       }
       setPrevTurn(battle.current_turn);
     }
   }, [battle?.current_turn, isMyTurn, prevTurn]);
+
+  // Auto-abandon after 60s away from page
+  useEffect(() => {
+    if (!battle || battle.status !== 'IN_PROGRESS') return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Start 60s timer
+        abandonTimerRef.current = setTimeout(() => {
+          abandonBattle.mutate(battle.id);
+          toast.warning('Batalha abandonada por inatividade');
+        }, 60000);
+      } else {
+        // Cancel timer if user returns
+        if (abandonTimerRef.current) {
+          clearTimeout(abandonTimerRef.current);
+          abandonTimerRef.current = null;
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (abandonTimerRef.current) {
+        clearTimeout(abandonTimerRef.current);
+      }
+    };
+  }, [battle?.id, battle?.status, abandonBattle]);
 
   useEffect(() => {
     if (battle?.status === 'FINISHED' && battleResult) {
@@ -169,8 +197,24 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   };
 
   const handleTurnTimeout = () => {
-    if (!battle || !isMyTurn()) return;
+    if (!battle) return;
     forceTimeoutTurn?.(battle.id);
+  };
+
+  const handleEndTurn = async () => {
+    if (!battle || !isMyTurn()) return;
+    endTurn?.(battle.id);
+  };
+
+  const handleForfeit = () => {
+    setShowForfeitDialog(true);
+  };
+
+  const confirmForfeit = async () => {
+    if (!battle) return;
+    await abandonBattle.mutateAsync(battle.id);
+    setShowForfeitDialog(false);
+    navigate('/aluno/batalha');
   };
 
   if (isLoading || !battle) {
@@ -252,7 +296,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         <BattleTurnTimer 
           isMyTurn={isMyTurn()} 
           turnStartedAt={battle.turn_started_at || null}
-          maxSeconds={15}
+          maxSeconds={30}
           onTimeout={handleTurnTimeout}
         />
         
@@ -284,10 +328,43 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
           </div>
         </div>
 
-        <ActionButtons canPlayCard={selectedCard !== null && isMyTurn()} canAttack={myField?.monster !== null && isMyTurn()} isMyTurn={isMyTurn()} onPlayCard={handlePlayCard} onAttack={handleAttack} onEndTurn={() => setSelectedCard(null)} />
+        <ActionButtons canPlayCard={selectedCard !== null && isMyTurn()} canAttack={myField?.monster !== null && isMyTurn()} isMyTurn={isMyTurn()} onPlayCard={handlePlayCard} onAttack={handleAttack} onEndTurn={handleEndTurn} />
 
-        {/* Battle Log Toggle Button */}
-        <div className="fixed bottom-4 right-4 z-20">
+        {/* Opponent Turn Overlay */}
+        <AnimatePresence>
+          {!isMyTurn() && battle.status === 'IN_PROGRESS' && (
+            <motion.div
+              className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-background/90 backdrop-blur-sm px-8 py-6 rounded-2xl border-2 border-primary/50 shadow-2xl"
+                animate={{ 
+                  scale: [1, 1.05, 1],
+                  opacity: [0.9, 1, 0.9],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <p className="text-2xl font-bold text-center text-primary">⏳ Turno do Oponente</p>
+                <p className="text-sm text-muted-foreground text-center mt-2">Aguardando jogada...</p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Battle Log Toggle Button + Forfeit */}
+        <div className="fixed bottom-4 right-4 z-20 flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleForfeit}
+            className="gap-2 bg-background/80 backdrop-blur-sm text-destructive hover:bg-destructive/10"
+          >
+            <Flag className="w-4 h-4" />
+            Desistir
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -317,6 +394,17 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
           <BattleDefeatModal open={showDefeatModal} onOpenChange={setShowDefeatModal} xpGained={battleResult.xpGained} stats={battleResult.stats} onTryAgain={() => navigate('/aluno/batalhas')} />
         </>
       )}
+
+      <ConfirmDialog
+        open={showForfeitDialog}
+        onOpenChange={setShowForfeitDialog}
+        title="Desistir da Batalha?"
+        description="Você perderá a batalha e não receberá XP. Esta ação não pode ser desfeita."
+        confirmText="Desistir"
+        cancelText="Continuar Lutando"
+        variant="destructive"
+        onConfirm={confirmForfeit}
+      />
     </div>
   );
 };

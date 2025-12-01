@@ -236,6 +236,31 @@ export const useBattle = (battleId?: string) => {
     },
   });
 
+  // End turn manually
+  const endTurn = useMutation({
+    mutationFn: async (battleId: string) => {
+      if (!user?.id) throw new Error('Usuário não autenticado');
+
+      const { error } = await supabase
+        .from('battles')
+        .update({
+          current_turn: battle?.current_turn === 'PLAYER1' ? 'PLAYER2' : 'PLAYER1',
+          turn_started_at: new Date().toISOString(),
+          last_action_at: new Date().toISOString(),
+        })
+        .eq('id', battleId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['battle'] });
+      toast.info('Turno passado!');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao passar turno');
+    },
+  });
+
   // Helpers
   const isMyTurnFn = () => {
     if (!battle || !user?.id) return false;
@@ -266,6 +291,7 @@ export const useBattle = (battleId?: string) => {
     attack,
     abandonBattle,
     forceTimeoutTurn: forceTimeoutTurn.mutate,
+    endTurn: endTurn.mutate,
     
     isCreating: createBattle.isPending,
     isPlaying: playCard.isPending,
