@@ -12,31 +12,12 @@ export interface Battle {
   player2_deck_id: string;
   status: 'WAITING' | 'IN_PROGRESS' | 'FINISHED' | 'ABANDONED';
   current_turn?: 'PLAYER1' | 'PLAYER2';
-  current_round: number;
-  rounds_data: RoundData[];
-  player1_rounds_won: number;
-  player2_rounds_won: number;
+  game_state: any; // JSONB with HP, fields, hands, etc.
   winner_id?: string;
   started_at?: string;
   finished_at?: string;
   last_action_at: string;
   created_at: string;
-}
-
-export interface RoundData {
-  round: number;
-  player1_cards: {
-    line1: CardInPlay[];
-    line2: CardInPlay[];
-    line3: CardInPlay[];
-  };
-  player2_cards: {
-    line1: CardInPlay[];
-    line2: CardInPlay[];
-    line3: CardInPlay[];
-  };
-  player1_score: number;
-  player2_score: number;
 }
 
 export interface CardInPlay {
@@ -50,7 +31,7 @@ export const useBattle = (battleId?: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch batalha específica
+  // Fetch specific battle
   const { data: battle, isLoading } = useQuery({
     queryKey: ['battle', battleId],
     queryFn: async () => {
@@ -63,16 +44,13 @@ export const useBattle = (battleId?: string) => {
         .single();
 
       if (error) throw error;
-      return {
-        ...data,
-        rounds_data: (data.rounds_data as any) || [],
-      } as Battle;
+      return data as Battle;
     },
     enabled: !!battleId,
-    refetchInterval: 2000, // Polling a cada 2 segundos
+    refetchInterval: 2000, // Poll every 2 seconds
   });
 
-  // Fetch batalhas do usuário
+  // Fetch user's battles
   const { data: userBattles = [], isLoading: loadingUserBattles } = useQuery({
     queryKey: ['user-battles', user?.id],
     queryFn: async () => {
@@ -86,15 +64,12 @@ export const useBattle = (battleId?: string) => {
         .limit(20);
 
       if (error) throw error;
-      return data.map(d => ({
-        ...d,
-        rounds_data: (d.rounds_data as any) || [],
-      })) as Battle[];
+      return data as Battle[];
     },
     enabled: !!user?.id,
   });
 
-  // Realtime subscription para batalha ativa
+  // Realtime subscription for active battle
   useEffect(() => {
     if (!battleId) return;
 
@@ -119,7 +94,7 @@ export const useBattle = (battleId?: string) => {
     };
   }, [battleId, queryClient]);
 
-  // Criar batalha
+  // Create battle
   const createBattle = useMutation({
     mutationFn: async (data: {
       player2_id: string;
@@ -141,10 +116,7 @@ export const useBattle = (battleId?: string) => {
         .single();
 
       if (error) throw error;
-      return {
-        ...newBattle,
-        rounds_data: (newBattle.rounds_data as any) || [],
-      } as Battle;
+      return newBattle as Battle;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-battles'] });
@@ -152,7 +124,7 @@ export const useBattle = (battleId?: string) => {
     },
   });
 
-  // Iniciar batalha
+  // Start battle
   const startBattle = useMutation({
     mutationFn: async (battleId: string) => {
       const { error } = await supabase
@@ -172,16 +144,16 @@ export const useBattle = (battleId?: string) => {
     },
   });
 
-  // Jogar carta
+  // Play card
   const playCard = useMutation({
-    mutationFn: async (data: { battleId: string; line: number; cardId: string }) => {
+    mutationFn: async (data: { battleId: string; cardId: string; isTrap?: boolean }) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      const { data: result, error } = await supabase.rpc('play_battle_turn', {
+      const { data: result, error } = await supabase.rpc('play_card', {
         p_battle_id: data.battleId,
         p_player_id: user.id,
-        p_line: data.line,
         p_card_id: data.cardId,
+        p_is_trap: data.isTrap || false,
       });
 
       if (error) throw error;
@@ -189,36 +161,42 @@ export const useBattle = (battleId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
+      toast.success('Carta jogada!');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao jogar carta');
     },
   });
 
-  // Finalizar round
-  const finishRound = useMutation({
+  // Attack
+  const attack = useMutation({
     mutationFn: async (battleId: string) => {
-      const { data: result, error } = await supabase.rpc('finish_battle_round', {
+      if (!user?.id) throw new Error('Usuário não autenticado');
+
+      const { data: result, error } = await supabase.rpc('attack', {
         p_battle_id: battleId,
+        p_player_id: user.id,
       });
 
       if (error) throw error;
       return result;
     },
-    onSuccess: async (result: any) => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
       
       if (result?.battle_finished) {
-        // Battle ended - XP and ranking updates will be handled in BattleArena
-        toast.success(`Batalha finalizada!`);
+        toast.success('Batalha finalizada!');
       } else {
-        toast.info(`Round ${result?.next_round} começando...`);
+        toast.info('Ataque realizado!');
       }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao atacar');
     },
   });
 
   // Helpers
-  const isMyTurn = () => {
+  const isMyTurnFn = () => {
     if (!battle || !user?.id) return false;
     
     if (battle.player1_id === user.id) {
@@ -232,16 +210,10 @@ export const useBattle = (battleId?: string) => {
     return battle.player1_id === user.id ? 'PLAYER1' : 'PLAYER2';
   };
 
-  const getCurrentRound = (): RoundData | null => {
-    if (!battle || !battle.rounds_data) return null;
-    return battle.rounds_data[battle.current_round - 1] || null;
-  };
-
   return {
     // Data
     battle,
     userBattles,
-    currentRound: getCurrentRound(),
 
     // Loading
     isLoading: isLoading || loadingUserBattles,
@@ -249,14 +221,14 @@ export const useBattle = (battleId?: string) => {
     // Mutations
     createBattle: createBattle.mutate,
     startBattle: startBattle.mutate,
-    playCard: playCard.mutate,
-    finishRound: finishRound.mutate,
+    playCard,
+    attack,
     
     isCreating: createBattle.isPending,
     isPlaying: playCard.isPending,
 
     // Helpers
-    isMyTurn: isMyTurn(),
-    myPlayerNumber: getMyPlayerNumber(),
+    isMyTurn: isMyTurnFn,
+    myPlayerNumber: getMyPlayerNumber,
   };
 };

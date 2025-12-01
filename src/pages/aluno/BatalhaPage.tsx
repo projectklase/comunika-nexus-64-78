@@ -112,16 +112,16 @@ export default function BatalhaPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Você</p>
+                          <p className="text-sm text-muted-foreground">HP</p>
                           <p className="text-2xl font-bold">
-                            {battle.player1_rounds_won}
+                            {(battle.game_state as any)?.player1_hp || 100}
                           </p>
                         </div>
                         <span className="text-muted-foreground">vs</span>
                         <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Oponente</p>
+                          <p className="text-sm text-muted-foreground">HP</p>
                           <p className="text-2xl font-bold">
-                            {battle.player2_rounds_won}
+                            {(battle.game_state as any)?.player2_hp || 100}
                           </p>
                         </div>
                       </div>

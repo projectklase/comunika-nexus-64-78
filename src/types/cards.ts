@@ -1,6 +1,7 @@
 export type CardRarity = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
 export type CardCategory = 'MATEMATICA' | 'CIENCIAS' | 'HISTORIA' | 'ARTES' | 'ESPORTES' | 'ESPECIAL';
-export type CardEffectType = 'BURN' | 'SHIELD' | 'BOOST' | 'HEAL' | 'FREEZE' | 'DOUBLE';
+export type CardEffectType = 'BURN' | 'SHIELD' | 'BOOST' | 'HEAL' | 'FREEZE' | 'DOUBLE' | 'REFLECT';
+export type CardType = 'MONSTER' | 'TRAP' | 'SPELL';
 export type PackType = 'BASIC' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'FREE';
 export type UnlockSource = 'PACK' | 'REWARD' | 'EVENT' | 'TRADE';
 
@@ -16,6 +17,7 @@ export interface Card {
   description?: string;
   category: CardCategory;
   rarity: CardRarity;
+  card_type?: CardType;
   atk: number;
   def: number;
   effects: CardEffect[];
