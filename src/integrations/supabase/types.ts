@@ -211,18 +211,15 @@ export type Database = {
       battles: {
         Row: {
           created_at: string | null
-          current_round: number | null
           current_turn: string | null
           finished_at: string | null
+          game_state: Json | null
           id: string
           last_action_at: string | null
           player1_deck_id: string
           player1_id: string
-          player1_rounds_won: number | null
           player2_deck_id: string
           player2_id: string
-          player2_rounds_won: number | null
-          rounds_data: Json | null
           started_at: string | null
           status: string
           updated_at: string | null
@@ -230,18 +227,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          current_round?: number | null
           current_turn?: string | null
           finished_at?: string | null
+          game_state?: Json | null
           id?: string
           last_action_at?: string | null
           player1_deck_id: string
           player1_id: string
-          player1_rounds_won?: number | null
           player2_deck_id: string
           player2_id: string
-          player2_rounds_won?: number | null
-          rounds_data?: Json | null
           started_at?: string | null
           status?: string
           updated_at?: string | null
@@ -249,18 +243,15 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          current_round?: number | null
           current_turn?: string | null
           finished_at?: string | null
+          game_state?: Json | null
           id?: string
           last_action_at?: string | null
           player1_deck_id?: string
           player1_id?: string
-          player1_rounds_won?: number | null
           player2_deck_id?: string
           player2_id?: string
-          player2_rounds_won?: number | null
-          rounds_data?: Json | null
           started_at?: string | null
           status?: string
           updated_at?: string | null
@@ -342,6 +333,7 @@ export type Database = {
       cards: {
         Row: {
           atk: number
+          card_type: Database["public"]["Enums"]["card_type"] | null
           category: string
           created_at: string | null
           def: number
@@ -359,6 +351,7 @@ export type Database = {
         }
         Insert: {
           atk?: number
+          card_type?: Database["public"]["Enums"]["card_type"] | null
           category: string
           created_at?: string | null
           def?: number
@@ -376,6 +369,7 @@ export type Database = {
         }
         Update: {
           atk?: number
+          card_type?: Database["public"]["Enums"]["card_type"] | null
           category?: string
           created_at?: string | null
           def?: number
@@ -2154,6 +2148,10 @@ export type Database = {
         Args: { p_challenge_id: string }
         Returns: number
       }
+      attack: {
+        Args: { p_battle_id: string; p_player_id: string }
+        Returns: Json
+      }
       can_create_notifications: { Args: { _user_id: string }; Returns: boolean }
       check_and_unlock_achievements: {
         Args: { p_user_id: string }
@@ -2174,7 +2172,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      finish_battle_round: { Args: { p_battle_id: string }; Returns: Json }
       get_class_performance_analytics: {
         Args: { days_filter?: number; p_class_id: string }
         Returns: Json
@@ -2274,11 +2271,11 @@ export type Database = {
             Returns: Json
           }
         | { Args: { p_pack_type: string; p_user_id: string }; Returns: Json }
-      play_battle_turn: {
+      play_card: {
         Args: {
           p_battle_id: string
           p_card_id: string
-          p_line: number
+          p_is_trap?: boolean
           p_player_id: string
         }
         Returns: Json
@@ -2302,6 +2299,7 @@ export type Database = {
     }
     Enums: {
       app_role: "secretaria" | "professor" | "aluno" | "administrador"
+      card_type: "MONSTER" | "TRAP" | "SPELL"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2430,6 +2428,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["secretaria", "professor", "aluno", "administrador"],
+      card_type: ["MONSTER", "TRAP", "SPELL"],
     },
   },
 } as const

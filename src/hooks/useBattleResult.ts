@@ -22,22 +22,17 @@ export function useBattleResult(
     return null;
   }
 
-  const isPlayer1 = battle.player1_id === userId;
   const isVictory = battle.winner_id === userId;
 
-  const roundsWon = isPlayer1 ? battle.player1_rounds_won : battle.player2_rounds_won;
-  const roundsLost = isPlayer1 ? battle.player2_rounds_won : battle.player1_rounds_won;
+  // For Direct Duel, estimate rounds and cards based on HP
+  const gameState = battle.game_state as any;
+  const roundsWon = isVictory ? 1 : 0;
+  const roundsLost = isVictory ? 0 : 1;
 
-  // Calculate total cards played (approximate based on rounds)
-  const cardsPlayed = battle.rounds_data?.reduce((total, round) => {
-    const playerCards = isPlayer1 ? round.player1_cards : round.player2_cards;
-    const lineCards = [
-      playerCards.line1?.length || 0,
-      playerCards.line2?.length || 0,
-      playerCards.line3?.length || 0,
-    ];
-    return total + lineCards.reduce((sum, count) => sum + count, 0);
-  }, 0) || 0;
+  // Estimate cards played from battle log
+  const cardsPlayed = gameState?.battle_log?.filter((log: any) => 
+    log.action === 'PLAY_MONSTER' || log.action === 'PLAY_TRAP'
+  ).length || 0;
 
   // Base XP
   const baseXP = isVictory ? 50 : 10;
