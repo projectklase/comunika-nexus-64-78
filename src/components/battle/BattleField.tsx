@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { BattleCard } from './BattleCard';
 import { TrapCard } from './TrapCard';
 import { Card } from '@/types/cards';
@@ -38,25 +38,40 @@ export const BattleField = ({ monster, traps = [], isOpponent }: BattleFieldProp
     >
       {/* Monster Zone */}
       <div className="flex-1 flex items-center justify-center">
-        {monster ? (
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', duration: 0.6 }}
-          >
-            <BattleCard
-              card={monster as any}
-              isSelected={false}
-              isSelectable={false}
-            />
-          </motion.div>
-        ) : (
-          <div className="w-32 h-44 border-2 border-dashed border-muted-foreground/30 rounded-xl flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">
-              {isOpponent ? 'Monstro Inimigo' : 'Seu Monstro'}
-            </span>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {monster ? (
+            <motion.div
+              key={monster.id}
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ 
+                scale: 0, 
+                opacity: 0, 
+                rotate: 180,
+                filter: 'brightness(2)',
+              }}
+              transition={{ duration: 0.5 }}
+            >
+              <BattleCard
+                card={monster as any}
+                isSelected={false}
+                isSelectable={false}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-32 h-44 border-2 border-dashed border-muted-foreground/30 rounded-xl flex items-center justify-center"
+            >
+              <span className="text-xs text-muted-foreground">
+                {isOpponent ? 'Monstro Inimigo' : 'Seu Monstro'}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Trap Zone */}

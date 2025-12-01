@@ -7,12 +7,14 @@ interface BattleTurnTimerProps {
   isMyTurn: boolean;
   turnStartedAt: string | null;
   maxSeconds?: number;
+  onTimeout?: () => void;
 }
 
 export const BattleTurnTimer = ({ 
   isMyTurn, 
   turnStartedAt,
-  maxSeconds = 15 
+  maxSeconds = 15,
+  onTimeout
 }: BattleTurnTimerProps) => {
   const [remainingSeconds, setRemainingSeconds] = useState(maxSeconds);
 
@@ -29,6 +31,9 @@ export const BattleTurnTimer = ({
 
       if (remaining === 0) {
         clearInterval(interval);
+        if (onTimeout) {
+          onTimeout();
+        }
       }
     }, 100);
 
