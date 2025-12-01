@@ -12,6 +12,7 @@ import { BattleField } from './BattleField';
 import { BattlePlayerInfo } from './BattlePlayerInfo';
 import { BattleCard } from './BattleCard';
 import { BattleTurnIndicator } from './BattleTurnIndicator';
+import { BattleTurnTimer } from './BattleTurnTimer';
 import { BattleVictoryModal } from './BattleVictoryModal';
 import { BattleDefeatModal } from './BattleDefeatModal';
 import { BattleLog } from './BattleLog';
@@ -51,10 +52,14 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const opponentField = isPlayer1 ? gameState?.player2_field : gameState?.player1_field;
   const battleLog = gameState?.battle_log || [];
 
-  // Fetch player profiles
+  // Fetch player profiles with loading state
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
+  
   useEffect(() => {
     const fetchProfiles = async () => {
       if (!battle) return;
+      
+      setIsLoadingProfiles(true);
       
       const { data: profiles } = await supabase
         .from('profiles')
@@ -68,6 +73,8 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         if (p1) setPlayer1Profile({ name: p1.name, avatar: p1.avatar || undefined });
         if (p2) setPlayer2Profile({ name: p2.name, avatar: p2.avatar || undefined });
       }
+      
+      setIsLoadingProfiles(false);
     };
     
     fetchProfiles();
@@ -208,7 +215,12 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
           isPlayer={false}
         />
         
-        <BattleTurnIndicator isMyTurn={isMyTurn()} />
+        <BattleTurnTimer 
+          isMyTurn={isMyTurn()} 
+          turnStartedAt={battle.turn_started_at || null}
+          maxSeconds={15}
+        />
+        
         <BattleField monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />
         
         <div className="flex items-center justify-center py-8">

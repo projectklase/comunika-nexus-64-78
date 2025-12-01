@@ -17,7 +17,7 @@ interface BattleCardProps {
 
 // Type guard to check if card is full Card type
 const isFullCard = (card: Card | CardInPlay): card is Card => {
-  return 'category' in card && 'rarity' in card;
+  return 'category' in card;
 };
 
 export const BattleCard = memo(({ 
@@ -29,14 +29,14 @@ export const BattleCard = memo(({
 }: BattleCardProps) => {
   // Use defaults for CardInPlay (simple cards in battle)
   const fullCard = isFullCard(card);
-  const rarity = fullCard ? card.rarity : 'COMMON';
+  const rarity = (card as any).rarity || 'COMMON';
   const rarityColor = RARITY_COLORS[rarity];
   const frameColors = RARITY_FRAME_COLORS[rarity];
   
   const isLegendary = rarity === 'LEGENDARY';
   const isEpic = rarity === 'EPIC';
-  const imageUrl = fullCard ? card.image_url : undefined;
-  const effects = fullCard ? card.effects : [];
+  const imageUrl = (card as any).image_url;
+  const effects = (card as any).effects || [];
 
   return (
     <motion.div

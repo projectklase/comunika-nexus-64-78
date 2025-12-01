@@ -6,6 +6,8 @@ import { Loader2, Swords, Users, Clock } from 'lucide-react';
 import { useMatchmaking } from '@/hooks/useMatchmaking';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface MatchmakingModalProps {
   open: boolean;
@@ -19,10 +21,30 @@ export function MatchmakingModal({ open, deckId, onClose, onMatchFound }: Matchm
   const { status, queuePosition, searchTime, foundBattleId, playersInQueue, joinQueue, leaveQueue } = useMatchmaking();
 
   useEffect(() => {
-    if (open && deckId && status === 'idle') {
-      joinQueue(deckId);
-    }
-  }, [open, deckId, status, joinQueue]);
+    const checkExistingBattle = async () => {
+      if (!open || !deckId || !user?.id) return;
+      
+      // Verificar se já tem batalha ativa
+      const { data: activeBattle } = await supabase
+        .from('battles')
+        .select('id')
+        .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
+        .eq('status', 'IN_PROGRESS')
+        .maybeSingle();
+      
+      if (activeBattle) {
+        toast.error('Você já tem uma batalha em andamento!');
+        onClose();
+        return;
+      }
+      
+      if (status === 'idle') {
+        joinQueue(deckId);
+      }
+    };
+    
+    checkExistingBattle();
+  }, [open, deckId, status, joinQueue, user?.id, onClose]);
 
   useEffect(() => {
     if (foundBattleId) {

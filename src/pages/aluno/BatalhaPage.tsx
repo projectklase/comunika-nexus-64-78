@@ -82,7 +82,7 @@ export default function BatalhaPage() {
                   className="hover:border-primary/50 transition-colors cursor-pointer"
                   onClick={() => {
                     if (battle.status === 'IN_PROGRESS') {
-                      window.location.href = `/aluno/batalha?id=${battle.id}`;
+                      navigate(`/aluno/batalha?id=${battle.id}`);
                     }
                   }}
                 >

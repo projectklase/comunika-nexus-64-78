@@ -18,6 +18,7 @@ export interface Battle {
   finished_at?: string;
   last_action_at: string;
   created_at: string;
+  turn_started_at?: string;
 }
 
 export interface CardInPlay {
@@ -25,6 +26,9 @@ export interface CardInPlay {
   name: string;
   atk: number;
   def: number;
+  image_url?: string;
+  rarity?: string;
+  effects?: any[];
 }
 
 export const useBattle = (battleId?: string) => {
