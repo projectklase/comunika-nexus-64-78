@@ -199,13 +199,30 @@ export const useBattle = (battleId?: string) => {
     },
   });
 
-  // Abandon battle
+  // Abandon battle - gives victory to opponent
   const abandonBattle = useMutation({
     mutationFn: async (battleId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Fetch battle to determine opponent
+      const { data: battleData } = await supabase
+        .from('battles')
+        .select('player1_id, player2_id')
+        .eq('id', battleId)
+        .single();
+      
+      if (!battleData) throw new Error('Battle not found');
+      
+      // Determine winner (the opponent)
+      const winnerId = battleData.player1_id === user.id 
+        ? battleData.player2_id 
+        : battleData.player1_id;
+      
       const { error } = await supabase
         .from('battles')
         .update({ 
-          status: 'ABANDONED',
+          status: 'FINISHED',
+          winner_id: winnerId,
           finished_at: new Date().toISOString()
         })
         .eq('id', battleId);
@@ -215,7 +232,7 @@ export const useBattle = (battleId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
       queryClient.invalidateQueries({ queryKey: ['user-battles'] });
-      toast.info('Batalha abandonada');
+      toast.warning('Você desistiu. Vitória concedida ao oponente.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao abandonar batalha');

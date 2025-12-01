@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchool } from '@/contexts/SchoolContext';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 type MatchmakingStatus = 'idle' | 'searching' | 'found' | 'error';
 
@@ -19,6 +20,7 @@ interface MatchmakingResult {
 export function useMatchmaking(): MatchmakingResult {
   const { user } = useAuth();
   const { currentSchool } = useSchool();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<MatchmakingStatus>('idle');
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const [searchTime, setSearchTime] = useState(0);
@@ -65,6 +67,8 @@ export function useMatchmaking(): MatchmakingResult {
         (payload) => {
           const newRecord = payload.new as any;
           if (newRecord.status === 'MATCHED' && newRecord.battle_id) {
+            // Invalidate battle cache before setting new battle ID
+            queryClient.invalidateQueries({ queryKey: ['battle'] });
             setFoundBattleId(newRecord.battle_id);
             setStatus('found');
           }
@@ -96,6 +100,8 @@ export function useMatchmaking(): MatchmakingResult {
           .single();
 
         if (queueData?.status === 'MATCHED' && queueData.battle_id) {
+          // Invalidate battle cache before setting new battle ID
+          queryClient.invalidateQueries({ queryKey: ['battle'] });
           setFoundBattleId(queueData.battle_id);
           setStatus('found');
           toast.success('Oponente encontrado!');
@@ -153,7 +159,8 @@ export function useMatchmaking(): MatchmakingResult {
         const result = data as { status: string; battle_id?: string; queue_id?: string };
 
         if (result.status === 'MATCHED' && result.battle_id) {
-          // Immediate match found!
+          // Immediate match found! Invalidate cache first
+          queryClient.invalidateQueries({ queryKey: ['battle'] });
           setFoundBattleId(result.battle_id);
           setStatus('found');
           toast.success('Oponente encontrado!');
