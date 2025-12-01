@@ -40,19 +40,26 @@ export const BattleCard = memo(({
 
   return (
     <motion.div
-      whileHover={isSelectable ? { scale: 1.05, y: -8 } : {}}
-      whileTap={isSelectable ? { scale: 0.98 } : {}}
+      whileHover={isSelectable ? { 
+        scale: 1.08, 
+        y: -12,
+        rotateZ: 0,
+        rotateY: 5
+      } : {}}
+      whileTap={isSelectable ? { scale: 0.95 } : {}}
       onClick={isSelectable ? onClick : undefined}
       className={`
         relative w-16 h-24 sm:w-20 sm:h-28 lg:w-24 lg:h-32 rounded-lg overflow-hidden
-        ${isSelectable ? 'cursor-pointer' : 'cursor-default'}
-        ${isSelected ? 'ring-2 sm:ring-4 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-background' : ''}
+        ${isSelectable ? 'cursor-pointer hover:z-10' : 'cursor-default'}
+        ${isSelected ? 'ring-2 sm:ring-4 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-background scale-105 -translate-y-2' : ''}
         ${frameColors.outer}
-        transition-all duration-200
+        transition-all duration-300
       `}
       style={{
         boxShadow: isSelected 
-          ? `0 0 20px currentColor, 0 0 40px currentColor` 
+          ? `0 0 20px currentColor, 0 0 40px currentColor, 0 8px 16px rgba(0,0,0,0.4)` 
+          : isSelectable
+          ? `0 4px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)`
           : `0 4px 12px rgba(0,0,0,0.3)`,
       }}
     >

@@ -88,6 +88,17 @@ export function BattleArena({ battleId }: BattleArenaProps) {
     if (!userCards) return [];
     return userCards.slice(0, 6);
   }, [userCards]);
+
+  // Create default round structure if currentRound doesn't exist
+  const defaultRound = useMemo(() => ({
+    round: 1,
+    player1_cards: { line1: [], line2: [], line3: [] },
+    player2_cards: { line1: [], line2: [], line3: [] },
+    player1_score: 0,
+    player2_score: 0,
+  }), []);
+
+  const activeRound = currentRound || defaultRound;
   
   // Detect HP changes and trigger screen shake
   useEffect(() => {
@@ -199,70 +210,66 @@ export function BattleArena({ battleId }: BattleArenaProps) {
           )}
         </motion.div>
 
-        {/* Arena com 3 linhas */}
+        {/* Arena com 3 linhas - SEMPRE VISÍVEL */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
           className="space-y-3 sm:space-y-4 mb-4 sm:mb-6 lg:mb-8"
         >
-          {currentRound && (
-            <>
-              <BattleLine
-                lineNumber={1}
-                playerCards={
-                  myPlayerNumber === 'PLAYER1'
-                    ? currentRound.player1_cards.line1
-                    : currentRound.player2_cards.line1
-                }
-                opponentCards={
-                  myPlayerNumber === 'PLAYER1'
-                    ? currentRound.player2_cards.line1
-                    : currentRound.player1_cards.line1
-                }
-                isMyTurn={isMyTurn}
-                canPlayOnLine={!!selectedCard}
-                onCardClick={() => handleLineClick(1)}
-                isAttacking={attackingLines.includes(1)}
-              />
+          <BattleLine
+            lineNumber={1}
+            playerCards={
+              myPlayerNumber === 'PLAYER1'
+                ? activeRound.player1_cards.line1
+                : activeRound.player2_cards.line1
+            }
+            opponentCards={
+              myPlayerNumber === 'PLAYER1'
+                ? activeRound.player2_cards.line1
+                : activeRound.player1_cards.line1
+            }
+            isMyTurn={isMyTurn}
+            canPlayOnLine={!!selectedCard}
+            onCardClick={() => handleLineClick(1)}
+            isAttacking={attackingLines.includes(1)}
+          />
 
-              <BattleLine
-                lineNumber={2}
-                playerCards={
-                  myPlayerNumber === 'PLAYER1'
-                    ? currentRound.player1_cards.line2
-                    : currentRound.player2_cards.line2
-                }
-                opponentCards={
-                  myPlayerNumber === 'PLAYER1'
-                    ? currentRound.player2_cards.line2
-                    : currentRound.player1_cards.line2
-                }
-                isMyTurn={isMyTurn}
-                canPlayOnLine={!!selectedCard}
-                onCardClick={() => handleLineClick(2)}
-                isAttacking={attackingLines.includes(2)}
-              />
+          <BattleLine
+            lineNumber={2}
+            playerCards={
+              myPlayerNumber === 'PLAYER1'
+                ? activeRound.player1_cards.line2
+                : activeRound.player2_cards.line2
+            }
+            opponentCards={
+              myPlayerNumber === 'PLAYER1'
+                ? activeRound.player2_cards.line2
+                : activeRound.player1_cards.line2
+            }
+            isMyTurn={isMyTurn}
+            canPlayOnLine={!!selectedCard}
+            onCardClick={() => handleLineClick(2)}
+            isAttacking={attackingLines.includes(2)}
+          />
 
-              <BattleLine
-                lineNumber={3}
-                playerCards={
-                  myPlayerNumber === 'PLAYER1'
-                    ? currentRound.player1_cards.line3
-                    : currentRound.player2_cards.line3
-                }
-                opponentCards={
-                  myPlayerNumber === 'PLAYER1'
-                    ? currentRound.player2_cards.line3
-                    : currentRound.player1_cards.line3
-                }
-                isMyTurn={isMyTurn}
-                canPlayOnLine={!!selectedCard}
-                onCardClick={() => handleLineClick(3)}
-                isAttacking={attackingLines.includes(3)}
-              />
-            </>
-          )}
+          <BattleLine
+            lineNumber={3}
+            playerCards={
+              myPlayerNumber === 'PLAYER1'
+                ? activeRound.player1_cards.line3
+                : activeRound.player2_cards.line3
+            }
+            opponentCards={
+              myPlayerNumber === 'PLAYER1'
+                ? activeRound.player2_cards.line3
+                : activeRound.player1_cards.line3
+            }
+            isMyTurn={isMyTurn}
+            canPlayOnLine={!!selectedCard}
+            onCardClick={() => handleLineClick(3)}
+            isAttacking={attackingLines.includes(3)}
+          />
         </motion.div>
 
       {/* Mão do jogador */}
