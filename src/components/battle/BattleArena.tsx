@@ -104,18 +104,23 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     fetchProfiles();
   }, [battle?.player1_id, battle?.player2_id, battle?.id]);
 
-  // Monitor turn changes and show feedback
+  // Monitor turn changes and show feedback (avoid duplicate toasts)
+  const hasShownTurnToast = useRef(false);
+  
   useEffect(() => {
     if (!battle?.current_turn || !prevTurn) {
       setPrevTurn(battle?.current_turn || null);
       return;
     }
     
+    // Only show toast if turn actually changed
     if (battle.current_turn !== prevTurn) {
-      if (isMyTurn()) {
+      if (isMyTurn() && !hasShownTurnToast.current) {
         toast.info('🎯 Agora é seu turno!', { duration: 2000 });
-      } else {
+        hasShownTurnToast.current = true;
+      } else if (!isMyTurn()) {
         toast.info('⏳ Turno do oponente...', { duration: 2000 });
+        hasShownTurnToast.current = false; // Reset when opponent's turn
       }
       setPrevTurn(battle.current_turn);
     }
