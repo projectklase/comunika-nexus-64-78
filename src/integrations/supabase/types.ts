@@ -2199,7 +2199,9 @@ export type Database = {
           total_xp: number
         }[]
       }
-      get_queue_position: { Args: { p_user_id: string }; Returns: number }
+      get_queue_position:
+        | { Args: { p_school_id: string; p_user_id: string }; Returns: number }
+        | { Args: { p_user_id: string }; Returns: number }
       get_school_rankings: {
         Args: {
           limit_param?: number
