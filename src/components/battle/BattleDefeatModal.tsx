@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Star, BookOpen, Swords } from 'lucide-react';
@@ -99,6 +99,10 @@ export function BattleDefeatModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg border-2 border-primary/30 bg-gradient-to-br from-background via-primary/5 to-background overflow-hidden">
+        <DialogTitle className="sr-only">Derrota na Batalha</DialogTitle>
+        <DialogDescription className="sr-only">
+          Você foi derrotado, mas ganhou XP de participação
+        </DialogDescription>
         <AnimatePresence>
           {open && (
             <>
