@@ -98,7 +98,7 @@ export function useMatchmaking(): MatchmakingResult {
           .from('battle_queue')
           .select('status, battle_id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (queueData?.status === 'MATCHED' && queueData.battle_id) {
           // Validate that the battle is actually IN_PROGRESS
