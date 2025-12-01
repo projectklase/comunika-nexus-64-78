@@ -19,7 +19,7 @@ import { ActionButtons } from './ActionButtons';
 import { CardPlayEffect } from './CardPlayEffect';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ScrollText } from 'lucide-react';
+import { ScrollText, AlertTriangle } from 'lucide-react';
 
 interface BattleArenaProps {
   battleId: string;
@@ -28,7 +28,7 @@ interface BattleArenaProps {
 export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { battle, isLoading, playCard, attack, isMyTurn, myPlayerNumber } = useBattle(battleId);
+  const { battle, isLoading, playCard, attack, abandonBattle, isMyTurn, myPlayerNumber } = useBattle(battleId);
   const { userCards } = useCards();
   const battleResult = useBattleResult(battle, user?.id);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -126,12 +126,47 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     await attack.mutateAsync(battle.id);
   };
 
+  const handleAbandonBattle = async () => {
+    if (!battle) return;
+    await abandonBattle.mutateAsync(battle.id);
+    navigate('/aluno/batalha');
+  };
+
   if (isLoading || !battle) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando batalha...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar batalha inválida (game_state NULL ou vazio)
+  if (!battle.game_state || Object.keys(battle.game_state).length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-4">
+        <AlertTriangle className="w-16 h-16 text-destructive animate-pulse" />
+        <h2 className="text-2xl font-bold text-center">Batalha com Erro</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          Esta batalha não foi inicializada corretamente e não pode continuar. 
+          Por favor, abandone esta batalha e inicie uma nova.
+        </p>
+        <div className="flex gap-3 mt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/aluno/batalha')}
+          >
+            Voltar
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={handleAbandonBattle}
+            disabled={abandonBattle.isPending}
+          >
+            {abandonBattle.isPending ? 'Abandonando...' : 'Abandonar Batalha'}
+          </Button>
         </div>
       </div>
     );

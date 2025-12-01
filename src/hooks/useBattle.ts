@@ -195,6 +195,29 @@ export const useBattle = (battleId?: string) => {
     },
   });
 
+  // Abandon battle
+  const abandonBattle = useMutation({
+    mutationFn: async (battleId: string) => {
+      const { error } = await supabase
+        .from('battles')
+        .update({ 
+          status: 'ABANDONED',
+          finished_at: new Date().toISOString()
+        })
+        .eq('id', battleId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['battle'] });
+      queryClient.invalidateQueries({ queryKey: ['user-battles'] });
+      toast.info('Batalha abandonada');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao abandonar batalha');
+    },
+  });
+
   // Helpers
   const isMyTurnFn = () => {
     if (!battle || !user?.id) return false;
@@ -223,6 +246,7 @@ export const useBattle = (battleId?: string) => {
     startBattle: startBattle.mutate,
     playCard,
     attack,
+    abandonBattle,
     
     isCreating: createBattle.isPending,
     isPlaying: playCard.isPending,
