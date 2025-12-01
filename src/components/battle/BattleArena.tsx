@@ -17,7 +17,9 @@ import { BattleDefeatModal } from './BattleDefeatModal';
 import { BattleLog } from './BattleLog';
 import { ActionButtons } from './ActionButtons';
 import { CardPlayEffect } from './CardPlayEffect';
+import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ScrollText } from 'lucide-react';
 
 interface BattleArenaProps {
   battleId: string;
@@ -33,6 +35,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [showDefeatModal, setShowDefeatModal] = useState(false);
+  const [showBattleLog, setShowBattleLog] = useState(false);
   const [player1Profile, setPlayer1Profile] = useState<{ name: string; avatar?: string } | null>(null);
   const [player2Profile, setPlayer2Profile] = useState<{ name: string; avatar?: string } | null>(null);
   
@@ -134,6 +137,29 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     );
   }
 
+  // Check if battle is properly initialized with both players and cards
+  const isBattleReady = battle && gameState && 
+    battle.player2_id && 
+    gameState.player1_hand && 
+    gameState.player2_hand &&
+    Array.isArray(gameState.player1_hand) &&
+    Array.isArray(gameState.player2_hand) &&
+    gameState.player1_hand.length > 0 && 
+    gameState.player2_hand.length > 0;
+
+  if (!isBattleReady) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <div className="animate-pulse text-primary text-lg font-semibold">
+          Aguardando oponente...
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Procurando adversário na sua escola
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <BattleBackground />
@@ -178,9 +204,25 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
 
         <ActionButtons canPlayCard={selectedCard !== null && isMyTurn()} canAttack={myField?.monster !== null && isMyTurn()} isMyTurn={isMyTurn()} onPlayCard={handlePlayCard} onAttack={handleAttack} onEndTurn={() => setSelectedCard(null)} />
 
-        <div className="hidden lg:block fixed right-4 top-1/2 -translate-y-1/2 w-80 h-[500px]">
-          <BattleLog logs={battleLog} />
+        {/* Battle Log Toggle Button */}
+        <div className="fixed bottom-4 right-4 z-20">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowBattleLog(!showBattleLog)}
+            className="gap-2 bg-background/80 backdrop-blur-sm"
+          >
+            <ScrollText className="w-4 h-4" />
+            {showBattleLog ? 'Ocultar Log' : 'Ver Histórico'}
+          </Button>
         </div>
+
+        {/* Battle Log Panel */}
+        {showBattleLog && (
+          <div className="fixed right-4 bottom-16 z-20 w-64 max-h-[250px]">
+            <BattleLog logs={battleLog} onClose={() => setShowBattleLog(false)} />
+          </div>
+        )}
 
         <AnimatePresence>
           {isPlaying && selectedCard && <CardPlayEffect cardId={selectedCard} />}
