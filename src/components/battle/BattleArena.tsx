@@ -88,8 +88,14 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         const p1 = profiles.find(p => p.id === battle.player1_id);
         const p2 = profiles.find(p => p.id === battle.player2_id);
         
-        setPlayer1Profile(p1 ? { name: p1.name, avatar: p1.avatar || undefined } : null);
-        setPlayer2Profile(p2 ? { name: p2.name, avatar: p2.avatar || undefined } : null);
+        setPlayer1Profile(p1 ? { 
+          name: p1.name, 
+          avatar: p1.avatar || undefined
+        } : null);
+        setPlayer2Profile(p2 ? { 
+          name: p2.name, 
+          avatar: p2.avatar || undefined
+        } : null);
       }
       
       setIsLoadingProfiles(false);

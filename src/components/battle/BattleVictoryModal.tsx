@@ -200,7 +200,10 @@ export function BattleVictoryModal({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate('/aluno/batalha');
+                  }}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   Fechar

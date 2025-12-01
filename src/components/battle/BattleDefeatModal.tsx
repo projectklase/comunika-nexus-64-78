@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Star, BookOpen, Swords } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useBattleSounds } from '@/hooks/useBattleSounds';
 
 interface BattleDefeatModalProps {
@@ -34,6 +35,7 @@ export function BattleDefeatModal({
 }: BattleDefeatModalProps) {
   const [displayXP, setDisplayXP] = useState(0);
   const [tip, setTip] = useState('');
+  const navigate = useNavigate();
   const { playLoseSound } = useBattleSounds();
 
   useEffect(() => {
@@ -226,7 +228,10 @@ export function BattleDefeatModal({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate('/aluno/batalha');
+                  }}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   Fechar
