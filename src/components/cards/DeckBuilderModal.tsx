@@ -46,16 +46,16 @@ export const DeckBuilderModal = ({
   const canAddCard = (cardId: string) => {
     const inDeck = getCardCountInDeck(cardId);
     const owned = userCards.get(cardId) || 0;
-    return inDeck < 3 && inDeck < owned && selectedCards.length < 25;
+    return inDeck < 2 && inDeck < owned && selectedCards.length < 15;
   };
 
   const handleAddCard = (cardId: string) => {
     if (canAddCard(cardId)) {
       setSelectedCards([...selectedCards, cardId]);
-    } else if (selectedCards.length >= 25) {
-      toast.error('Máximo de 25 cartas por deck');
-    } else if (getCardCountInDeck(cardId) >= 3) {
-      toast.error('Máximo de 3 cópias da mesma carta');
+    } else if (selectedCards.length >= 15) {
+      toast.error('Máximo de 15 cartas por deck (Duelo Direto)');
+    } else if (getCardCountInDeck(cardId) >= 2) {
+      toast.error('Máximo de 2 cópias da mesma carta');
     }
   };
 
@@ -74,8 +74,8 @@ export const DeckBuilderModal = ({
       return;
     }
 
-    if (selectedCards.length < 10) {
-      toast.error('Deck deve ter no mínimo 10 cartas');
+    if (selectedCards.length < 5) {
+      toast.error('Deck deve ter no mínimo 5 cartas');
       return;
     }
 
@@ -166,9 +166,9 @@ export const DeckBuilderModal = ({
             <div>
               <h3 className="font-semibold mb-2">Deck Atual</h3>
               <div className="flex items-center justify-between text-sm">
-                <span>{selectedCards.length}/25 cartas</span>
-                <Badge variant={selectedCards.length >= 10 ? 'default' : 'destructive'}>
-                  {selectedCards.length >= 10 ? 'Válido' : 'Mín. 10'}
+                <span>{selectedCards.length}/15 cartas</span>
+                <Badge variant={selectedCards.length >= 5 ? 'default' : 'destructive'}>
+                  {selectedCards.length >= 5 ? 'Válido' : 'Mín. 5'}
                 </Badge>
               </div>
             </div>
@@ -236,7 +236,7 @@ export const DeckBuilderModal = ({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={selectedCards.length < 10}>
+          <Button onClick={handleSave} disabled={selectedCards.length < 5}>
             Salvar Deck
           </Button>
         </DialogFooter>

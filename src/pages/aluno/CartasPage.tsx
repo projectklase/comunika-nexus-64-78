@@ -8,9 +8,12 @@ import { CardGalleryModal } from '@/components/cards/CardGalleryModal';
 import { PackOpeningModal } from '@/components/cards/PackOpeningModal';
 import { DeckBuilderModal } from '@/components/cards/DeckBuilderModal';
 import { CardDisplay } from '@/components/cards/CardDisplay';
-import { Package, BookOpen, Plus, Sparkles, TrendingUp } from 'lucide-react';
+import { Package, BookOpen, Plus, Sparkles, TrendingUp, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Deck } from '@/types/cards';
 
 export default function CartasPage() {
   const { user } = useAuth();
@@ -25,6 +28,7 @@ export default function CartasPage() {
     hasClaimedFreePack,
     createDeck,
     updateDeck,
+    deleteDeck,
     getTotalCards,
     getUniqueCards,
     getCollectionProgress
@@ -34,6 +38,8 @@ export default function CartasPage() {
   const [showPackOpening, setShowPackOpening] = useState(false);
   const [showDeckBuilder, setShowDeckBuilder] = useState(false);
   const [lastOpenedCards, setLastOpenedCards] = useState<any>(null);
+  const [editingDeck, setEditingDeck] = useState<Deck | undefined>(undefined);
+  const [deckToDelete, setDeckToDelete] = useState<Deck | null>(null);
 
   const userCardsMap = new Map(userCards.map(uc => [uc.card_id, uc.quantity]));
   const collectionProgress = getCollectionProgress();
@@ -170,11 +176,36 @@ export default function CartasPage() {
             <ScrollArea className="w-full">
               <div className="flex gap-4 pb-4">
                 {decks.map(deck => (
-                  <UICard key={deck.id} className="min-w-[250px] cursor-pointer hover:border-primary transition-colors">
+                  <UICard key={deck.id} className="min-w-[250px] hover:border-primary transition-colors">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <span className="truncate">{deck.name}</span>
-                        {deck.is_favorite && <Badge variant="secondary">★</Badge>}
+                        <div className="flex items-center gap-2">
+                          {deck.is_favorite && <Badge variant="secondary">★</Badge>}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setEditingDeck(deck);
+                                setShowDeckBuilder(true);
+                              }}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => setDeckToDelete(deck)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -245,11 +276,48 @@ export default function CartasPage() {
 
       <DeckBuilderModal
         isOpen={showDeckBuilder}
-        onClose={() => setShowDeckBuilder(false)}
+        onClose={() => {
+          setShowDeckBuilder(false);
+          setEditingDeck(undefined);
+        }}
         allCards={allCards}
         userCards={userCardsMap}
-        onSave={(deckData) => createDeck(deckData)}
+        existingDeck={editingDeck}
+        onSave={(deckData) => {
+          if (editingDeck) {
+            updateDeck({ id: editingDeck.id, ...deckData });
+          } else {
+            createDeck(deckData);
+          }
+        }}
       />
+
+      {/* Alert Dialog para Confirmação de Exclusão */}
+      <AlertDialog open={!!deckToDelete} onOpenChange={() => setDeckToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Deck</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o deck "<strong>{deckToDelete?.name}</strong>"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deckToDelete) {
+                  deleteDeck(deckToDelete.id);
+                  setDeckToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
