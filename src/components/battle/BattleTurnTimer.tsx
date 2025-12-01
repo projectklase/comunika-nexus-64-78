@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -17,6 +17,7 @@ export const BattleTurnTimer = ({
   onTimeout
 }: BattleTurnTimerProps) => {
   const [remainingSeconds, setRemainingSeconds] = useState(maxSeconds);
+  const timeoutCalledRef = useRef(false);
 
   useEffect(() => {
     if (!turnStartedAt) {
@@ -24,12 +25,16 @@ export const BattleTurnTimer = ({
       return;
     }
 
+    // Reset timeout flag when turn changes
+    timeoutCalledRef.current = false;
+
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - new Date(turnStartedAt).getTime()) / 1000);
       const remaining = Math.max(0, maxSeconds - elapsed);
       setRemainingSeconds(remaining);
 
-      if (remaining === 0) {
+      if (remaining === 0 && !timeoutCalledRef.current) {
+        timeoutCalledRef.current = true;
         clearInterval(interval);
         if (onTimeout) {
           onTimeout();
@@ -38,7 +43,7 @@ export const BattleTurnTimer = ({
     }, 100);
 
     return () => clearInterval(interval);
-  }, [turnStartedAt, maxSeconds]);
+  }, [turnStartedAt, maxSeconds, onTimeout]);
 
   const progress = (remainingSeconds / maxSeconds) * 100;
   const isUrgent = remainingSeconds <= 5;

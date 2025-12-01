@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +19,7 @@ interface MatchmakingModalProps {
 export function MatchmakingModal({ open, deckId, onClose, onMatchFound }: MatchmakingModalProps) {
   const { user } = useAuth();
   const { status, queuePosition, searchTime, foundBattleId, playersInQueue, joinQueue, leaveQueue } = useMatchmaking();
+  const [opponentProfile, setOpponentProfile] = useState<{ name: string; avatar?: string } | null>(null);
 
   useEffect(() => {
     const checkExistingBattle = async () => {
@@ -46,14 +47,43 @@ export function MatchmakingModal({ open, deckId, onClose, onMatchFound }: Matchm
     checkExistingBattle();
   }, [open, deckId, status, joinQueue, user?.id, onClose]);
 
+  // Fetch opponent profile when match is found
   useEffect(() => {
-    if (foundBattleId) {
+    if (foundBattleId && user?.id) {
+      const fetchOpponent = async () => {
+        try {
+          const { data: battle } = await supabase
+            .from('battles')
+            .select('player1_id, player2_id')
+            .eq('id', foundBattleId)
+            .single();
+          
+          if (battle) {
+            const opponentId = battle.player1_id === user.id ? battle.player2_id : battle.player1_id;
+            
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('name, avatar')
+              .eq('id', opponentId)
+              .single();
+            
+            if (profile) {
+              setOpponentProfile(profile);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching opponent profile:', error);
+        }
+      };
+      fetchOpponent();
+
+      // Navigate to battle after 3 seconds
       setTimeout(() => {
         onMatchFound(foundBattleId);
         onClose();
       }, 3000);
     }
-  }, [foundBattleId, onMatchFound, onClose]);
+  }, [foundBattleId, user?.id, onMatchFound, onClose]);
 
   const handleCancel = async () => {
     await leaveQueue();
@@ -154,9 +184,14 @@ export function MatchmakingModal({ open, deckId, onClose, onMatchFound }: Matchm
 
               <div className="text-center space-y-2">
                 <Avatar className="h-20 w-20 border-4 border-destructive mx-auto">
-                  <AvatarFallback className="bg-destructive/20 text-xl">?</AvatarFallback>
+                  {opponentProfile?.avatar ? (
+                    <AvatarImage src={opponentProfile.avatar} />
+                  ) : null}
+                  <AvatarFallback className="bg-destructive/20 text-xl">
+                    {opponentProfile?.name.charAt(0).toUpperCase() || '?'}
+                  </AvatarFallback>
                 </Avatar>
-                <p className="font-semibold">Oponente</p>
+                <p className="font-semibold">{opponentProfile?.name.split(' ')[0] || 'Oponente'}</p>
               </div>
             </div>
 

@@ -57,12 +57,17 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const opponentField = isPlayer1 ? gameState?.player2_field : gameState?.player1_field;
   const battleLog = gameState?.battle_log || [];
 
-  // Fetch player profiles with loading state
+  // Fetch player profiles with loading state - refetch on battle change
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
   
   useEffect(() => {
     const fetchProfiles = async () => {
       if (!battle?.player1_id || !battle?.player2_id) return;
+      
+      console.log('Fetching profiles for battle:', battle.id, {
+        player1: battle.player1_id,
+        player2: battle.player2_id
+      });
       
       setIsLoadingProfiles(true);
       
@@ -78,6 +83,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
       }
       
       if (profiles) {
+        console.log('Profiles fetched:', profiles);
         const p1 = profiles.find(p => p.id === battle.player1_id);
         const p2 = profiles.find(p => p.id === battle.player2_id);
         
@@ -89,7 +95,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     };
     
     fetchProfiles();
-  }, [battle?.player1_id, battle?.player2_id]);
+  }, [battle?.player1_id, battle?.player2_id, battle?.id]);
 
   // Monitor turn changes and show feedback
   useEffect(() => {
