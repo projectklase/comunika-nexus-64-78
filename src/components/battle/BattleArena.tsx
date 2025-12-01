@@ -6,9 +6,10 @@ import { useBattleResult } from '@/hooks/useBattleResult';
 import { useScreenShake } from '@/hooks/useScreenShake';
 import { useBattleSounds } from '@/hooks/useBattleSounds';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { BattleBackground } from './BattleBackground';
 import { BattleField } from './BattleField';
-import { HPBar } from './HPBar';
+import { BattlePlayerInfo } from './BattlePlayerInfo';
 import { BattleCard } from './BattleCard';
 import { BattleTurnIndicator } from './BattleTurnIndicator';
 import { BattleVictoryModal } from './BattleVictoryModal';
@@ -32,6 +33,8 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [showDefeatModal, setShowDefeatModal] = useState(false);
+  const [player1Profile, setPlayer1Profile] = useState<{ name: string; avatar?: string } | null>(null);
+  const [player2Profile, setPlayer2Profile] = useState<{ name: string; avatar?: string } | null>(null);
   
   const { triggerShake } = useScreenShake();
   const { playAttackSound, playSwooshSound, playWinSound, playLoseSound } = useBattleSounds();
@@ -44,6 +47,28 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const myField = isPlayer1 ? gameState?.player1_field : gameState?.player2_field;
   const opponentField = isPlayer1 ? gameState?.player2_field : gameState?.player1_field;
   const battleLog = gameState?.battle_log || [];
+
+  // Fetch player profiles
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      if (!battle) return;
+      
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, avatar')
+        .in('id', [battle.player1_id, battle.player2_id]);
+      
+      if (profiles) {
+        const p1 = profiles.find(p => p.id === battle.player1_id);
+        const p2 = profiles.find(p => p.id === battle.player2_id);
+        
+        if (p1) setPlayer1Profile({ name: p1.name, avatar: p1.avatar || undefined });
+        if (p2) setPlayer2Profile({ name: p2.name, avatar: p2.avatar || undefined });
+      }
+    };
+    
+    fetchProfiles();
+  }, [battle]);
 
   useEffect(() => {
     if (battle?.status === 'FINISHED' && battleResult) {
@@ -114,7 +139,14 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
       <BattleBackground />
       
       <div className="relative z-10 container mx-auto px-4 py-8 space-y-6 max-w-7xl">
-        <HPBar currentHP={opponentHP || 100} maxHP={100} playerName="Oponente" />
+        <BattlePlayerInfo
+          playerName={isPlayer1 ? player2Profile?.name || 'Oponente' : player1Profile?.name || 'Oponente'}
+          playerAvatar={isPlayer1 ? player2Profile?.avatar : player1Profile?.avatar}
+          currentHP={opponentHP || 100}
+          maxHP={100}
+          isPlayer={false}
+        />
+        
         <BattleTurnIndicator isMyTurn={isMyTurn()} />
         <BattleField monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />
         
@@ -126,7 +158,14 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         </div>
 
         <BattleField monster={myField?.monster} traps={myField?.traps || []} />
-        <HPBar currentHP={myHP || 100} maxHP={100} playerName="Você" isPlayer />
+        
+        <BattlePlayerInfo
+          playerName={isPlayer1 ? player1Profile?.name || 'Você' : player2Profile?.name || 'Você'}
+          playerAvatar={isPlayer1 ? player1Profile?.avatar : player2Profile?.avatar}
+          currentHP={myHP || 100}
+          maxHP={100}
+          isPlayer={true}
+        />
 
         <div className="mt-8">
           <p className="text-sm text-center text-muted-foreground mb-4">Sua Mão</p>
