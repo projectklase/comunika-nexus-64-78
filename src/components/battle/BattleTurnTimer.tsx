@@ -18,6 +18,10 @@ export const BattleTurnTimer = ({
 }: BattleTurnTimerProps) => {
   const [remainingSeconds, setRemainingSeconds] = useState(maxSeconds);
   const timeoutCalledRef = useRef(false);
+  const onTimeoutRef = useRef(onTimeout);
+  
+  // Keep ref updated without triggering re-renders
+  onTimeoutRef.current = onTimeout;
 
   useEffect(() => {
     if (!turnStartedAt) {
@@ -36,14 +40,13 @@ export const BattleTurnTimer = ({
       if (remaining === 0 && !timeoutCalledRef.current) {
         timeoutCalledRef.current = true;
         clearInterval(interval);
-        if (onTimeout) {
-          onTimeout();
-        }
+        // Call via ref to avoid dependency issues
+        onTimeoutRef.current?.();
       }
     }, 100);
 
     return () => clearInterval(interval);
-  }, [turnStartedAt, maxSeconds, onTimeout]);
+  }, [turnStartedAt, maxSeconds]);
 
   const progress = (remainingSeconds / maxSeconds) * 100;
   const isUrgent = remainingSeconds <= 5;

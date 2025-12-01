@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBattle } from '@/hooks/useBattle';
 import { useCards } from '@/hooks/useCards';
@@ -43,6 +43,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const [player2Profile, setPlayer2Profile] = useState<{ name: string; avatar?: string } | null>(null);
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
   const [showForfeitDialog, setShowForfeitDialog] = useState(false);
+  const [hasShownResultModal, setHasShownResultModal] = useState(false);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const { triggerShake } = useScreenShake();
@@ -143,8 +144,11 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     };
   }, [battle?.id, battle?.status, abandonBattle]);
 
+  // Show result modal only once per battle
   useEffect(() => {
-    if (battle?.status === 'FINISHED' && battleResult) {
+    if (battle?.status === 'FINISHED' && battleResult && !hasShownResultModal) {
+      setHasShownResultModal(true);
+      
       if (battleResult.isVictory) {
         playWinSound();
         setShowVictoryModal(true);
@@ -153,7 +157,12 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         setShowDefeatModal(true);
       }
     }
-  }, [battle?.status, battleResult]);
+  }, [battle?.status, battleResult, hasShownResultModal, playWinSound, playLoseSound]);
+
+  // Reset modal flag when battle changes
+  useEffect(() => {
+    setHasShownResultModal(false);
+  }, [battleId]);
 
   const playerHand = useMemo(() => {
     if (!battle || !gameState) return [];
@@ -202,19 +211,19 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     navigate('/aluno/batalha');
   };
 
-  const handleTurnTimeout = () => {
-    if (!battle) return;
+  const handleTurnTimeout = useCallback(() => {
+    if (!battle?.id) return;
     forceTimeoutTurn?.(battle.id);
-  };
+  }, [battle?.id, forceTimeoutTurn]);
 
-  const handleEndTurn = async () => {
+  const handleEndTurn = useCallback(async () => {
     if (!battle || !isMyTurn()) return;
     endTurn?.(battle.id);
-  };
+  }, [battle?.id, isMyTurn, endTurn]);
 
-  const handleForfeit = () => {
+  const handleForfeit = useCallback(() => {
     setShowForfeitDialog(true);
-  };
+  }, []);
 
   const confirmForfeit = async () => {
     if (!battle) return;

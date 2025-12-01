@@ -242,14 +242,18 @@ export const useBattle = (battleId?: string) => {
   // Force turn timeout
   const forceTimeoutTurn = useMutation({
     mutationFn: async (battleId: string) => {
-      const { error } = await supabase.rpc('check_turn_timeout', {
+      const { data, error } = await supabase.rpc('check_turn_timeout', {
         p_battle_id: battleId,
       });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
-      toast.info('Tempo esgotado! Turno passou automaticamente.');
+      // Only show toast if turn actually passed (not if battle already finished)
+      if (result?.turn_passed) {
+        toast.info('Tempo esgotado! Turno passou automaticamente.');
+      }
     },
   });
 
