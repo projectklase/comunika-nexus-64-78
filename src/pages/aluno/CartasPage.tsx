@@ -12,7 +12,7 @@ import { Package, BookOpen, Plus, Sparkles, TrendingUp, MoreVertical, Edit, Tras
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DeleteDeckConfirmModal } from '@/components/cards/DeleteDeckConfirmModal';
 import { Deck } from '@/types/cards';
 
 export default function CartasPage() {
@@ -29,6 +29,7 @@ export default function CartasPage() {
     createDeck,
     updateDeck,
     deleteDeck,
+    isDeletingDeck,
     getTotalCards,
     getUniqueCards,
     getCollectionProgress
@@ -292,32 +293,20 @@ export default function CartasPage() {
         }}
       />
 
-      {/* Alert Dialog para Confirmação de Exclusão */}
-      <AlertDialog open={!!deckToDelete} onOpenChange={() => setDeckToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Deck</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o deck "<strong>{deckToDelete?.name}</strong>"? 
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deckToDelete) {
-                  deleteDeck(deckToDelete.id);
-                  setDeckToDelete(null);
-                }
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Modal de Confirmação Extra para Exclusão Permanente */}
+      <DeleteDeckConfirmModal
+        open={!!deckToDelete}
+        onOpenChange={(open) => !open && setDeckToDelete(null)}
+        deckName={deckToDelete?.name || ''}
+        cardCount={deckToDelete?.card_ids?.length || 0}
+        onConfirm={() => {
+          if (deckToDelete) {
+            deleteDeck(deckToDelete.id);
+            setDeckToDelete(null);
+          }
+        }}
+        loading={isDeletingDeck}
+      />
     </AppLayout>
   );
 }
