@@ -1,4 +1,4 @@
-export type CardRarity = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+export type CardRarity = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'SPECIAL';
 export type CardCategory = 'MATEMATICA' | 'CIENCIAS' | 'HISTORIA' | 'ARTES' | 'ESPORTES' | 'ESPECIAL';
 export type CardEffectType = 'BURN' | 'SHIELD' | 'BOOST' | 'HEAL' | 'FREEZE' | 'DOUBLE' | 'REFLECT';
 export type CardType = 'MONSTER' | 'TRAP' | 'SPELL';
@@ -84,11 +84,20 @@ export const PACK_SIZES: Record<PackType, number> = {
   FREE: 5,
 };
 
+export const RARITY_STARS: Record<CardRarity, number> = {
+  COMMON: 1,
+  RARE: 2,
+  EPIC: 3,
+  LEGENDARY: 4,
+  SPECIAL: 5,
+};
+
 export const RARITY_COLORS: Record<CardRarity, string> = {
   COMMON: 'bg-gray-700 text-gray-100 border-gray-500',
   RARE: 'bg-blue-900 text-blue-200 border-blue-500',
   EPIC: 'bg-purple-900 text-purple-200 border-purple-500',
   LEGENDARY: 'bg-yellow-900 text-yellow-200 border-yellow-500',
+  SPECIAL: 'bg-gradient-to-r from-pink-600 to-cyan-500 text-white border-pink-400',
 };
 
 export const RARITY_LABELS: Record<CardRarity, string> = {
@@ -96,6 +105,7 @@ export const RARITY_LABELS: Record<CardRarity, string> = {
   RARE: 'Rara',
   EPIC: 'Épica',
   LEGENDARY: 'Lendária',
+  SPECIAL: 'Especial',
 };
 
 export const CATEGORY_LABELS: Record<CardCategory, string> = {
@@ -149,5 +159,10 @@ export const RARITY_FRAME_COLORS: Record<CardRarity, {
     outer: 'from-yellow-300 via-yellow-500 to-amber-600',
     inner: 'border-yellow-400',
     glow: 'shadow-[0_0_30px_rgba(234,179,8,0.6)] animate-legendary-glow',
+  },
+  SPECIAL: {
+    outer: 'from-pink-400 via-cyan-400 to-purple-500',
+    inner: 'border-pink-400',
+    glow: 'shadow-[0_0_35px_rgba(236,72,153,0.7)] animate-legendary-glow',
   },
 };

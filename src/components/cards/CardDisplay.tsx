@@ -1,4 +1,4 @@
-import { Card, RARITY_COLORS, RARITY_LABELS, CATEGORY_COLORS, RARITY_FRAME_COLORS, CATEGORY_ICONS } from '@/types/cards';
+import { Card, RARITY_COLORS, RARITY_LABELS, CATEGORY_COLORS, RARITY_FRAME_COLORS, CATEGORY_ICONS, RARITY_STARS } from '@/types/cards';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Zap, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -77,8 +77,8 @@ export const CardDisplay = ({
   // Get category icon dynamically
   const CategoryIcon = (LucideIcons as any)[CATEGORY_ICONS[card.category]] || LucideIcons.Sparkles;
   
-  // Calculate level stars (1-5 based on required_level)
-  const levelStars = Math.min(5, Math.max(1, Math.ceil(card.required_level / 20)));
+  // Stars based on rarity
+  const rarityStars = RARITY_STARS[card.rarity];
 
   return (
     <div
@@ -160,7 +160,7 @@ export const CardDisplay = ({
             <div className="relative px-2 py-1 bg-black/40 border-b border-white/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-0.5">
-                  {Array.from({ length: levelStars }).map((_, i) => (
+                  {Array.from({ length: rarityStars }).map((_, i) => (
                     <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
