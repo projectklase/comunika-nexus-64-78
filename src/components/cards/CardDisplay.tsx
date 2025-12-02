@@ -10,7 +10,7 @@ interface CardDisplayProps {
   showStats?: boolean;
   onClick?: () => void;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 export const CardDisplay = ({ 
@@ -22,10 +22,54 @@ export const CardDisplay = ({
   size = 'md'
 }: CardDisplayProps) => {
   const sizeClasses = {
+    xs: 'w-10 h-14',
     sm: 'w-32 h-48',
     md: 'w-44 h-64',
     lg: 'w-52 h-72'
   };
+
+  // For xs size, render ultra-compact version (just image with rarity border)
+  if (size === 'xs') {
+    const frameColors = RARITY_FRAME_COLORS[card.rarity];
+    const categoryGradient = CATEGORY_COLORS[card.category];
+    const CategoryIcon = (LucideIcons as any)[CATEGORY_ICONS[card.category]] || LucideIcons.Sparkles;
+    
+    return (
+      <div
+        onClick={onClick}
+        className={cn(
+          'relative rounded overflow-hidden cursor-pointer transition-all duration-200',
+          'hover:scale-110',
+          sizeClasses.xs,
+          className
+        )}
+      >
+        <div className={cn(
+          'absolute inset-0 rounded p-[2px]',
+          'bg-gradient-to-br',
+          frameColors.outer
+        )}>
+          <div className="relative w-full h-full rounded overflow-hidden bg-gray-900">
+            {card.image_url ? (
+              <img 
+                src={card.image_url} 
+                alt={card.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className={cn(
+                'w-full h-full flex items-center justify-center',
+                'bg-gradient-to-br',
+                categoryGradient
+              )}>
+                <CategoryIcon className="w-4 h-4 text-white/60" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const frameColors = RARITY_FRAME_COLORS[card.rarity];
   const categoryGradient = CATEGORY_COLORS[card.category];
@@ -111,19 +155,21 @@ export const CardDisplay = ({
             )}
           </div>
 
-          {/* Level Stars and Rarity Badge */}
-          <div className="relative px-2 py-1 bg-black/40 border-b border-white/10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: levelStars }).map((_, i) => (
-                  <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                ))}
+          {/* Level Stars and Rarity Badge - only show when showStats is true */}
+          {showStats && (
+            <div className="relative px-2 py-1 bg-black/40 border-b border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: levelStars }).map((_, i) => (
+                    <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', RARITY_COLORS[card.rarity])}>
+                  {RARITY_LABELS[card.rarity]}
+                </Badge>
               </div>
-              <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', RARITY_COLORS[card.rarity])}>
-                {RARITY_LABELS[card.rarity]}
-              </Badge>
             </div>
-          </div>
+          )}
 
           {/* Stats Section */}
           {showStats && (

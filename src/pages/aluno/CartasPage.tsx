@@ -212,11 +212,11 @@ export default function CartasPage() {
                       <p className="text-sm text-muted-foreground mb-3">
                         {deck.card_ids.length} cartas
                       </p>
-                      <div className="grid grid-cols-5 gap-1">
+                      <div className="flex gap-1">
                         {deck.card_ids.slice(0, 5).map((cardId, idx) => {
                           const card = allCards.find(c => c.id === cardId);
                           return card ? (
-                            <CardDisplay key={idx} card={card} size="sm" showStats={false} />
+                            <CardDisplay key={idx} card={card} size="xs" showStats={false} />
                           ) : null;
                         })}
                       </div>
