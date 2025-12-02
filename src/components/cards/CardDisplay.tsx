@@ -23,9 +23,9 @@ export const CardDisplay = ({
 }: CardDisplayProps) => {
   const sizeClasses = {
     xs: 'w-10 h-14',
-    sm: 'w-32 h-48',
-    md: 'w-44 h-64',
-    lg: 'w-52 h-72'
+    sm: 'w-32 h-52',
+    md: 'w-44 h-72',
+    lg: 'w-52 h-80'
   };
 
   // For xs size, render ultra-compact version (just image with rarity border)
@@ -136,7 +136,7 @@ export const CardDisplay = ({
           </div>
 
           {/* Illustration Area */}
-          <div className="relative h-[45%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10">
+          <div className="relative h-[50%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10">
             {card.image_url ? (
               <img 
                 src={card.image_url} 
