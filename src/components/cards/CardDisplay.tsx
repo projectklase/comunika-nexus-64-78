@@ -136,12 +136,12 @@ export const CardDisplay = ({
           </div>
 
           {/* Illustration Area */}
-          <div className="relative h-[50%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10 flex items-center justify-center">
+          <div className="relative h-[45%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10">
             {card.image_url ? (
               <img 
                 src={card.image_url} 
                 alt={card.name} 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
               />
             ) : (
               <div className={cn(
