@@ -64,7 +64,6 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
-import CardImageUploadPage from "./pages/admin/CardImageUploadPage";
 
 const queryClient = new QueryClient();
 
@@ -131,13 +130,6 @@ const App = () => (
                 <AppLayout>
                   <SchoolsManagementPage />
                 </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Admin - Upload de Imagens de Cartas */}
-            <Route path="/admin/card-images" element={
-              <ProtectedRoute allowedRoles={['administrador']}>
-                <CardImageUploadPage />
               </ProtectedRoute>
             } />
             
