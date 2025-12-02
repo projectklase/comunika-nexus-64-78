@@ -73,6 +73,7 @@ export const useCards = () => {
         .from('decks')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_active', true) // Filtrar apenas decks ativos (soft delete)
         .order('is_favorite', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -265,10 +266,15 @@ export const useCards = () => {
     },
   });
 
-  // Deletar deck
+  // Deletar deck (soft delete - marca como inativo)
   const deleteDeck = useMutation({
     mutationFn: async (deckId: string) => {
-      const { error } = await supabase.from('decks').delete().eq('id', deckId);
+      // Soft delete: marca como inativo ao invés de excluir fisicamente
+      // Isso preserva o histórico de batalhas e evita erros de foreign key
+      const { error } = await supabase
+        .from('decks')
+        .update({ is_active: false })
+        .eq('id', deckId);
       if (error) throw error;
     },
     onSuccess: () => {
