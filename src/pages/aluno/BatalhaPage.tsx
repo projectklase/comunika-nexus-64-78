@@ -1,27 +1,114 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { BattleArena } from '@/components/battle/BattleArena';
 import { useBattle } from '@/hooks/useBattle';
 import { useCards } from '@/hooks/useCards';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Sword, Trophy, Clock } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Sword, Trophy, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { DeckSelectionSheet } from '@/components/battle/DeckSelectionSheet';
 import { MatchmakingModal } from '@/components/battle/MatchmakingModal';
+import { RecentBattleCard } from '@/components/battle/RecentBattleCard';
+
+const DEFAULT_BATTLES_SHOWN = 3;
+const MAX_BATTLES_SHOWN = 10;
 
 export default function BatalhaPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const battleId = searchParams.get('id');
   const { userBattles, isLoading } = useBattle();
   const { decks } = useCards();
   const [showDeckSelection, setShowDeckSelection] = useState(false);
   const [showMatchmaking, setShowMatchmaking] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
+  const [showAllBattles, setShowAllBattles] = useState(false);
+
+  // Fetch opponent profiles for all battles
+  const opponentIds = useMemo(() => {
+    if (!user?.id || !userBattles.length) return [];
+    return userBattles.map(b => 
+      b.player1_id === user.id ? b.player2_id : b.player1_id
+    ).filter(Boolean);
+  }, [userBattles, user?.id]);
+
+  const { data: opponentProfiles } = useQuery({
+    queryKey: ['opponent-profiles', opponentIds],
+    queryFn: async () => {
+      if (!opponentIds.length) return {};
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, avatar, preferences')
+        .in('id', opponentIds);
+      
+      // Also fetch equipped avatars
+      const { data: unlocks } = await supabase
+        .from('user_unlocks')
+        .select('user_id, unlockable_id, is_equipped, unlockables(preview_data, rarity)')
+        .in('user_id', opponentIds)
+        .eq('is_equipped', true);
+      
+      const profileMap: Record<string, { name: string; avatar?: string; equippedAvatar?: any }> = {};
+      
+      data?.forEach(p => {
+        profileMap[p.id] = { 
+          name: p.name, 
+          avatar: p.avatar 
+        };
+      });
+      
+      unlocks?.forEach(u => {
+        if (profileMap[u.user_id] && u.unlockables) {
+          const unlockable = u.unlockables as any;
+          profileMap[u.user_id].equippedAvatar = {
+            emoji: unlockable.preview_data?.emoji,
+            imageUrl: unlockable.preview_data?.imageUrl,
+            rarity: unlockable.rarity
+          };
+        }
+      });
+      
+      return profileMap;
+    },
+    enabled: opponentIds.length > 0,
+  });
+
+  // Calculate battle stats
+  const battleStats = useMemo(() => {
+    if (!user?.id || !userBattles.length) {
+      return { wins: 0, losses: 0, winRate: 0 };
+    }
+    
+    const finishedBattles = userBattles.filter(b => b.status === 'FINISHED');
+    const wins = finishedBattles.filter(b => b.winner_id === user.id).length;
+    const losses = finishedBattles.length - wins;
+    const winRate = finishedBattles.length > 0 
+      ? Math.round((wins / finishedBattles.length) * 100) 
+      : 0;
+    
+    return { wins, losses, winRate };
+  }, [userBattles, user?.id]);
+
+  // Format duration
+  const formatDuration = (startedAt?: string, finishedAt?: string) => {
+    if (!startedAt || !finishedAt) return undefined;
+    const duration = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
+    const minutes = Math.floor(duration / 60000);
+    const seconds = Math.floor((duration % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Get battles to display
+  const displayedBattles = useMemo(() => {
+    const limit = showAllBattles ? MAX_BATTLES_SHOWN : DEFAULT_BATTLES_SHOWN;
+    return userBattles.slice(0, limit);
+  }, [userBattles, showAllBattles]);
 
   if (battleId) {
     return (
@@ -33,15 +120,15 @@ export default function BatalhaPage() {
 
   return (
     <AppLayout>
-      <div className="container max-w-7xl mx-auto p-6 space-y-6">
+      <div className="container max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Sword className="w-8 h-8" />
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              <Sword className="w-7 h-7 sm:w-8 sm:h-8" />
               Arena de Batalha
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Desafie outros alunos e prove suas habilidades!
             </p>
           </div>
@@ -49,6 +136,7 @@ export default function BatalhaPage() {
             size="lg" 
             disabled={!decks.length}
             onClick={() => setShowDeckSelection(true)}
+            className="w-full sm:w-auto"
           >
             <Sword className="w-5 h-5 mr-2" />
             Nova Batalha
@@ -65,78 +153,105 @@ export default function BatalhaPage() {
           </Card>
         )}
 
-        {/* Batalhas em andamento */}
+        {/* Estatísticas Rápidas */}
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
+            <CardContent className="p-4 text-center">
+              <Trophy className="w-5 h-5 mx-auto mb-1 text-green-500" />
+              <p className="text-2xl font-bold text-green-500">{battleStats.wins}</p>
+              <p className="text-xs text-muted-foreground">Vitórias</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/30">
+            <CardContent className="p-4 text-center">
+              <Sword className="w-5 h-5 mx-auto mb-1 text-red-500" />
+              <p className="text-2xl font-bold text-red-500">{battleStats.losses}</p>
+              <p className="text-xs text-muted-foreground">Derrotas</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/30">
+            <CardContent className="p-4 text-center">
+              <TrendingUp className="w-5 h-5 mx-auto mb-1 text-primary" />
+              <p className="text-2xl font-bold text-primary">{battleStats.winRate}%</p>
+              <p className="text-xs text-muted-foreground">Taxa de Vitória</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Batalhas Recentes */}
         <div>
-          <h2 className="text-xl font-bold mb-4">Batalhas Recentes</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold">Batalhas Recentes</h2>
+            {userBattles.length > DEFAULT_BATTLES_SHOWN && (
+              <span className="text-xs text-muted-foreground">
+                {displayedBattles.length} de {Math.min(userBattles.length, MAX_BATTLES_SHOWN)}
+              </span>
+            )}
+          </div>
+
           {isLoading ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">Carregando batalhas...</p>
               </CardContent>
             </Card>
-          ) : userBattles.length > 0 ? (
-            <div className="grid gap-4">
-              {userBattles.map((battle) => (
-                <Card
-                  key={battle.id}
-                  className="hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    if (battle.status === 'IN_PROGRESS') {
-                      navigate(`/aluno/batalha?id=${battle.id}`);
-                    }
-                  }}
-                >
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Trophy className="w-5 h-5" />
-                        Batalha #{battle.id.slice(0, 8)}
-                      </CardTitle>
-                      <Badge
-                        variant={
-                          battle.status === 'IN_PROGRESS'
-                            ? 'default'
-                            : battle.status === 'FINISHED'
-                            ? 'secondary'
-                            : 'outline'
-                        }
-                      >
-                        {battle.status === 'IN_PROGRESS' && 'Em Andamento'}
-                        {battle.status === 'FINISHED' && 'Finalizada'}
-                        {battle.status === 'WAITING' && 'Aguardando'}
-                        {battle.status === 'ABANDONED' && 'Abandonada'}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">HP</p>
-                          <p className="text-2xl font-bold">
-                            {(battle.game_state as any)?.player1_hp || 100}
-                          </p>
-                        </div>
-                        <span className="text-muted-foreground">vs</span>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">HP</p>
-                          <p className="text-2xl font-bold">
-                            {(battle.game_state as any)?.player2_hp || 100}
-                          </p>
-                        </div>
-                      </div>
+          ) : displayedBattles.length > 0 ? (
+            <div className="space-y-3">
+              {displayedBattles.map((battle) => {
+                const isPlayer1 = battle.player1_id === user?.id;
+                const opponentId = isPlayer1 ? battle.player2_id : battle.player1_id;
+                const opponent = opponentProfiles?.[opponentId];
+                const gameState = battle.game_state as any;
+                
+                const myHP = isPlayer1 ? gameState?.player1_hp : gameState?.player2_hp;
+                const opponentHP = isPlayer1 ? gameState?.player2_hp : gameState?.player1_hp;
+                const isVictory = battle.status === 'FINISHED' 
+                  ? battle.winner_id === user?.id 
+                  : null;
 
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {formatDistanceToNow(new Date(battle.last_action_at), {
-                          addSuffix: true,
-                          locale: ptBR,
-                        })}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                return (
+                  <RecentBattleCard
+                    key={battle.id}
+                    opponentName={opponent?.name || 'Oponente'}
+                    opponentAvatar={opponent?.equippedAvatar}
+                    isVictory={isVictory}
+                    myFinalHP={myHP ?? 100}
+                    opponentFinalHP={opponentHP ?? 100}
+                    xpGained={isVictory === true ? 50 : isVictory === false ? 10 : 0}
+                    duration={formatDuration(battle.started_at, battle.finished_at)}
+                    battleDate={new Date(battle.last_action_at)}
+                    status={battle.status}
+                    onClick={() => {
+                      if (battle.status === 'IN_PROGRESS') {
+                        navigate(`/aluno/batalha?id=${battle.id}`);
+                      }
+                    }}
+                  />
+                );
+              })}
+
+              {/* Botão Ver Mais / Ver Menos */}
+              {userBattles.length > DEFAULT_BATTLES_SHOWN && (
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowAllBattles(!showAllBattles)}
+                >
+                  {showAllBattles ? (
+                    <>
+                      <ChevronUp className="w-4 h-4 mr-2" />
+                      Ver menos
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4 mr-2" />
+                      Ver histórico ({Math.min(userBattles.length, MAX_BATTLES_SHOWN) - DEFAULT_BATTLES_SHOWN} mais)
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           ) : (
             <Card>
@@ -148,36 +263,6 @@ export default function BatalhaPage() {
               </CardContent>
             </Card>
           )}
-        </div>
-
-        {/* Estatísticas */}
-        <div className="grid sm:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Vitórias</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Derrotas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Taxa de Vitória</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0%</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Deck Selection Sheet */}
