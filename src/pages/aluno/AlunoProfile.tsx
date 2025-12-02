@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchool } from '@/contexts/SchoolContext';
@@ -55,7 +55,7 @@ export default function AlunoProfile() {
     enabled: !!user?.id
   });
 
-  // Query para buscar best_streak do profile
+  // Query para buscar XP e stats do profile (fonte de verdade: banco de dados)
   const { data: profileStats } = useQuery({
     queryKey: ['student-profile-stats', user?.id],
     queryFn: async () => {
@@ -63,7 +63,7 @@ export default function AlunoProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('best_streak_days, current_streak_days')
+        .select('total_xp, best_streak_days, current_streak_days')
         .eq('id', user.id)
         .single();
       
@@ -74,8 +74,20 @@ export default function AlunoProfile() {
       
       return data;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 0,
+    refetchOnWindowFocus: true
   });
+
+  // XP do banco de dados (fonte de verdade)
+  const profileXP = profileStats?.total_xp || 0;
+
+  // Sincronizar Zustand com valor do banco para outros componentes
+  useEffect(() => {
+    if (profileXP > 0 && profileXP !== gamification.xp) {
+      useStudentGamification.setState({ xp: profileXP });
+    }
+  }, [profileXP, gamification.xp]);
 
   // Badges equipados (até 5)
   const equippedBadges = userUnlocks?.filter(unlock => 
@@ -145,7 +157,7 @@ export default function AlunoProfile() {
               <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                 <div className="flex items-center gap-2 bg-background/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-border/50">
                   <Trophy className="h-5 w-5 text-primary" />
-                  <span className="font-bold">{gamification.xp.toLocaleString()} XP</span>
+                  <span className="font-bold">{profileXP.toLocaleString()} XP</span>
                 </div>
                 
                 <div className="flex items-center gap-2 bg-background/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-border/50">
@@ -205,7 +217,7 @@ export default function AlunoProfile() {
 
         {/* Estatísticas Detalhadas */}
         <ProfileStats
-          totalXP={gamification.xp}
+          totalXP={profileXP}
           recentXPGain={0}
           activitiesCompleted={deliveriesCount}
           bestStreak={profileStats?.best_streak_days || 0}
