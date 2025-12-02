@@ -164,7 +164,7 @@ export const CardDisplay = ({
                     <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', RARITY_COLORS[card.rarity])}>
+                <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', RARITY_COLORS[card.rarity])}>
                   {RARITY_LABELS[card.rarity]}
                 </Badge>
               </div>

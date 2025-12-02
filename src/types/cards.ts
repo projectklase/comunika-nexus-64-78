@@ -85,10 +85,10 @@ export const PACK_SIZES: Record<PackType, number> = {
 };
 
 export const RARITY_COLORS: Record<CardRarity, string> = {
-  COMMON: 'text-gray-400 border-gray-500',
-  RARE: 'text-blue-400 border-blue-500',
-  EPIC: 'text-purple-400 border-purple-500',
-  LEGENDARY: 'text-yellow-400 border-yellow-500',
+  COMMON: 'bg-gray-700 text-gray-100 border-gray-500',
+  RARE: 'bg-blue-900 text-blue-200 border-blue-500',
+  EPIC: 'bg-purple-900 text-purple-200 border-purple-500',
+  LEGENDARY: 'bg-yellow-900 text-yellow-200 border-yellow-500',
 };
 
 export const RARITY_LABELS: Record<CardRarity, string> = {
