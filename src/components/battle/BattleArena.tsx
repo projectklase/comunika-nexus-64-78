@@ -287,15 +287,13 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     );
   }
 
-  // Check if battle is properly initialized with both players and cards
+  // Check if battle is properly initialized with both players
   const isBattleReady = battle && gameState && 
     battle.player2_id && 
-    gameState.player1_hand && 
-    gameState.player2_hand &&
-    Array.isArray(gameState.player1_hand) &&
-    Array.isArray(gameState.player2_hand) &&
-    gameState.player1_hand.length > 0 && 
-    gameState.player2_hand.length > 0;
+    typeof gameState.player1_hp === 'number' &&
+    typeof gameState.player2_hp === 'number' &&
+    gameState.player1_hand !== undefined &&
+    gameState.player2_hand !== undefined;
 
   if (!isBattleReady) {
     return (
