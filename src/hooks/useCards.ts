@@ -266,14 +266,13 @@ export const useCards = () => {
     },
   });
 
-  // Deletar deck (soft delete - marca como inativo)
+  // Deletar deck permanentemente
   const deleteDeck = useMutation({
     mutationFn: async (deckId: string) => {
-      // Soft delete: marca como inativo ao invés de excluir fisicamente
-      // Isso preserva o histórico de batalhas e evita erros de foreign key
+      // Exclusão permanente - FK com SET NULL preserva histórico de batalhas
       const { error } = await supabase
         .from('decks')
-        .update({ is_active: false })
+        .delete()
         .eq('id', deckId);
       if (error) throw error;
     },

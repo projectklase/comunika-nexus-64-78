@@ -216,9 +216,9 @@ export type Database = {
           game_state: Json | null
           id: string
           last_action_at: string | null
-          player1_deck_id: string
+          player1_deck_id: string | null
           player1_id: string
-          player2_deck_id: string
+          player2_deck_id: string | null
           player2_id: string
           started_at: string | null
           status: string
@@ -233,9 +233,9 @@ export type Database = {
           game_state?: Json | null
           id?: string
           last_action_at?: string | null
-          player1_deck_id: string
+          player1_deck_id?: string | null
           player1_id: string
-          player2_deck_id: string
+          player2_deck_id?: string | null
           player2_id: string
           started_at?: string | null
           status?: string
@@ -250,9 +250,9 @@ export type Database = {
           game_state?: Json | null
           id?: string
           last_action_at?: string | null
-          player1_deck_id?: string
+          player1_deck_id?: string | null
           player1_id?: string
-          player2_deck_id?: string
+          player2_deck_id?: string | null
           player2_id?: string
           started_at?: string | null
           status?: string
