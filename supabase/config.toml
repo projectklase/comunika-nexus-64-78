@@ -3,6 +3,9 @@ project_id = "yanspolqarficibgovia"
 [functions.generate-card-art]
 verify_jwt = false
 
+[functions.generate-all-card-arts]
+verify_jwt = false
+
 [functions.create-demo-user]
 verify_jwt = false
 
