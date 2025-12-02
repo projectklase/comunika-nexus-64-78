@@ -102,11 +102,24 @@ export const BattleCard = memo(({
             <span className="text-[0.6rem] sm:text-xs font-bold text-destructive-foreground">{card.atk}</span>
           </div>
           
-          {/* DEF */}
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-primary/80 rounded px-1 sm:px-1.5 py-0.5">
-            <Shield className="w-2 h-2 sm:w-3 sm:h-3 text-primary-foreground" />
-            <span className="text-[0.6rem] sm:text-xs font-bold text-primary-foreground">{card.def}</span>
-          </div>
+          {/* HP (current_hp se disponível, senão DEF) */}
+          {(() => {
+            const currentHp = (card as any).current_hp;
+            const maxHp = (card as any).max_hp || card.def;
+            const isInBattle = currentHp !== undefined;
+            const hpColor = isInBattle && currentHp < maxHp 
+              ? currentHp <= maxHp * 0.3 ? 'bg-destructive/80' : 'bg-amber-500/80'
+              : 'bg-primary/80';
+            
+            return (
+              <div className={`flex items-center gap-0.5 sm:gap-1 ${hpColor} rounded px-1 sm:px-1.5 py-0.5`}>
+                <Shield className="w-2 h-2 sm:w-3 sm:h-3 text-primary-foreground" />
+                <span className="text-[0.6rem] sm:text-xs font-bold text-primary-foreground">
+                  {isInBattle ? currentHp : card.def}
+                </span>
+              </div>
+            );
+          })()}
         </div>
         
         {/* Effects indicator */}
