@@ -165,7 +165,7 @@ export const useBattle = (battleId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
-      toast.success('Carta jogada!');
+      // Visual feedback already provided by card animation
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao jogar carta');
@@ -185,14 +185,9 @@ export const useBattle = (battleId?: string) => {
       if (error) throw error;
       return result;
     },
-    onSuccess: (result: any) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
-      
-      if (result?.battle_finished) {
-        toast.success('Batalha finalizada!');
-      } else {
-        toast.info('Ataque realizado!');
-      }
+      // Visual feedback already provided by attack animation and HP change
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao atacar');
@@ -295,7 +290,7 @@ export const useBattle = (battleId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
-      toast.info('Turno passado!');
+      // Visual feedback already provided by turn indicator overlay
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao passar turno');
