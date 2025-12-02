@@ -157,7 +157,7 @@ export const useBattle = (battleId?: string) => {
         p_battle_id: data.battleId,
         p_player_id: user.id,
         p_card_id: data.cardId,
-        p_position: data.isTrap ? 'TRAP' : 'MONSTER',
+        p_is_trap: data.isTrap ?? false,
       });
 
       if (error) throw error;
