@@ -178,6 +178,10 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     
+    /* Warning - Amber/Orange for medium states */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    
     /* Borders and inputs */
     --border: 220 27% 18%;
     --input: 220 27% 12%;

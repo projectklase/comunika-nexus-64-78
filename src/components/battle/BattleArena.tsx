@@ -39,8 +39,24 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [showDefeatModal, setShowDefeatModal] = useState(false);
   const [showBattleLog, setShowBattleLog] = useState(false);
-  const [player1Profile, setPlayer1Profile] = useState<{ name: string; avatar?: string } | null>(null);
-  const [player2Profile, setPlayer2Profile] = useState<{ name: string; avatar?: string } | null>(null);
+const [player1Profile, setPlayer1Profile] = useState<{ 
+    name: string; 
+    avatar?: string;
+    equippedAvatar?: {
+      emoji?: string;
+      imageUrl?: string;
+      rarity?: string;
+    };
+  } | null>(null);
+  const [player2Profile, setPlayer2Profile] = useState<{ 
+    name: string; 
+    avatar?: string;
+    equippedAvatar?: {
+      emoji?: string;
+      imageUrl?: string;
+      rarity?: string;
+    };
+  } | null>(null);
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
   const [showForfeitDialog, setShowForfeitDialog] = useState(false);
   const [hasShownResultModal, setHasShownResultModal] = useState(false);
@@ -65,13 +81,9 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
     const fetchProfiles = async () => {
       if (!battle?.player1_id || !battle?.player2_id) return;
       
-      console.log('Fetching profiles for battle:', battle.id, {
-        player1: battle.player1_id,
-        player2: battle.player2_id
-      });
-      
       setIsLoadingProfiles(true);
       
+      // Fetch basic profiles
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('id, name, avatar')
@@ -82,19 +94,42 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         setIsLoadingProfiles(false);
         return;
       }
+
+      // Fetch equipped avatars from gamification system
+      const { data: equippedAvatars } = await supabase
+        .from('user_unlocks')
+        .select(`
+          user_id,
+          unlockable:unlockables(type, rarity, preview_data)
+        `)
+        .in('user_id', [battle.player1_id, battle.player2_id])
+        .eq('is_equipped', true);
+
+      // Build avatar map from equipped unlockables
+      const avatarMap: Record<string, { emoji?: string; imageUrl?: string; rarity?: string }> = {};
+      equippedAvatars?.forEach((unlock: any) => {
+        if (unlock.unlockable?.type === 'AVATAR') {
+          avatarMap[unlock.user_id] = {
+            emoji: unlock.unlockable.preview_data?.emoji,
+            imageUrl: unlock.unlockable.preview_data?.imageUrl,
+            rarity: unlock.unlockable.rarity
+          };
+        }
+      });
       
       if (profiles) {
-        console.log('Profiles fetched:', profiles);
         const p1 = profiles.find(p => p.id === battle.player1_id);
         const p2 = profiles.find(p => p.id === battle.player2_id);
         
         setPlayer1Profile(p1 ? { 
           name: p1.name, 
-          avatar: p1.avatar || undefined
+          avatar: p1.avatar || undefined,
+          equippedAvatar: avatarMap[battle.player1_id]
         } : null);
         setPlayer2Profile(p2 ? { 
           name: p2.name, 
-          avatar: p2.avatar || undefined
+          avatar: p2.avatar || undefined,
+          equippedAvatar: avatarMap[battle.player2_id]
         } : null);
       }
       
@@ -316,6 +351,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         <BattlePlayerInfo
           playerName={isLoadingProfiles ? 'Carregando...' : (isPlayer1 ? player2Profile?.name || 'Oponente' : player1Profile?.name || 'Oponente')}
           playerAvatar={isPlayer1 ? player2Profile?.avatar : player1Profile?.avatar}
+          equippedAvatar={isPlayer1 ? player2Profile?.equippedAvatar : player1Profile?.equippedAvatar}
           currentHP={opponentHP || 100}
           maxHP={100}
           isPlayer={false}
@@ -342,6 +378,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
         <BattlePlayerInfo
           playerName={isPlayer1 ? player1Profile?.name || 'Você' : player2Profile?.name || 'Você'}
           playerAvatar={isPlayer1 ? player1Profile?.avatar : player2Profile?.avatar}
+          equippedAvatar={isPlayer1 ? player1Profile?.equippedAvatar : player2Profile?.equippedAvatar}
           currentHP={myHP || 100}
           maxHP={100}
           isPlayer={true}
