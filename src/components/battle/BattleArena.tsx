@@ -148,14 +148,13 @@ const [player1Profile, setPlayer1Profile] = useState<{
       return;
     }
     
-    // Only show toast if turn actually changed
+    // Track turn changes for internal state only
+    // Visual feedback is provided by the turn overlay - no toasts needed
     if (battle.current_turn !== prevTurn) {
-      if (isMyTurn() && !hasShownTurnToast.current) {
-        toast.info('🎯 Agora é seu turno!', { duration: 2000 });
+      if (isMyTurn()) {
         hasShownTurnToast.current = true;
-      } else if (!isMyTurn()) {
-        toast.info('⏳ Turno do oponente...', { duration: 2000 });
-        hasShownTurnToast.current = false; // Reset when opponent's turn
+      } else {
+        hasShownTurnToast.current = false;
       }
       setPrevTurn(battle.current_turn);
     }

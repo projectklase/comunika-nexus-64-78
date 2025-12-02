@@ -5,7 +5,6 @@ import { Trophy, Star, TrendingUp, Swords } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { celebrateLegendary } from '@/utils/celebration-effects';
 import { useNavigate } from 'react-router-dom';
-import { useBattleSounds } from '@/hooks/useBattleSounds';
 
 interface BattleVictoryModalProps {
   open: boolean;
@@ -30,13 +29,11 @@ export function BattleVictoryModal({
 }: BattleVictoryModalProps) {
   const [displayXP, setDisplayXP] = useState(0);
   const navigate = useNavigate();
-  const { playWinSound } = useBattleSounds();
   const totalXP = xpGained + streakBonus;
 
   useEffect(() => {
     if (open) {
-      // Play victory sound
-      playWinSound();
+      // Sound is played by BattleArena - no duplicate here
       
       // Trigger confetti after modal appears
       const confettiTimer = setTimeout(() => {

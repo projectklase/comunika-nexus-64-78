@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Star, BookOpen, Swords } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBattleSounds } from '@/hooks/useBattleSounds';
 
 interface BattleDefeatModalProps {
   open: boolean;
@@ -36,12 +35,10 @@ export function BattleDefeatModal({
   const [displayXP, setDisplayXP] = useState(0);
   const [tip, setTip] = useState('');
   const navigate = useNavigate();
-  const { playLoseSound } = useBattleSounds();
 
   useEffect(() => {
     if (open) {
-      // Play defeat sound
-      playLoseSound();
+      // Sound is played by BattleArena - no duplicate here
       
       // Select random tip
       setTip(motivationalTips[Math.floor(Math.random() * motivationalTips.length)]);
