@@ -29,36 +29,44 @@ export default function BatalhaPage() {
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const [showAllBattles, setShowAllBattles] = useState(false);
 
-  // Fetch opponent profiles for all battles
+  // Extract opponent IDs from battles (deduplicated)
   const opponentIds = useMemo(() => {
     if (!user?.id || !userBattles.length) return [];
-    return userBattles.map(b => 
+    const ids = userBattles.map(b => 
       b.player1_id === user.id ? b.player2_id : b.player1_id
     ).filter(Boolean);
+    return [...new Set(ids)];
   }, [userBattles, user?.id]);
 
+  // Stable query key using sorted string
+  const opponentIdsKey = useMemo(() => 
+    opponentIds.sort().join(','), 
+    [opponentIds]
+  );
+
   const { data: opponentProfiles } = useQuery({
-    queryKey: ['opponent-profiles', opponentIds],
+    queryKey: ['opponent-profiles', opponentIdsKey],
     queryFn: async () => {
       if (!opponentIds.length) return {};
       
       const { data } = await supabase
         .from('profiles')
-        .select('id, name, avatar, preferences')
+        .select('id, name, avatar')
         .in('id', opponentIds);
       
-      // Also fetch equipped avatars
+      // Fetch equipped avatars - filter by AVATAR type via inner join
       const { data: unlocks } = await supabase
         .from('user_unlocks')
-        .select('user_id, unlockable_id, is_equipped, unlockables(preview_data, rarity)')
+        .select('user_id, unlockables!inner(type, preview_data, rarity)')
         .in('user_id', opponentIds)
-        .eq('is_equipped', true);
+        .eq('is_equipped', true)
+        .eq('unlockables.type', 'AVATAR');
       
       const profileMap: Record<string, { name: string; avatar?: string; equippedAvatar?: any }> = {};
       
       data?.forEach(p => {
         profileMap[p.id] = { 
-          name: p.name, 
+          name: p.name || 'Jogador', 
           avatar: p.avatar 
         };
       });
@@ -77,6 +85,8 @@ export default function BatalhaPage() {
       return profileMap;
     },
     enabled: opponentIds.length > 0,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Calculate battle stats
