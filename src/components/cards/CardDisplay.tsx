@@ -110,13 +110,16 @@ export const CardDisplay = ({
   const hasHolographic = card.rarity === 'LEGENDARY' || card.rarity === 'SPECIAL';
   const hasLightFoil = card.rarity === 'EPIC' || card.rarity === 'RARE';
 
+  // Determine rarity-specific wrapper class
+  const rarityWrapperClass = card.rarity === 'COMMON' ? 'card-common-shimmer' : '';
+
   return (
     <div
       onClick={onClick}
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300',
         'hover:scale-105 hover:-translate-y-2',
-        'card-shimmer-hover',
+        rarityWrapperClass,
         sizeClasses[size],
         frameColors.glow,
         className
@@ -149,6 +152,16 @@ export const CardDisplay = ({
           {/* Light Foil Effect for EPIC/RARE */}
           {hasLightFoil && (
             <div className="absolute inset-0 card-holographic-foil z-10" />
+          )}
+
+          {/* RARE: Animated blue reflection */}
+          {card.rarity === 'RARE' && (
+            <div className="card-rare-reflection" />
+          )}
+
+          {/* EPIC: Pulsating aura effect */}
+          {card.rarity === 'EPIC' && (
+            <div className="card-epic-aura" />
           )}
 
           {/* Floating Particles for EPIC */}
