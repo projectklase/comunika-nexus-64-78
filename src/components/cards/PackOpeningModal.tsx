@@ -2,10 +2,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card, PackType, PACK_COSTS, PACK_SIZES, RARITY_LABELS } from '@/types/cards';
 import { CardDisplay } from './CardDisplay';
-import { useState } from 'react';
-import { Sparkles, Gift } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Sparkles, Gift, Info } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PackOpeningModalProps {
   isOpen: boolean;
@@ -17,6 +18,15 @@ interface PackOpeningModalProps {
   lastOpenedCards?: Card[];
   hasClaimedFreePack?: boolean;
 }
+
+// Probabilidades de raridade por tipo de pacote (devem coincidir com o backend)
+const PACK_PROBABILITIES: Record<PackType, { common: number; rare: number; epic: number; legendary: number }> = {
+  BASIC: { common: 70, rare: 25, epic: 4, legendary: 1 },
+  RARE: { common: 40, rare: 45, epic: 13, legendary: 2 },
+  EPIC: { common: 20, rare: 40, epic: 35, legendary: 5 },
+  LEGENDARY: { common: 10, rare: 30, epic: 40, legendary: 20 },
+  FREE: { common: 50, rare: 40, epic: 10, legendary: 0 },
+};
 
 export const PackOpeningModal = ({ 
   isOpen, 
@@ -31,6 +41,7 @@ export const PackOpeningModal = ({
   const [selectedPack, setSelectedPack] = useState<PackType | null>(null);
   const [revealing, setRevealing] = useState(false);
   const [revealedCards, setRevealedCards] = useState<Card[]>([]);
+  const hasStartedReveal = useRef(false);
 
   const packs: { type: PackType; name: string; color: string }[] = [
     { type: 'BASIC', name: 'Pacote Básico', color: 'bg-gray-500' },
@@ -39,44 +50,86 @@ export const PackOpeningModal = ({
     { type: 'LEGENDARY', name: 'Pacote Lendário', color: 'bg-yellow-500' },
   ];
 
+  // Reset state when modal closes or opens
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedPack(null);
+      setRevealing(false);
+      setRevealedCards([]);
+      hasStartedReveal.current = false;
+    }
+  }, [isOpen]);
+
+  // Auto-reveal cards when pack opening completes
+  useEffect(() => {
+    if (revealing && lastOpenedCards && lastOpenedCards.length > 0 && !isOpening && !hasStartedReveal.current) {
+      hasStartedReveal.current = true;
+      setRevealedCards([]); // Reset before revealing
+      
+      // Revelar cartas uma por uma
+      lastOpenedCards.forEach((card, idx) => {
+        setTimeout(() => {
+          setRevealedCards(prev => {
+            // Prevent duplicates
+            if (prev.length >= lastOpenedCards.length) return prev;
+            const newCards = [...prev, card];
+            
+            // Confetti para cartas raras+
+            if (card.rarity === 'RARE' || card.rarity === 'EPIC' || card.rarity === 'LEGENDARY') {
+              confetti({
+                particleCount: card.rarity === 'LEGENDARY' ? 100 : card.rarity === 'EPIC' ? 75 : 50,
+                spread: 70,
+                origin: { y: 0.6 }
+              });
+            }
+            
+            return newCards;
+          });
+        }, idx * 500);
+      });
+    }
+  }, [revealing, lastOpenedCards, isOpening]);
+
   const handleOpenPack = async (packType: PackType) => {
     setSelectedPack(packType);
     setRevealing(true);
     setRevealedCards([]);
+    hasStartedReveal.current = false;
     onOpenPack(packType);
-  };
-
-  const handleRevealCards = () => {
-    if (lastOpenedCards) {
-      // Revelar cartas uma por uma
-      lastOpenedCards.forEach((card, idx) => {
-        setTimeout(() => {
-          setRevealedCards(prev => [...prev, card]);
-          
-          // Confetti para cartas raras+
-          if (card.rarity === 'RARE' || card.rarity === 'EPIC' || card.rarity === 'LEGENDARY') {
-            confetti({
-              particleCount: card.rarity === 'LEGENDARY' ? 100 : 50,
-              spread: 70,
-              origin: { y: 0.6 }
-            });
-          }
-        }, idx * 500);
-      });
-    }
   };
 
   const handleClose = () => {
     setSelectedPack(null);
     setRevealing(false);
     setRevealedCards([]);
+    hasStartedReveal.current = false;
     onClose();
   };
 
-  // Auto-revelar quando terminar de abrir
-  if (revealing && lastOpenedCards && revealedCards.length === 0 && !isOpening) {
-    handleRevealCards();
-  }
+  const renderProbabilities = (packType: PackType) => {
+    const probs = PACK_PROBABILITIES[packType];
+    return (
+      <div className="text-xs space-y-1 text-left">
+        <p className="font-semibold mb-2">Probabilidades:</p>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+          <span>Comum: {probs.common}%</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+          <span>Rara: {probs.rare}%</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+          <span>Épica: {probs.epic}%</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+          <span>Lendária: {probs.legendary}%</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -139,35 +192,51 @@ export const PackOpeningModal = ({
                 const canAfford = userXP >= cost;
 
                 return (
-                  <div
-                    key={pack.type}
-                    className={`relative p-6 rounded-lg border-2 transition-all ${
-                      canAfford 
-                        ? 'border-primary hover:border-primary/80 cursor-pointer hover:scale-105' 
-                        : 'border-muted opacity-50 cursor-not-allowed'
-                    }`}
-                    onClick={() => canAfford && handleOpenPack(pack.type)}
-                  >
-                    <div className={`w-16 h-16 rounded-full ${pack.color} flex items-center justify-center mb-4 mx-auto`}>
-                      <Gift className="w-8 h-8 text-white" />
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-center mb-2">{pack.name}</h3>
-                    <p className="text-sm text-muted-foreground text-center mb-3">
-                      {size} cartas
-                    </p>
-                    
-                    <div className="flex items-center justify-center gap-2">
-                      <Sparkles className="w-4 h-4 text-yellow-500" />
-                      <span className="font-bold">{cost} XP</span>
-                    </div>
+                  <TooltipProvider key={pack.type}>
+                    <div
+                      className={`relative p-6 rounded-lg border-2 transition-all ${
+                        canAfford 
+                          ? 'border-primary hover:border-primary/80 cursor-pointer hover:scale-105' 
+                          : 'border-muted opacity-50 cursor-not-allowed'
+                      }`}
+                      onClick={() => canAfford && handleOpenPack(pack.type)}
+                    >
+                      {/* Info tooltip */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button 
+                            className="absolute top-2 left-2 p-1 rounded-full hover:bg-muted/50 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="p-3">
+                          {renderProbabilities(pack.type)}
+                        </TooltipContent>
+                      </Tooltip>
 
-                    {!canAfford && (
-                      <Badge variant="destructive" className="absolute top-2 right-2">
-                        XP Insuficiente
-                      </Badge>
-                    )}
-                  </div>
+                      <div className={`w-16 h-16 rounded-full ${pack.color} flex items-center justify-center mb-4 mx-auto`}>
+                        <Gift className="w-8 h-8 text-white" />
+                      </div>
+                      
+                      <h3 className="text-lg font-bold text-center mb-2">{pack.name}</h3>
+                      <p className="text-sm text-muted-foreground text-center mb-3">
+                        {size} cartas
+                      </p>
+                      
+                      <div className="flex items-center justify-center gap-2">
+                        <Sparkles className="w-4 h-4 text-yellow-500" />
+                        <span className="font-bold">{cost} XP</span>
+                      </div>
+
+                      {!canAfford && (
+                        <Badge variant="destructive" className="absolute top-2 right-2">
+                          XP Insuficiente
+                        </Badge>
+                      )}
+                    </div>
+                  </TooltipProvider>
                 );
               })}
             </div>
@@ -190,7 +259,7 @@ export const PackOpeningModal = ({
 
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                   {revealedCards.map((card, idx) => (
-                    <div key={idx} className="animate-in zoom-in duration-300">
+                    <div key={`${card.id}-${idx}`} className="animate-in zoom-in duration-300">
                       <CardDisplay card={card} size="sm" />
                     </div>
                   ))}
