@@ -21,11 +21,11 @@ interface PackOpeningModalProps {
 
 // Probabilidades de raridade por tipo de pacote (devem coincidir com o backend)
 const PACK_PROBABILITIES: Record<PackType, { common: number; rare: number; epic: number; legendary: number }> = {
-  BASIC: { common: 70, rare: 25, epic: 4, legendary: 1 },
-  RARE: { common: 40, rare: 45, epic: 13, legendary: 2 },
-  EPIC: { common: 20, rare: 40, epic: 35, legendary: 5 },
-  LEGENDARY: { common: 10, rare: 30, epic: 40, legendary: 20 },
-  FREE: { common: 50, rare: 40, epic: 10, legendary: 0 },
+  BASIC: { common: 85, rare: 13, epic: 1.9, legendary: 0.1 },
+  RARE: { common: 60, rare: 35, epic: 4.5, legendary: 0.5 },
+  EPIC: { common: 40, rare: 45, epic: 14, legendary: 1 },
+  LEGENDARY: { common: 25, rare: 45, epic: 25, legendary: 5 },
+  FREE: { common: 80, rare: 18, epic: 2, legendary: 0 },
 };
 
 export const PackOpeningModal = ({ 
