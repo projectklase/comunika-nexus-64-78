@@ -64,6 +64,125 @@
 }
 
 /* ========================================
+   RARITY-SPECIFIC EFFECTS
+   ======================================== */
+
+/* COMMON: Shimmer sweep on hover */
+@keyframes common-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+.card-common-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-common-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 55%,
+    transparent 100%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  transition: none;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.card-common-shimmer:hover::after {
+  animation: common-sweep 0.8s ease-out;
+}
+
+/* RARE: Animated blue reflection */
+@keyframes rare-reflection {
+  0% { 
+    background-position: -200% 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% { 
+    background-position: 200% 0;
+    opacity: 0;
+  }
+}
+
+.card-rare-reflection {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(59, 130, 246, 0.15) 45%,
+    rgba(147, 197, 253, 0.25) 50%,
+    rgba(59, 130, 246, 0.15) 55%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: rare-reflection 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 8;
+  mix-blend-mode: screen;
+}
+
+/* EPIC: Pulsating aura */
+@keyframes epic-aura-pulse {
+  0%, 100% { 
+    box-shadow: 
+      inset 0 0 20px rgba(168, 85, 247, 0.2),
+      inset 0 0 40px rgba(168, 85, 247, 0.1);
+    opacity: 0.6;
+  }
+  50% { 
+    box-shadow: 
+      inset 0 0 30px rgba(168, 85, 247, 0.4),
+      inset 0 0 60px rgba(168, 85, 247, 0.2);
+    opacity: 1;
+  }
+}
+
+.card-epic-aura {
+  position: absolute;
+  inset: 0;
+  animation: epic-aura-pulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 7;
+  border-radius: inherit;
+}
+
+/* Enhanced floating particles for EPIC */
+@keyframes float-particles {
+  0%, 100% { 
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  50% { 
+    transform: translateY(-20px) translateX(5px);
+    opacity: 0.9;
+  }
+  90% {
+    opacity: 0.5;
+  }
+}
+
+.animate-float-particles {
+  animation: float-particles 3s ease-in-out infinite;
+}
+
+/* ========================================
    TCG CARD HOLOGRAPHIC EFFECTS
    Premium foil and texture animations
    ======================================== */
