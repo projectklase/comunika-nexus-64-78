@@ -8,12 +8,13 @@ import { CardGalleryModal } from '@/components/cards/CardGalleryModal';
 import { PackOpeningModal } from '@/components/cards/PackOpeningModal';
 import { DeckBuilderModal } from '@/components/cards/DeckBuilderModal';
 import { CardDisplay } from '@/components/cards/CardDisplay';
+import { CardDetailModal } from '@/components/cards/CardDetailModal';
 import { Package, BookOpen, Plus, Sparkles, TrendingUp, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { DeleteDeckConfirmModal } from '@/components/cards/DeleteDeckConfirmModal';
-import { Deck } from '@/types/cards';
+import { Deck, Card } from '@/types/cards';
 
 export default function CartasPage() {
   const { user } = useAuth();
@@ -41,6 +42,7 @@ export default function CartasPage() {
   const [lastOpenedCards, setLastOpenedCards] = useState<any>(null);
   const [editingDeck, setEditingDeck] = useState<Deck | undefined>(undefined);
   const [deckToDelete, setDeckToDelete] = useState<Deck | null>(null);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   const userCardsMap = new Map(userCards.map(uc => [uc.card_id, uc.quantity]));
   const collectionProgress = getCollectionProgress();
@@ -217,7 +219,13 @@ export default function CartasPage() {
                         {deck.card_ids.slice(0, 5).map((cardId, idx) => {
                           const card = allCards.find(c => c.id === cardId);
                           return card ? (
-                            <CardDisplay key={idx} card={card} size="xs" showStats={false} />
+                            <CardDisplay 
+                              key={idx} 
+                              card={card} 
+                              size="xs" 
+                              showStats={false}
+                              onClick={() => setSelectedCard(card)}
+                            />
                           ) : null;
                         })}
                       </div>
@@ -240,6 +248,7 @@ export default function CartasPage() {
                   card={uc.card} 
                   quantity={uc.quantity}
                   size="sm"
+                  onClick={() => setSelectedCard(uc.card!)}
                 />
               ))}
             </div>
@@ -306,6 +315,14 @@ export default function CartasPage() {
           }
         }}
         loading={isDeletingDeck}
+      />
+
+      {/* Modal de Detalhes da Carta */}
+      <CardDetailModal
+        card={selectedCard}
+        isOpen={!!selectedCard}
+        onClose={() => setSelectedCard(null)}
+        quantity={selectedCard ? userCardsMap.get(selectedCard.id) : undefined}
       />
     </AppLayout>
   );
