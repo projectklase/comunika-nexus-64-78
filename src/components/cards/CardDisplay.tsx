@@ -380,7 +380,7 @@ export const CardDisplay = ({
 
           {/* Quantity Badge */}
           {quantity !== undefined && quantity > 1 && (
-            <div className="absolute top-2 right-2 bg-black/90 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-yellow-400 text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]">
+            <div className="absolute top-2 right-2 bg-black/90 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-yellow-400 text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)] animate-[scale-in_0.3s_ease-out,quantity-pulse_2s_ease-in-out_infinite]">
               {quantity}
             </div>
           )}

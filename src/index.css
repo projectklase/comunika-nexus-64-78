@@ -161,6 +161,17 @@
 }
 
 /* Enhanced floating particles for EPIC */
+@keyframes quantity-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.8), 0 0 30px rgba(234, 179, 8, 0.4);
+    transform: scale(1.05);
+  }
+}
+
 @keyframes float-particles {
   0%, 100% { 
     transform: translateY(0) translateX(0);
