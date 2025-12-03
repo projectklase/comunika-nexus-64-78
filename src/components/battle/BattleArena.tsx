@@ -477,8 +477,27 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
       {battleResult && (
         <>
-          <BattleVictoryModal open={showVictoryModal} onOpenChange={setShowVictoryModal} xpGained={battleResult.xpGained} streakBonus={battleResult.streakInfo.bonusXP} stats={battleResult.stats} onPlayAgain={() => navigate('/aluno/batalhas')} />
-          <BattleDefeatModal open={showDefeatModal} onOpenChange={setShowDefeatModal} xpGained={battleResult.xpGained} stats={battleResult.stats} onTryAgain={() => navigate('/aluno/batalhas')} />
+          <BattleVictoryModal 
+            open={showVictoryModal} 
+            onOpenChange={(open) => {
+              setShowVictoryModal(open);
+              if (!open) navigate('/aluno/batalha');
+            }} 
+            xpGained={battleResult.xpGained} 
+            streakBonus={battleResult.streakInfo.bonusXP} 
+            stats={battleResult.stats} 
+            onPlayAgain={() => navigate('/aluno/batalha')} 
+          />
+          <BattleDefeatModal 
+            open={showDefeatModal} 
+            onOpenChange={(open) => {
+              setShowDefeatModal(open);
+              if (!open) navigate('/aluno/batalha');
+            }} 
+            xpGained={battleResult.xpGained} 
+            stats={battleResult.stats} 
+            onTryAgain={() => navigate('/aluno/batalha')} 
+          />
         </>
       )}
 
