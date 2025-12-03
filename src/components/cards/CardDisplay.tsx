@@ -4,6 +4,7 @@ import { Shield, Zap, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
 import { useState, useRef, useCallback } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CardDisplayProps {
   card: Card;
@@ -26,6 +27,8 @@ export const CardDisplay = ({
   const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({});
   const [shinePosition, setShinePosition] = useState({ x: 50, y: 50 });
   const [isHovering, setIsHovering] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || size === 'xs' || size === 'sm') return;
@@ -126,11 +129,13 @@ export const CardDisplay = ({
           frameColors.outer
         )}>
           <div className="relative w-full h-full rounded overflow-hidden bg-gray-900">
-            {card.image_url ? (
+            {card.image_url && !imageError ? (
               <img 
                 src={card.image_url} 
                 alt={card.name} 
+                loading="lazy"
                 className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
               />
             ) : (
               <div className={cn(
@@ -269,11 +274,22 @@ export const CardDisplay = ({
 
           {/* Illustration Area */}
           <div className="relative h-[50%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10 card-inner-glow">
-            {card.image_url ? (
+            {/* Skeleton while loading */}
+            {card.image_url && !imageLoaded && !imageError && (
+              <Skeleton className="absolute inset-0 w-full h-full" />
+            )}
+            
+            {card.image_url && !imageError ? (
               <img 
                 src={card.image_url} 
                 alt={card.name} 
-                className="w-full h-full object-cover"
+                loading="lazy"
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+                className={cn(
+                  "w-full h-full object-cover transition-opacity duration-300",
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                )}
               />
             ) : (
               <div className={cn(
