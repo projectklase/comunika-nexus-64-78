@@ -28,6 +28,41 @@
   }
 }
 
+/* Enhanced Star Animations */
+@keyframes star-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(234, 179, 8, 0.6));
+  }
+  50% { 
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px rgba(234, 179, 8, 1));
+  }
+}
+
+@keyframes star-sparkle {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Star styling classes */
+.card-star {
+  filter: drop-shadow(0 0 3px rgba(234, 179, 8, 0.5));
+  transition: all 0.2s ease;
+}
+
+.card-star-legendary {
+  animation: star-pulse 2s ease-in-out infinite;
+}
+
+.card-star-epic {
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.7));
+}
+
+.card-star-rare {
+  filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.6));
+}
+
 /* ========================================
    TCG CARD HOLOGRAPHIC EFFECTS
    Premium foil and texture animations
