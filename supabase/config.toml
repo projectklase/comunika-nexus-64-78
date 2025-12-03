@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.generate-daily-briefing]
 verify_jwt = false
+
+[functions.upload-card-image]
+verify_jwt = false
