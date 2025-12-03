@@ -212,9 +212,27 @@ export const CardDisplay = ({
           {showStats && (
             <div className="relative px-2 py-1 bg-black/40 border-b border-white/10">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
                   {Array.from({ length: rarityStars }).map((_, i) => (
-                    <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    <div 
+                      key={i} 
+                      className={cn(
+                        "relative",
+                        card.rarity === 'LEGENDARY' && "card-star-legendary",
+                      )}
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    >
+                      <Star 
+                        className={cn(
+                          "w-3.5 h-3.5 card-star",
+                          card.rarity === 'LEGENDARY' && "fill-amber-400 text-amber-300",
+                          card.rarity === 'SPECIAL' && "fill-pink-400 text-pink-300",
+                          card.rarity === 'EPIC' && "fill-purple-400 text-purple-300 card-star-epic",
+                          card.rarity === 'RARE' && "fill-blue-400 text-blue-300 card-star-rare",
+                          card.rarity === 'COMMON' && "fill-yellow-400 text-yellow-400",
+                        )} 
+                      />
+                    </div>
                   ))}
                 </div>
                 <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', RARITY_COLORS[card.rarity])}>
