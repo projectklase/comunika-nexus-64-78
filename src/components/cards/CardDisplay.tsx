@@ -329,22 +329,38 @@ export const CardDisplay = ({
               {/* ATK / DEF */}
               <div className={cn("flex items-center justify-between", size === 'sm' ? 'gap-1' : 'gap-2')}>
                 <div className={cn(
-                  "flex items-center bg-gradient-to-r from-orange-600/20 to-orange-900/20 rounded border border-orange-500/30",
+                  "flex items-center rounded border border-orange-500/40 relative overflow-hidden",
+                  "bg-gradient-to-r from-orange-600/30 via-orange-500/20 to-orange-900/30",
+                  "shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]",
                   currentStatSize.container,
                   currentStatSize.gap
                 )}>
-                  <Zap className={cn("text-orange-400 fill-orange-400", currentStatSize.icon)} />
-                  <span className={cn("font-bold text-orange-300", currentStatSize.label)}>ATK</span>
-                  <span className={cn("font-bold text-white", currentStatSize.value)}>{card.atk}</span>
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjxyZWN0IHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyIvPjwvc3ZnPg==')] opacity-50" />
+                  <Zap className={cn("text-orange-400 fill-orange-400 drop-shadow-[0_0_4px_rgba(251,146,60,0.7)]", currentStatSize.icon)} />
+                  <span className={cn("font-bold text-orange-300 drop-shadow-[0_0_2px_rgba(251,146,60,0.5)]", currentStatSize.label)}>ATK</span>
+                  <span 
+                    className={cn("font-bold text-white", currentStatSize.value)}
+                    style={{ textShadow: '0 1px 0 #666, 0 2px 0 #555, 0 0 8px rgba(251,146,60,0.4)' }}
+                  >
+                    {card.atk}
+                  </span>
                 </div>
                 <div className={cn(
-                  "flex items-center bg-gradient-to-r from-blue-600/20 to-blue-900/20 rounded border border-blue-500/30",
+                  "flex items-center rounded border border-blue-500/40 relative overflow-hidden",
+                  "bg-gradient-to-r from-blue-600/30 via-blue-500/20 to-blue-900/30",
+                  "shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]",
                   currentStatSize.container,
                   currentStatSize.gap
                 )}>
-                  <Shield className={cn("text-blue-400 fill-blue-400", currentStatSize.icon)} />
-                  <span className={cn("font-bold text-blue-300", currentStatSize.label)}>DEF</span>
-                  <span className={cn("font-bold text-white", currentStatSize.value)}>{card.def}</span>
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjxyZWN0IHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyIvPjwvc3ZnPg==')] opacity-50" />
+                  <Shield className={cn("text-blue-400 fill-blue-400 drop-shadow-[0_0_4px_rgba(96,165,250,0.7)]", currentStatSize.icon)} />
+                  <span className={cn("font-bold text-blue-300 drop-shadow-[0_0_2px_rgba(96,165,250,0.5)]", currentStatSize.label)}>DEF</span>
+                  <span 
+                    className={cn("font-bold text-white", currentStatSize.value)}
+                    style={{ textShadow: '0 1px 0 #666, 0 2px 0 #555, 0 0 8px rgba(96,165,250,0.4)' }}
+                  >
+                    {card.def}
+                  </span>
                 </div>
               </div>
 
