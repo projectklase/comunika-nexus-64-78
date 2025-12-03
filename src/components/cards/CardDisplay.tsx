@@ -106,12 +106,17 @@ export const CardDisplay = ({
   // Stars based on rarity
   const rarityStars = RARITY_STARS[card.rarity];
 
+  // Determine if card should have holographic effect
+  const hasHolographic = card.rarity === 'LEGENDARY' || card.rarity === 'SPECIAL';
+  const hasLightFoil = card.rarity === 'EPIC' || card.rarity === 'RARE';
+
   return (
     <div
       onClick={onClick}
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300',
         'hover:scale-105 hover:-translate-y-2',
+        'card-shimmer-hover',
         sizeClasses[size],
         frameColors.glow,
         className
@@ -130,18 +135,38 @@ export const CardDisplay = ({
           'border-2',
           frameColors.inner
         )}>
-          {/* Holographic Effect for LEGENDARY */}
-          {card.rarity === 'LEGENDARY' && (
-            <div className="absolute inset-0 opacity-30 bg-gradient-to-r from-transparent via-white to-transparent animate-card-shine" 
-                 style={{ backgroundSize: '200% 100%' }} />
+          {/* Background Texture Layer - adds depth to all cards */}
+          <div className="absolute inset-0 card-texture-overlay" />
+          
+          {/* Vignette Layer - adds depth */}
+          <div className="absolute inset-0 card-vignette opacity-50" />
+
+          {/* Holographic Foil Effect for LEGENDARY/SPECIAL */}
+          {hasHolographic && (
+            <div className="absolute inset-0 card-holographic-foil-intense z-10" />
+          )}
+          
+          {/* Light Foil Effect for EPIC/RARE */}
+          {hasLightFoil && (
+            <div className="absolute inset-0 card-holographic-foil z-10" />
           )}
 
           {/* Floating Particles for EPIC */}
           {card.rarity === 'EPIC' && (
             <>
-              <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full opacity-60 animate-float-particles" />
-              <div className="absolute top-1/2 right-1/4 w-1.5 h-1.5 bg-purple-300 rounded-full opacity-70 animate-float-particles" style={{ animationDelay: '0.5s' }} />
-              <div className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-purple-500 rounded-full opacity-50 animate-float-particles" style={{ animationDelay: '1s' }} />
+              <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full opacity-60 animate-float-particles z-20" />
+              <div className="absolute top-1/2 right-1/4 w-1.5 h-1.5 bg-purple-300 rounded-full opacity-70 animate-float-particles z-20" style={{ animationDelay: '0.5s' }} />
+              <div className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-purple-500 rounded-full opacity-50 animate-float-particles z-20" style={{ animationDelay: '1s' }} />
+            </>
+          )}
+          
+          {/* Golden Particles for LEGENDARY */}
+          {card.rarity === 'LEGENDARY' && (
+            <>
+              <div className="absolute top-1/5 left-1/5 w-1.5 h-1.5 bg-yellow-400 rounded-full opacity-70 animate-float-particles z-20" />
+              <div className="absolute top-1/3 right-1/5 w-2 h-2 bg-yellow-300 rounded-full opacity-60 animate-float-particles z-20" style={{ animationDelay: '0.3s' }} />
+              <div className="absolute top-2/3 left-1/4 w-1 h-1 bg-amber-400 rounded-full opacity-80 animate-float-particles z-20" style={{ animationDelay: '0.7s' }} />
+              <div className="absolute bottom-1/4 right-1/3 w-1.5 h-1.5 bg-yellow-500 rounded-full opacity-50 animate-float-particles z-20" style={{ animationDelay: '1.2s' }} />
             </>
           )}
 
@@ -162,7 +187,7 @@ export const CardDisplay = ({
           </div>
 
           {/* Illustration Area */}
-          <div className="relative h-[50%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10">
+          <div className="relative h-[50%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10 card-inner-glow">
             {card.image_url ? (
               <img 
                 src={card.image_url} 
@@ -179,6 +204,8 @@ export const CardDisplay = ({
                 <CategoryIcon className="w-16 h-16 text-white/30" />
               </div>
             )}
+            {/* Inner frame border for premium feel */}
+            <div className="absolute inset-1 border border-white/5 rounded pointer-events-none" />
           </div>
 
           {/* Level Stars and Rarity Badge - only show when showStats is true */}

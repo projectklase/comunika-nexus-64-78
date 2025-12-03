@@ -28,6 +28,107 @@
   }
 }
 
+/* ========================================
+   TCG CARD HOLOGRAPHIC EFFECTS
+   Premium foil and texture animations
+   ======================================== */
+
+/* Holographic Rainbow Foil - moves diagonally */
+@keyframes holographic-foil {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* Shimmer effect for all cards on hover */
+@keyframes card-shimmer {
+  0% { transform: translateX(-100%) rotate(25deg); }
+  100% { transform: translateX(200%) rotate(25deg); }
+}
+
+/* Subtle pulse for rare+ borders */
+@keyframes rarity-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Card foil overlay classes */
+.card-holographic-foil {
+  background: linear-gradient(
+    125deg,
+    transparent 20%,
+    rgba(255, 0, 128, 0.15) 30%,
+    rgba(0, 255, 255, 0.15) 40%,
+    rgba(255, 255, 0, 0.15) 50%,
+    rgba(0, 255, 128, 0.15) 60%,
+    rgba(128, 0, 255, 0.15) 70%,
+    transparent 80%
+  );
+  background-size: 300% 300%;
+  animation: holographic-foil 6s ease-in-out infinite;
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+}
+
+.card-holographic-foil-intense {
+  background: linear-gradient(
+    125deg,
+    transparent 15%,
+    rgba(255, 0, 128, 0.25) 25%,
+    rgba(0, 255, 255, 0.25) 35%,
+    rgba(255, 255, 0, 0.3) 45%,
+    rgba(0, 255, 128, 0.25) 55%,
+    rgba(128, 0, 255, 0.25) 65%,
+    rgba(255, 128, 0, 0.2) 75%,
+    transparent 85%
+  );
+  background-size: 300% 300%;
+  animation: holographic-foil 4s ease-in-out infinite;
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+}
+
+/* Texture overlay for depth */
+.card-texture-overlay {
+  background-image: 
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(255,255,255,0.02) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Vignette for depth */
+.card-vignette {
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none;
+}
+
+/* Inner frame glow for image area */
+.card-inner-glow {
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.1), inset 0 0 40px rgba(0,0,0,0.3);
+}
+
+/* Shimmer on hover */
+.card-shimmer-hover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.2),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: none;
+}
+
+.card-shimmer-hover:hover::after {
+  animation: card-shimmer 0.6s ease-out;
+}
+
 /* Mobile-First Design Tokens */
 @import './styles/mobile-tokens.css';
 
