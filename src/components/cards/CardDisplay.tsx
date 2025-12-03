@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, Zap, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
 
 interface CardDisplayProps {
   card: Card;
@@ -21,6 +22,55 @@ export const CardDisplay = ({
   className,
   size = 'md'
 }: CardDisplayProps) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({});
+  const [shinePosition, setShinePosition] = useState({ x: 50, y: 50 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current || size === 'xs' || size === 'sm') return;
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    // Calculate tilt (max 15 degrees)
+    const rotateX = ((y - centerY) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 12;
+    
+    // Calculate shine position (percentage)
+    const shineX = (x / rect.width) * 100;
+    const shineY = (y / rect.height) * 100;
+    
+    // Calculate shadow offset based on tilt
+    const shadowX = rotateY * 1.5;
+    const shadowY = rotateX * -1.5;
+    
+    setTiltStyle({
+      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`,
+      boxShadow: `${shadowX}px ${shadowY + 15}px 30px rgba(0, 0, 0, 0.4), 
+                  ${shadowX * 0.5}px ${shadowY * 0.5 + 8}px 15px rgba(0, 0, 0, 0.3)`,
+      transition: 'transform 0.1s ease-out, box-shadow 0.1s ease-out',
+    });
+    setShinePosition({ x: shineX, y: shineY });
+  }, [size]);
+
+  const handleMouseLeave = useCallback(() => {
+    setTiltStyle({
+      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+      boxShadow: 'none',
+      transition: 'transform 0.4s ease-out, box-shadow 0.4s ease-out',
+    });
+    setIsHovering(false);
+    setShinePosition({ x: 50, y: 50 });
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    setIsHovering(true);
+  }, []);
+
   const sizeClasses = {
     xs: 'w-10 h-14',
     sm: 'w-32 h-52',
@@ -113,18 +163,36 @@ export const CardDisplay = ({
   // Determine rarity-specific wrapper class
   const rarityWrapperClass = card.rarity === 'COMMON' ? 'card-common-shimmer' : '';
 
+  // Enable 3D hover only for md and lg sizes
+  const enable3DHover = size === 'md' || size === 'lg';
+
   return (
     <div
+      ref={cardRef}
       onClick={onClick}
+      onMouseMove={enable3DHover ? handleMouseMove : undefined}
+      onMouseEnter={enable3DHover ? handleMouseEnter : undefined}
+      onMouseLeave={enable3DHover ? handleMouseLeave : undefined}
+      style={enable3DHover ? tiltStyle : undefined}
       className={cn(
-        'relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300',
-        'hover:scale-105 hover:-translate-y-2',
+        'relative rounded-xl overflow-hidden cursor-pointer',
+        !enable3DHover && 'transition-all duration-300 hover:scale-105 hover:-translate-y-2',
         rarityWrapperClass,
         sizeClasses[size],
         frameColors.glow,
         className
       )}
     >
+      {/* Dynamic Shine Overlay - follows cursor */}
+      {enable3DHover && isHovering && (
+        <div 
+          className="absolute inset-0 z-30 pointer-events-none rounded-xl"
+          style={{
+            background: `radial-gradient(circle at ${shinePosition.x}% ${shinePosition.y}%, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 20%, transparent 50%)`,
+          }}
+        />
+      )}
+      
       {/* Outer Frame (Rarity Border) */}
       <div className={cn(
         'absolute inset-0 rounded-xl p-[3px]',
