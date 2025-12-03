@@ -64,7 +64,6 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
-import { CardImageUploader } from "./components/admin/CardImageUploader";
 
 const queryClient = new QueryClient();
 
@@ -130,17 +129,6 @@ const App = () => (
               <ProtectedRoute allowedRoles={['administrador']}>
                 <AppLayout>
                   <SchoolsManagementPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Admin - Upload Imagens de Cartas (temporário) */}
-            <Route path="/admin/upload-card-images" element={
-              <ProtectedRoute allowedRoles={['administrador']}>
-                <AppLayout>
-                  <div className="container mx-auto py-8">
-                    <CardImageUploader />
-                  </div>
                 </AppLayout>
               </ProtectedRoute>
             } />
