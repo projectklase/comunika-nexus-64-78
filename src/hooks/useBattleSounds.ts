@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 
 // Import sound files
 import winSound from '@/assets/sounds/battle/win_sound.mp3';
@@ -7,6 +7,7 @@ import swordAttackSound from '@/assets/sounds/battle/sword_attack.mp3';
 import shieldDefenseSound from '@/assets/sounds/battle/shield_defense.mp3';
 import swooshCardSound from '@/assets/sounds/battle/swoosh_card.mp3';
 import cardDefeatedSound from '@/assets/sounds/battle/card_defeated.mp3';
+import battleBgMusic from '@/assets/sounds/battle/Klash_of_Kards.mp3';
 
 interface BattleSounds {
   playWinSound: () => void;
@@ -15,6 +16,8 @@ interface BattleSounds {
   playDefenseSound: () => void;
   playSwooshSound: () => void;
   playCardDefeatedSound: () => void;
+  playBattleMusic: () => void;
+  stopBattleMusic: () => void;
   stopAllSounds: () => void;
   setVolume: (volume: number) => void;
 }
@@ -27,9 +30,18 @@ export const useBattleSounds = (): BattleSounds => {
     defense: new Audio(shieldDefenseSound),
     swoosh: new Audio(swooshCardSound),
     defeated: new Audio(cardDefeatedSound),
+    battleBg: new Audio(battleBgMusic),
   });
 
   const volume = useRef(0.5); // Default volume 50%
+  const bgMusicVolume = 0.25; // Background music at 25%
+
+  // Configure battle background music
+  useEffect(() => {
+    const bgAudio = audioRefs.current.battleBg;
+    bgAudio.loop = true;
+    bgAudio.volume = bgMusicVolume;
+  }, []);
 
   const playSound = useCallback((key: string) => {
     const audio = audioRefs.current[key];
@@ -64,6 +76,22 @@ export const useBattleSounds = (): BattleSounds => {
     playSound('defeated');
   }, [playSound]);
 
+  const playBattleMusic = useCallback(() => {
+    const bgAudio = audioRefs.current.battleBg;
+    if (bgAudio.paused) {
+      bgAudio.volume = bgMusicVolume;
+      bgAudio.play().catch(err => console.warn('Failed to play battle music:', err));
+    }
+  }, []);
+
+  const stopBattleMusic = useCallback(() => {
+    const bgAudio = audioRefs.current.battleBg;
+    if (!bgAudio.paused) {
+      bgAudio.pause();
+      bgAudio.currentTime = 0;
+    }
+  }, []);
+
   const stopAllSounds = useCallback(() => {
     Object.values(audioRefs.current).forEach(audio => {
       audio.pause();
@@ -73,8 +101,11 @@ export const useBattleSounds = (): BattleSounds => {
 
   const setVolume = useCallback((newVolume: number) => {
     volume.current = Math.max(0, Math.min(1, newVolume)); // Clamp between 0 and 1
-    Object.values(audioRefs.current).forEach(audio => {
-      audio.volume = volume.current;
+    // Don't change background music volume - keep it fixed at 25%
+    Object.entries(audioRefs.current).forEach(([key, audio]) => {
+      if (key !== 'battleBg') {
+        audio.volume = volume.current;
+      }
     });
   }, []);
 
@@ -85,6 +116,8 @@ export const useBattleSounds = (): BattleSounds => {
     playDefenseSound,
     playSwooshSound,
     playCardDefeatedSound,
+    playBattleMusic,
+    stopBattleMusic,
     stopAllSounds,
     setVolume,
   };

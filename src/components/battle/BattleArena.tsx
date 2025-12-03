@@ -63,7 +63,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const { triggerShake } = useScreenShake();
-  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound } = useBattleSounds();
+  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic } = useBattleSounds();
 
   const gameState = battle?.game_state as any;
   const isPlayer1 = myPlayerNumber() === 'PLAYER1';
@@ -192,8 +192,12 @@ const [player1Profile, setPlayer1Profile] = useState<{
   // Show result modal only once per battle
   useEffect(() => {
     if (battle?.status === 'FINISHED' && battleResult && !hasShownResultModal) {
+      // FIRST: Stop background music before showing result
+      stopBattleMusic();
+      
       setHasShownResultModal(true);
       
+      // THEN: Play win/lose sound
       if (battleResult.isVictory) {
         playWinSound();
         setShowVictoryModal(true);
@@ -202,12 +206,31 @@ const [player1Profile, setPlayer1Profile] = useState<{
         setShowDefeatModal(true);
       }
     }
-  }, [battle?.status, battleResult, hasShownResultModal, playWinSound, playLoseSound]);
+  }, [battle?.status, battleResult, hasShownResultModal, playWinSound, playLoseSound, stopBattleMusic]);
 
   // Reset modal flag when battle changes
   useEffect(() => {
     setHasShownResultModal(false);
   }, [battleId]);
+
+  // Control background music based on battle state
+  useEffect(() => {
+    const isBattleActive = battle?.status === 'IN_PROGRESS' && 
+      battle.game_state && 
+      Object.keys(battle.game_state).length > 0 &&
+      battle.player2_id;
+    
+    if (isBattleActive) {
+      playBattleMusic();
+    } else {
+      stopBattleMusic();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      stopBattleMusic();
+    };
+  }, [battle?.status, battle?.player2_id, battle?.game_state, playBattleMusic, stopBattleMusic]);
 
   const playerHand = useMemo(() => {
     if (!battle || !gameState) return [];
