@@ -43,7 +43,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left Column: Card Preview */}
-          <div className="flex items-start justify-center">
+          <div className="flex items-center justify-center">
             <CardDisplay 
               card={card} 
               quantity={quantity}
