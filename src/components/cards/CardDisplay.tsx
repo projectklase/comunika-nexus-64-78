@@ -28,6 +28,32 @@ export const CardDisplay = ({
     lg: 'w-52 h-80'
   };
 
+  const statSizes = {
+    sm: {
+      container: 'px-1 py-0.5',
+      icon: 'w-2.5 h-2.5',
+      label: 'text-[8px]',
+      value: 'text-[9px]',
+      gap: 'gap-0.5'
+    },
+    md: {
+      container: 'px-2 py-1',
+      icon: 'w-3.5 h-3.5',
+      label: 'text-xs',
+      value: 'text-sm',
+      gap: 'gap-1'
+    },
+    lg: {
+      container: 'px-2 py-1',
+      icon: 'w-3.5 h-3.5',
+      label: 'text-xs',
+      value: 'text-sm',
+      gap: 'gap-1'
+    }
+  };
+
+  const currentStatSize = statSizes[size as 'sm' | 'md' | 'lg'] || statSizes.md;
+
   // For xs size, render ultra-compact version (just image with rarity border)
   if (size === 'xs') {
     const frameColors = RARITY_FRAME_COLORS[card.rarity];
@@ -175,16 +201,24 @@ export const CardDisplay = ({
           {showStats && (
             <div className="relative px-2 py-2 space-y-1.5">
               {/* ATK / DEF */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-orange-600/20 to-orange-900/20 rounded border border-orange-500/30">
-                  <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-                  <span className="text-xs font-bold text-orange-300">ATK</span>
-                  <span className="text-sm font-bold text-white">{card.atk}</span>
+              <div className={cn("flex items-center justify-between", size === 'sm' ? 'gap-1' : 'gap-2')}>
+                <div className={cn(
+                  "flex items-center bg-gradient-to-r from-orange-600/20 to-orange-900/20 rounded border border-orange-500/30",
+                  currentStatSize.container,
+                  currentStatSize.gap
+                )}>
+                  <Zap className={cn("text-orange-400 fill-orange-400", currentStatSize.icon)} />
+                  <span className={cn("font-bold text-orange-300", currentStatSize.label)}>ATK</span>
+                  <span className={cn("font-bold text-white", currentStatSize.value)}>{card.atk}</span>
                 </div>
-                <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-600/20 to-blue-900/20 rounded border border-blue-500/30">
-                  <Shield className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
-                  <span className="text-xs font-bold text-blue-300">DEF</span>
-                  <span className="text-sm font-bold text-white">{card.def}</span>
+                <div className={cn(
+                  "flex items-center bg-gradient-to-r from-blue-600/20 to-blue-900/20 rounded border border-blue-500/30",
+                  currentStatSize.container,
+                  currentStatSize.gap
+                )}>
+                  <Shield className={cn("text-blue-400 fill-blue-400", currentStatSize.icon)} />
+                  <span className={cn("font-bold text-blue-300", currentStatSize.label)}>DEF</span>
+                  <span className={cn("font-bold text-white", currentStatSize.value)}>{card.def}</span>
                 </div>
               </div>
 
