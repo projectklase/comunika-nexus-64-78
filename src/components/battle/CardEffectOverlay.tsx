@@ -219,6 +219,72 @@ export const CardEffectOverlay = ({ effects }: CardEffectOverlayProps) => {
               </motion.div>
             </>
           )}
+
+          {effect.type === 'REFLECT' && (
+            <>
+              {/* Mirror reflection effect */}
+              <motion.div
+                className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg"
+                animate={{
+                  opacity: [0.3, 0.6, 0.3]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity
+                }}
+              >
+                {/* Diagonal shine lines */}
+                {[...Array(4)].map((_, i) => (
+                  <motion.div
+                    key={`shine-${i}`}
+                    className="absolute h-full w-1 bg-gradient-to-b from-transparent via-white/60 to-transparent"
+                    style={{
+                      left: `${20 + i * 20}%`,
+                      transform: 'skewX(-20deg)'
+                    }}
+                    animate={{
+                      y: ['-100%', '200%']
+                    }}
+                    transition={{
+                      duration: 2,
+                      delay: i * 0.3,
+                      repeat: Infinity,
+                      ease: 'linear'
+                    }}
+                  />
+                ))}
+              </motion.div>
+              {/* Silver mirror border */}
+              <motion.div
+                className="absolute inset-0 rounded-lg border-2 border-slate-300 pointer-events-none"
+                animate={{
+                  boxShadow: [
+                    '0 0 10px rgba(203, 213, 225, 0.5)',
+                    '0 0 20px rgba(203, 213, 225, 0.8)',
+                    '0 0 10px rgba(203, 213, 225, 0.5)'
+                  ]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity
+                }}
+              />
+              {/* Reflect icon */}
+              <motion.div
+                className="absolute top-2 left-2 text-slate-300 text-lg"
+                animate={{
+                  rotateY: [0, 180, 360],
+                  opacity: [0.7, 1, 0.7]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity
+                }}
+              >
+                🪞
+              </motion.div>
+            </>
+          )}
         </div>
       ))}
     </>
