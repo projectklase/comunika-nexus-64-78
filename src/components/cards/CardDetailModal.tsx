@@ -47,7 +47,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
             <CardDisplay 
               card={card} 
               quantity={quantity}
-              size="lg"
+              size="md"
               showStats={true}
               className="transform-none hover:transform-none"
             />
