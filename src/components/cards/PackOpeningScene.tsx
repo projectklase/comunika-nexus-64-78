@@ -160,7 +160,7 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 mt-4">
+        <div className="flex gap-3 mt-8">
           {!allRevealed && revealedIndices.size < cards.length && (
             <Button
               onClick={revealAll}
@@ -175,7 +175,7 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
           {allRevealed && (
             <Button
               onClick={onComplete}
-              className="bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-black font-bold px-8 py-3 text-lg animate-pulse"
+              className="bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-black font-bold px-8 py-3 text-lg shadow-lg shadow-yellow-500/50 hover:shadow-yellow-500/70 transition-all duration-500 hover:scale-105"
             >
               Continuar
             </Button>
