@@ -97,7 +97,7 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto">
       {/* Background */}
       <div 
         className="absolute inset-0 bg-cover bg-center"
@@ -124,7 +124,7 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center gap-6 p-4 max-w-full">
+      <div className="relative z-10 flex flex-col items-center gap-6 p-4 pb-8 max-w-full">
         {/* Title */}
         {showTitle && (
           <div className="animate-pack-title text-center">
@@ -160,7 +160,7 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 mt-8">
+        <div className="flex gap-3 mt-12">
           {!allRevealed && revealedIndices.size < cards.length && (
             <Button
               onClick={revealAll}
