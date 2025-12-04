@@ -66,7 +66,9 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [showDuelStart, setShowDuelStart] = useState(true);
   const [duelStartComplete, setDuelStartComplete] = useState(false);
   const [showSetupAnnouncement, setShowSetupAnnouncement] = useState(false);
+  const [actualTimerStart, setActualTimerStart] = useState<string | null>(null);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTurnStartRef = useRef<string | null>(null);
   
   const { triggerShake } = useScreenShake();
   const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic } = useBattleSounds();
@@ -252,6 +254,29 @@ const [player1Profile, setPlayer1Profile] = useState<{
     }
   }, [duelStartComplete, isSetupPhase]);
 
+  // Sync timer start when overlays end (prevents timer jump)
+  useEffect(() => {
+    const overlaysActive = showDuelStart || showSetupAnnouncement;
+    
+    if (!overlaysActive && battle?.status === 'IN_PROGRESS') {
+      // When overlays finish, set the actual timer start to NOW
+      setActualTimerStart(new Date().toISOString());
+    }
+  }, [showDuelStart, showSetupAnnouncement, battle?.status]);
+
+  // Reset timer when turn changes (after first turn)
+  useEffect(() => {
+    if (!battle?.turn_started_at) return;
+    
+    // Only update if turn actually changed (not initial load)
+    if (lastTurnStartRef.current && lastTurnStartRef.current !== battle.turn_started_at) {
+      // Turn changed - use the database timestamp
+      setActualTimerStart(battle.turn_started_at);
+    }
+    
+    lastTurnStartRef.current = battle.turn_started_at;
+  }, [battle?.turn_started_at]);
+
   const playerHand = useMemo(() => {
     if (!battle || !gameState) return [];
     const handCardIds = isPlayer1 ? gameState.player1_hand : gameState.player2_hand;
@@ -401,7 +426,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
         
         <BattleTurnTimer 
           isMyTurn={isMyTurn()} 
-          turnStartedAt={battle.turn_started_at || null}
+          turnStartedAt={actualTimerStart}
           maxSeconds={30}
           onTimeout={handleTurnTimeout}
           isPaused={showDuelStart || showSetupAnnouncement}
