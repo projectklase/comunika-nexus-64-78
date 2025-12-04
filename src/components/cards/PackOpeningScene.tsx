@@ -160,7 +160,7 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 mt-12">
+        <div className="flex gap-3 mt-20">
           {!allRevealed && revealedIndices.size < cards.length && (
             <Button
               onClick={revealAll}
