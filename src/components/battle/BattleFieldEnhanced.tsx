@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { BattleCard } from './BattleCard';
 import { TrapCard } from './TrapCard';
-import { Shield, Sparkles } from 'lucide-react';
+import { Shield, Sparkles, Swords, Moon } from 'lucide-react';
 
 interface FieldMonster {
   id: string;
@@ -11,6 +11,7 @@ interface FieldMonster {
   effects: any[];
   image_url?: string;
   rarity?: string;
+  summoned_on_turn?: number;
 }
 
 interface FieldTrap {
@@ -24,10 +25,58 @@ interface BattleFieldEnhancedProps {
   monster?: FieldMonster | null;
   traps?: FieldTrap[];
   isOpponent?: boolean;
+  hasAttackedThisTurn?: boolean;
+  currentTurnNumber?: number;
+  isMyField?: boolean;
 }
 
-export const BattleFieldEnhanced = ({ monster, traps = [], isOpponent }: BattleFieldEnhancedProps) => {
+// Monster status badge component
+const MonsterBadge = ({ type }: { type: 'attacked' | 'summoned' }) => {
+  const isAttacked = type === 'attacked';
+  
+  return (
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={`
+        absolute -top-2 -right-2 z-20
+        px-2 py-1 rounded-full
+        text-[10px] font-bold uppercase tracking-wide
+        flex items-center gap-1
+        ${isAttacked 
+          ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]' 
+          : 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_0_10px_rgba(139,92,246,0.5)]'
+        }
+      `}
+    >
+      {isAttacked ? (
+        <>
+          <Swords className="w-3 h-3" />
+          <span>Atacou</span>
+        </>
+      ) : (
+        <>
+          <Moon className="w-3 h-3" />
+          <span>Invocado</span>
+        </>
+      )}
+    </motion.div>
+  );
+};
+
+export const BattleFieldEnhanced = ({ 
+  monster, 
+  traps = [], 
+  isOpponent,
+  hasAttackedThisTurn = false,
+  currentTurnNumber = 1,
+  isMyField = false
+}: BattleFieldEnhancedProps) => {
   const accentColor = isOpponent ? 'red' : 'blue';
+  
+  // Determine monster status for my field only
+  const hasSummoningSickness = isMyField && monster?.summoned_on_turn === currentTurnNumber;
+  const hasAttacked = isMyField && hasAttackedThisTurn && monster;
   
   return (
     <motion.div
@@ -115,6 +164,11 @@ export const BattleFieldEnhanced = ({ monster, traps = [], isOpponent }: BattleF
                     ? 'from-red-500/40 to-orange-500/40' 
                     : 'from-blue-500/40 to-cyan-500/40'
                 } blur-lg opacity-60`} />
+                
+                {/* Monster status badges - only on my field */}
+                {hasAttacked && <MonsterBadge type="attacked" />}
+                {hasSummoningSickness && !hasAttacked && <MonsterBadge type="summoned" />}
+                
                 <div className="relative">
                   <BattleCard
                     card={monster as any}
