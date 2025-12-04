@@ -7,13 +7,15 @@ interface BattleTurnTimerProps {
   turnStartedAt: string | null;
   maxSeconds?: number;
   onTimeout?: () => void;
+  isPaused?: boolean;
 }
 
 export const BattleTurnTimer = ({ 
   isMyTurn, 
   turnStartedAt,
   maxSeconds = 15,
-  onTimeout
+  onTimeout,
+  isPaused = false
 }: BattleTurnTimerProps) => {
   const [remainingSeconds, setRemainingSeconds] = useState(maxSeconds);
   const timeoutCalledRef = useRef(false);
@@ -23,6 +25,12 @@ export const BattleTurnTimer = ({
 
   useEffect(() => {
     if (!turnStartedAt) {
+      setRemainingSeconds(maxSeconds);
+      return;
+    }
+
+    // If paused, don't run timer
+    if (isPaused) {
       setRemainingSeconds(maxSeconds);
       return;
     }
@@ -42,7 +50,7 @@ export const BattleTurnTimer = ({
     }, 100);
 
     return () => clearInterval(interval);
-  }, [turnStartedAt, maxSeconds]);
+  }, [turnStartedAt, maxSeconds, isPaused]);
 
   const progress = (remainingSeconds / maxSeconds) * 100;
   const isUrgent = remainingSeconds <= 5;

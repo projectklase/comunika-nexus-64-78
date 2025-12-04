@@ -272,21 +272,25 @@ export const useBattle = (battleId?: string) => {
     },
   });
 
-  // End turn manually
+  // End turn manually - USE RPC to properly update is_setup_phase
   const endTurn = useMutation({
     mutationFn: async (battleId: string) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      const { error } = await supabase
-        .from('battles')
-        .update({
-          current_turn: battle?.current_turn === 'PLAYER1' ? 'PLAYER2' : 'PLAYER1',
-          turn_started_at: new Date().toISOString(),
-          last_action_at: new Date().toISOString(),
-        })
-        .eq('id', battleId);
+      const { data: result, error } = await supabase.rpc('end_turn', {
+        p_battle_id: battleId,
+        p_player_id: user.id,
+      });
 
       if (error) throw error;
+      
+      // Cast result to check for internal error
+      const rpcResult = result as { success?: boolean; error?: string } | null;
+      if (rpcResult && rpcResult.success === false) {
+        throw new Error(rpcResult.error || 'Erro ao passar turno');
+      }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['battle'] });
