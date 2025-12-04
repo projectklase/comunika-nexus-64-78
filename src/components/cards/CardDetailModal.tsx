@@ -46,7 +46,6 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
         <div className="flex flex-col items-center justify-center gap-2">
           <CardDisplay 
             card={card} 
-            quantity={quantity}
             size="md"
             showStats={true}
             className="transform-none hover:transform-none"
