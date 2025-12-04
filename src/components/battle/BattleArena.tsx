@@ -390,6 +390,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           turnStartedAt={battle.turn_started_at || null}
           maxSeconds={30}
           onTimeout={handleTurnTimeout}
+          isPaused={showDuelStart || (duelStartComplete && isSetupPhase)}
         />
         
         <BattleFieldEnhanced monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />
