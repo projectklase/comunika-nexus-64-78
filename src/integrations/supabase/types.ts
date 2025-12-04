@@ -2284,8 +2284,8 @@ export type Database = {
             Args: {
               p_battle_id: string
               p_card_id: string
-              p_is_trap?: boolean
               p_player_id: string
+              p_position?: string
             }
             Returns: Json
           }
@@ -2293,8 +2293,8 @@ export type Database = {
             Args: {
               p_battle_id: string
               p_card_id: string
+              p_is_trap?: boolean
               p_player_id: string
-              p_position?: string
             }
             Returns: Json
           }
