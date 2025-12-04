@@ -78,10 +78,18 @@ export const CardDisplay = ({
     setIsHovering(true);
   }, []);
 
+  // Helper para vibração háptica com verificação de suporte
+  const triggerHapticFeedback = useCallback((duration: number = 10) => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(duration);
+    }
+  }, []);
+
   // Touch handlers for mobile devices
   const handleTouchStart = useCallback(() => {
     setIsHovering(true);
-  }, []);
+    triggerHapticFeedback(15); // 15ms - vibração leve no toque inicial
+  }, [triggerHapticFeedback]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     if (!cardRef.current || size === 'xs' || size === 'sm') return;
@@ -91,7 +99,8 @@ export const CardDisplay = ({
 
   const handleTouchEnd = useCallback(() => {
     handleMouseLeave();
-  }, [handleMouseLeave]);
+    triggerHapticFeedback(8); // 8ms - vibração sutil ao soltar
+  }, [handleMouseLeave, triggerHapticFeedback]);
 
   const sizeClasses = {
     xs: 'w-10 h-14',
