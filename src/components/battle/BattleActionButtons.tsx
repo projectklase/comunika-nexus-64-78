@@ -146,7 +146,7 @@ export const BattleActionButtons = ({
           isLoading={isLoading}
         />
 
-        <div className="relative flex-1">
+        <div className="relative flex-1 flex">
           <ActionButton
             onClick={onAttack}
             disabled={!canAttack || isSetupPhase}
