@@ -42,16 +42,24 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
         </DialogHeader>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Left Column: Card Preview */}
-          <div className="flex items-center justify-center">
-            <CardDisplay 
-              card={card} 
-              quantity={quantity}
-              size="md"
-              showStats={true}
-              className="transform-none hover:transform-none"
-            />
-          </div>
+        {/* Left Column: Card Preview + Quantity */}
+        <div className="flex flex-col items-center justify-center gap-2">
+          <CardDisplay 
+            card={card} 
+            quantity={quantity}
+            size="md"
+            showStats={true}
+            className="transform-none hover:transform-none"
+          />
+          
+          {/* Badge de quantidade compacto */}
+          {quantity !== undefined && quantity > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/30">
+              <span className="text-xs text-yellow-300/70">Na coleção:</span>
+              <span className="text-sm font-bold text-yellow-300">{quantity}x</span>
+            </div>
+          )}
+        </div>
 
           {/* Right Column: Details */}
           <div className="space-y-6">
@@ -158,15 +166,6 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
               </div>
             )}
 
-            {/* Quantity */}
-            {quantity !== undefined && quantity > 0 && (
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 rounded-lg border-2 border-yellow-500/30">
-                <span className="font-semibold text-yellow-300">Quantidade na Coleção</span>
-                <Badge variant="secondary" className="text-xl px-4 py-2 bg-yellow-500/20 text-yellow-300 border-yellow-500">
-                  {quantity}x
-                </Badge>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>
