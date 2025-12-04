@@ -30,12 +30,12 @@ export const CardDisplay = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const applyTiltEffect = useCallback((clientX: number, clientY: number) => {
     if (!cardRef.current || size === 'xs' || size === 'sm') return;
     
     const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     
@@ -60,6 +60,10 @@ export const CardDisplay = ({
     setShinePosition({ x: shineX, y: shineY });
   }, [size]);
 
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    applyTiltEffect(e.clientX, e.clientY);
+  }, [applyTiltEffect]);
+
   const handleMouseLeave = useCallback(() => {
     setTiltStyle({
       transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
@@ -73,6 +77,21 @@ export const CardDisplay = ({
   const handleMouseEnter = useCallback(() => {
     setIsHovering(true);
   }, []);
+
+  // Touch handlers for mobile devices
+  const handleTouchStart = useCallback(() => {
+    setIsHovering(true);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (!cardRef.current || size === 'xs' || size === 'sm') return;
+    const touch = e.touches[0];
+    applyTiltEffect(touch.clientX, touch.clientY);
+  }, [applyTiltEffect, size]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleMouseLeave();
+  }, [handleMouseLeave]);
 
   const sizeClasses = {
     xs: 'w-10 h-14',
@@ -178,6 +197,9 @@ export const CardDisplay = ({
       onMouseMove={enable3DHover ? handleMouseMove : undefined}
       onMouseEnter={enable3DHover ? handleMouseEnter : undefined}
       onMouseLeave={enable3DHover ? handleMouseLeave : undefined}
+      onTouchStart={enable3DHover ? handleTouchStart : undefined}
+      onTouchMove={enable3DHover ? handleTouchMove : undefined}
+      onTouchEnd={enable3DHover ? handleTouchEnd : undefined}
       style={enable3DHover ? tiltStyle : undefined}
       className={cn(
         'relative rounded-xl overflow-hidden cursor-pointer',
