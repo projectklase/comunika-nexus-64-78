@@ -82,6 +82,9 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const opponentField = isPlayer1 ? gameState?.player2_field : gameState?.player1_field;
   const battleLog = gameState?.battle_log || [];
   const isSetupPhase = gameState?.is_setup_phase === true;
+  const hasAttackedThisTurn = gameState?.has_attacked_this_turn === true;
+  const hasPlayedCardThisTurn = gameState?.has_played_card_this_turn === true;
+  const currentTurnNumber = gameState?.turn_number || 1;
 
   // Fetch player profiles with loading state - refetch on battle change
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
@@ -432,11 +435,21 @@ const [player1Profile, setPlayer1Profile] = useState<{
           isPaused={showDuelStart || showSetupAnnouncement}
         />
         
-        <BattleFieldEnhanced monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />
+        <BattleFieldEnhanced 
+          monster={opponentField?.monster} 
+          traps={opponentField?.traps || []} 
+          isOpponent 
+        />
         
         <BattleZoneDivider />
 
-        <BattleFieldEnhanced monster={myField?.monster} traps={myField?.traps || []} />
+        <BattleFieldEnhanced 
+          monster={myField?.monster} 
+          traps={myField?.traps || []} 
+          hasAttackedThisTurn={hasAttackedThisTurn}
+          currentTurnNumber={currentTurnNumber}
+          isMyField
+        />
         
         <BattlePlayerInfo
           playerName={isPlayer1 ? player1Profile?.name || 'Você' : player2Profile?.name || 'Você'}
@@ -457,13 +470,15 @@ const [player1Profile, setPlayer1Profile] = useState<{
         </div>
 
         <BattleActionButtons 
-          canPlayCard={selectedCard !== null && isMyTurn()} 
-          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase} 
+          canPlayCard={selectedCard !== null && isMyTurn() && !hasPlayedCardThisTurn} 
+          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase && !hasAttackedThisTurn} 
           isMyTurn={isMyTurn()} 
           onPlayCard={handlePlayCard} 
           onAttack={handleAttack} 
           onEndTurn={handleEndTurn}
           isSetupPhase={isSetupPhase}
+          hasAttackedThisTurn={hasAttackedThisTurn}
+          hasPlayedCardThisTurn={hasPlayedCardThisTurn}
         />
 
         {/* Duel Start Announcement */}

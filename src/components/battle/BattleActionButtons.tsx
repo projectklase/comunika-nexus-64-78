@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Swords, Hand, ArrowRight, Loader2 } from 'lucide-react';
+import { Swords, Hand, ArrowRight, Loader2, Check, Shield } from 'lucide-react';
 
 interface BattleActionButtonsProps {
   canPlayCard: boolean;
@@ -10,7 +10,11 @@ interface BattleActionButtonsProps {
   onEndTurn: () => void;
   isLoading?: boolean;
   isSetupPhase?: boolean;
+  hasAttackedThisTurn?: boolean;
+  hasPlayedCardThisTurn?: boolean;
 }
+
+type ButtonState = 'enabled' | 'disabled' | 'completed' | 'blocked';
 
 const variantStyles = {
   play: {
@@ -36,6 +40,19 @@ const variantStyles = {
   },
 };
 
+const completedStyles = {
+  gradient: 'from-emerald-500/60 to-green-600/60',
+  glow: 'shadow-[0_0_15px_rgba(16,185,129,0.3)]',
+  iconBg: 'bg-emerald-400/20',
+};
+
+const highlightedStyles = {
+  gradient: 'from-yellow-400 via-amber-500 to-yellow-400',
+  glow: 'shadow-[0_0_30px_rgba(251,191,36,0.6)]',
+  hoverGlow: 'hover:shadow-[0_0_40px_rgba(251,191,36,0.8)]',
+  iconBg: 'bg-yellow-400/30',
+};
+
 interface ActionButtonProps {
   onClick: () => void;
   disabled: boolean;
@@ -43,31 +60,83 @@ interface ActionButtonProps {
   icon: React.ReactNode;
   label: string;
   isLoading?: boolean;
+  state?: ButtonState;
+  completedLabel?: string;
+  isHighlighted?: boolean;
 }
 
-const ActionButton = ({ onClick, disabled, variant, icon, label, isLoading }: ActionButtonProps) => {
-  const styles = variantStyles[variant];
+const ActionButton = ({ 
+  onClick, 
+  disabled, 
+  variant, 
+  icon, 
+  label, 
+  isLoading,
+  state = 'enabled',
+  completedLabel,
+  isHighlighted
+}: ActionButtonProps) => {
+  const baseStyles = variantStyles[variant];
+  const isCompleted = state === 'completed';
+  const isBlocked = state === 'blocked';
+  
+  // Determine which styles to use
+  const getGradient = () => {
+    if (isHighlighted) return highlightedStyles.gradient;
+    if (isCompleted) return completedStyles.gradient;
+    if (disabled || isBlocked) return baseStyles.disabledGradient;
+    return baseStyles.gradient;
+  };
+  
+  const getGlow = () => {
+    if (isHighlighted) return highlightedStyles.glow;
+    if (isCompleted) return completedStyles.glow;
+    if (disabled || isBlocked) return '';
+    return baseStyles.glow;
+  };
+  
+  const getHoverGlow = () => {
+    if (isHighlighted) return highlightedStyles.hoverGlow;
+    if (disabled || isCompleted || isBlocked) return '';
+    return baseStyles.hoverGlow;
+  };
+  
+  const getIconBg = () => {
+    if (isHighlighted) return highlightedStyles.iconBg;
+    if (isCompleted) return completedStyles.iconBg;
+    return baseStyles.iconBg;
+  };
+  
+  const displayLabel = isCompleted && completedLabel ? completedLabel : label;
+  const displayIcon = isCompleted ? <Check className="w-4 h-4" /> : icon;
   
   return (
     <motion.button
       onClick={onClick}
-      disabled={disabled || isLoading}
+      disabled={disabled || isLoading || isCompleted || isBlocked}
       className={`
         relative flex-1 flex items-center justify-center gap-2 
         px-4 py-3 rounded-xl font-semibold text-white
         transition-all duration-300
-        ${disabled 
-          ? `bg-gradient-to-r ${styles.disabledGradient} cursor-not-allowed opacity-50` 
-          : `bg-gradient-to-r ${styles.gradient} ${styles.glow} ${styles.hoverGlow} hover:scale-[1.02] active:scale-[0.98]`
-        }
+        bg-gradient-to-r ${getGradient()} ${getGlow()} ${getHoverGlow()}
+        ${(disabled || isCompleted || isBlocked) ? 'cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
+        ${isCompleted ? 'opacity-80' : disabled || isBlocked ? 'opacity-50' : ''}
         border border-white/10
         overflow-hidden
       `}
-      whileHover={!disabled ? { y: -2 } : {}}
-      whileTap={!disabled ? { scale: 0.98 } : {}}
+      whileHover={(!disabled && !isCompleted && !isBlocked) ? { y: -2 } : {}}
+      whileTap={(!disabled && !isCompleted && !isBlocked) ? { scale: 0.98 } : {}}
+      animate={isHighlighted ? {
+        scale: [1, 1.02, 1],
+      } : {}}
+      transition={isHighlighted ? {
+        duration: 1.5,
+        repeat: Infinity,
+        ease: 'easeInOut'
+      } : {}}
     >
       {/* Shine effect */}
-      {!disabled && (
+      {!disabled && !isCompleted && !isBlocked && (
         <motion.div
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
           initial={{ x: '-100%' }}
@@ -76,21 +145,30 @@ const ActionButton = ({ onClick, disabled, variant, icon, label, isLoading }: Ac
         />
       )}
       
+      {/* Highlighted pulsing border */}
+      {isHighlighted && (
+        <motion.div
+          className="absolute inset-0 rounded-xl border-2 border-yellow-300/60"
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+      )}
+      
       {/* Icon container */}
-      <div className={`p-1.5 rounded-lg ${styles.iconBg}`}>
+      <div className={`p-1.5 rounded-lg ${getIconBg()}`}>
         {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
           <motion.div
-            animate={!disabled ? { rotate: [0, 5, -5, 0] } : {}}
+            animate={(!disabled && !isCompleted && !isBlocked) ? { rotate: [0, 5, -5, 0] } : {}}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            {icon}
+            {displayIcon}
           </motion.div>
         )}
       </div>
       
-      <span className="relative z-10 text-sm">{label}</span>
+      <span className="relative z-10 text-sm">{displayLabel}</span>
     </motion.button>
   );
 };
@@ -104,7 +182,27 @@ export const BattleActionButtons = ({
   onEndTurn,
   isLoading,
   isSetupPhase = false,
+  hasAttackedThisTurn = false,
+  hasPlayedCardThisTurn = false,
 }: BattleActionButtonsProps) => {
+  // Determine if "End Turn" should be highlighted
+  const allActionsDone = hasPlayedCardThisTurn && hasAttackedThisTurn;
+  const shouldHighlightEndTurn = isMyTurn && (allActionsDone || (hasPlayedCardThisTurn && isSetupPhase));
+  
+  // Determine button states
+  const getPlayCardState = (): ButtonState => {
+    if (hasPlayedCardThisTurn) return 'completed';
+    if (!canPlayCard) return 'disabled';
+    return 'enabled';
+  };
+  
+  const getAttackState = (): ButtonState => {
+    if (hasAttackedThisTurn) return 'completed';
+    if (isSetupPhase) return 'blocked';
+    if (!canAttack) return 'disabled';
+    return 'enabled';
+  };
+
   if (!isMyTurn) {
     return (
       <motion.div 
@@ -143,19 +241,23 @@ export const BattleActionButtons = ({
           variant="play"
           icon={<Hand className="w-4 h-4" />}
           label="Jogar Carta"
+          completedLabel="✓ Jogada"
           isLoading={isLoading}
+          state={getPlayCardState()}
         />
 
         <div className="relative flex-1 flex">
           <ActionButton
             onClick={onAttack}
-            disabled={!canAttack || isSetupPhase}
+            disabled={!canAttack}
             variant="attack"
-            icon={<Swords className="w-4 h-4" />}
-            label={isSetupPhase ? "🛡️ Bloqueado" : "Atacar"}
+            icon={isSetupPhase ? <Shield className="w-4 h-4" /> : <Swords className="w-4 h-4" />}
+            label={isSetupPhase ? "Bloqueado" : "Atacar"}
+            completedLabel="✓ Atacou"
             isLoading={isLoading}
+            state={getAttackState()}
           />
-          {isSetupPhase && (
+          {isSetupPhase && !hasAttackedThisTurn && (
             <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-yellow-400 font-medium bg-black/80 px-2 py-1 rounded">
               Fase de Preparação
             </div>
@@ -167,8 +269,9 @@ export const BattleActionButtons = ({
           disabled={false}
           variant="endTurn"
           icon={<ArrowRight className="w-4 h-4" />}
-          label="Passar"
+          label={shouldHighlightEndTurn ? "⚡ Passar" : "Passar"}
           isLoading={isLoading}
+          isHighlighted={shouldHighlightEndTurn}
         />
       </div>
     </motion.div>
