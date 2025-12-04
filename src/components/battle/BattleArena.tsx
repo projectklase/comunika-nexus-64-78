@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { BattleBackground } from './BattleBackground';
-import { BattleField } from './BattleField';
+import { BattleFieldEnhanced } from './BattleFieldEnhanced';
 import { BattlePlayerInfo } from './BattlePlayerInfo';
 import { BattleCard } from './BattleCard';
 import { BattleTurnIndicator } from './BattleTurnIndicator';
@@ -17,7 +17,8 @@ import { BattleTurnTimer } from './BattleTurnTimer';
 import { BattleVictoryModal } from './BattleVictoryModal';
 import { BattleDefeatModal } from './BattleDefeatModal';
 import { BattleLog } from './BattleLog';
-import { ActionButtons } from './ActionButtons';
+import { BattleActionButtons } from './BattleActionButtons';
+import { BattleZoneDivider } from './BattleZoneDivider';
 import { CardPlayEffect } from './CardPlayEffect';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
@@ -386,16 +387,11 @@ const [player1Profile, setPlayer1Profile] = useState<{
           onTimeout={handleTurnTimeout}
         />
         
-        <BattleField monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />
+        <BattleFieldEnhanced monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />
         
-        <div className="flex items-center justify-center py-8">
-          <motion.div className="text-center space-y-2" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-            <div className="text-4xl">⚔️</div>
-            <p className="text-sm text-muted-foreground font-semibold">ZONA DE BATALHA</p>
-          </motion.div>
-        </div>
+        <BattleZoneDivider />
 
-        <BattleField monster={myField?.monster} traps={myField?.traps || []} />
+        <BattleFieldEnhanced monster={myField?.monster} traps={myField?.traps || []} />
         
         <BattlePlayerInfo
           playerName={isPlayer1 ? player1Profile?.name || 'Você' : player2Profile?.name || 'Você'}
@@ -415,7 +411,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           </div>
         </div>
 
-        <ActionButtons canPlayCard={selectedCard !== null && isMyTurn()} canAttack={myField?.monster !== null && isMyTurn()} isMyTurn={isMyTurn()} onPlayCard={handlePlayCard} onAttack={handleAttack} onEndTurn={handleEndTurn} />
+        <BattleActionButtons canPlayCard={selectedCard !== null && isMyTurn()} canAttack={myField?.monster !== null && isMyTurn()} isMyTurn={isMyTurn()} onPlayCard={handlePlayCard} onAttack={handleAttack} onEndTurn={handleEndTurn} />
 
         {/* Opponent Turn Overlay */}
         <AnimatePresence>

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, AlertTriangle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Clock, AlertTriangle, Zap } from 'lucide-react';
 
 interface BattleTurnTimerProps {
   isMyTurn: boolean;
@@ -20,7 +19,6 @@ export const BattleTurnTimer = ({
   const timeoutCalledRef = useRef(false);
   const onTimeoutRef = useRef(onTimeout);
   
-  // Keep ref updated without triggering re-renders
   onTimeoutRef.current = onTimeout;
 
   useEffect(() => {
@@ -29,7 +27,6 @@ export const BattleTurnTimer = ({
       return;
     }
 
-    // Reset timeout flag when turn changes
     timeoutCalledRef.current = false;
 
     const interval = setInterval(() => {
@@ -40,7 +37,6 @@ export const BattleTurnTimer = ({
       if (remaining === 0 && !timeoutCalledRef.current) {
         timeoutCalledRef.current = true;
         clearInterval(interval);
-        // Call via ref to avoid dependency issues
         onTimeoutRef.current?.();
       }
     }, 100);
@@ -52,57 +48,108 @@ export const BattleTurnTimer = ({
   const isUrgent = remainingSeconds <= 5;
   const isExpired = remainingSeconds === 0;
 
+  // Color based on time remaining
+  const getTimerColor = () => {
+    if (isExpired) return 'from-red-600 to-red-800';
+    if (isUrgent) return 'from-orange-500 to-red-600';
+    if (isMyTurn) return 'from-emerald-500 to-cyan-500';
+    return 'from-slate-500 to-slate-600';
+  };
+
+  const getGlowColor = () => {
+    if (isExpired || isUrgent) return 'shadow-[0_0_20px_rgba(239,68,68,0.5)]';
+    if (isMyTurn) return 'shadow-[0_0_20px_rgba(16,185,129,0.4)]';
+    return '';
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`
-        flex items-center gap-3 px-4 py-3 rounded-lg border-2
-        ${isMyTurn ? 'bg-primary/10 border-primary/50' : 'bg-muted/50 border-muted'}
-        ${isUrgent && isMyTurn ? 'animate-pulse' : ''}
-        transition-all duration-300
-      `}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="relative"
     >
-      {/* Icon */}
+      {/* Outer glow for urgent */}
+      {isUrgent && isMyTurn && (
+        <motion.div
+          className="absolute -inset-2 bg-red-500/30 rounded-2xl blur-xl"
+          animate={{ opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 0.5, repeat: Infinity }}
+        />
+      )}
+      
       <div className={`
-        p-2 rounded-full
-        ${isMyTurn ? 'bg-primary/20' : 'bg-muted'}
+        relative flex items-center gap-4 px-5 py-3 rounded-xl
+        bg-background/60 backdrop-blur-md
+        border-2 transition-all duration-300
+        ${isMyTurn ? 'border-emerald-500/50' : 'border-muted/50'}
+        ${isUrgent && isMyTurn ? 'border-red-500/60' : ''}
+        ${getGlowColor()}
       `}>
-        {isUrgent && isMyTurn ? (
-          <AlertTriangle className="w-4 h-4 text-destructive" />
-        ) : (
-          <Clock className={`w-4 h-4 ${isMyTurn ? 'text-primary' : 'text-muted-foreground'}`} />
-        )}
-      </div>
-
-      {/* Timer info */}
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center justify-between">
-          <span className={`text-sm font-medium ${isMyTurn ? 'text-foreground' : 'text-muted-foreground'}`}>
-            {isMyTurn ? 'Seu Turno' : 'Turno do Oponente'}
-          </span>
-          <span className={`
-            text-lg font-bold tabular-nums
-            ${isExpired ? 'text-destructive' : isUrgent && isMyTurn ? 'text-destructive' : isMyTurn ? 'text-primary' : 'text-muted-foreground'}
-          `}>
-            {remainingSeconds}s
-          </span>
-        </div>
-        
-        {/* Progress bar */}
+        {/* Animated icon */}
         <div className="relative">
-          <Progress 
-            value={progress} 
-            className={`h-2 ${isUrgent && isMyTurn ? 'bg-destructive/20' : ''}`}
-          />
-          <div 
-            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-300 ${
-              isExpired ? 'bg-destructive' :
-              isUrgent && isMyTurn ? 'bg-destructive' :
-              isMyTurn ? 'bg-primary' : 'bg-muted-foreground'
-            }`}
-            style={{ width: `${progress}%` }}
-          />
+          <motion.div
+            className={`
+              p-2.5 rounded-xl bg-gradient-to-br ${getTimerColor()}
+              ${isUrgent && isMyTurn ? 'animate-pulse' : ''}
+            `}
+            animate={isUrgent && isMyTurn ? { scale: [1, 1.1, 1] } : {}}
+            transition={{ duration: 0.5, repeat: Infinity }}
+          >
+            {isUrgent && isMyTurn ? (
+              <AlertTriangle className="w-5 h-5 text-white" />
+            ) : isMyTurn ? (
+              <Zap className="w-5 h-5 text-white" />
+            ) : (
+              <Clock className="w-5 h-5 text-white" />
+            )}
+          </motion.div>
+          
+          {/* Icon glow */}
+          {isMyTurn && (
+            <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${getTimerColor()} blur-md opacity-50`} />
+          )}
+        </div>
+
+        {/* Timer content */}
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className={`text-sm font-semibold ${
+              isMyTurn ? 'text-foreground' : 'text-muted-foreground'
+            }`}>
+              {isMyTurn ? '⚡ Seu Turno' : '⏳ Turno do Oponente'}
+            </span>
+            <motion.span 
+              className={`
+                text-2xl font-bold tabular-nums
+                ${isExpired ? 'text-red-500' : 
+                  isUrgent && isMyTurn ? 'text-orange-500' : 
+                  isMyTurn ? 'text-emerald-400' : 'text-muted-foreground'}
+              `}
+              animate={isUrgent && isMyTurn ? { scale: [1, 1.1, 1] } : {}}
+              transition={{ duration: 0.5, repeat: Infinity }}
+            >
+              {remainingSeconds}s
+            </motion.span>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="relative h-2 bg-muted/30 rounded-full overflow-hidden">
+            <motion.div 
+              className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${getTimerColor()}`}
+              initial={{ width: '100%' }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.1 }}
+            />
+            
+            {/* Shine effect */}
+            {isMyTurn && !isUrgent && (
+              <motion.div
+                className="absolute inset-y-0 w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                animate={{ x: [-32, 300] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+              />
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
