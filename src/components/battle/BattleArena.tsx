@@ -65,6 +65,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [hasShownResultModal, setHasShownResultModal] = useState(false);
   const [showDuelStart, setShowDuelStart] = useState(true);
   const [duelStartComplete, setDuelStartComplete] = useState(false);
+  const [showSetupAnnouncement, setShowSetupAnnouncement] = useState(false);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const { triggerShake } = useScreenShake();
@@ -238,6 +239,19 @@ const [player1Profile, setPlayer1Profile] = useState<{
     };
   }, [battle?.status, battle?.player2_id, battle?.game_state, playBattleMusic, stopBattleMusic]);
 
+  // Show setup phase announcement for 3 seconds only
+  useEffect(() => {
+    if (duelStartComplete && isSetupPhase) {
+      setShowSetupAnnouncement(true);
+      
+      const timer = setTimeout(() => {
+        setShowSetupAnnouncement(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [duelStartComplete, isSetupPhase]);
+
   const playerHand = useMemo(() => {
     if (!battle || !gameState) return [];
     const handCardIds = isPlayer1 ? gameState.player1_hand : gameState.player2_hand;
@@ -390,7 +404,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           turnStartedAt={battle.turn_started_at || null}
           maxSeconds={30}
           onTimeout={handleTurnTimeout}
-          isPaused={showDuelStart || (duelStartComplete && isSetupPhase)}
+          isPaused={showDuelStart || showSetupAnnouncement}
         />
         
         <BattleFieldEnhanced monster={opponentField?.monster} traps={opponentField?.traps || []} isOpponent />
@@ -436,9 +450,9 @@ const [player1Profile, setPlayer1Profile] = useState<{
           }} 
         />
 
-        {/* Setup Phase Announcement */}
+        {/* Setup Phase Announcement - shows for 3 seconds only */}
         <BattlePhaseAnnouncement 
-          isVisible={duelStartComplete && isSetupPhase && battle.status === 'IN_PROGRESS'} 
+          isVisible={showSetupAnnouncement && battle.status === 'IN_PROGRESS'} 
           phase="SETUP" 
         />
 
