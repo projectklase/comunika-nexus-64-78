@@ -2176,6 +2176,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      end_turn: {
+        Args: { p_battle_id: string; p_player_id: string }
+        Returns: Json
+      }
       get_class_performance_analytics: {
         Args: { days_filter?: number; p_class_id: string }
         Returns: Json
@@ -2261,6 +2265,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      initialize_battle_game_state: {
+        Args: { p_player1_deck_cards: string[]; p_player2_deck_cards: string[] }
+        Returns: Json
       }
       join_battle_queue: {
         Args: { p_deck_id: string; p_school_id: string; p_user_id: string }
