@@ -7,6 +7,7 @@ import { RewardItem } from '@/types/rewards';
 import { Coins, Package, ShoppingCart, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ProtectedImage } from '@/components/ui/protected-image';
 
 interface RewardDetailModalProps {
   item: RewardItem | null;
@@ -63,13 +64,14 @@ export function RewardDetailModal({
                   {item.images.map((image, index) => (
                     <CarouselItem key={index}>
                       <div className="aspect-square rounded-lg overflow-hidden">
-                        <img
+                        <ProtectedImage
                           src={image || '/placeholder.svg'}
                           alt={`${item.name} - Imagem ${index + 1}`}
                           className={cn(
                             "w-full h-full object-cover",
                             isOutOfStock && "grayscale"
                           )}
+                          wrapperClassName="w-full h-full"
                         />
                       </div>
                     </CarouselItem>
@@ -80,13 +82,14 @@ export function RewardDetailModal({
               </Carousel>
             ) : (
               <div className="aspect-square rounded-lg overflow-hidden">
-                <img
+                <ProtectedImage
                   src={item.images[0] || '/placeholder.svg'}
                   alt={item.name}
                   className={cn(
                     "w-full h-full object-cover",
                     isOutOfStock && "grayscale"
                   )}
+                  wrapperClassName="w-full h-full"
                 />
               </div>
             )}

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
 import { useState, useRef, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { ProtectedImage } from '@/components/ui/protected-image';
 interface CardDisplayProps {
   card: Card;
   quantity?: number;
@@ -149,11 +149,12 @@ export const CardDisplay = ({
         )}>
           <div className="relative w-full h-full rounded overflow-hidden bg-gray-900">
             {card.image_url && !imageError ? (
-              <img 
+              <ProtectedImage 
                 src={card.image_url} 
                 alt={card.name} 
                 loading="lazy"
                 className="w-full h-full object-cover"
+                wrapperClassName="w-full h-full"
                 onError={() => setImageError(true)}
               />
             ) : (
@@ -302,7 +303,7 @@ export const CardDisplay = ({
             )}
             
             {card.image_url && !imageError ? (
-              <img 
+              <ProtectedImage 
                 src={card.image_url} 
                 alt={card.name} 
                 loading="lazy"
@@ -312,6 +313,7 @@ export const CardDisplay = ({
                   "w-full h-full object-cover transition-opacity duration-300",
                   imageLoaded ? "opacity-100" : "opacity-0"
                 )}
+                wrapperClassName="w-full h-full"
               />
             ) : (
               <div className={cn(
