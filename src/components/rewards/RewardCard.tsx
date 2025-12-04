@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { RewardItem } from '@/types/rewards';
 import { Coins, Eye, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
+import { ProtectedImage } from '@/components/ui/protected-image';
 interface RewardCardProps {
   item: RewardItem;
   onViewDetails: (item: RewardItem) => void;
@@ -52,7 +52,7 @@ export function RewardCard({
       <CardContent className="p-0">
         {/* Image Container */}
         <div className="relative aspect-square overflow-hidden">
-          <img
+          <ProtectedImage
             src={item.images[0] || '/placeholder.svg'}
             alt={item.name}
             className={cn(
@@ -60,6 +60,7 @@ export function RewardCard({
               "group-hover:scale-105",
               isOutOfStock && "grayscale"
             )}
+            wrapperClassName="w-full h-full"
           />
           
           {/* Hover Overlay */}

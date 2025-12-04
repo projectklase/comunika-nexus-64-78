@@ -5,8 +5,8 @@ import { Swords, Shield, Zap } from 'lucide-react';
 import { RARITY_COLORS, RARITY_FRAME_COLORS } from '@/types/cards';
 import { RarityEffects } from './RarityEffects';
 import { CardEffectOverlay } from './CardEffectOverlay';
+import { ProtectedImage } from '@/components/ui/protected-image';
 import { memo } from 'react';
-
 interface BattleCardProps {
   card: Card | CardInPlay;
   onClick?: () => void;
@@ -66,10 +66,11 @@ export const BattleCard = memo(({
       {/* Card image/background */}
       <div className="absolute inset-0">
         {imageUrl ? (
-          <img 
+          <ProtectedImage 
             src={imageUrl} 
             alt={card.name}
             className="w-full h-full object-cover"
+            wrapperClassName="w-full h-full"
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${rarityColor}`} />
