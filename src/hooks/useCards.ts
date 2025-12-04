@@ -14,7 +14,7 @@ import type {
 } from '@/types/cards';
 
 export const useCards = () => {
-  const { user } = useAuth();
+  const { user, refetchUser } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch todas as cartas disponíveis
@@ -127,9 +127,14 @@ export const useCards = () => {
         })) || [],
       } as OpenPackResult;
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: ['user-cards', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['card-packs', user?.id] });
+      
+      // Sincronizar XP do usuário após abrir pacote
+      if (refetchUser) {
+        await refetchUser();
+      }
       
       const cardCount = result.cards_received?.length || 0;
       toast.success(`🎁 Pacote inicial gratuito reivindicado! ${cardCount} cartas recebidas!`);
@@ -163,10 +168,14 @@ export const useCards = () => {
         })) || [],
       } as OpenPackResult;
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: ['user-cards', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['card-packs', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      
+      // Sincronizar XP do usuário após abrir pacote
+      if (refetchUser) {
+        await refetchUser();
+      }
       
       const cardCount = result.cards_received?.length || 0;
       toast.success(`🎴 Pacote ${result.pack_type} aberto! ${cardCount} cartas recebidas!`);

@@ -41,4 +41,5 @@ export interface AuthContextType {
   updatePassword: (userId: string, newPasswordHash: string, mustChange?: boolean) => Promise<boolean>;
   isLoading: boolean;
   createDemoUser?: (email: string, password: string, name: string, role: string) => Promise<any>;
+  refetchUser?: () => Promise<User | null>;
 }

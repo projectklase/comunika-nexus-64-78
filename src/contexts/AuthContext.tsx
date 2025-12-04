@@ -372,6 +372,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Função para atualizar dados do usuário do banco (sincronização de XP, koins, etc)
+  const refetchUser = async (): Promise<User | null> => {
+    if (!user?.id) return null;
+    
+    console.log('[refetchUser] Atualizando dados do usuário...');
+    const freshProfile = await getUserProfile(user.id);
+    if (freshProfile) {
+      setUser(freshProfile);
+      console.log('[refetchUser] ✅ Dados atualizados - XP:', freshProfile.total_xp, 'Koins:', freshProfile.koins);
+      return freshProfile;
+    }
+    return null;
+  };
+
   // Export createDemoUser function so it can be used in Login component
   const contextValue = {
     user,
@@ -380,7 +394,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUser,
     updatePassword,
     isLoading,
-    createDemoUser, // Add this to the context
+    createDemoUser,
+    refetchUser,
   };
 
   return (
