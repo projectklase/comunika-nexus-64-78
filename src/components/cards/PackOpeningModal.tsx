@@ -1,11 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, PackType, PACK_COSTS, PACK_SIZES, RARITY_LABELS } from '@/types/cards';
-import { CardDisplay } from './CardDisplay';
+import { Card, PackType, PACK_COSTS, PACK_SIZES } from '@/types/cards';
 import { CardDetailModal } from './CardDetailModal';
+import { PackOpeningScene } from './PackOpeningScene';
 import { useState, useEffect, useRef } from 'react';
 import { Sparkles, Gift, Info } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -41,7 +40,7 @@ export const PackOpeningModal = ({
 }: PackOpeningModalProps) => {
   const [selectedPack, setSelectedPack] = useState<PackType | null>(null);
   const [revealing, setRevealing] = useState(false);
-  const [revealedCards, setRevealedCards] = useState<Card[]>([]);
+  const [showEpicScene, setShowEpicScene] = useState(false);
   const [detailCard, setDetailCard] = useState<Card | null>(null);
   const hasStartedReveal = useRef(false);
 
@@ -57,46 +56,24 @@ export const PackOpeningModal = ({
     if (!isOpen) {
       setSelectedPack(null);
       setRevealing(false);
-      setRevealedCards([]);
+      setShowEpicScene(false);
       setDetailCard(null);
       hasStartedReveal.current = false;
     }
   }, [isOpen]);
 
-  // Auto-reveal cards when pack opening completes
+  // Show epic scene when pack opening completes
   useEffect(() => {
     if (revealing && lastOpenedCards && lastOpenedCards.length > 0 && !isOpening && !hasStartedReveal.current) {
       hasStartedReveal.current = true;
-      setRevealedCards([]); // Reset before revealing
-      
-      // Revelar cartas uma por uma
-      lastOpenedCards.forEach((card, idx) => {
-        setTimeout(() => {
-          setRevealedCards(prev => {
-            // Prevent duplicates
-            if (prev.length >= lastOpenedCards.length) return prev;
-            const newCards = [...prev, card];
-            
-            // Confetti para cartas raras+
-            if (card.rarity === 'RARE' || card.rarity === 'EPIC' || card.rarity === 'LEGENDARY') {
-              confetti({
-                particleCount: card.rarity === 'LEGENDARY' ? 100 : card.rarity === 'EPIC' ? 75 : 50,
-                spread: 70,
-                origin: { y: 0.6 }
-              });
-            }
-            
-            return newCards;
-          });
-        }, idx * 500);
-      });
+      setShowEpicScene(true);
     }
   }, [revealing, lastOpenedCards, isOpening]);
 
   const handleOpenPack = async (packType: PackType) => {
     setSelectedPack(packType);
     setRevealing(true);
-    setRevealedCards([]);
+    setShowEpicScene(false);
     hasStartedReveal.current = false;
     onOpenPack(packType);
   };
@@ -104,7 +81,7 @@ export const PackOpeningModal = ({
   const handleClose = () => {
     setSelectedPack(null);
     setRevealing(false);
-    setRevealedCards([]);
+    setShowEpicScene(false);
     setDetailCard(null);
     hasStartedReveal.current = false;
     onClose();
@@ -134,6 +111,24 @@ export const PackOpeningModal = ({
       </div>
     );
   };
+
+  // Show epic scene as fullscreen overlay
+  if (showEpicScene && lastOpenedCards && lastOpenedCards.length > 0) {
+    return (
+      <>
+        <PackOpeningScene
+          cards={lastOpenedCards}
+          onComplete={handleClose}
+          onCardClick={(card) => setDetailCard(card)}
+        />
+        <CardDetailModal
+          card={detailCard}
+          isOpen={!!detailCard}
+          onClose={() => setDetailCard(null)}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -247,40 +242,10 @@ export const PackOpeningModal = ({
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {isOpening ? (
-                <div className="text-center py-12">
-                  <Gift className="w-16 h-16 mx-auto mb-4 animate-bounce text-primary" />
-                  <p className="text-lg font-semibold">Abrindo pacote...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="text-center">
-                    <h3 className="text-xl font-bold mb-2">🎉 Cartas Recebidas!</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {revealedCards.length} de {lastOpenedCards?.length || 0}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                    {revealedCards.map((card, idx) => (
-                      <div key={`${card.id}-${idx}`} className="animate-in zoom-in duration-300">
-                        <CardDisplay 
-                          card={card} 
-                          size="sm" 
-                          onClick={() => setDetailCard(card)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {revealedCards.length === lastOpenedCards?.length && (
-                    <Button onClick={handleClose} className="w-full">
-                      Continuar
-                    </Button>
-                  )}
-                </>
-              )}
+            <div className="text-center py-12">
+              <Gift className="w-16 h-16 mx-auto mb-4 animate-bounce text-primary" />
+              <p className="text-lg font-semibold">Abrindo pacote...</p>
+              <p className="text-sm text-muted-foreground mt-2">Prepare-se para revelar suas cartas!</p>
             </div>
           )}
         </DialogContent>
