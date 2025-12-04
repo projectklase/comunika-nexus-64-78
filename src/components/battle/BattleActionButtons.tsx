@@ -9,6 +9,7 @@ interface BattleActionButtonsProps {
   onAttack: () => void;
   onEndTurn: () => void;
   isLoading?: boolean;
+  isSetupPhase?: boolean;
 }
 
 const variantStyles = {
@@ -102,6 +103,7 @@ export const BattleActionButtons = ({
   onAttack,
   onEndTurn,
   isLoading,
+  isSetupPhase = false,
 }: BattleActionButtonsProps) => {
   if (!isMyTurn) {
     return (
@@ -144,14 +146,21 @@ export const BattleActionButtons = ({
           isLoading={isLoading}
         />
 
-        <ActionButton
-          onClick={onAttack}
-          disabled={!canAttack}
-          variant="attack"
-          icon={<Swords className="w-4 h-4" />}
-          label="Atacar"
-          isLoading={isLoading}
-        />
+        <div className="relative flex-1">
+          <ActionButton
+            onClick={onAttack}
+            disabled={!canAttack || isSetupPhase}
+            variant="attack"
+            icon={<Swords className="w-4 h-4" />}
+            label={isSetupPhase ? "🛡️ Bloqueado" : "Atacar"}
+            isLoading={isLoading}
+          />
+          {isSetupPhase && (
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-yellow-400 font-medium bg-black/80 px-2 py-1 rounded">
+              Fase de Preparação
+            </div>
+          )}
+        </div>
 
         <ActionButton
           onClick={onEndTurn}

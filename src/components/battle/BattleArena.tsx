@@ -20,6 +20,8 @@ import { BattleLog } from './BattleLog';
 import { BattleActionButtons } from './BattleActionButtons';
 import { BattleZoneDivider } from './BattleZoneDivider';
 import { CardPlayEffect } from './CardPlayEffect';
+import { BattleDuelStart } from './BattleDuelStart';
+import { BattlePhaseAnnouncement } from './BattlePhaseAnnouncement';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -61,6 +63,8 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
   const [showForfeitDialog, setShowForfeitDialog] = useState(false);
   const [hasShownResultModal, setHasShownResultModal] = useState(false);
+  const [showDuelStart, setShowDuelStart] = useState(true);
+  const [duelStartComplete, setDuelStartComplete] = useState(false);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const { triggerShake } = useScreenShake();
@@ -74,6 +78,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const myField = isPlayer1 ? gameState?.player1_field : gameState?.player2_field;
   const opponentField = isPlayer1 ? gameState?.player2_field : gameState?.player1_field;
   const battleLog = gameState?.battle_log || [];
+  const isSetupPhase = gameState?.is_setup_phase === true;
 
   // Fetch player profiles with loading state - refetch on battle change
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
@@ -411,11 +416,34 @@ const [player1Profile, setPlayer1Profile] = useState<{
           </div>
         </div>
 
-        <BattleActionButtons canPlayCard={selectedCard !== null && isMyTurn()} canAttack={myField?.monster !== null && isMyTurn()} isMyTurn={isMyTurn()} onPlayCard={handlePlayCard} onAttack={handleAttack} onEndTurn={handleEndTurn} />
+        <BattleActionButtons 
+          canPlayCard={selectedCard !== null && isMyTurn()} 
+          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase} 
+          isMyTurn={isMyTurn()} 
+          onPlayCard={handlePlayCard} 
+          onAttack={handleAttack} 
+          onEndTurn={handleEndTurn}
+          isSetupPhase={isSetupPhase}
+        />
+
+        {/* Duel Start Announcement */}
+        <BattleDuelStart 
+          isVisible={showDuelStart && battle.status === 'IN_PROGRESS'} 
+          onComplete={() => {
+            setShowDuelStart(false);
+            setDuelStartComplete(true);
+          }} 
+        />
+
+        {/* Setup Phase Announcement */}
+        <BattlePhaseAnnouncement 
+          isVisible={duelStartComplete && isSetupPhase && battle.status === 'IN_PROGRESS'} 
+          phase="SETUP" 
+        />
 
         {/* Opponent Turn Overlay */}
         <AnimatePresence>
-          {!isMyTurn() && battle.status === 'IN_PROGRESS' && (
+          {!isMyTurn() && battle.status === 'IN_PROGRESS' && !isSetupPhase && (
             <motion.div
               className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none"
               initial={{ opacity: 0 }}
