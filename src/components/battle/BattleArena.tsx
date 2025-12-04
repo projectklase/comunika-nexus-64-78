@@ -273,19 +273,9 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
   const handleAttack = async () => {
     if (!battle || !myField?.monster) return;
-    
-    try {
-      playAttackSound();
-      triggerShake();
-      await attack.mutateAsync(battle.id);
-    } catch (error: any) {
-      // Handle summoning sickness error
-      if (error?.message?.includes('Summoning Sickness')) {
-        toast.error('⚡ Summoning Sickness!', {
-          description: 'Monstros não podem atacar no turno em que são invocados.',
-        });
-      }
-    }
+    playAttackSound();
+    triggerShake();
+    await attack.mutateAsync(battle.id);
   };
 
   const handleAbandonBattle = async () => {
@@ -421,23 +411,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           </div>
         </div>
 
-        <BattleActionButtons 
-          canPlayCard={selectedCard !== null && isMyTurn()} 
-          canAttack={
-            myField?.monster !== null && 
-            isMyTurn() && 
-            // Summoning Sickness check: monster can't attack on the turn it was summoned
-            (myField?.monster?.summoned_on_turn !== gameState?.turn_number)
-          } 
-          isMyTurn={isMyTurn()} 
-          onPlayCard={handlePlayCard} 
-          onAttack={handleAttack} 
-          onEndTurn={handleEndTurn}
-          hasSummoningSickness={
-            myField?.monster !== null && 
-            myField?.monster?.summoned_on_turn === gameState?.turn_number
-          }
-        />
+        <BattleActionButtons canPlayCard={selectedCard !== null && isMyTurn()} canAttack={myField?.monster !== null && isMyTurn()} isMyTurn={isMyTurn()} onPlayCard={handlePlayCard} onAttack={handleAttack} onEndTurn={handleEndTurn} />
 
         {/* Opponent Turn Overlay */}
         <AnimatePresence>

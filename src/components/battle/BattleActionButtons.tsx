@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Swords, Hand, ArrowRight, Loader2, Zap } from 'lucide-react';
+import { Swords, Hand, ArrowRight, Loader2 } from 'lucide-react';
 
 interface BattleActionButtonsProps {
   canPlayCard: boolean;
@@ -9,7 +9,6 @@ interface BattleActionButtonsProps {
   onAttack: () => void;
   onEndTurn: () => void;
   isLoading?: boolean;
-  hasSummoningSickness?: boolean;
 }
 
 const variantStyles = {
@@ -103,7 +102,6 @@ export const BattleActionButtons = ({
   onAttack,
   onEndTurn,
   isLoading,
-  hasSummoningSickness,
 }: BattleActionButtonsProps) => {
   if (!isMyTurn) {
     return (
@@ -146,25 +144,14 @@ export const BattleActionButtons = ({
           isLoading={isLoading}
         />
 
-        <div className="relative flex-1">
-          <ActionButton
-            onClick={onAttack}
-            disabled={!canAttack}
-            variant="attack"
-            icon={hasSummoningSickness ? <Zap className="w-4 h-4" /> : <Swords className="w-4 h-4" />}
-            label={hasSummoningSickness ? "Sickness!" : "Atacar"}
-            isLoading={isLoading}
-          />
-          {hasSummoningSickness && (
-            <motion.div 
-              className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/30"
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              ⚡ Summoning Sickness
-            </motion.div>
-          )}
-        </div>
+        <ActionButton
+          onClick={onAttack}
+          disabled={!canAttack}
+          variant="attack"
+          icon={<Swords className="w-4 h-4" />}
+          label="Atacar"
+          isLoading={isLoading}
+        />
 
         <ActionButton
           onClick={onEndTurn}
