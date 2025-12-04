@@ -1,7 +1,7 @@
-import { Card, RARITY_LABELS, CATEGORY_LABELS, RARITY_FRAME_COLORS } from '@/types/cards';
+import { Card, RARITY_LABELS, CATEGORY_LABELS, RARITY_FRAME_COLORS, EFFECT_MECHANICS, CardEffectType } from '@/types/cards';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Shield, Star } from 'lucide-react';
+import { Sparkles, Zap, Shield, Star, Clock, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CardDisplay } from './CardDisplay';
 
@@ -109,20 +109,51 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
             {card.effects.length > 0 && (
               <div className="space-y-3">
                 <p className="text-sm text-gray-400 font-semibold">Efeitos Especiais</p>
-                <div className="space-y-2">
-                  {card.effects.map((effect, index) => (
-                    <div key={index} className="flex items-start gap-3 p-4 bg-gradient-to-br from-purple-600/20 to-purple-900/20 rounded-lg border-2 border-purple-500/50">
-                      <span className="text-2xl">{getEffectIcon(effect.type)}</span>
-                      <div className="flex-1">
-                        <p className="font-bold text-purple-300 uppercase tracking-wide">{effect.type}</p>
-                        <p className="text-sm text-gray-300 mt-1">{effect.description}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Sparkles className="w-3 h-3 text-purple-400" />
-                          <p className="text-xs text-purple-300">Poder: {effect.value}</p>
+                <div className="space-y-3">
+                  {card.effects.map((effect, index) => {
+                    const mechanics = EFFECT_MECHANICS[effect.type as CardEffectType];
+                    return (
+                      <div key={index} className="p-4 bg-gradient-to-br from-purple-600/20 to-purple-900/20 rounded-lg border-2 border-purple-500/50">
+                        {/* Header do efeito */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="text-2xl">{getEffectIcon(effect.type)}</span>
+                          <div className="flex-1">
+                            <p className="font-bold text-purple-300 uppercase tracking-wide">{effect.type}</p>
+                            <p className="text-sm text-gray-300 mt-1">{effect.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Sparkles className="w-3 h-3 text-purple-400" />
+                              <p className="text-xs text-purple-300">Poder: {effect.value}</p>
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Mecânicas do efeito */}
+                        {mechanics && (
+                          <div className="mt-3 pt-3 border-t border-purple-500/30 space-y-2">
+                            <p className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-2">Mecânicas</p>
+                            
+                            <div className="flex items-center gap-2 text-xs">
+                              <Zap className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                              <span className="text-yellow-300/80 font-medium">Ativação:</span>
+                              <span className="text-gray-300">{mechanics.activation}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-xs">
+                              <Clock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                              <span className="text-cyan-300/80 font-medium">Duração:</span>
+                              <span className="text-gray-300">{mechanics.duration}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-xs">
+                              <Target className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                              <span className="text-red-300/80 font-medium">Consumo:</span>
+                              <span className="text-gray-300">{mechanics.consumption}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

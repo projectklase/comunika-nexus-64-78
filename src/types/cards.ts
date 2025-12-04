@@ -135,6 +135,51 @@ export const CATEGORY_COLORS: Record<CardCategory, string> = {
   ESPECIAL: 'from-yellow-400 to-yellow-700',
 };
 
+// Mecânicas detalhadas de cada tipo de efeito
+export interface EffectMechanics {
+  activation: string;
+  duration: string;
+  consumption: string;
+}
+
+export const EFFECT_MECHANICS: Record<CardEffectType, EffectMechanics> = {
+  BURN: {
+    activation: 'Imediato ao atacar',
+    duration: 'Instantâneo',
+    consumption: 'Dano aplicado a cada ataque',
+  },
+  SHIELD: {
+    activation: 'Quando você é atacado',
+    duration: 'Até ser ativado',
+    consumption: 'Após bloquear 1 ataque',
+  },
+  BOOST: {
+    activation: 'Passivo enquanto em campo',
+    duration: 'Permanente',
+    consumption: 'Ativo enquanto monstro vivo',
+  },
+  HEAL: {
+    activation: 'Imediato ao jogar carta',
+    duration: 'Instantâneo',
+    consumption: 'HP recuperado uma única vez',
+  },
+  FREEZE: {
+    activation: 'Ao atacar inimigo',
+    duration: '1 turno do oponente',
+    consumption: 'Após turno do oponente',
+  },
+  DOUBLE: {
+    activation: 'Passivo em combate',
+    duration: 'Permanente',
+    consumption: 'Multiplica outros efeitos',
+  },
+  REFLECT: {
+    activation: 'Quando você é atacado',
+    duration: 'Até ser atacado',
+    consumption: 'Após refletir 1 ataque',
+  },
+};
+
 export const RARITY_FRAME_COLORS: Record<CardRarity, {
   outer: string;
   inner: string;
