@@ -17,6 +17,7 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
   const [showTitle, setShowTitle] = useState(true);
   const [allRevealed, setAllRevealed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const flipSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Play sound on mount
   useEffect(() => {
@@ -26,10 +27,18 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
       // Autoplay blocked - user interaction required
     });
 
+    // Pre-load flip sound
+    flipSoundRef.current = new Audio('/sounds/card-flipping.mp3');
+    flipSoundRef.current.volume = 0.6;
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (flipSoundRef.current) {
+        flipSoundRef.current.pause();
+        flipSoundRef.current = null;
       }
     };
   }, []);
@@ -49,6 +58,12 @@ export const PackOpeningScene = ({ cards, onComplete, onCardClick }: PackOpening
 
   const revealCard = (index: number) => {
     if (revealedIndices.has(index)) return;
+
+    // Play flip sound
+    if (flipSoundRef.current) {
+      flipSoundRef.current.currentTime = 0;
+      flipSoundRef.current.play().catch(() => {});
+    }
 
     setRevealedIndices(prev => {
       const newSet = new Set(prev);
