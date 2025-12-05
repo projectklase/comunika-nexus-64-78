@@ -22,6 +22,7 @@ import { BattleZoneDivider } from './BattleZoneDivider';
 import { CardPlayEffect } from './CardPlayEffect';
 import { BattleDuelStart } from './BattleDuelStart';
 import { BattlePhaseAnnouncement } from './BattlePhaseAnnouncement';
+import { TrapActivationOverlay } from './TrapActivationOverlay';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -67,11 +68,13 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [duelStartComplete, setDuelStartComplete] = useState(false);
   const [showSetupAnnouncement, setShowSetupAnnouncement] = useState(false);
   const [actualTimerStart, setActualTimerStart] = useState<string | null>(null);
+  const [trapOverlay, setTrapOverlay] = useState<{ name: string; description: string } | null>(null);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTurnStartRef = useRef<string | null>(null);
+  const lastTrapLogCountRef = useRef<number>(0);
   
   const { triggerShake } = useScreenShake();
-  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic } = useBattleSounds();
+  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic, playDefenseSound } = useBattleSounds();
 
   const gameState = battle?.game_state as any;
   const isPlayer1 = myPlayerNumber() === 'PLAYER1';
@@ -279,6 +282,48 @@ const [player1Profile, setPlayer1Profile] = useState<{
     
     lastTurnStartRef.current = battle.turn_started_at;
   }, [battle?.turn_started_at]);
+
+  // Detect trap activations from battle_log
+  useEffect(() => {
+    if (!battleLog || battleLog.length === 0) return;
+    
+    // Look for new trap-related entries (TRAP_ACTIVATED, TRAP_EFFECT, etc.)
+    const trapEntries = battleLog.filter((log: any) => 
+      log.action?.includes('TRAP') && 
+      log.action !== 'PLAY_TRAP' // PLAY_TRAP is setting face-down, not activation
+    );
+    
+    // Check if there are new trap activations
+    if (trapEntries.length > lastTrapLogCountRef.current) {
+      const latestTrap = trapEntries[trapEntries.length - 1];
+      
+      // Show trap overlay with effect info
+      const trapName = latestTrap.card_name || latestTrap.trap_name || "Trap Card";
+      const trapEffect = latestTrap.effect_description || latestTrap.message || getTrapEffectDescription(latestTrap.effect_type);
+      
+      setTrapOverlay({ name: trapName, description: trapEffect });
+      playDefenseSound();
+      
+      // Auto-hide after 2.5 seconds
+      setTimeout(() => {
+        setTrapOverlay(null);
+      }, 2500);
+    }
+    
+    lastTrapLogCountRef.current = trapEntries.length;
+  }, [battleLog, playDefenseSound]);
+
+  // Helper function to get trap effect descriptions
+  const getTrapEffectDescription = (effectType?: string): string => {
+    const effects: Record<string, string> = {
+      'SHIELD': 'Anula o ataque do oponente completamente!',
+      'COUNTER': 'Reflete 50% do dano de volta ao atacante!',
+      'DRAIN': 'Absorve HP do oponente para si mesmo!',
+      'WEAKEN': 'Reduz o ATK do monstro atacante!',
+      'STUN': 'O monstro atacante não pode atacar no próximo turno!',
+    };
+    return effects[effectType || ''] || 'Efeito especial ativado!';
+  };
 
   const playerHand = useMemo(() => {
     if (!battle || !gameState) return [];
@@ -553,6 +598,13 @@ const [player1Profile, setPlayer1Profile] = useState<{
         <AnimatePresence>
           {isPlaying && selectedCard && <CardPlayEffect cardId={selectedCard} />}
         </AnimatePresence>
+
+        {/* Trap Activation Overlay */}
+        <TrapActivationOverlay 
+          isVisible={trapOverlay !== null}
+          trapName={trapOverlay?.name || ''}
+          trapDescription={trapOverlay?.description || ''}
+        />
       </div>
 
       {battleResult && (
