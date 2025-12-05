@@ -24,6 +24,7 @@ import { BattleDuelStart } from './BattleDuelStart';
 import { BattlePhaseAnnouncement } from './BattlePhaseAnnouncement';
 import { TrapActivationOverlay } from './TrapActivationOverlay';
 import { MonsterAttackAnimation } from './MonsterAttackAnimation';
+import { DefeatedCardEffect } from './DefeatedCardEffect';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -37,6 +38,12 @@ interface AttackAnimationData {
   defenderImage?: string;
   damage: number;
   isCritical?: boolean;
+}
+
+interface DefeatedCardData {
+  name: string;
+  image?: string;
+  isOpponent: boolean;
 }
 
 interface BattleArenaProps {
@@ -81,12 +88,15 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [actualTimerStart, setActualTimerStart] = useState<string | null>(null);
   const [trapOverlay, setTrapOverlay] = useState<{ name: string; description: string } | null>(null);
   const [attackAnimation, setAttackAnimation] = useState<AttackAnimationData | null>(null);
+  const [defeatedCard, setDefeatedCard] = useState<DefeatedCardData | null>(null);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTurnStartRef = useRef<string | null>(null);
   const lastTrapLogCountRef = useRef<number>(0);
+  const prevMyMonsterRef = useRef<string | null>(null);
+  const prevOpponentMonsterRef = useRef<string | null>(null);
   
   const { triggerShake } = useScreenShake();
-  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic, playDefenseSound } = useBattleSounds();
+  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic, playDefenseSound, playCardDefeatedSound } = useBattleSounds();
 
   const gameState = battle?.game_state as any;
   const isPlayer1 = myPlayerNumber() === 'PLAYER1';
@@ -324,6 +334,42 @@ const [player1Profile, setPlayer1Profile] = useState<{
     
     lastTrapLogCountRef.current = trapEntries.length;
   }, [battleLog, playDefenseSound]);
+
+  // Detect defeated monsters
+  useEffect(() => {
+    const currentMyMonster = myField?.monster?.id || null;
+    const currentOpponentMonster = opponentField?.monster?.id || null;
+    
+    // Check if my monster was destroyed
+    if (prevMyMonsterRef.current && !currentMyMonster) {
+      const destroyedMonster = allCards?.find(c => c.id === prevMyMonsterRef.current);
+      setDefeatedCard({
+        name: destroyedMonster?.name || 'Seu Monstro',
+        image: destroyedMonster?.image_url,
+        isOpponent: false
+      });
+      playCardDefeatedSound();
+      
+      setTimeout(() => setDefeatedCard(null), 1500);
+    }
+    
+    // Check if opponent monster was destroyed
+    if (prevOpponentMonsterRef.current && !currentOpponentMonster) {
+      const destroyedMonster = allCards?.find(c => c.id === prevOpponentMonsterRef.current);
+      setDefeatedCard({
+        name: destroyedMonster?.name || 'Monstro Inimigo',
+        image: destroyedMonster?.image_url,
+        isOpponent: true
+      });
+      playCardDefeatedSound();
+      
+      setTimeout(() => setDefeatedCard(null), 1500);
+    }
+    
+    // Update refs
+    prevMyMonsterRef.current = currentMyMonster;
+    prevOpponentMonsterRef.current = currentOpponentMonster;
+  }, [myField?.monster?.id, opponentField?.monster?.id, allCards, playCardDefeatedSound]);
 
   // Helper function to get trap effect descriptions
   const getTrapEffectDescription = (effectType?: string): string => {
@@ -661,6 +707,15 @@ const [player1Profile, setPlayer1Profile] = useState<{
           isVisible={attackAnimation !== null}
           attackData={attackAnimation}
           onComplete={() => setAttackAnimation(null)}
+        />
+
+        {/* Defeated Card Effect */}
+        <DefeatedCardEffect 
+          isVisible={defeatedCard !== null}
+          cardName={defeatedCard?.name || ''}
+          cardImage={defeatedCard?.image}
+          accentColor={defeatedCard?.isOpponent ? 'red' : 'blue'}
+          onComplete={() => setDefeatedCard(null)}
         />
       </div>
 
