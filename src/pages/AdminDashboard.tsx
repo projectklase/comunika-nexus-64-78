@@ -34,6 +34,7 @@ import {
 } from '@/utils/audit-helpers';
 import { AuditEvent } from '@/types/audit';
 import { FamilyMetricsWidget } from '@/components/admin/FamilyMetricsWidget';
+import { CleanupPostsButton } from '@/components/admin/CleanupPostsButton';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -367,20 +368,21 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background p-8 space-y-12 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div className="flex-1 text-center">
-          <h1 className="text-4xl font-bold gradient-text">Dashboard Administrativo</h1>
-          <p className="text-muted-foreground mt-2 text-lg">
+        <div className="flex-1">
+          <h1 className="text-4xl font-bold gradient-text text-center">Dashboard Administrativo</h1>
+          <p className="text-muted-foreground mt-2 text-lg text-center">
             Sistema de monitoramento e gestão
           </p>
         </div>
         
-        <div className="text-right">
+        <div className="text-right space-y-2">
           <div className="text-2xl font-bold text-purple-500">
             {format(new Date(), 'HH:mm:ss')}
           </div>
           <p className="text-sm text-muted-foreground">
             {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
           </p>
+          <CleanupPostsButton />
         </div>
       </div>
 
