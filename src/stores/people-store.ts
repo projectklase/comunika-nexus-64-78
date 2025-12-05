@@ -9,7 +9,7 @@ interface PeopleStore {
   loading: boolean;
   lastCreatedId: string | null;
   
-  loadPeople: () => void;
+  loadPeople: (schoolId?: string, userId?: string, userRole?: string) => void;
   getPerson: (id: string) => Person | undefined;
   createPerson: (person: Omit<Person, 'id' | 'createdAt'>) => Promise<Person>;
   updatePerson: (id: string, updates: Partial<Person>) => Promise<void>;
@@ -94,28 +94,63 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
   loading: false,
   lastCreatedId: null,
 
-  loadPeople: async () => {
+  loadPeople: async (schoolId?: string, userId?: string, userRole?: string) => {
     set({ loading: true });
     try {
-      // Primeiro, buscar IDs de estudantes
-      const { data: studentRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'aluno');
+      let studentIds: string[] = [];
 
-      if (rolesError) {
-        console.error('Error loading student roles:', rolesError);
-        throw rolesError;
+      if (userRole === 'professor' && userId) {
+        // Para professores: buscar alunos apenas das turmas onde é main_teacher_id
+        const { data: classStudents, error: classError } = await supabase
+          .from('class_students')
+          .select(`
+            student_id,
+            classes!inner(main_teacher_id)
+          `)
+          .eq('classes.main_teacher_id', userId);
+
+        if (classError) {
+          console.error('Error loading class students for teacher:', classError);
+          throw classError;
+        }
+
+        // Remove duplicates
+        studentIds = [...new Set(classStudents?.map(cs => cs.student_id) || [])];
+      } else if (schoolId) {
+        // Para admin/secretaria: buscar via school_memberships
+        const { data: memberships, error: memberError } = await supabase
+          .from('school_memberships')
+          .select('user_id')
+          .eq('school_id', schoolId)
+          .eq('role', 'aluno');
+
+        if (memberError) {
+          console.error('Error loading school memberships:', memberError);
+          throw memberError;
+        }
+
+        studentIds = memberships?.map(m => m.user_id) || [];
+      } else {
+        // Fallback: user_roles (admin/secretaria conseguem ver)
+        const { data: studentRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'aluno');
+
+        if (rolesError) {
+          console.error('Error loading student roles:', rolesError);
+          throw rolesError;
+        }
+
+        studentIds = studentRoles?.map(r => r.user_id) || [];
       }
-
-      const studentIds = studentRoles?.map(r => r.user_id) || [];
       
       if (studentIds.length === 0) {
         set({ people: [], loading: false });
         return;
       }
 
-      // Depois, buscar profiles desses IDs
+      // Buscar profiles desses IDs
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -129,7 +164,7 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
       const people: Person[] = [];
       if (profiles) {
         for (const row of profiles) {
-          const person = await dbRowToPerson(row, 'aluno'); // Explicitly pass role
+          const person = await dbRowToPerson(row, 'aluno');
           people.push(person);
         }
       }
