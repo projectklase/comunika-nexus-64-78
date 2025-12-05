@@ -7,7 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Challenge } from '@/hooks/useChallenges';
 import { ACTION_TARGET_LABELS, CHALLENGE_TYPE_LABELS, ICON_LABELS } from '@/constants/challenge-labels';
-import { getXPLimit, getXPSuggestion, isXPWithinLimit, XP_ECONOMY_HINTS } from '@/constants/xp-limits';
+import { 
+  getXPLimit, 
+  getXPSuggestion, 
+  isXPWithinLimit, 
+  XP_ECONOMY_HINTS,
+  getMinActionCount,
+  isActionCountValid,
+  getTypeDescription,
+  calculateXPEfficiency
+} from '@/constants/xp-limits';
 import { useToast } from '@/hooks/use-toast';
 import * as Icons from 'lucide-react';
 
@@ -43,6 +52,14 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
   const xpLimit = getXPLimit(formData.type);
   const xpSuggestion = getXPSuggestion(formData.type);
   const isXPOverLimit = formData.xp_reward > xpLimit;
+  
+  // Quantidade mínima e validação
+  const minActionCount = getMinActionCount(formData.type);
+  const isActionCountBelowMin = formData.action_count < minActionCount;
+  const typeDescription = getTypeDescription(formData.type);
+  
+  // Eficiência de XP (para feedback visual)
+  const xpEfficiency = calculateXPEfficiency(formData.xp_reward, formData.action_count);
 
   useEffect(() => {
     if (challenge) {
@@ -72,12 +89,19 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
     }
   }, [challenge, isOpen]);
 
-  // Ajustar XP automaticamente se mudar o tipo e ultrapassar o limite
+  // Ajustar XP e quantidade automaticamente se mudar o tipo
   useEffect(() => {
-    if (formData.xp_reward > xpLimit) {
-      setFormData(prev => ({ ...prev, xp_reward: xpLimit }));
-    }
-  }, [formData.type, xpLimit]);
+    setFormData(prev => {
+      const newXpLimit = getXPLimit(prev.type);
+      const newMinActionCount = getMinActionCount(prev.type);
+      
+      return {
+        ...prev,
+        xp_reward: prev.xp_reward > newXpLimit ? newXpLimit : prev.xp_reward,
+        action_count: prev.action_count < newMinActionCount ? newMinActionCount : prev.action_count,
+      };
+    });
+  }, [formData.type]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +121,16 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
       toast({
         title: 'XP acima do limite',
         description: `Desafios ${CHALLENGE_TYPE_LABELS[formData.type]} podem dar no máximo ${xpLimit} XP.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validação: quantidade mínima de ações
+    if (!isActionCountValid(formData.type, formData.action_count)) {
+      toast({
+        title: 'Quantidade insuficiente',
+        description: `Desafios ${CHALLENGE_TYPE_LABELS[formData.type]} requerem no mínimo ${minActionCount} ações.`,
         variant: 'destructive',
       });
       return;
@@ -164,6 +198,13 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
                   ))}
                 </SelectContent>
               </Select>
+              {/* Descrição do tipo selecionado */}
+              {typeDescription && (
+                <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                  <Icons.Info className="h-3 w-3 mt-0.5 shrink-0" />
+                  {typeDescription}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -188,15 +229,27 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="action_count">Quantidade</Label>
+              <Label htmlFor="action_count" className="flex items-center justify-between">
+                <span>Quantidade</span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  mín: {minActionCount}
+                </span>
+              </Label>
               <Input
                 id="action_count"
                 type="number"
-                min="1"
+                min={minActionCount}
                 value={formData.action_count}
-                onChange={(e) => setFormData({ ...formData, action_count: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setFormData({ ...formData, action_count: parseInt(e.target.value) || minActionCount })}
+                className={isActionCountBelowMin ? 'border-destructive' : ''}
                 required
               />
+              {isActionCountBelowMin && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <Icons.AlertCircle className="h-3 w-3" />
+                  Mínimo {minActionCount} para {CHALLENGE_TYPE_LABELS[formData.type]}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -283,6 +336,21 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
                 )}
               </div>
             </div>
+
+            {/* Estimativa de eficiência */}
+            {formData.xp_reward > 0 && formData.action_count > 0 && (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-blue-500/10 text-xs text-blue-400 border border-blue-500/20">
+                <Icons.Calculator className="h-4 w-4 shrink-0" />
+                <span>
+                  Eficiência: <strong>{xpEfficiency} XP/ação</strong>
+                  {xpEfficiency > 30 && (
+                    <span className="text-yellow-500 ml-2">
+                      ⚠️ Alto - considere reduzir
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -300,7 +368,7 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting || isActionCountBelowMin || isXPOverLimit}>
               {submitting ? 'Salvando...' : challenge ? 'Atualizar' : 'Criar'}
             </Button>
           </div>
