@@ -9,7 +9,7 @@ import { useStudentGamification } from '@/stores/studentGamification';
 import { Button } from '@/components/ui/button';
 import { RankingList } from '@/components/gamification/RankingList';
 import { ProfileStats } from '@/components/gamification/ProfileStats';
-import { BadgeWithLabel } from '@/components/gamification/BadgeWithLabel';
+import { AchievementBadge } from '@/components/gamification/AchievementBadge';
 import { BadgeSelectorModal } from '@/components/gamification/BadgeSelectorModal';
 import { PublicProfileModal } from '@/components/gamification/PublicProfileModal';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
@@ -194,13 +194,13 @@ export default function AlunoProfile() {
                     ))}
                   </div>
                 ) : equippedBadges.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                  <div className="flex gap-2 justify-center md:justify-start">
                     {equippedBadges.map((badge) => (
                       badge.unlockable && (
-                        <BadgeWithLabel
+                        <AchievementBadge
                           key={badge.id}
                           unlockable={badge.unlockable}
-                          size="md"
+                          size="lg"
                         />
                       )
                     ))}

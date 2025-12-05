@@ -24,7 +24,7 @@ import { useStudentClass } from '@/hooks/useStudentClass';
 import { usePeopleStore } from '@/stores/people-store';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
 import { useUnlockables } from '@/hooks/useUnlockables';
-
+import { BadgeDisplay } from '@/components/gamification/BadgeDisplay';
 import { useUserSettingsStore } from '@/stores/user-settings-store';
 
 interface AppLayoutProps {
@@ -116,13 +116,18 @@ export function AppLayout({ children }: AppLayoutProps) {
               
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center hover:opacity-80 transition-opacity">
-                  <PremiumAvatar 
-                    emoji={equippedAvatar?.emoji || '🐱'}
-                    rarity={equippedAvatar?.rarity as any || 'COMMON'}
-                    size="sm"
-                    className="cursor-pointer"
-                  />
+                <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  <div className="flex items-center gap-1.5">
+                    <PremiumAvatar 
+                      emoji={equippedAvatar?.emoji || '🐱'}
+                      rarity={equippedAvatar?.rarity as any || 'COMMON'}
+                      size="sm"
+                      className="cursor-pointer"
+                    />
+                    {user?.role === 'aluno' && user?.id && (
+                      <BadgeDisplay userId={user.id} maxDisplay={3} />
+                    )}
+                  </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass-card border border-border/50">

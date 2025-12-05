@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trophy, Flame, Coins } from 'lucide-react';
-import { BadgeWithLabel } from './BadgeWithLabel';
+import { AchievementBadge } from './AchievementBadge';
 import { PremiumAvatar } from './PremiumAvatar';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { cn } from '@/lib/utils';
@@ -43,8 +43,7 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
         .limit(5);
       
       if (error) throw error;
-      // Filter only BADGE type (not AVATAR or THEME)
-      return data?.filter(item => item.unlockable?.type === 'BADGE') || [];
+      return data;
     },
     enabled: open && !!studentId,
   });
@@ -116,13 +115,13 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
 
         {/* Badges */}
         {badges.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 py-4">
+          <div className="flex justify-center gap-3 py-4">
             {badges.map((badge) => (
               badge.unlockable && (
-                <BadgeWithLabel
+                <AchievementBadge
                   key={badge.id}
                   unlockable={badge.unlockable as any}
-                  size="md"
+                  size="lg"
                 />
               )
             ))}
