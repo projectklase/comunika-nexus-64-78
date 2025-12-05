@@ -330,7 +330,7 @@ export const useBattle = (battleId?: string) => {
     playCard,
     attack,
     abandonBattle,
-    forceTimeoutTurn: forceTimeoutTurn.mutate,
+    forceTimeoutTurn, // Return full mutation for async access
     endTurn: endTurn.mutate,
     
     isCreating: createBattle.isPending,
