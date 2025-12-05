@@ -20,6 +20,7 @@ import { HeatmapModal } from '@/components/admin/analytics/HeatmapModal';
 import { RetentionModal } from '@/components/admin/analytics/RetentionModal';
 import { OperationalModal } from '@/components/admin/analytics/OperationalModal';
 import { PulseScoreModal } from '@/components/admin/analytics/PulseScoreModal';
+import { AttendanceAnalyticsWidget } from '@/components/admin/AttendanceAnalyticsWidget';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -291,6 +292,11 @@ export default function AdminAnalyticsPage() {
           </div>
         </button>
       </div>
+
+      {/* Widget de Lista de Chamada (condicional) */}
+      <section className="mb-12">
+        <AttendanceAnalyticsWidget />
+      </section>
 
       {/* Dashboard de IA */}
       <Separator className="my-12" />
