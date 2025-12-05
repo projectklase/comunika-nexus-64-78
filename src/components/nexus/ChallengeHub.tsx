@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { BookOpen, CheckCircle, Trophy, Flame, Sparkles, Frown, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, CheckCircle, Trophy, Flame, Sparkles, Star, Frown, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const iconMap = {
@@ -24,6 +24,7 @@ interface Challenge {
   title: string;
   description: string;
   koin_reward: number;
+  xp_reward: number;
   challenge_type: string;
   action_target: string;
   action_count: number;
@@ -41,6 +42,7 @@ interface CompletedChallenge {
   challenges: {
     title: string;
     koin_reward: number;
+    xp_reward?: number;
     icon_name: string;
   };
 }
@@ -61,10 +63,9 @@ export function ChallengeHub() {
       return data as Challenge[];
     },
     enabled: !!user,
-    refetchInterval: 30000, // Refetch a cada 30s
+    refetchInterval: 30000,
   });
 
-  // QOL 2: Histórico de desafios completados (últimos 7 dias)
   const { data: completedChallenges } = useQuery({
     queryKey: ['completed_challenges_history', user?.id],
     queryFn: async () => {
@@ -77,7 +78,7 @@ export function ChallengeHub() {
         .select(`
           id,
           completed_at,
-          challenges(title, koin_reward, icon_name)
+          challenges(title, koin_reward, xp_reward, icon_name)
         `)
         .eq('student_id', user.id)
         .eq('status', 'COMPLETED')
@@ -97,6 +98,8 @@ export function ChallengeHub() {
     const Icon = iconMap[challenge.icon_name as keyof typeof iconMap] || Sparkles;
     const progressPercent = (challenge.current_progress / challenge.action_count) * 100;
     const isComplete = challenge.status === 'COMPLETED';
+    const hasKoins = challenge.koin_reward > 0;
+    const hasXp = (challenge.xp_reward ?? 0) > 0;
 
     return (
       <Card 
@@ -120,9 +123,21 @@ export function ChallengeHub() {
             </div>
             <CardTitle className="text-sm font-medium">{challenge.title}</CardTitle>
           </div>
-          <div className="flex items-center gap-1">
-            <Sparkles className="h-3 w-3 text-yellow-500" />
-            <span className="text-xs font-bold text-yellow-500">+{challenge.koin_reward}</span>
+          
+          {/* Recompensas condicionais */}
+          <div className="flex items-center gap-2">
+            {hasKoins && (
+              <div className="flex items-center gap-1">
+                <Sparkles className="h-3 w-3 text-yellow-500" />
+                <span className="text-xs font-bold text-yellow-500">+{challenge.koin_reward}</span>
+              </div>
+            )}
+            {hasXp && (
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 text-blue-400" />
+                <span className="text-xs font-bold text-blue-400">+{challenge.xp_reward}</span>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -197,7 +212,7 @@ export function ChallengeHub() {
           </h3>
         </div>
         <p className="text-xs text-muted-foreground">
-          Complete desafios e ganhe Koins para trocar na loja!
+          Complete desafios e ganhe Koins e XP!
         </p>
       </div>
 
@@ -229,7 +244,7 @@ export function ChallengeHub() {
         </div>
       )}
 
-      {/* QOL 2: Histórico de desafios completados */}
+      {/* Histórico de desafios completados */}
       <Collapsible open={showHistory} onOpenChange={setShowHistory} className="space-y-2">
         <CollapsibleTrigger asChild>
           <Button 
@@ -243,20 +258,34 @@ export function ChallengeHub() {
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-2">
           {completedChallenges && completedChallenges.length > 0 ? (
-            completedChallenges.map((c) => (
-              <div 
-                key={c.id} 
-                className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                  <span className="text-xs font-medium">{c.challenges.title}</span>
+            completedChallenges.map((c) => {
+              const hasKoins = c.challenges.koin_reward > 0;
+              const hasXp = (c.challenges.xp_reward ?? 0) > 0;
+              
+              return (
+                <div 
+                  key={c.id} 
+                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                    <span className="text-xs font-medium">{c.challenges.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {hasKoins && (
+                      <Badge variant="secondary" className="text-xs bg-yellow-500/10 text-yellow-500">
+                        +{c.challenges.koin_reward} Koins
+                      </Badge>
+                    )}
+                    {hasXp && (
+                      <Badge variant="secondary" className="text-xs bg-blue-400/10 text-blue-400">
+                        +{c.challenges.xp_reward} XP
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <Badge variant="secondary" className="text-xs">
-                  +{c.challenges.koin_reward} Koins
-                </Badge>
-              </div>
-            ))
+              );
+            })
           ) : (
             <p className="text-xs text-center text-muted-foreground py-4">
               Nenhum desafio completado nos últimos 7 dias
@@ -269,7 +298,7 @@ export function ChallengeHub() {
       <Card className="glass-card border-primary/20 bg-primary/5">
         <CardContent className="p-3">
           <p className="text-xs text-center text-muted-foreground">
-            💡 <span className="font-medium">Dica:</span> Os Koins são creditados automaticamente quando você completa um desafio!
+            💡 <span className="font-medium">Dica:</span> Koins e XP são creditados automaticamente quando você completa um desafio!
           </p>
         </CardContent>
       </Card>

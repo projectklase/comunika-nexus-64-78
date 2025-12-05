@@ -10,6 +10,7 @@ export interface Challenge {
   action_target: string;
   action_count: number;
   koin_reward: number;
+  xp_reward?: number;
   icon_name: string;
   is_active: boolean;
   created_at: string;

@@ -412,6 +412,7 @@ export type Database = {
           title: string
           type: string
           updated_at: string
+          xp_reward: number | null
         }
         Insert: {
           action_count?: number
@@ -426,6 +427,7 @@ export type Database = {
           title: string
           type: string
           updated_at?: string
+          xp_reward?: number | null
         }
         Update: {
           action_count?: number
@@ -440,6 +442,7 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+          xp_reward?: number | null
         }
         Relationships: [
           {
@@ -2167,15 +2170,26 @@ export type Database = {
         Args: { days_to_keep?: number }
         Returns: number
       }
-      complete_challenge_and_reward: {
-        Args: {
-          p_challenge_title: string
-          p_koin_reward: number
-          p_student_challenge_id: string
-          p_student_id: string
-        }
-        Returns: undefined
-      }
+      complete_challenge_and_reward:
+        | {
+            Args: {
+              p_challenge_title: string
+              p_koin_reward: number
+              p_student_challenge_id: string
+              p_student_id: string
+              p_xp_reward: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_challenge_title: string
+              p_koin_reward: number
+              p_student_challenge_id: string
+              p_student_id: string
+            }
+            Returns: undefined
+          }
       end_turn: {
         Args: { p_battle_id: string; p_player_id: string }
         Returns: Json
@@ -2246,6 +2260,7 @@ export type Database = {
           status: string
           student_challenge_id: string
           title: string
+          xp_reward: number
         }[]
       }
       get_user_role: { Args: { _user_id: string }; Returns: string }
