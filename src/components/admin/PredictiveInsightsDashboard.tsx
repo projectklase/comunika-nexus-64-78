@@ -16,8 +16,10 @@ import {
   Zap,
   Target,
   Loader2,
+  ClipboardList,
+  AlertCircle,
 } from 'lucide-react';
-import { SeverityLevel, TrendLevel, PriorityLevel, SchoolInsights } from '@/types/school-insights';
+import { SeverityLevel, TrendLevel, PriorityLevel, AttendanceStatus, SchoolInsights } from '@/types/school-insights';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +42,15 @@ function getTrendConfig(trend: TrendLevel) {
     growing: { color: 'text-green-500', icon: TrendingUp, label: 'Crescente' },
   };
   return configs[trend];
+}
+
+function getAttendanceStatusConfig(status: AttendanceStatus) {
+  const configs = {
+    critical: { color: 'text-red-500', bg: 'bg-red-500/10', icon: AlertTriangle, label: 'Crítico' },
+    warning: { color: 'text-amber-500', bg: 'bg-amber-500/10', icon: AlertCircle, label: 'Atenção' },
+    healthy: { color: 'text-green-500', bg: 'bg-green-500/10', icon: CheckCircle2, label: 'Saudável' },
+  };
+  return configs[status];
 }
 
 function getPriorityConfig(priority: PriorityLevel) {
@@ -237,6 +248,61 @@ export function PredictiveInsightsDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Card de Presença (condicional) */}
+        {insights.attendanceInsights && (() => {
+          const attendanceConfig = getAttendanceStatusConfig(insights.attendanceInsights.status);
+          const AttendanceIcon = attendanceConfig.icon;
+          return (
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className={`h-5 w-5 ${attendanceConfig.color}`} />
+                  Análise de Frequência
+                </CardTitle>
+                <CardDescription>
+                  <Badge className={attendanceConfig.bg + ' ' + attendanceConfig.color}>
+                    <AttendanceIcon className="h-3 w-3 mr-1" />
+                    {attendanceConfig.label}
+                  </Badge>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Situação Atual
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {insights.attendanceInsights.summary}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      Correlação com Evasão
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {insights.attendanceInsights.correlationWithEvasion}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Recomendações</h4>
+                  <ul className="space-y-2">
+                    {insights.attendanceInsights.recommendations.map((rec, idx) => (
+                      <li key={idx} className="text-sm flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
 
       {/* Ações Prioritárias */}
