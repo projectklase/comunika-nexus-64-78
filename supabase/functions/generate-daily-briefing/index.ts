@@ -12,6 +12,7 @@ const corsHeaders = {
 interface AnalyticsContext {
   evasionAnalytics: any;
   postReadAnalytics: any;
+  attendanceAnalytics?: any;
 }
 
 Deno.serve(async (req) => {
@@ -93,12 +94,42 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Verificar se a escola tem attendance_enabled
+        const { data: attendanceFeature } = await supabaseAdmin
+          .from("school_settings")
+          .select("value")
+          .eq("school_id", school.id)
+          .eq("key", "attendance_enabled")
+          .single();
+
+        const isAttendanceEnabled = attendanceFeature?.value === true;
+        let attendanceData = null;
+
+        if (isAttendanceEnabled) {
+          console.log(`[CRON Job] 📋 Buscando dados de frequência para ${school.name}...`);
+          
+          const { data: attData, error: attError } = await supabaseAdmin
+            .rpc("get_attendance_analytics", { 
+              days_filter: daysFilter,
+              school_id_param: school.id 
+            });
+
+          if (attError) {
+            console.warn(`[CRON Job] ⚠️ Erro ao buscar attendance analytics para ${school.name}:`, attError);
+            // Não falhar, apenas continuar sem dados de frequência
+          } else {
+            attendanceData = attData;
+            console.log(`[CRON Job] ✅ Dados de frequência carregados para ${school.name}`);
+          }
+        }
+
         console.log(`[CRON Job] ✅ KPIs carregados para ${school.name}`);
 
         // Preparar contexto para a IA
         const analyticsContext: AnalyticsContext = {
           evasionAnalytics: evasionData,
           postReadAnalytics: postReadData,
+          ...(attendanceData && { attendanceAnalytics: attendanceData }),
         };
 
         // Chamar IA Lovable
@@ -137,6 +168,14 @@ Você está auxiliando um ADMINISTRADOR ESCOLAR (não um desenvolvedor). Suas re
 4. Sugerir ações administrativas para retenção de alunos
 5. Identificar oportunidades de captação baseadas no calendário atual
 6. Propor eventos, campanhas e iniciativas para atração de novos alunos
+7. **ANÁLISE DE FREQUÊNCIA**: Se dados de frequência estiverem disponíveis, identificar alunos e turmas com padrão de faltas preocupante
+
+**ANÁLISE DE FREQUÊNCIA (quando dados disponíveis):**
+- Identificar alunos com alto número de faltas que precisam de atenção
+- Correlacionar ausências com risco de evasão (faltas frequentes = sinal de abandono)
+- Destacar turmas com taxa de presença abaixo do aceitável (< 80%)
+- Recomendar ações específicas: contato com família, reunião com coordenação, acompanhamento pedagógico
+- Priorizar alunos com faltas consecutivas (maior urgência)
 
 **TIPOS DE RECOMENDAÇÕES PERMITIDAS:**
 ✅ Entrar em contato com alunos específicos (email, telefone, WhatsApp)
@@ -149,6 +188,8 @@ Você está auxiliando um ADMINISTRADOR ESCOLAR (não um desenvolvedor). Suas re
 ✅ Desenvolver ações de marketing educacional (redes sociais, anúncios)
 ✅ Criar parcerias com empresas ou instituições
 ✅ Organizar dias de portas abertas, aulas experimentais ou demonstrativas
+✅ Contatar famílias de alunos com faltas excessivas
+✅ Agendar reuniões de acompanhamento pedagógico
 
 **TIPOS DE RECOMENDAÇÕES PROIBIDAS:**
 ❌ NUNCA sugira implementar funcionalidades técnicas no sistema
@@ -168,6 +209,17 @@ Sempre inclua pelo menos UMA recomendação de captação baseada na data atual,
 
 Seja estratégico, objetivo e focado em resultados mensuráveis.`;
 
+        const attendancePromptSection = attendanceData ? `
+**DADOS DE FREQUÊNCIA/LISTA DE CHAMADA:**
+Os dados de frequência abaixo mostram a situação de presença e ausência dos alunos. Analise com atenção especial:
+- Taxa geral de presença da escola
+- Turmas com baixa frequência
+- Alunos com padrão de faltas preocupante
+- Correlação entre faltas e risco de evasão
+
+IMPORTANTE: Alunos que faltam frequentemente são fortes candidatos a abandono escolar. Priorize ações de retenção para esses casos.
+` : '';
+
         const userPrompt = `DATA ATUAL: ${currentDate}
 
 Analise os seguintes indicadores educacionais da escola "${school.name}":
@@ -176,6 +228,7 @@ Analise os seguintes indicadores educacionais da escola "${school.name}":
 
 **Dados Estatísticos Disponíveis:**
 ${JSON.stringify(analyticsContext, null, 2)}
+${attendancePromptSection}
 
 **INSTRUÇÕES CRÍTICAS PARA ANÁLISE:**
 1. Interprete os números e transforme em insights claros e naturais
@@ -183,16 +236,156 @@ ${JSON.stringify(analyticsContext, null, 2)}
 3. Use linguagem profissional adequada para gestores escolares (não desenvolvedores)
 4. Gere recomendações práticas e executáveis
 5. Evite qualquer jargão de TI, programação ou banco de dados
+${attendanceData ? '6. PRIORIZE a análise de frequência - alunos com muitas faltas precisam de atenção URGENTE' : ''}
 
 **ESTRUTURA ESPERADA:**
 1. Análise do risco de evasão com ações práticas de retenção
 2. Avaliação do engajamento com oportunidades de melhoria
-3. Ações prioritárias para o administrador executar
-4. Pelo menos UMA estratégia de captação de novos alunos baseada no calendário/época atual
+${attendanceData ? '3. Análise detalhada de frequência com identificação de alunos e turmas em risco' : ''}
+${attendanceData ? '4' : '3'}. Ações prioritárias para o administrador executar
+${attendanceData ? '5' : '4'}. Pelo menos UMA estratégia de captação de novos alunos baseada no calendário/época atual
 
 Use a função generate_insights para estruturar sua resposta com linguagem 100% natural.`;
 
         console.log(`[CRON Job] 🤖 Chamando IA Lovable para ${school.name}...`);
+
+        // Build tools schema - add attendanceInsights if attendance data is available
+        const toolsSchema: any = {
+          evasionInsights: {
+            type: "object",
+            properties: {
+              severity: {
+                type: "string",
+                enum: ["low", "medium", "high", "critical"],
+                description: "Nível de severidade do risco de evasão",
+              },
+              prediction: {
+                type: "string",
+                description: "Análise preditiva sobre evasão",
+              },
+              recommendations: {
+                type: "array",
+                items: { type: "string" },
+                description: "Lista de 3-5 recomendações práticas e executáveis pelo administrador (sem sugestões técnicas). Exemplos: contatar alunos inativos, agendar reuniões, criar eventos",
+              },
+            },
+            required: ["severity", "prediction", "recommendations"],
+          },
+          engagementInsights: {
+            type: "object",
+            properties: {
+              trend: {
+                type: "string",
+                enum: ["declining", "stable", "growing"],
+                description: "Tendência de engajamento",
+              },
+              analysis: {
+                type: "string",
+                description: "Análise qualitativa do engajamento",
+              },
+              opportunities: {
+                type: "array",
+                items: { type: "string" },
+                description: "Lista de 3-5 oportunidades pedagógicas e administrativas. Exemplos: workshops, dinâmicas de grupo, ações de mentoria",
+              },
+            },
+            required: ["trend", "analysis", "opportunities"],
+          },
+          priorityActions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                action: {
+                  type: "string",
+                  description: "Descrição da ação prática (eventos, campanhas, contatos, reuniões, ajustes pedagógicos). NUNCA sugerir desenvolvimento de funcionalidades técnicas",
+                },
+                priority: {
+                  type: "string",
+                  enum: ["low", "medium", "high"],
+                  description: "Nível de prioridade",
+                },
+                impact: {
+                  type: "string",
+                  description: "Impacto esperado",
+                },
+              },
+              required: ["action", "priority", "impact"],
+            },
+            description: "Lista de 3-5 ações prioritárias. OBRIGATÓRIO: incluir pelo menos uma ação de captação de alunos baseada na data/época atual (ex: campanha Black Friday, aula demonstrativa, evento de portas abertas)",
+          },
+          predictions: {
+            type: "object",
+            properties: {
+              nextWeekTrend: {
+                type: "string",
+                description: "Previsão de tendência para próxima semana",
+              },
+              riskForecast: {
+                type: "string",
+                description: "Previsão de risco futuro",
+              },
+            },
+            required: ["nextWeekTrend", "riskForecast"],
+          },
+        };
+
+        // Add attendanceInsights to schema if attendance data available
+        if (attendanceData) {
+          toolsSchema.attendanceInsights = {
+            type: "object",
+            properties: {
+              status: {
+                type: "string",
+                enum: ["critical", "warning", "healthy"],
+                description: "Status geral da frequência escolar",
+              },
+              summary: {
+                type: "string",
+                description: "Resumo executivo da situação de frequência da escola em linguagem clara para gestores",
+              },
+              studentsNeedingAttention: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    description: {
+                      type: "string",
+                      description: "Descrição do aluno ou grupo de alunos que precisam de atenção (ex: 'Alunos do 3º Ano com mais de 5 faltas')",
+                    },
+                    urgency: {
+                      type: "string",
+                      enum: ["immediate", "soon", "monitor"],
+                      description: "Nível de urgência para ação",
+                    },
+                  },
+                  required: ["description", "urgency"],
+                },
+                description: "Lista de alunos ou grupos que precisam de atenção especial por conta de faltas",
+              },
+              classesWithLowAttendance: {
+                type: "array",
+                items: { type: "string" },
+                description: "Lista de turmas com taxa de presença abaixo de 80%",
+              },
+              correlationWithEvasion: {
+                type: "string",
+                description: "Análise da correlação entre faltas frequentes e risco de abandono escolar",
+              },
+              recommendations: {
+                type: "array",
+                items: { type: "string" },
+                description: "Lista de 3-5 ações específicas para melhorar a frequência (contato com famílias, reuniões, acompanhamento)",
+              },
+            },
+            required: ["status", "summary", "correlationWithEvasion", "recommendations"],
+          };
+        }
+
+        const requiredFields = ["evasionInsights", "engagementInsights", "priorityActions", "predictions"];
+        if (attendanceData) {
+          requiredFields.push("attendanceInsights");
+        }
 
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -211,89 +404,11 @@ Use a função generate_insights para estruturar sua resposta com linguagem 100%
                 type: "function",
                 function: {
                   name: "generate_insights",
-                  description: "Gera insights estruturados sobre risco de evasão, engajamento, ações prioritárias e previsões futuras",
+                  description: "Gera insights estruturados sobre risco de evasão, engajamento, frequência, ações prioritárias e previsões futuras",
                   parameters: {
                     type: "object",
-                    properties: {
-                      evasionInsights: {
-                        type: "object",
-                        properties: {
-                          severity: {
-                            type: "string",
-                            enum: ["low", "medium", "high", "critical"],
-                            description: "Nível de severidade do risco de evasão",
-                          },
-                          prediction: {
-                            type: "string",
-                            description: "Análise preditiva sobre evasão",
-                          },
-                          recommendations: {
-                            type: "array",
-                            items: { type: "string" },
-                            description: "Lista de 3-5 recomendações práticas e executáveis pelo administrador (sem sugestões técnicas). Exemplos: contatar alunos inativos, agendar reuniões, criar eventos",
-                          },
-                        },
-                        required: ["severity", "prediction", "recommendations"],
-                      },
-                      engagementInsights: {
-                        type: "object",
-                        properties: {
-                          trend: {
-                            type: "string",
-                            enum: ["declining", "stable", "growing"],
-                            description: "Tendência de engajamento",
-                          },
-                          analysis: {
-                            type: "string",
-                            description: "Análise qualitativa do engajamento",
-                          },
-                          opportunities: {
-                            type: "array",
-                            items: { type: "string" },
-                            description: "Lista de 3-5 oportunidades pedagógicas e administrativas. Exemplos: workshops, dinâmicas de grupo, ações de mentoria",
-                          },
-                        },
-                        required: ["trend", "analysis", "opportunities"],
-                      },
-                      priorityActions: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            action: {
-                              type: "string",
-                              description: "Descrição da ação prática (eventos, campanhas, contatos, reuniões, ajustes pedagógicos). NUNCA sugerir desenvolvimento de funcionalidades técnicas",
-                            },
-                            priority: {
-                              type: "string",
-                              enum: ["low", "medium", "high"],
-                              description: "Nível de prioridade",
-                            },
-                            impact: {
-                              type: "string",
-                              description: "Impacto esperado",
-                            },
-                          },
-                          required: ["action", "priority", "impact"],
-                        },
-                        description: "Lista de 3-5 ações prioritárias. OBRIGATÓRIO: incluir pelo menos uma ação de captação de alunos baseada na data/época atual (ex: campanha Black Friday, aula demonstrativa, evento de portas abertas)",
-                      },
-                      predictions: {
-                        type: "object",
-                        properties: {
-                          nextWeekTrend: {
-                            type: "string",
-                            description: "Previsão de tendência para próxima semana",
-                          },
-                          riskForecast: {
-                            type: "string",
-                            description: "Previsão de risco futuro",
-                          },
-                        },
-                        required: ["nextWeekTrend", "riskForecast"],
-                      },
-                    },
-                    required: ["evasionInsights", "engagementInsights", "priorityActions", "predictions"],
+                    properties: toolsSchema,
+                    required: requiredFields,
                   },
                 },
               },
@@ -324,7 +439,7 @@ Use a função generate_insights para estruturar sua resposta com linguagem 100%
         }
 
         const insights = JSON.parse(toolCall.function.arguments);
-        console.log(`[CRON Job] ✅ Insights extraídos com sucesso para ${school.name}`);
+        console.log(`[CRON Job] ✅ Insights extraídos com sucesso para ${school.name}${attendanceData ? ' (incluindo frequência)' : ''}`);
 
         // Salvar no banco com school_id
         const { error: updateError } = await supabaseAdmin
@@ -335,6 +450,7 @@ Use a função generate_insights para estruturar sua resposta com linguagem 100%
             value: {
               insights: insights,
               generatedAt: new Date().toISOString(),
+              includesAttendance: !!attendanceData,
             },
           }]);
 
@@ -345,7 +461,7 @@ Use a função generate_insights para estruturar sua resposta com linguagem 100%
         }
 
         console.log(`[CRON Job] 🎉 Insights salvos com sucesso para ${school.name}!`);
-        results.push({ school: school.name, status: 'success' });
+        results.push({ school: school.name, status: 'success', includesAttendance: !!attendanceData });
 
       } catch (schoolError) {
         console.error(`[CRON Job] ❌ Erro ao processar ${school.name}:`, schoolError);
