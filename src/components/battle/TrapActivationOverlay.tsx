@@ -5,6 +5,7 @@ interface TrapActivationOverlayProps {
   isVisible: boolean;
   trapName: string;
   trapDescription: string;
+  trapImage?: string;
   onComplete?: () => void;
 }
 
@@ -12,6 +13,7 @@ export const TrapActivationOverlay = ({
   isVisible,
   trapName,
   trapDescription,
+  trapImage,
   onComplete,
 }: TrapActivationOverlayProps) => {
   return (
@@ -82,6 +84,33 @@ export const TrapActivationOverlay = ({
 
             {/* Trap card visual */}
             <div className="relative bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-950 rounded-2xl p-6 border-2 border-purple-400/50 shadow-2xl min-w-[320px] max-w-[400px]">
+              {/* Trap Card Image */}
+              {trapImage ? (
+                <motion.div
+                  className="relative w-28 h-36 mx-auto mb-4 rounded-lg overflow-hidden border-2 border-purple-400/50 shadow-xl"
+                  initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
+                  animate={{ rotateY: 0, scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.15, duration: 0.5, type: 'spring' }}
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  <img 
+                    src={trapImage} 
+                    alt={trapName}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Glow effect on card */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-500/40 to-transparent" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  className="w-20 h-20 mx-auto mb-4 rounded-full bg-purple-500/30 flex items-center justify-center border-2 border-purple-400/50"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
+                  transition={{ delay: 0.15, type: 'spring' }}
+                >
+                  <Shield className="w-10 h-10 text-purple-300" />
+                </motion.div>
+              )}
               {/* Top decorative border */}
               <motion.div
                 className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"

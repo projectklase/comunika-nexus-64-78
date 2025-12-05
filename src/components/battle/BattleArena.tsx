@@ -86,7 +86,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [duelStartComplete, setDuelStartComplete] = useState(false);
   const [showSetupAnnouncement, setShowSetupAnnouncement] = useState(false);
   const [actualTimerStart, setActualTimerStart] = useState<string | null>(null);
-  const [trapOverlay, setTrapOverlay] = useState<{ name: string; description: string } | null>(null);
+  const [trapOverlay, setTrapOverlay] = useState<{ name: string; description: string; image?: string } | null>(null);
   const [attackAnimation, setAttackAnimation] = useState<AttackAnimationData | null>(null);
   const [defeatedCard, setDefeatedCard] = useState<DefeatedCardData | null>(null);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -323,7 +323,13 @@ const [player1Profile, setPlayer1Profile] = useState<{
       const trapName = latestTrap.trap || "Trap Card";
       const trapEffect = latestTrap.message || getTrapEffectDescription(latestTrap.effect);
       
-      setTrapOverlay({ name: trapName, description: trapEffect });
+      // Find trap card image from allCards
+      const trapCard = allCards?.find(c => 
+        c.name?.toLowerCase() === trapName.toLowerCase() && 
+        c.card_type === 'TRAP'
+      );
+      
+      setTrapOverlay({ name: trapName, description: trapEffect, image: trapCard?.image_url || undefined });
       playSpellSound();
       
       // Auto-hide after 2.5 seconds
@@ -333,7 +339,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
     }
     
     lastTrapLogCountRef.current = trapEntries.length;
-  }, [battleLog, playSpellSound]);
+  }, [battleLog, playSpellSound, allCards]);
 
   // Detect defeated monsters
   useEffect(() => {
@@ -700,6 +706,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           isVisible={trapOverlay !== null}
           trapName={trapOverlay?.name || ''}
           trapDescription={trapOverlay?.description || ''}
+          trapImage={trapOverlay?.image}
         />
 
         {/* Monster Attack Animation */}
