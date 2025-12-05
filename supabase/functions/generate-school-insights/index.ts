@@ -119,6 +119,16 @@ serve(async (req) => {
 
     const schoolId = profileData.current_school_id;
 
+    // Verificar se attendance está habilitado para esta escola
+    const { data: attendanceSetting } = await supabase
+      .from('school_settings')
+      .select('value')
+      .eq('school_id', schoolId)
+      .eq('key', 'attendance_enabled')
+      .maybeSingle();
+
+    const isAttendanceEnabled = attendanceSetting?.value?.enabled === true;
+
     // Buscar dados de analytics
     const { data: evasionData, error: evasionError } = await supabase.rpc(
       "get_evasion_risk_analytics",
@@ -136,6 +146,21 @@ serve(async (req) => {
       }
     );
 
+    // Buscar dados de presença se habilitado
+    let attendanceData = null;
+    if (isAttendanceEnabled) {
+      const { data, error } = await supabase.rpc(
+        "get_attendance_analytics",
+        { 
+          days_filter: daysFilter,
+          school_id_param: schoolId
+        }
+      );
+      if (!error) {
+        attendanceData = data;
+      }
+    }
+
     if (evasionError || postReadError) {
       console.error("Erro ao buscar analytics:", evasionError || postReadError);
       return new Response(
@@ -145,7 +170,7 @@ serve(async (req) => {
     }
 
     // Preparar contexto para IA
-    const analyticsContext = {
+    const analyticsContext: Record<string, any> = {
       evasion: {
         studentsAtRisk: evasionData.students_at_risk_count,
         worstClass: evasionData.worst_class_name,
@@ -162,6 +187,20 @@ serve(async (req) => {
       },
       period: daysFilter,
     };
+
+    // Adicionar dados de presença se disponíveis
+    if (attendanceData) {
+      analyticsContext.attendance = {
+        attendanceRate: attendanceData.attendance_rate,
+        absenceRate: attendanceData.absence_rate,
+        totalRecords: attendanceData.total_records,
+        totalPresent: attendanceData.total_present,
+        totalAbsent: attendanceData.total_absent,
+        totalJustified: attendanceData.total_justified,
+        studentsWithHighAbsence: attendanceData.students_with_high_absence?.slice(0, 5) || [],
+        classesWithLowAttendance: attendanceData.classes_with_low_attendance?.slice(0, 3) || [],
+      };
+    }
 
     const systemPrompt = `Você é um consultor educacional especializado em gestão escolar e análise de dados educacionais.
 
@@ -191,6 +230,7 @@ Você receberá dados estatísticos sobre:
 - Informações sobre turmas com dificuldades
 - Taxas de leitura e engajamento dos alunos
 - Quantidade de publicações e interações
+${attendanceData ? '- Dados de presença/frequência nas aulas (lista de chamada)' : ''}
 
 **SUA RESPONSABILIDADE:**
 1. Interpretar os dados estatísticos e transformá-los em insights compreensíveis
@@ -198,8 +238,20 @@ Você receberá dados estatísticos sobre:
 3. Usar linguagem natural e profissional
 4. Evitar qualquer termo técnico de sistemas ou banco de dados
 5. Focar em ações práticas para gestores escolares
+${attendanceData ? '6. Correlacionar faltas excessivas com risco de evasão quando aplicável' : ''}
 
 Período de análise: ${daysFilter} dias`;
+
+    // Construir prompt de presença condicionalmente
+    const attendanceSection = attendanceData ? `
+**INDICADORES DE PRESENÇA (Lista de Chamada):**
+- Taxa de presença geral: ${analyticsContext.attendance.attendanceRate}%
+- Taxa de faltas: ${analyticsContext.attendance.absenceRate}%
+- Total de registros de chamada: ${analyticsContext.attendance.totalRecords}
+- Presenças: ${analyticsContext.attendance.totalPresent} | Faltas: ${analyticsContext.attendance.totalAbsent} | Justificadas: ${analyticsContext.attendance.totalJustified}
+- Alunos com muitas faltas: ${analyticsContext.attendance.studentsWithHighAbsence.length > 0 ? analyticsContext.attendance.studentsWithHighAbsence.map((s: any) => `${s.name} (${s.absences} faltas)`).join(', ') : 'Nenhum identificado'}
+- Turmas com baixa frequência: ${analyticsContext.attendance.classesWithLowAttendance.length > 0 ? analyticsContext.attendance.classesWithLowAttendance.map((c: any) => `${c.name} (${c.attendance_rate}%)`).join(', ') : 'Nenhuma identificada'}
+` : '';
 
     const userPrompt = `Analise os seguintes indicadores educacionais e gere insights estratégicos:
 
@@ -212,15 +264,16 @@ Período de análise: ${daysFilter} dias`;
 - Total de publicações realizadas: ${analyticsContext.engagement.totalPosts}
 - Total de leituras registradas: ${analyticsContext.engagement.totalReads}
 - Taxa média de leitura: ${analyticsContext.engagement.avgReadRate}%
-
+${attendanceSection}
 **INSTRUÇÕES CRÍTICAS:**
 1. NÃO mencione nomes de campos técnicos em nenhuma hipótese
 2. Use apenas linguagem natural e profissional
 3. Interprete os números e transforme em insights acionáveis
 4. Foque em recomendações práticas para gestores educacionais
 5. Evite jargões de TI, programação ou banco de dados
+${attendanceData ? '6. IMPORTANTE: Correlacione os dados de presença com o risco de evasão - alunos faltosos frequentemente estão em risco' : ''}
 
-Use a função generate_insights para estruturar sua resposta de forma clara e sem termos técnicos.`;
+Use a função generate_insights para estruturar sua resposta de forma clara e sem termos técnicos.${attendanceData ? ' Inclua attendanceInsights na resposta com análise detalhada da frequência.' : ''}`;
 
     // Chamar Lovable AI
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -279,6 +332,22 @@ Use a função generate_insights para estruturar sua resposta de forma clara e s
                       },
                     },
                     required: ["trend", "analysis", "opportunities"],
+                  },
+                  attendanceInsights: {
+                    type: "object",
+                    description: "Insights sobre frequência/presença. Incluir apenas se dados de chamada estiverem disponíveis.",
+                    properties: {
+                      status: { type: "string", enum: ["critical", "warning", "healthy"] },
+                      summary: { type: "string", description: "Resumo da situação de frequência da escola" },
+                      correlationWithEvasion: { type: "string", description: "Análise de como as faltas se correlacionam com risco de evasão" },
+                      recommendations: {
+                        type: "array",
+                        items: { type: "string" },
+                        minItems: 1,
+                        maxItems: 3,
+                      },
+                    },
+                    required: ["status", "summary", "correlationWithEvasion", "recommendations"],
                   },
                   priorityActions: {
                     type: "array",

@@ -1,6 +1,7 @@
 export type SeverityLevel = "low" | "medium" | "high" | "critical";
 export type TrendLevel = "declining" | "stable" | "growing";
 export type PriorityLevel = "low" | "medium" | "high";
+export type AttendanceStatus = "critical" | "warning" | "healthy";
 
 export interface EvasionInsights {
   severity: SeverityLevel;
@@ -12,6 +13,13 @@ export interface EngagementInsights {
   trend: TrendLevel;
   analysis: string;
   opportunities: string[];
+}
+
+export interface AttendanceInsights {
+  status: AttendanceStatus;
+  summary: string;
+  correlationWithEvasion: string;
+  recommendations: string[];
 }
 
 export interface PriorityAction {
@@ -28,6 +36,7 @@ export interface Predictions {
 export interface SchoolInsights {
   evasionInsights: EvasionInsights;
   engagementInsights: EngagementInsights;
+  attendanceInsights?: AttendanceInsights;
   priorityActions: PriorityAction[];
   predictions: Predictions;
 }
