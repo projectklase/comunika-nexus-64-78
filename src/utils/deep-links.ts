@@ -91,7 +91,7 @@ export async function navigateWithScroll(
     case 'calendar-day': {
       // Navigate to calendar and open day
       const calendarPath = target.classId 
-        ? `/professor/calendario/turma/${target.classId}`
+        ? `/professor/turma/${target.classId}/calendario`
         : '/aluno/calendario';
         
       navigate(`${calendarPath}?date=${target.date}`, { replace });
@@ -112,7 +112,7 @@ export async function navigateWithScroll(
     case 'calendar-event': {
       // Navigate to calendar and focus event
       const calendarPath = target.classId 
-        ? `/professor/calendario/turma/${target.classId}`
+        ? `/professor/turma/${target.classId}/calendario`
         : '/aluno/calendario';
         
       navigate(`${calendarPath}?event=${target.id}`, { replace });
@@ -205,7 +205,7 @@ export function generatePostLink(postId: string, classId?: string): string {
  */
 export function generateCalendarLink(date: string, eventId?: string, classId?: string): string {
   // Default to current user's calendar
-  const base = classId ? `/professor/calendario/turma/${classId}` : '/calendario';
+  const base = classId ? `/professor/turma/${classId}/calendario` : '/calendario';
   const params = new URLSearchParams({ date });
   if (eventId) params.set('event', eventId);
   
