@@ -2266,6 +2266,10 @@ export type Database = {
         Args: { p_battle_id: string; p_player_id: string }
         Returns: Json
       }
+      get_attendance_analytics: {
+        Args: { days_filter?: number; school_id_param?: string }
+        Returns: Json
+      }
       get_class_performance_analytics: {
         Args: { days_filter?: number; p_class_id: string }
         Returns: Json
