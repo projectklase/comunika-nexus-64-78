@@ -25,6 +25,7 @@ import { BattlePhaseAnnouncement } from './BattlePhaseAnnouncement';
 import { TrapActivationOverlay } from './TrapActivationOverlay';
 import { MonsterAttackAnimation } from './MonsterAttackAnimation';
 import { DefeatedCardEffect } from './DefeatedCardEffect';
+import { TimeoutOverlay } from './TimeoutOverlay';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -89,6 +90,8 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [trapOverlay, setTrapOverlay] = useState<{ name: string; description: string; image?: string } | null>(null);
   const [attackAnimation, setAttackAnimation] = useState<AttackAnimationData | null>(null);
   const [defeatedCard, setDefeatedCard] = useState<DefeatedCardData | null>(null);
+  const [showTimeoutOverlay, setShowTimeoutOverlay] = useState(false);
+  const [timeoutNextPlayerName, setTimeoutNextPlayerName] = useState('');
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTurnStartRef = useRef<string | null>(null);
   const lastTrapTimestampRef = useRef<string>('0');
@@ -486,10 +489,32 @@ const [player1Profile, setPlayer1Profile] = useState<{
     navigate('/aluno/batalha');
   };
 
-  const handleTurnTimeout = useCallback(() => {
-    if (!battle?.id) return;
-    forceTimeoutTurn?.(battle.id);
-  }, [battle?.id, forceTimeoutTurn]);
+  const handleTurnTimeout = useCallback(async () => {
+    if (!battle?.id || !forceTimeoutTurn) return;
+    
+    try {
+      // Call the RPC to force turn switch
+      const result = await forceTimeoutTurn.mutateAsync(battle.id);
+      
+      // Show timeout overlay if turn actually passed
+      if (result?.turn_passed || result?.timeout_occurred) {
+        // Determine next player name
+        const nextPlayerName = result?.new_turn === 'PLAYER1' 
+          ? (player1Profile?.name || 'Jogador 1')
+          : (player2Profile?.name || 'Jogador 2');
+        
+        setTimeoutNextPlayerName(nextPlayerName);
+        setShowTimeoutOverlay(true);
+        
+        // Auto-hide after 2.5 seconds
+        setTimeout(() => {
+          setShowTimeoutOverlay(false);
+        }, 2500);
+      }
+    } catch (error) {
+      console.error('Timeout error:', error);
+    }
+  }, [battle?.id, forceTimeoutTurn, player1Profile?.name, player2Profile?.name]);
 
   const handleEndTurn = useCallback(async () => {
     if (!battle || !isMyTurn()) return;
@@ -701,7 +726,12 @@ const [player1Profile, setPlayer1Profile] = useState<{
         {/* Battle Log Panel */}
         {showBattleLog && (
           <div className="fixed right-4 bottom-16 z-20 w-64 max-h-[250px]">
-            <BattleLog logs={battleLog} onClose={() => setShowBattleLog(false)} />
+            <BattleLog 
+              logs={battleLog} 
+              player1Name={player1Profile?.name || 'Jogador 1'}
+              player2Name={player2Profile?.name || 'Jogador 2'}
+              onClose={() => setShowBattleLog(false)} 
+            />
           </div>
         )}
 
@@ -722,6 +752,12 @@ const [player1Profile, setPlayer1Profile] = useState<{
           isVisible={attackAnimation !== null}
           attackData={attackAnimation}
           onComplete={() => setAttackAnimation(null)}
+        />
+
+        {/* Timeout Overlay */}
+        <TimeoutOverlay 
+          isVisible={showTimeoutOverlay}
+          nextPlayerName={timeoutNextPlayerName}
         />
 
         {/* Defeated Card Effect */}
@@ -745,7 +781,10 @@ const [player1Profile, setPlayer1Profile] = useState<{
             xpGained={battleResult.xpGained} 
             streakBonus={battleResult.streakInfo.bonusXP} 
             stats={battleResult.stats} 
-            onPlayAgain={() => navigate('/aluno/batalha')} 
+            onPlayAgain={() => navigate('/aluno/batalha')}
+            battleLog={battleLog}
+            player1Name={player1Profile?.name || 'Jogador 1'}
+            player2Name={player2Profile?.name || 'Jogador 2'}
           />
           <BattleDefeatModal 
             open={showDefeatModal} 
@@ -755,7 +794,10 @@ const [player1Profile, setPlayer1Profile] = useState<{
             }} 
             xpGained={battleResult.xpGained} 
             stats={battleResult.stats} 
-            onTryAgain={() => navigate('/aluno/batalha')} 
+            onTryAgain={() => navigate('/aluno/batalha')}
+            battleLog={battleLog}
+            player1Name={player1Profile?.name || 'Jogador 1'}
+            player2Name={player2Profile?.name || 'Jogador 2'}
           />
         </>
       )}

@@ -1,48 +1,168 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scroll, Swords, Shield, Zap, X } from 'lucide-react';
+import { Scroll, Swords, Shield, Zap, X, Flame, Heart, Snowflake, Skull, Target, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 
-interface LogEntry {
-  action: string;
-  player: string;
+interface BattleLogEntry {
+  // Format antigo (play_card RPC)
+  action?: string;
   card_name?: string;
+  player?: string;
+  timestamp?: string;
   damage?: number;
   target_hp?: number;
-  timestamp: string;
+  
+  // Format novo (attack RPC)
+  type?: string;
+  logged_at?: string;
+  attacker?: string;
+  defender?: string;
+  remainingHp?: number;
+  monster?: string;
+  trap?: string;
+  effect?: string;
+  value?: number;
+  target?: string;
+  message?: string;
+  duration?: number;
+  cause?: string;
 }
 
 interface BattleLogProps {
-  logs: LogEntry[];
+  logs: BattleLogEntry[];
+  player1Name?: string;
+  player2Name?: string;
   onClose?: () => void;
 }
 
-export const BattleLog = ({ logs, onClose }: BattleLogProps) => {
-  const getLogIcon = (action: string) => {
-    switch (action) {
+export const BattleLog = ({ logs, player1Name = 'Jogador 1', player2Name = 'Jogador 2', onClose }: BattleLogProps) => {
+  
+  const getPlayerName = (playerKey?: string): string => {
+    if (!playerKey) return 'Jogador';
+    if (playerKey === 'player1' || playerKey === 'PLAYER1') return player1Name;
+    if (playerKey === 'player2' || playerKey === 'PLAYER2') return player2Name;
+    return playerKey;
+  };
+
+  const getLogIcon = (entry: BattleLogEntry) => {
+    const type = entry.type || entry.action;
+    
+    switch (type) {
       case 'ATTACK':
+      case 'ATTACK_MONSTER':
+      case 'DIRECT_ATTACK':
         return <Swords className="w-4 h-4 text-red-500" />;
       case 'PLAY_MONSTER':
-        return <Shield className="w-4 h-4 text-blue-500" />;
+        return <Sparkles className="w-4 h-4 text-blue-500" />;
       case 'PLAY_TRAP':
-        return <Zap className="w-4 h-4 text-purple-500" />;
+        return <Shield className="w-4 h-4 text-purple-500" />;
+      case 'TRAP_ACTIVATED':
+        return <Zap className="w-4 h-4 text-purple-400" />;
+      case 'MONSTER_DESTROYED':
+        return <Skull className="w-4 h-4 text-gray-400" />;
+      case 'BURN_DOT':
+      case 'BURN_DAMAGE':
+        return <Flame className="w-4 h-4 text-orange-500" />;
+      case 'HEAL':
+        return <Heart className="w-4 h-4 text-green-500" />;
+      case 'FREEZE_APPLIED':
+      case 'FROZEN_SKIP':
+        return <Snowflake className="w-4 h-4 text-cyan-400" />;
+      case 'REFLECT_DAMAGE':
+        return <Target className="w-4 h-4 text-yellow-500" />;
+      case 'OVERFLOW_DAMAGE':
+        return <Swords className="w-4 h-4 text-red-600" />;
       default:
         return <Scroll className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
-  const getLogMessage = (log: LogEntry) => {
-    const playerLabel = log.player === 'player1' ? 'Jogador 1' : 'Jogador 2';
+  const getLogMessage = (entry: BattleLogEntry): string => {
+    // Se tem message pré-formatada (novo formato), usar ela
+    if (entry.message) {
+      return entry.message;
+    }
     
-    switch (log.action) {
+    const type = entry.type || entry.action;
+    const playerLabel = getPlayerName(entry.player || entry.target);
+    
+    switch (type) {
+      // Formato novo (attack RPC)
+      case 'ATTACK_MONSTER':
+        return `⚔️ ${entry.attacker} atacou ${entry.defender} causando ${entry.damage} dano! HP: ${entry.remainingHp}`;
+      
+      case 'DIRECT_ATTACK':
+        return `⚡ ${entry.attacker} atacou diretamente! ${entry.damage} de dano ao ${getPlayerName(entry.target)}`;
+      
+      case 'MONSTER_DESTROYED':
+        return `💀 ${entry.monster} foi destruído${entry.cause ? ` por ${entry.cause}` : ''}!`;
+      
+      case 'TRAP_ACTIVATED':
+        return `🛡️ ${entry.trap} ativada! Efeito: ${entry.effect}${entry.value ? ` (${entry.value})` : ''}`;
+      
+      case 'BURN_DOT':
+        return `🔥 ${entry.target} sofreu ${entry.damage} de queimadura!`;
+      
+      case 'BURN_DAMAGE':
+        return `🔥 ${getPlayerName(entry.target)} recebeu ${entry.damage} de dano por BURN!`;
+      
+      case 'HEAL':
+        return `💚 ${entry.monster} recuperou ${entry.value} HP!`;
+      
+      case 'FREEZE_APPLIED':
+        return `❄️ ${entry.target} foi congelado!`;
+      
+      case 'FROZEN_SKIP':
+        return `❄️ ${entry.attacker} está congelado e não pôde atacar!`;
+      
+      case 'REFLECT_DAMAGE':
+        return `🪞 ${entry.damage} de dano refletido ao ${getPlayerName(entry.target)}!`;
+      
+      case 'OVERFLOW_DAMAGE':
+        return `💥 ${Math.abs(entry.damage || 0)} de dano excedente ao ${getPlayerName(entry.target)}!`;
+      
+      // Formato antigo (play_card RPC)
       case 'ATTACK':
-        return `${playerLabel} atacou causando ${log.damage} de dano! HP restante: ${log.target_hp}`;
+        return `⚔️ ${playerLabel} atacou causando ${entry.damage} de dano! HP: ${entry.target_hp}`;
+      
       case 'PLAY_MONSTER':
-        return `${playerLabel} jogou ${log.card_name} em campo!`;
+        return `🃏 ${playerLabel} invocou ${entry.card_name}!`;
+      
       case 'PLAY_TRAP':
-        return `${playerLabel} colocou uma trap virada!`;
+        return `🎭 ${playerLabel} colocou uma trap virada!`;
+      
       default:
         return `${playerLabel} realizou uma ação`;
+    }
+  };
+
+  const getEntryColor = (entry: BattleLogEntry): string => {
+    const type = entry.type || entry.action;
+    
+    switch (type) {
+      case 'ATTACK':
+      case 'ATTACK_MONSTER':
+      case 'DIRECT_ATTACK':
+      case 'OVERFLOW_DAMAGE':
+        return 'border-red-500/30 bg-red-500/5';
+      case 'TRAP_ACTIVATED':
+        return 'border-purple-500/30 bg-purple-500/5';
+      case 'MONSTER_DESTROYED':
+        return 'border-gray-500/30 bg-gray-500/5';
+      case 'BURN_DOT':
+      case 'BURN_DAMAGE':
+        return 'border-orange-500/30 bg-orange-500/5';
+      case 'HEAL':
+        return 'border-green-500/30 bg-green-500/5';
+      case 'FREEZE_APPLIED':
+      case 'FROZEN_SKIP':
+        return 'border-cyan-500/30 bg-cyan-500/5';
+      case 'PLAY_MONSTER':
+        return 'border-blue-500/30 bg-blue-500/5';
+      case 'PLAY_TRAP':
+        return 'border-purple-500/30 bg-purple-500/5';
+      default:
+        return 'border-border/20 bg-background/30';
     }
   };
 
@@ -70,14 +190,14 @@ export const BattleLog = ({ logs, onClose }: BattleLogProps) => {
           <AnimatePresence mode="popLayout">
             {logs.slice().reverse().map((log, index) => (
               <motion.div
-                key={`${log.timestamp}-${index}`}
+                key={`${log.logged_at || log.timestamp}-${index}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className="flex items-start gap-2 p-2 bg-background/30 rounded-lg border border-border/20"
+                className={`flex items-start gap-2 p-2 rounded-lg border ${getEntryColor(log)}`}
               >
-                <div className="mt-0.5">{getLogIcon(log.action)}</div>
+                <div className="mt-0.5 flex-shrink-0">{getLogIcon(log)}</div>
                 <p className="text-xs text-foreground/80 leading-relaxed flex-1">
                   {getLogMessage(log)}
                 </p>
