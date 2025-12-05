@@ -12,6 +12,7 @@ export const ACTION_TARGET_LABELS: Record<string, string> = {
   COMPLETE_PROFILE: 'Completar perfil',
   INVITE_FRIEND: 'Convidar amigo',
   ATTEND_EVENT: 'Comparecer a evento',
+  DAILY_CHECKIN: 'Check-in diário',
 } as const;
 
 export const CHALLENGE_TYPE_LABELS: Record<string, string> = {
