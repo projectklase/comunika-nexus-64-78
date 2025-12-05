@@ -23,6 +23,25 @@ export const XP_ECONOMY_HINTS = [
 ] as const;
 
 /**
+ * Quantidade mínima de ações por tipo de desafio
+ * Previne exploits de "500 XP com 1 ação"
+ */
+export const MIN_ACTION_COUNT_BY_TYPE: Record<string, number> = {
+  DAILY: 1,
+  WEEKLY: 5,
+  ACHIEVEMENT: 15,
+} as const;
+
+/**
+ * Descrições explicativas de cada tipo de desafio
+ */
+export const TYPE_DESCRIPTIONS: Record<string, string> = {
+  DAILY: 'Reseta diariamente. Ideal para tarefas simples e únicas.',
+  WEEKLY: 'Reseta semanalmente. Requer esforço contínuo ao longo de 7 dias.',
+  ACHIEVEMENT: 'Conquistas permanentes. Requer dedicação prolongada (15+ ações).',
+} as const;
+
+/**
  * Retorna o limite máximo de XP para um tipo de desafio
  */
 export function getXPLimit(type: string): number {
@@ -42,4 +61,33 @@ export function getXPSuggestion(type: string): { min: number; max: number; label
 export function isXPWithinLimit(type: string, xp: number): boolean {
   const limit = getXPLimit(type);
   return xp <= limit;
+}
+
+/**
+ * Retorna a quantidade mínima de ações para um tipo de desafio
+ */
+export function getMinActionCount(type: string): number {
+  return MIN_ACTION_COUNT_BY_TYPE[type] || 1;
+}
+
+/**
+ * Valida se a quantidade de ações está dentro do mínimo
+ */
+export function isActionCountValid(type: string, count: number): boolean {
+  return count >= getMinActionCount(type);
+}
+
+/**
+ * Retorna a descrição do tipo de desafio
+ */
+export function getTypeDescription(type: string): string {
+  return TYPE_DESCRIPTIONS[type] || '';
+}
+
+/**
+ * Calcula eficiência de XP por ação
+ */
+export function calculateXPEfficiency(xp: number, actionCount: number): number {
+  if (actionCount <= 0) return 0;
+  return Math.round((xp / actionCount) * 10) / 10;
 }
