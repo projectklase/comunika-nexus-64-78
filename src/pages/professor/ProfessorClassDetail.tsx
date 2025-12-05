@@ -9,6 +9,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { Button } from '@/components/ui/button';
 import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
+import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +28,10 @@ import {
   Mail,
   Phone,
   FolderOpen,
-  ClipboardCheck
+  ClipboardCheck,
+  ClipboardList
 } from 'lucide-react';
+import { AttendanceSheet } from '@/components/attendance/AttendanceSheet';
 import { ActivityFilters } from '@/components/activities/ActivityFilters';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
 import { useState, useEffect } from 'react';
@@ -78,6 +81,10 @@ export default function ProfessorClassDetail() {
   }
   
   const info = getClassDisplayInfo(schoolClass, levels, modalities);
+  
+  // Verificar se chamada está habilitada para esta escola
+  const { getSetting } = useSchoolSettings();
+  const attendanceEnabled = getSetting('attendance_enabled', { enabled: false })?.enabled === true;
   
   // Buscar atividades desta turma (todos os tipos)
   const { posts: allClassPosts } = usePosts({ classId: schoolClass.id });
@@ -284,6 +291,12 @@ export default function ProfessorClassDetail() {
           <TabsTrigger value="activities">Atividades</TabsTrigger>
           <TabsTrigger value="deliveries">Entregas</TabsTrigger>
           <TabsTrigger value="students">Alunos</TabsTrigger>
+          {attendanceEnabled && (
+            <TabsTrigger value="attendance">
+              <ClipboardList className="h-4 w-4 mr-2" />
+              Chamada
+            </TabsTrigger>
+          )}
         </TabsList>
         
         {/* Visão Geral */}
@@ -678,6 +691,20 @@ export default function ProfessorClassDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Chamada (condicional) */}
+        {attendanceEnabled && (
+          <TabsContent value="attendance" className="space-y-6">
+            <AttendanceSheet 
+              classId={schoolClass.id} 
+              students={students.map(s => ({
+                id: s.id,
+                name: s.name,
+                email: s.email
+              }))}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
