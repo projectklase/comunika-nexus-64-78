@@ -34,7 +34,7 @@ import {
 } from '@/utils/audit-helpers';
 import { AuditEvent } from '@/types/audit';
 import { FamilyMetricsWidget } from '@/components/admin/FamilyMetricsWidget';
-import { CleanupPostsButton } from '@/components/admin/CleanupPostsButton';
+
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -382,7 +382,7 @@ export default function AdminDashboard() {
           <p className="text-sm text-muted-foreground">
             {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
           </p>
-          <CleanupPostsButton />
+          
         </div>
       </div>
 
