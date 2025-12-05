@@ -125,7 +125,31 @@ export function useChallenges() {
   };
 
   const toggleActive = async (id: string, isActive: boolean) => {
-    await updateChallenge(id, { is_active: isActive });
+    try {
+      const { data, error } = await supabase
+        .from('challenges')
+        .update({ is_active: isActive })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setChallenges(prev => prev.map(c => c.id === id ? (data as Challenge) : c));
+      toast({
+        title: isActive ? '✅ Desafio ativado' : '⏸️ Desafio pausado',
+        description: isActive 
+          ? 'O desafio agora está visível para os alunos.' 
+          : 'O desafio foi pausado e não aparecerá para os alunos.',
+      });
+    } catch (error) {
+      console.error('Error toggling challenge:', error);
+      toast({
+        title: 'Erro ao alterar status',
+        description: 'Não foi possível alterar o status do desafio.',
+        variant: 'destructive',
+      });
+    }
   };
 
   useEffect(() => {
