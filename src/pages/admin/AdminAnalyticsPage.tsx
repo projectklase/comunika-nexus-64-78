@@ -293,15 +293,15 @@ export default function AdminAnalyticsPage() {
         </button>
       </div>
 
-      {/* Widget de Lista de Chamada (condicional) */}
-      <section className="mb-12">
-        <AttendanceAnalyticsWidget />
-      </section>
-
-      {/* Dashboard de IA */}
+      {/* Dashboard de IA - Insights Preditivos + Ações Prioritárias */}
       <Separator className="my-12" />
       <section className="mb-12">
         <PredictiveInsightsDashboard />
+      </section>
+
+      {/* Widget de Lista de Chamada (abaixo das Ações Prioritárias) */}
+      <section className="mb-12">
+        <AttendanceAnalyticsWidget />
       </section>
 
       {/* Modal 1: Alunos em Risco */}
