@@ -91,7 +91,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [defeatedCard, setDefeatedCard] = useState<DefeatedCardData | null>(null);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTurnStartRef = useRef<string | null>(null);
-  const lastTrapLogCountRef = useRef<number>(0);
+  const lastTrapTimestampRef = useRef<string>('0');
   const prevMyMonsterRef = useRef<string | null>(null);
   const prevOpponentMonsterRef = useRef<string | null>(null);
   
@@ -305,7 +305,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
     lastTurnStartRef.current = battle.turn_started_at;
   }, [battle?.turn_started_at]);
 
-  // Detect trap activations from battle_log
+  // Detect trap activations from battle_log using timestamp
   useEffect(() => {
     if (!battleLog || battleLog.length === 0) return;
     
@@ -315,10 +315,17 @@ const [player1Profile, setPlayer1Profile] = useState<{
       log.type !== 'PLAY_TRAP' // PLAY_TRAP is setting face-down, not activation
     );
     
-    // Check if there are new trap activations
-    if (trapEntries.length > lastTrapLogCountRef.current) {
-      const latestTrap = trapEntries[trapEntries.length - 1];
-      
+    if (trapEntries.length === 0) return;
+    
+    // Sort by timestamp to get the most recent
+    const sortedTraps = [...trapEntries].sort((a: any, b: any) => 
+      parseFloat(b.logged_at || '0') - parseFloat(a.logged_at || '0')
+    );
+    const latestTrap = sortedTraps[0];
+    const latestTimestamp = latestTrap.logged_at || '0';
+    
+    // Only show if this trap is newer than the last one we processed
+    if (parseFloat(latestTimestamp) > parseFloat(lastTrapTimestampRef.current)) {
       // Show trap overlay with effect info - use "trap" field for name
       const trapName = latestTrap.trap || "Trap Card";
       const trapEffect = latestTrap.message || getTrapEffectDescription(latestTrap.effect);
@@ -336,9 +343,10 @@ const [player1Profile, setPlayer1Profile] = useState<{
       setTimeout(() => {
         setTrapOverlay(null);
       }, 2500);
+      
+      // Update the last processed timestamp
+      lastTrapTimestampRef.current = latestTimestamp;
     }
-    
-    lastTrapLogCountRef.current = trapEntries.length;
   }, [battleLog, playSpellSound, allCards]);
 
   // Detect defeated monsters
