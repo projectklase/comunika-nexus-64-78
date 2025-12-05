@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Flame, Sparkles, AlertTriangle, Package } from 'lucide-react';
@@ -114,7 +114,7 @@ export function CardRecycleModal({ isOpen, onClose, userCards }: CardRecycleModa
             </div>
 
             {/* Lista de cartas com scroll */}
-            <ScrollArea className="flex-1 min-h-0 max-h-[40vh] sm:max-h-[50vh] -mx-4 sm:-mx-6 px-4 sm:px-6">
+            <div className="overflow-y-auto max-h-[35vh] sm:max-h-[45vh] -mx-4 sm:-mx-6 px-4 sm:px-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               <div className="space-y-2 sm:space-y-3 py-2">
                 {recyclableCards.map(userCard => {
                   const card = userCard.card!;
@@ -197,7 +197,7 @@ export function CardRecycleModal({ isOpen, onClose, userCards }: CardRecycleModa
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Preview e ação - sticky footer */}
             <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4 flex-shrink-0 bg-background">
