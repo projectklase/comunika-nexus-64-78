@@ -702,6 +702,7 @@ export default function ProfessorClassDetail() {
                 name: s.name,
                 email: s.email
               }))}
+              daysOfWeek={schoolClass.daysOfWeek}
             />
           </TabsContent>
         )}
