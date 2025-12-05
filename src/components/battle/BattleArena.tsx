@@ -23,10 +23,21 @@ import { CardPlayEffect } from './CardPlayEffect';
 import { BattleDuelStart } from './BattleDuelStart';
 import { BattlePhaseAnnouncement } from './BattlePhaseAnnouncement';
 import { TrapActivationOverlay } from './TrapActivationOverlay';
+import { MonsterAttackAnimation } from './MonsterAttackAnimation';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ScrollText, AlertTriangle, Flag } from 'lucide-react';
+
+interface AttackAnimationData {
+  attackerName: string;
+  attackerImage?: string;
+  attackerAtk: number;
+  defenderName: string;
+  defenderImage?: string;
+  damage: number;
+  isCritical?: boolean;
+}
 
 interface BattleArenaProps {
   battleId: string;
@@ -69,6 +80,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [showSetupAnnouncement, setShowSetupAnnouncement] = useState(false);
   const [actualTimerStart, setActualTimerStart] = useState<string | null>(null);
   const [trapOverlay, setTrapOverlay] = useState<{ name: string; description: string } | null>(null);
+  const [attackAnimation, setAttackAnimation] = useState<AttackAnimationData | null>(null);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTurnStartRef = useRef<string | null>(null);
   const lastTrapLogCountRef = useRef<number>(0);
@@ -365,9 +377,47 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
   const handleAttack = async () => {
     if (!battle || !myField?.monster) return;
-    playAttackSound();
-    triggerShake();
-    await attack.mutateAsync(battle.id);
+    
+    // Get monster data for animation
+    const myMonster = myField.monster;
+    const enemyMonster = opponentField?.monster;
+    
+    // Find full card data from allCards
+    const myMonsterCard = allCards?.find(c => c.id === myMonster.id);
+    const enemyMonsterCard = enemyMonster ? allCards?.find(c => c.id === enemyMonster.id) : null;
+    
+    // Calculate estimated damage (ATK value)
+    const estimatedDamage = myMonsterCard?.atk || myMonster.atk || 0;
+    
+    // Set up animation data
+    setAttackAnimation({
+      attackerName: myMonsterCard?.name || myMonster.name || 'Monstro',
+      attackerImage: myMonsterCard?.image_url || myMonster.image_url,
+      attackerAtk: myMonsterCard?.atk || myMonster.atk || 0,
+      defenderName: enemyMonsterCard?.name || enemyMonster?.name || 'Oponente',
+      defenderImage: enemyMonsterCard?.image_url || enemyMonster?.image_url,
+      damage: estimatedDamage,
+      isCritical: estimatedDamage >= 30
+    });
+    
+    // Play sounds with timing
+    playSwooshSound(); // Card jump sound
+    
+    // Delayed attack sound at impact moment
+    setTimeout(() => {
+      playAttackSound();
+      triggerShake();
+    }, 900);
+    
+    // Execute attack after animation starts
+    setTimeout(async () => {
+      await attack.mutateAsync(battle.id);
+    }, 500);
+    
+    // Clear animation after it completes
+    setTimeout(() => {
+      setAttackAnimation(null);
+    }, 2000);
   };
 
   const handleAbandonBattle = async () => {
@@ -604,6 +654,13 @@ const [player1Profile, setPlayer1Profile] = useState<{
           isVisible={trapOverlay !== null}
           trapName={trapOverlay?.name || ''}
           trapDescription={trapOverlay?.description || ''}
+        />
+
+        {/* Monster Attack Animation */}
+        <MonsterAttackAnimation 
+          isVisible={attackAnimation !== null}
+          attackData={attackAnimation}
+          onComplete={() => setAttackAnimation(null)}
         />
       </div>
 
