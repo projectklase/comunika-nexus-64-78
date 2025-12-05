@@ -6,7 +6,7 @@ import { Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
-
+import { ChallengeCelebration } from '@/components/gamification/ChallengeCelebration';
 export function SimplifiedNexusPanel() {
   const { user } = useAuth();
   const { getKoinsEnabled } = useSchoolSettings();
@@ -54,6 +54,8 @@ export function SimplifiedNexusPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Componente de celebração de desafios (invisível, monitora notificações) */}
+      <ChallengeCelebration />
       {/* QOL 1: Alert de Koins pendentes */}
       {koinsEnabled && pendingKoins && pendingKoins.count > 0 && (
         <Alert className="border-yellow-500/50 bg-yellow-500/10">
