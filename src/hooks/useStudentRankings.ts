@@ -36,7 +36,7 @@ export function useStudentRankings(studentId?: string, limit: number = 10): Stud
       const { data, error } = await supabase.rpc('get_school_rankings', {
         school_id_param: currentSchool.id,
         ranking_type: 'xp',
-        limit_param: limit
+        limit_count: limit
       });
       if (error) throw error;
       return data as RankedStudent[];
@@ -52,7 +52,7 @@ export function useStudentRankings(studentId?: string, limit: number = 10): Stud
       const { data, error } = await supabase.rpc('get_school_rankings', {
         school_id_param: currentSchool.id,
         ranking_type: 'koins',
-        limit_param: limit
+        limit_count: limit
       });
       if (error) throw error;
       return data as RankedStudent[];
@@ -68,7 +68,7 @@ export function useStudentRankings(studentId?: string, limit: number = 10): Stud
       const { data, error } = await supabase.rpc('get_school_rankings', {
         school_id_param: currentSchool.id,
         ranking_type: 'streak',
-        limit_param: limit
+        limit_count: limit
       });
       if (error) throw error;
       return data as RankedStudent[];
