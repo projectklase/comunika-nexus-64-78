@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Challenge } from '@/hooks/useChallenges';
 import { Edit, Trash2, Power, PowerOff, Sparkles, Star } from 'lucide-react';
 import { getActionTargetLabel, getChallengeTypeLabel } from '@/constants/challenge-labels';
@@ -80,17 +81,24 @@ export function ChallengesTable({ challenges, onEdit, onDelete, onToggleActive }
               </div>
 
               <div className="flex gap-2 ml-4">
-                <Button
-                  size="sm"
-                  variant={challenge.is_active ? "outline" : "default"}
-                  onClick={() => onToggleActive(challenge.id, !challenge.is_active)}
-                >
-                  {challenge.is_active ? (
-                    <PowerOff className="h-4 w-4" />
-                  ) : (
-                    <Power className="h-4 w-4" />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant={challenge.is_active ? "outline" : "default"}
+                      onClick={() => onToggleActive(challenge.id, !challenge.is_active)}
+                    >
+                      {challenge.is_active ? (
+                        <PowerOff className="h-4 w-4" />
+                      ) : (
+                        <Power className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {challenge.is_active ? 'Pausar desafio' : 'Ativar desafio'}
+                  </TooltipContent>
+                </Tooltip>
                 <Button
                   size="sm"
                   variant="outline"
