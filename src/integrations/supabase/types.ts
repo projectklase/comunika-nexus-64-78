@@ -2158,6 +2158,10 @@ export type Database = {
         Args: { p_battle_id: string; p_player_id: string }
         Returns: Json
       }
+      auto_archive_expired_posts: {
+        Args: { p_school_id?: string }
+        Returns: number
+      }
       can_create_notifications: { Args: { _user_id: string }; Returns: boolean }
       check_and_unlock_achievements: {
         Args: { p_user_id: string }
@@ -2313,6 +2317,18 @@ export type Database = {
             }
             Returns: Json
           }
+      preview_expired_posts: {
+        Args: { p_school_id?: string }
+        Returns: {
+          created_at: string
+          due_at: string
+          event_end_at: string
+          event_start_at: string
+          id: string
+          title: string
+          type: string
+        }[]
+      }
       reject_redemption: {
         Args: { p_admin_id: string; p_reason: string; p_redemption_id: string }
         Returns: undefined
