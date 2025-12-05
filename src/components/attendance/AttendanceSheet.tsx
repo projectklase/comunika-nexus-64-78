@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAttendance, AttendanceRecord, AttendanceStatus } from '@/hooks/useAttendance';
@@ -19,7 +19,7 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  Clock
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ interface Student {
 interface AttendanceSheetProps {
   classId: string;
   students: Student[];
+  daysOfWeek?: string[];
 }
 
 type LocalAttendance = {
@@ -42,15 +43,64 @@ type LocalAttendance = {
   notes?: string;
 };
 
-export function AttendanceSheet({ classId, students }: AttendanceSheetProps) {
+// Mapeamento de dia da semana para número (0=Domingo, 6=Sábado)
+const dayNameToNumber: Record<string, number> = {
+  'Domingo': 0,
+  'Segunda': 1,
+  'Terça': 2,
+  'Quarta': 3,
+  'Quinta': 4,
+  'Sexta': 5,
+  'Sábado': 6
+};
+
+// Abreviações para exibição
+const dayAbbreviations: Record<string, string> = {
+  'Domingo': 'Dom',
+  'Segunda': 'Seg',
+  'Terça': 'Ter',
+  'Quarta': 'Qua',
+  'Quinta': 'Qui',
+  'Sexta': 'Sex',
+  'Sábado': 'Sáb'
+};
+
+export function AttendanceSheet({ classId, students, daysOfWeek }: AttendanceSheetProps) {
   const { user } = useAuth();
   const { loadAttendance, saveAttendance, isLoading: loading } = useAttendance();
   
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  // Função para verificar se é dia de aula
+  const isClassDay = (date: Date): boolean => {
+    if (!daysOfWeek || daysOfWeek.length === 0) return true; // fallback: permite todos
+    const dayOfWeek = date.getDay();
+    return daysOfWeek.some(day => dayNameToNumber[day] === dayOfWeek);
+  };
+
+  // Função para encontrar o último dia de aula válido (hoje ou anterior)
+  const getLastValidClassDay = (): Date => {
+    const today = new Date();
+    // Se não há dias configurados, retorna hoje
+    if (!daysOfWeek || daysOfWeek.length === 0) return today;
+    
+    // Buscar até 7 dias atrás
+    for (let i = 0; i <= 7; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      if (isClassDay(checkDate)) {
+        return checkDate;
+      }
+    }
+    return today; // fallback
+  };
+
+  const [selectedDate, setSelectedDate] = useState<Date>(() => getLastValidClassDay());
   const [localAttendance, setLocalAttendance] = useState<LocalAttendance[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
+
+  // Verificar se data selecionada é válida
+  const isValidClassDay = useMemo(() => isClassDay(selectedDate), [selectedDate, daysOfWeek]);
 
   // Carregar chamada da data selecionada
   useEffect(() => {
@@ -96,6 +146,12 @@ export function AttendanceSheet({ classId, students }: AttendanceSheetProps) {
 
   const handleSave = async () => {
     if (!user) return;
+    
+    // Validação: não permitir salvar em dia não-válido
+    if (!isValidClassDay) {
+      toast.error('Esta data não é um dia de aula da turma');
+      return;
+    }
     
     setSaving(true);
     try {
@@ -178,6 +234,12 @@ export function AttendanceSheet({ classId, students }: AttendanceSheetProps) {
     );
   };
 
+  // Formatar dias de aula para exibição
+  const classDaysDisplay = useMemo(() => {
+    if (!daysOfWeek || daysOfWeek.length === 0) return null;
+    return daysOfWeek.map(day => dayAbbreviations[day] || day).join(', ');
+  }, [daysOfWeek]);
+
   if (students.length === 0) {
     return (
       <Card>
@@ -198,7 +260,13 @@ export function AttendanceSheet({ classId, students }: AttendanceSheetProps) {
         <div className="flex items-center gap-4">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+              <Button 
+                variant="outline" 
+                className={cn(
+                  "w-[200px] justify-start text-left font-normal",
+                  !isValidClassDay && "border-yellow-500 text-yellow-600"
+                )}
+              >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {format(selectedDate, "dd 'de' MMMM, yyyy", { locale: ptBR })}
               </Button>
@@ -209,13 +277,36 @@ export function AttendanceSheet({ classId, students }: AttendanceSheetProps) {
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
                 locale={ptBR}
-                disabled={(date) => date > new Date()}
+                disabled={(date) => date > new Date() || !isClassDay(date)}
+                modifiers={{
+                  classDay: (date) => isClassDay(date) && date <= new Date()
+                }}
+                modifiersClassNames={{
+                  classDay: 'bg-primary/10 font-medium'
+                }}
+                className={cn("p-3 pointer-events-auto")}
               />
+              {/* Legenda do calendário */}
+              {classDaysDisplay && (
+                <div className="px-3 pb-3 pt-1 border-t">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Dias de aula: <span className="font-medium text-foreground">{classDaysDisplay}</span>
+                  </p>
+                </div>
+              )}
             </PopoverContent>
           </Popover>
+
+          {/* Badge de dias de aula */}
+          {classDaysDisplay && (
+            <Badge variant="outline" className="hidden sm:flex">
+              Aulas: {classDaysDisplay}
+            </Badge>
+          )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={markAllPresent}>
             <CheckCircle className="h-4 w-4 mr-2" />
             Todos Presentes
@@ -226,7 +317,7 @@ export function AttendanceSheet({ classId, students }: AttendanceSheetProps) {
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={!hasChanges || saving}
+            disabled={!hasChanges || saving || !isValidClassDay}
             className="min-w-[120px]"
           >
             <Save className="h-4 w-4 mr-2" />
@@ -234,6 +325,23 @@ export function AttendanceSheet({ classId, students }: AttendanceSheetProps) {
           </Button>
         </div>
       </div>
+
+      {/* Alerta se data não é dia de aula */}
+      {!isValidClassDay && (
+        <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <div>
+              <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                Data inválida para chamada
+              </p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                Selecione um dia de aula da turma ({classDaysDisplay})
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Estatísticas */}
       <div className="grid grid-cols-4 gap-4">
