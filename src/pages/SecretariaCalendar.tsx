@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { postStore } from '@/stores/post-store';
 import { PostInput, PostType } from '@/types/post';
 import { canAccessOperations } from '@/utils/auth-helpers';
+import { BirthdayModal } from '@/components/calendar/BirthdayModal';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -33,7 +34,8 @@ import {
   Grid3X3,
   Rows4,
   Plus,
-  Settings
+  Settings,
+  Cake
 } from 'lucide-react';
 
 export default function SecretariaCalendar() {
@@ -87,7 +89,8 @@ export default function SecretariaCalendar() {
     hasAttachments: false,
     showHolidays: true
   });
-  const [showEventComposer, setShowEventComposer] = useState(false);
+const [showEventComposer, setShowEventComposer] = useState(false);
+  const [showBirthdayModal, setShowBirthdayModal] = useState(false);
   const { toast } = useToast();
   
   // Update state when URL changes - prevent infinite loops
@@ -311,19 +314,32 @@ export default function SecretariaCalendar() {
                 </Button>
               </div>
 
-              {/* View Switcher - compacto no mobile */}
-              <Tabs value={view} onValueChange={handleViewChange}>
-                <TabsList className="glass border border-border/30">
-                  <TabsTrigger value="month" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
-                    <Grid3X3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Mês</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="week" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
-                    <Rows4 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Semana</span>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              {/* View Switcher + Birthday Button - compacto no mobile */}
+              <div className="flex items-center gap-2">
+                <Tabs value={view} onValueChange={handleViewChange}>
+                  <TabsList className="glass border border-border/30">
+                    <TabsTrigger value="month" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
+                      <Grid3X3 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Mês</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="week" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3">
+                      <Rows4 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Semana</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                {/* Botão Aniversariantes */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBirthdayModal(true)}
+                  className="glass border-pink-500/30 hover:border-pink-500/50 hover:bg-pink-500/10 gap-1 sm:gap-2 px-2 sm:px-3"
+                >
+                  <Cake className="h-4 w-4 text-pink-400" />
+                  <span className="hidden sm:inline text-pink-400">Aniversariantes</span>
+                </Button>
+              </div>
             </div>
 
             {/* Calendar Grid */}
@@ -381,6 +397,12 @@ export default function SecretariaCalendar() {
               />
             </DialogContent>
           </Dialog>
+
+          {/* Birthday Modal */}
+          <BirthdayModal 
+            open={showBirthdayModal} 
+            onOpenChange={setShowBirthdayModal} 
+          />
         </div>
       </CalendarErrorBoundary>
     </CalendarModalProvider>
