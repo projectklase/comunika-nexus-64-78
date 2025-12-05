@@ -96,7 +96,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const prevOpponentMonsterRef = useRef<string | null>(null);
   
   const { triggerShake } = useScreenShake();
-  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic, playDefenseSound, playCardDefeatedSound } = useBattleSounds();
+  const { playAttackSound, playSwooshSound, playWinSound, playLoseSound, playBattleMusic, stopBattleMusic, playDefenseSound, playCardDefeatedSound, playSpellSound } = useBattleSounds();
 
   const gameState = battle?.game_state as any;
   const isPlayer1 = myPlayerNumber() === 'PLAYER1';
@@ -309,22 +309,22 @@ const [player1Profile, setPlayer1Profile] = useState<{
   useEffect(() => {
     if (!battleLog || battleLog.length === 0) return;
     
-    // Look for new trap-related entries (TRAP_ACTIVATED, TRAP_EFFECT, etc.)
+    // Look for new trap-related entries (TRAP_ACTIVATED, etc.) using "type" field
     const trapEntries = battleLog.filter((log: any) => 
-      log.action?.includes('TRAP') && 
-      log.action !== 'PLAY_TRAP' // PLAY_TRAP is setting face-down, not activation
+      log.type?.includes('TRAP') && 
+      log.type !== 'PLAY_TRAP' // PLAY_TRAP is setting face-down, not activation
     );
     
     // Check if there are new trap activations
     if (trapEntries.length > lastTrapLogCountRef.current) {
       const latestTrap = trapEntries[trapEntries.length - 1];
       
-      // Show trap overlay with effect info
-      const trapName = latestTrap.card_name || latestTrap.trap_name || "Trap Card";
-      const trapEffect = latestTrap.effect_description || latestTrap.message || getTrapEffectDescription(latestTrap.effect_type);
+      // Show trap overlay with effect info - use "trap" field for name
+      const trapName = latestTrap.trap || "Trap Card";
+      const trapEffect = latestTrap.message || getTrapEffectDescription(latestTrap.effect);
       
       setTrapOverlay({ name: trapName, description: trapEffect });
-      playDefenseSound();
+      playSpellSound();
       
       // Auto-hide after 2.5 seconds
       setTimeout(() => {
@@ -333,7 +333,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
     }
     
     lastTrapLogCountRef.current = trapEntries.length;
-  }, [battleLog, playDefenseSound]);
+  }, [battleLog, playSpellSound]);
 
   // Detect defeated monsters
   useEffect(() => {

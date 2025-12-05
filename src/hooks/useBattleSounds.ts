@@ -8,6 +8,7 @@ import shieldDefenseSound from '@/assets/sounds/battle/shield_defense.mp3';
 import swooshCardSound from '@/assets/sounds/battle/swoosh_card.mp3';
 import cardDefeatedSound from '@/assets/sounds/battle/card_defeated.mp3';
 import battleBgMusic from '@/assets/sounds/battle/Klash_of_Kards.mp3';
+import spellCardSound from '@/assets/sounds/battle/spell_card_sound.mp3';
 
 interface BattleSounds {
   playWinSound: () => void;
@@ -16,6 +17,7 @@ interface BattleSounds {
   playDefenseSound: () => void;
   playSwooshSound: () => void;
   playCardDefeatedSound: () => void;
+  playSpellSound: () => void;
   playBattleMusic: () => void;
   stopBattleMusic: () => void;
   stopAllSounds: () => void;
@@ -31,6 +33,7 @@ export const useBattleSounds = (): BattleSounds => {
     swoosh: new Audio(swooshCardSound),
     defeated: new Audio(cardDefeatedSound),
     battleBg: new Audio(battleBgMusic),
+    spell: new Audio(spellCardSound),
   });
 
   const volume = useRef(0.5); // Default volume 50%
@@ -76,6 +79,10 @@ export const useBattleSounds = (): BattleSounds => {
     playSound('defeated');
   }, [playSound]);
 
+  const playSpellSound = useCallback(() => {
+    playSound('spell');
+  }, [playSound]);
+
   const playBattleMusic = useCallback(() => {
     const bgAudio = audioRefs.current.battleBg;
     if (bgAudio.paused) {
@@ -116,6 +123,7 @@ export const useBattleSounds = (): BattleSounds => {
     playDefenseSound,
     playSwooshSound,
     playCardDefeatedSound,
+    playSpellSound,
     playBattleMusic,
     stopBattleMusic,
     stopAllSounds,
