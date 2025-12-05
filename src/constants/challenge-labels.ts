@@ -1,16 +1,14 @@
 /**
  * Labels humanizados para o sistema de desafios
  * Todos os textos em português para facilitar o entendimento dos profissionais da escola
+ * 
+ * IMPORTANTE: Apenas ações com triggers implementados estão listadas aqui.
+ * Ações removidas por falta de implementação: COMMENT_POST, LIKE_POST, SHARE_POST, LOGIN_STREAK, PERFECT_SCORE
  */
 
 export const ACTION_TARGET_LABELS: Record<string, string> = {
   READ_POST: 'Ler postagem',
   SUBMIT_ACTIVITY: 'Entregar atividade',
-  COMMENT_POST: 'Comentar postagem',
-  LIKE_POST: 'Curtir postagem',
-  SHARE_POST: 'Compartilhar postagem',
-  LOGIN_STREAK: 'Dias de login consecutivos',
-  PERFECT_SCORE: 'Nota perfeita',
   COMPLETE_PROFILE: 'Completar perfil',
   INVITE_FRIEND: 'Convidar amigo',
   ATTEND_EVENT: 'Comparecer a evento',
