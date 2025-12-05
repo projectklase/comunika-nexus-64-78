@@ -471,7 +471,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
         <BattleActionButtons 
           canPlayCard={selectedCard !== null && isMyTurn() && !hasPlayedCardThisTurn} 
-          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase && !hasAttackedThisTurn} 
+          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase && !hasAttackedThisTurn && myField?.monster?.summoned_on_turn !== currentTurnNumber} 
           isMyTurn={isMyTurn()} 
           onPlayCard={handlePlayCard} 
           onAttack={handleAttack} 
@@ -479,6 +479,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           isSetupPhase={isSetupPhase}
           hasAttackedThisTurn={hasAttackedThisTurn}
           hasPlayedCardThisTurn={hasPlayedCardThisTurn}
+          hasSummoningSickness={myField?.monster && myField.monster.summoned_on_turn === currentTurnNumber}
         />
 
         {/* Duel Start Announcement */}
