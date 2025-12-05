@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Challenge } from '@/hooks/useChallenges';
 import { ACTION_TARGET_LABELS, CHALLENGE_TYPE_LABELS, ICON_LABELS } from '@/constants/challenge-labels';
+import { getXPLimit, getXPSuggestion, isXPWithinLimit, XP_ECONOMY_HINTS } from '@/constants/xp-limits';
 import { useToast } from '@/hooks/use-toast';
 import * as Icons from 'lucide-react';
 
@@ -38,6 +39,11 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
 
   const [submitting, setSubmitting] = useState(false);
 
+  // Limites e sugestões baseados no tipo selecionado
+  const xpLimit = getXPLimit(formData.type);
+  const xpSuggestion = getXPSuggestion(formData.type);
+  const isXPOverLimit = formData.xp_reward > xpLimit;
+
   useEffect(() => {
     if (challenge) {
       setFormData({
@@ -66,6 +72,13 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
     }
   }, [challenge, isOpen]);
 
+  // Ajustar XP automaticamente se mudar o tipo e ultrapassar o limite
+  useEffect(() => {
+    if (formData.xp_reward > xpLimit) {
+      setFormData(prev => ({ ...prev, xp_reward: xpLimit }));
+    }
+  }, [formData.type, xpLimit]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -74,6 +87,16 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
       toast({
         title: 'Recompensa obrigatória',
         description: 'O desafio deve ter pelo menos uma recompensa (Koins ou XP) maior que zero.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validação: XP dentro do limite
+    if (!isXPWithinLimit(formData.type, formData.xp_reward)) {
+      toast({
+        title: 'XP acima do limite',
+        description: `Desafios ${CHALLENGE_TYPE_LABELS[formData.type]} podem dar no máximo ${xpLimit} XP.`,
         variant: 'destructive',
       });
       return;
@@ -210,6 +233,12 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
               Deixe 0 para não dar esse tipo de recompensa. Pelo menos uma deve ser maior que zero.
             </p>
             
+            {/* Dica de economia */}
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-xs text-muted-foreground">
+              <Icons.Lightbulb className="h-4 w-4 text-yellow-500 shrink-0" />
+              <span>{XP_ECONOMY_HINTS[0]}</span>
+            </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="koin_reward" className="flex items-center gap-2">
@@ -230,15 +259,28 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
                 <Label htmlFor="xp_reward" className="flex items-center gap-2">
                   <Icons.Star className="h-4 w-4 text-blue-400" />
                   XP
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    máx: {xpLimit}
+                  </span>
                 </Label>
                 <Input
                   id="xp_reward"
                   type="number"
                   min="0"
+                  max={xpLimit}
                   value={formData.xp_reward}
-                  onChange={(e) => setFormData({ ...formData, xp_reward: parseInt(e.target.value) || 0 })}
-                  className="border-blue-400/30 focus:border-blue-400"
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    setFormData({ ...formData, xp_reward: Math.min(value, xpLimit) });
+                  }}
+                  className={`border-blue-400/30 focus:border-blue-400 ${isXPOverLimit ? 'border-destructive' : ''}`}
                 />
+                {/* Sugestão contextual */}
+                {xpSuggestion && (
+                  <p className="text-xs text-muted-foreground">
+                    {xpSuggestion.label}
+                  </p>
+                )}
               </div>
             </div>
           </div>
