@@ -19,7 +19,8 @@ import {
   CheckCircle,
   Edit,
   Eye,
-  Plus
+  Plus,
+  PartyPopper
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,8 @@ import {
 import { activityDrawerStore, dayDrawerStore } from '@/utils/activity-drawer-handler';
 import { NormalizedCalendarEvent } from '@/utils/calendar-events';
 import { logAudit } from '@/stores/audit-store';
+import { isHoliday } from '@/utils/br-holidays';
+import { HolidayBanner } from './HolidayBanner';
 
 const typeIcons = {
   EVENTO: CalendarIcon,
@@ -274,17 +277,43 @@ export function DayFocusModal() {
 
         {/* Main Content */}
         <ScrollArea className="flex-1 px-6 pb-6">
+          {/* Holiday Banner */}
+          {(() => {
+            const holiday = isHoliday(date);
+            return holiday ? <div className="pt-4"><HolidayBanner holiday={holiday} /></div> : null;
+          })()}
+          
           {!dayData || dayData.filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <CalendarIcon className="h-16 w-16 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-semibold text-muted-foreground">
-                {activeFilter === 'all' ? 'Nenhum item para este dia' : `Nenhum ${filterLabels[activeFilter].toLowerCase()} para este dia`}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                {activeFilter !== 'all' && (dayData?.allItems.length || 0) > 0 
-                  ? 'Tente alterar o filtro para ver outros tipos de itens.'
-                  : 'Este dia está livre de eventos e atividades.'}
-              </p>
+              {(() => {
+                const holiday = isHoliday(date);
+                if (holiday) {
+                  return (
+                    <>
+                      <PartyPopper className="h-16 w-16 text-amber-400/70 mb-4" />
+                      <h3 className="text-lg font-semibold text-foreground">
+                        🎉 Dia de Feriado!
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Nenhum compromisso agendado - aproveite o descanso!
+                      </p>
+                    </>
+                  );
+                }
+                return (
+                  <>
+                    <CalendarIcon className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-semibold text-muted-foreground">
+                      {activeFilter === 'all' ? 'Nenhum item para este dia' : `Nenhum ${filterLabels[activeFilter].toLowerCase()} para este dia`}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {activeFilter !== 'all' && (dayData?.allItems.length || 0) > 0 
+                        ? 'Tente alterar o filtro para ver outros tipos de itens.'
+                        : 'Este dia está livre de eventos e atividades.'}
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
