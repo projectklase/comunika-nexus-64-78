@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Challenge } from '@/hooks/useChallenges';
 import { ACTION_TARGET_LABELS, CHALLENGE_TYPE_LABELS, ICON_LABELS } from '@/constants/challenge-labels';
+import { useToast } from '@/hooks/use-toast';
 import * as Icons from 'lucide-react';
 
 // Usar constantes do arquivo challenge-labels.ts
@@ -22,6 +23,7 @@ interface ChallengeFormModalProps {
 }
 
 export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: ChallengeFormModalProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -29,6 +31,7 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
     action_target: 'READ_POST',
     action_count: 1,
     koin_reward: 10,
+    xp_reward: 10,
     icon_name: 'target',
     is_active: true,
   });
@@ -44,6 +47,7 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
         action_target: challenge.action_target,
         action_count: challenge.action_count,
         koin_reward: challenge.koin_reward,
+        xp_reward: challenge.xp_reward ?? 0,
         icon_name: challenge.icon_name,
         is_active: challenge.is_active,
       });
@@ -55,6 +59,7 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
         action_target: 'READ_POST',
         action_count: 1,
         koin_reward: 10,
+        xp_reward: 10,
         icon_name: 'target',
         is_active: true,
       });
@@ -63,6 +68,17 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação: pelo menos uma recompensa deve ser > 0
+    if (formData.koin_reward <= 0 && formData.xp_reward <= 0) {
+      toast({
+        title: 'Recompensa obrigatória',
+        description: 'O desafio deve ter pelo menos uma recompensa (Koins ou XP) maior que zero.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setSubmitting(true);
     try {
       await onSubmit(formData);
@@ -147,7 +163,7 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="action_count">Quantidade</Label>
               <Input
@@ -155,19 +171,7 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
                 type="number"
                 min="1"
                 value={formData.action_count}
-                onChange={(e) => setFormData({ ...formData, action_count: parseInt(e.target.value) })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="koin_reward">Recompensa (Koins)</Label>
-              <Input
-                id="koin_reward"
-                type="number"
-                min="1"
-                value={formData.koin_reward}
-                onChange={(e) => setFormData({ ...formData, koin_reward: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, action_count: parseInt(e.target.value) || 1 })}
                 required
               />
             </div>
@@ -183,7 +187,6 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
                 </SelectTrigger>
                 <SelectContent>
                   {ICON_OPTIONS.map(iconKey => {
-                    // Converter para PascalCase para importar do lucide-react
                     const IconComponent = Icons[iconKey.charAt(0).toUpperCase() + iconKey.slice(1) as keyof typeof Icons] as any;
                     const label = ICON_LABELS[iconKey as keyof typeof ICON_LABELS];
                     return (
@@ -197,6 +200,46 @@ export function ChallengeFormModal({ isOpen, onClose, onSubmit, challenge }: Cha
                   })}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Recompensas separadas */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">Recompensas</Label>
+            <p className="text-xs text-muted-foreground">
+              Deixe 0 para não dar esse tipo de recompensa. Pelo menos uma deve ser maior que zero.
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="koin_reward" className="flex items-center gap-2">
+                  <Icons.Sparkles className="h-4 w-4 text-yellow-500" />
+                  Koins
+                </Label>
+                <Input
+                  id="koin_reward"
+                  type="number"
+                  min="0"
+                  value={formData.koin_reward}
+                  onChange={(e) => setFormData({ ...formData, koin_reward: parseInt(e.target.value) || 0 })}
+                  className="border-yellow-500/30 focus:border-yellow-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="xp_reward" className="flex items-center gap-2">
+                  <Icons.Star className="h-4 w-4 text-blue-400" />
+                  XP
+                </Label>
+                <Input
+                  id="xp_reward"
+                  type="number"
+                  min="0"
+                  value={formData.xp_reward}
+                  onChange={(e) => setFormData({ ...formData, xp_reward: parseInt(e.target.value) || 0 })}
+                  className="border-blue-400/30 focus:border-blue-400"
+                />
+              </div>
             </div>
           </div>
 
