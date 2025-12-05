@@ -2212,7 +2212,7 @@ export type Database = {
         | { Args: { p_user_id: string }; Returns: number }
       get_school_rankings: {
         Args: {
-          limit_param?: number
+          limit_count?: number
           ranking_type?: string
           school_id_param: string
         }
