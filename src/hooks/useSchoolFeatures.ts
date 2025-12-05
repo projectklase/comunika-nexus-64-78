@@ -32,6 +32,13 @@ const AVAILABLE_FEATURES: Omit<SchoolFeature, 'enabled'>[] = [
     description: 'Exibe ranking de XP, Koins e streak entre alunos da escola',
     icon: '🏆',
     category: 'Gamificação'
+  },
+  {
+    key: 'attendance_enabled',
+    label: 'Lista de Chamada',
+    description: 'Professores podem registrar presença/falta dos alunos nas aulas',
+    icon: '📋',
+    category: 'Gestão Acadêmica'
   }
 ];
 
