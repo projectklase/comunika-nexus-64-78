@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useCards } from '@/hooks/useCards';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/Layout/AppLayout';
@@ -7,13 +7,15 @@ import { PackOpeningModal } from '@/components/cards/PackOpeningModal';
 import { DeckBuilderModal } from '@/components/cards/DeckBuilderModal';
 import { CardDisplay } from '@/components/cards/CardDisplay';
 import { CardDetailModal } from '@/components/cards/CardDetailModal';
+import { CardRecycleModal } from '@/components/cards/CardRecycleModal';
 import { GameStatCard } from '@/components/cards/GameStatCard';
 import { GameActionButton } from '@/components/cards/GameActionButton';
 import { GameDeckCard } from '@/components/cards/GameDeckCard';
-import { Package, BookOpen, Plus, Sparkles, TrendingUp } from 'lucide-react';
+import { Package, BookOpen, Plus, Sparkles, TrendingUp, Flame } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DeleteDeckConfirmModal } from '@/components/cards/DeleteDeckConfirmModal';
 import { Deck, Card } from '@/types/cards';
+import { getRecyclableCards } from '@/hooks/useCardRecycling';
 
 export default function CartasPage() {
   const { user } = useAuth();
@@ -38,6 +40,7 @@ export default function CartasPage() {
   const [showGallery, setShowGallery] = useState(false);
   const [showPackOpening, setShowPackOpening] = useState(false);
   const [showDeckBuilder, setShowDeckBuilder] = useState(false);
+  const [showRecycleModal, setShowRecycleModal] = useState(false);
   const [lastOpenedCards, setLastOpenedCards] = useState<any>(null);
   const [editingDeck, setEditingDeck] = useState<Deck | undefined>(undefined);
   const [deckToDelete, setDeckToDelete] = useState<Deck | null>(null);
@@ -45,6 +48,11 @@ export default function CartasPage() {
 
   const userCardsMap = new Map(userCards.map(uc => [uc.card_id, uc.quantity]));
   const collectionProgress = getCollectionProgress();
+  
+  // Contar duplicatas para badge
+  const duplicateCount = useMemo(() => {
+    return getRecyclableCards(userCards).reduce((sum, uc) => sum + (uc.quantity - 1), 0);
+  }, [userCards]);
 
   const handleOpenPack = (packType: any) => {
     openPack(packType, {
@@ -113,7 +121,7 @@ export default function CartasPage() {
         </div>
 
         {/* Ações Rápidas */}
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <GameActionButton
             icon={<Package className="w-full h-full" />}
             title="Abrir Pacotes"
@@ -139,6 +147,16 @@ export default function CartasPage() {
             variant="create"
             onClick={() => setShowDeckBuilder(true)}
             delay={6}
+          />
+
+          <GameActionButton
+            icon={<Flame className="w-full h-full" />}
+            title="Forja de Cartas"
+            subtitle={duplicateCount > 0 ? `${duplicateCount} duplicata(s)` : 'Sem duplicatas'}
+            variant="forge"
+            onClick={() => setShowRecycleModal(true)}
+            delay={7}
+            badge={duplicateCount > 0 ? duplicateCount : undefined}
           />
         </div>
 
@@ -266,6 +284,13 @@ export default function CartasPage() {
         isOpen={!!selectedCard}
         onClose={() => setSelectedCard(null)}
         quantity={selectedCard ? userCardsMap.get(selectedCard.id) : undefined}
+      />
+
+      {/* Modal de Reciclagem de Cartas */}
+      <CardRecycleModal
+        isOpen={showRecycleModal}
+        onClose={() => setShowRecycleModal(false)}
+        userCards={userCards}
       />
     </AppLayout>
   );

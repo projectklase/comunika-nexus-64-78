@@ -2329,6 +2329,10 @@ export type Database = {
           type: string
         }[]
       }
+      recycle_cards: {
+        Args: { p_cards: Json; p_user_id: string }
+        Returns: Json
+      }
       reject_redemption: {
         Args: { p_admin_id: string; p_reason: string; p_redemption_id: string }
         Returns: undefined

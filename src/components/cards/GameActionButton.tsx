@@ -6,9 +6,10 @@ interface GameActionButtonProps {
   icon: ReactNode;
   title: string;
   subtitle: string;
-  variant?: 'reward' | 'explore' | 'create';
+  variant?: 'reward' | 'explore' | 'create' | 'forge';
   onClick: () => void;
   delay?: number;
+  badge?: number;
 }
 
 const variantStyles = {
@@ -30,6 +31,12 @@ const variantStyles = {
     glow: 'rgba(139, 92, 246, 0.4)',
     iconBg: 'bg-violet-500/20',
   },
+  forge: {
+    gradient: 'from-orange-600 to-red-600',
+    hoverGradient: 'from-orange-500 to-red-500',
+    glow: 'rgba(239, 68, 68, 0.4)',
+    iconBg: 'bg-orange-500/20',
+  },
 };
 
 export function GameActionButton({ 
@@ -38,7 +45,8 @@ export function GameActionButton({
   subtitle, 
   variant = 'reward',
   onClick,
-  delay = 0 
+  delay = 0,
+  badge
 }: GameActionButtonProps) {
   const styles = variantStyles[variant];
 
@@ -95,6 +103,13 @@ export function GameActionButton({
         <p className="font-bold text-white text-lg drop-shadow-md">{title}</p>
         <p className="text-xs text-white/70">{subtitle}</p>
       </div>
+
+      {/* Badge */}
+      {badge && badge > 0 && (
+        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+          {badge > 99 ? '99+' : badge}
+        </div>
+      )}
 
       {/* Bottom highlight */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
