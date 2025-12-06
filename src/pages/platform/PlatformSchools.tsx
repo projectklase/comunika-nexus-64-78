@@ -92,7 +92,7 @@ export default function PlatformSchools() {
     Object.values(groups).forEach(group => {
       if (group.subscription) {
         const baseCost = group.subscription.price_cents;
-        const addonSchoolsCount = group.subscription.addon_schools || 0;
+        const addonSchoolsCount = group.subscription.addon_schools_count || 0;
         const addonCost = addonSchoolsCount * (group.subscription.addon_school_price_cents || 49700);
         group.totalMonthlyCost = baseCost + addonCost;
         
@@ -248,8 +248,8 @@ export default function PlatformSchools() {
                             <p className="text-sm font-medium text-primary">{group.subscription.plan_name}</p>
                             <p className="text-xs text-muted-foreground">
                               {group.schools.length} {group.schools.length === 1 ? 'escola' : 'escolas'}
-                              {group.subscription.addon_schools > 0 && (
-                                <span className="text-purple-400"> (+{group.subscription.addon_schools} add-on)</span>
+                              {group.subscription.addon_schools_count > 0 && (
+                                <span className="text-purple-400"> (+{group.subscription.addon_schools_count} add-on)</span>
                               )}
                             </p>
                           </div>
@@ -267,9 +267,9 @@ export default function PlatformSchools() {
                               <div className="space-y-1">
                                 <p className="font-medium">Detalhamento:</p>
                                 <p className="text-xs">Plano base: {formatCurrency(group.subscription.price_cents)}</p>
-                                {group.subscription.addon_schools > 0 && (
+                                {group.subscription.addon_schools_count > 0 && (
                                   <p className="text-xs">
-                                    Add-ons ({group.subscription.addon_schools}x): {formatCurrency(group.subscription.addon_schools * (group.subscription.addon_school_price_cents || 49700))}
+                                    Add-ons ({group.subscription.addon_schools_count}x): {formatCurrency(group.subscription.addon_schools_count * (group.subscription.addon_school_price_cents || 49700))}
                                   </p>
                                 )}
                                 <p className="text-xs font-medium border-t border-white/10 pt-1">
