@@ -146,13 +146,13 @@ export default function ProfessorDashboard() {
 
       {/* Turmas Recentes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-white/15 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Minhas Turmas
             </CardTitle>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" className="bg-white/5 backdrop-blur-sm border-white/20 hover:bg-white/10 hover:border-white/30 transition-all" asChild>
               <Link to="/professor/turmas">Ver Todas</Link>
             </Button>
           </CardHeader>
@@ -172,7 +172,7 @@ export default function ProfessorDashboard() {
                 {orderedClasses.slice(0, 5).map((schoolClass) => {
                   const info = getClassDisplayInfo(schoolClass, levels, modalities);
                   return (
-                    <div key={schoolClass.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div key={schoolClass.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/8 hover:border-white/10 transition-all duration-200">
                       <div>
                         <h4 className="font-medium">{schoolClass.name}</h4>
                         <p className="text-sm text-muted-foreground">
@@ -193,13 +193,13 @@ export default function ProfessorDashboard() {
         </Card>
 
         {/* Atividades Recentes */}
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-white/15 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
               Atividades Recentes
             </CardTitle>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" className="bg-white/5 backdrop-blur-sm border-white/20 hover:bg-white/10 hover:border-white/30 transition-all" asChild>
               <Link to="/professor/atividades">Ver Todas</Link>
             </Button>
           </CardHeader>
@@ -225,7 +225,7 @@ export default function ProfessorDashboard() {
             ) : (
               <div className="space-y-3">
                 {recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/8 hover:border-white/10 transition-all duration-200">
                     <div className="flex-1">
                       <h4 className="font-medium">{activity.title}</h4>
                       <p className="text-sm text-muted-foreground">
@@ -246,7 +246,7 @@ export default function ProfessorDashboard() {
       </div>
 
       {/* Ações Rápidas */}
-      <Card className="max-w-fit mx-auto">
+      <Card className="max-w-fit mx-auto bg-card/50 backdrop-blur-sm border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -255,24 +255,24 @@ export default function ProfessorDashboard() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3 items-center justify-center">
-            <Button variant="outline" className="h-20 flex-col gap-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" asChild>
+            <Button variant="outline" className="h-20 w-28 flex-col gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
               <Link to="/professor/turmas">
-                <Users className="h-6 w-6" />
-                <span>Minhas Turmas</span>
+                <Users className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-xs">Minhas Turmas</span>
               </Link>
             </Button>
             
-            <Button variant="outline" className="h-20 flex-col gap-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" asChild>
+            <Button variant="outline" className="h-20 w-28 flex-col gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
               <Link to="/professor/calendario">
-                <Calendar className="h-6 w-6" />
-                <span>Calendário</span>
+                <Calendar className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-xs">Calendário</span>
               </Link>
             </Button>
             
-            <Button variant="outline" className="h-20 flex-col gap-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" asChild>
+            <Button variant="outline" className="h-20 w-28 flex-col gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
               <Link to="/professor/atividades/nova">
-                <Plus className="h-6 w-6" />
-                <span>Nova Atividade</span>
+                <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-xs">Nova Atividade</span>
               </Link>
             </Button>
           </div>
