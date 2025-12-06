@@ -601,7 +601,7 @@ export function NotificationPanel() {
             className="absolute top-[70px] right-8 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-[440px] max-h-[80vh] flex flex-col p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70] overflow-hidden">
+            <div className="w-[440px] max-h-[80vh] flex flex-col p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70]">
               {panelContent}
             </div>
           </div>
