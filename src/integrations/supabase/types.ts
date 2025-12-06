@@ -2305,6 +2305,7 @@ export type Database = {
         Args: { p_battle_id: string; p_player_id: string }
         Returns: Json
       }
+      get_admins_overview: { Args: never; Returns: Json }
       get_attendance_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
@@ -2383,6 +2384,7 @@ export type Database = {
           xp_reward: number
         }[]
       }
+      get_subscription_plans: { Args: never; Returns: Json }
       get_user_growth: { Args: never; Returns: Json }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       grant_koin_bonus: {
@@ -2468,6 +2470,28 @@ export type Database = {
       request_redemption: {
         Args: { p_item_id: string; p_student_id: string }
         Returns: undefined
+      }
+      update_school_admin: {
+        Args: {
+          p_is_active?: boolean
+          p_logo_url?: string
+          p_name?: string
+          p_primary_color?: string
+          p_school_id: string
+          p_slug?: string
+        }
+        Returns: Json
+      }
+      update_subscription_admin: {
+        Args: {
+          p_addon_schools_count?: number
+          p_admin_id: string
+          p_expires_at?: string
+          p_plan_id?: string
+          p_status?: string
+          p_trial_ends_at?: string
+        }
+        Returns: Json
       }
       user_has_school_access: {
         Args: { _school_id: string; _user_id: string }

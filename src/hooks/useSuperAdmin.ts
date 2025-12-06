@@ -46,6 +46,43 @@ interface SchoolOverview {
   } | null;
 }
 
+interface AdminOverview {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  avatar: string | null;
+  created_at: string;
+  is_active: boolean;
+  schools_count: number;
+  total_students: number;
+  subscription: {
+    id: string;
+    status: string;
+    plan_name: string;
+    plan_slug: string;
+    price_cents: number;
+    max_students: number;
+    included_schools: number;
+    addon_schools: number;
+    started_at: string;
+    expires_at: string | null;
+    trial_ends_at: string | null;
+  } | null;
+}
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  slug: string;
+  price_cents: number;
+  max_students: number;
+  included_schools: number;
+  addon_school_price_cents: number;
+  features: any;
+  is_active: boolean;
+}
+
 interface MrrHistoryItem {
   month_date: string;
   mrr_cents: number;
@@ -104,7 +141,7 @@ export function useSuperAdmin() {
       return data as unknown as PlatformMetrics;
     },
     enabled: isSuperAdmin === true,
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
   });
 
   // Get all schools with subscription info
@@ -192,6 +229,28 @@ export function useSuperAdmin() {
     enabled: isSuperAdmin === true,
   });
 
+  // Get admins overview (from RPC)
+  const { data: adminsOverview, isLoading: loadingAdminsOverview, refetch: refetchAdminsOverview } = useQuery({
+    queryKey: ['admins-overview'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_admins_overview');
+      if (error) throw error;
+      return data as unknown as AdminOverview[];
+    },
+    enabled: isSuperAdmin === true,
+  });
+
+  // Get subscription plans
+  const { data: subscriptionPlans, isLoading: loadingPlans } = useQuery({
+    queryKey: ['subscription-plans'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_subscription_plans');
+      if (error) throw error;
+      return data as unknown as SubscriptionPlan[];
+    },
+    enabled: isSuperAdmin === true,
+  });
+
   // Get MRR history
   const { data: mrrHistory, isLoading: loadingMrrHistory } = useQuery({
     queryKey: ['mrr-history'],
@@ -236,6 +295,64 @@ export function useSuperAdmin() {
     enabled: isSuperAdmin === true,
   });
 
+  // Update school mutation
+  const updateSchool = useMutation({
+    mutationFn: async (params: {
+      schoolId: string;
+      name?: string;
+      slug?: string;
+      logo_url?: string;
+      primary_color?: string;
+      is_active?: boolean;
+    }) => {
+      const { data, error } = await supabase.rpc('update_school_admin', {
+        p_school_id: params.schoolId,
+        p_name: params.name || null,
+        p_slug: params.slug || null,
+        p_logo_url: params.logo_url || null,
+        p_primary_color: params.primary_color || null,
+        p_is_active: params.is_active ?? null,
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schools-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-schools'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-metrics'] });
+    },
+  });
+
+  // Update subscription mutation
+  const updateSubscription = useMutation({
+    mutationFn: async (params: {
+      adminId: string;
+      planId?: string;
+      status?: string;
+      addonSchoolsCount?: number;
+      trialEndsAt?: string | null;
+      expiresAt?: string | null;
+    }) => {
+      const { data, error } = await supabase.rpc('update_subscription_admin', {
+        p_admin_id: params.adminId,
+        p_plan_id: params.planId || null,
+        p_status: params.status || null,
+        p_addon_schools_count: params.addonSchoolsCount ?? null,
+        p_trial_ends_at: params.trialEndsAt || null,
+        p_expires_at: params.expiresAt || null,
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admins-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['schools-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-metrics'] });
+    },
+  });
+
   return {
     isSuperAdmin,
     checkingStatus,
@@ -248,6 +365,11 @@ export function useSuperAdmin() {
     schoolsOverview,
     loadingSchoolsOverview,
     refetchSchoolsOverview,
+    adminsOverview,
+    loadingAdminsOverview,
+    refetchAdminsOverview,
+    subscriptionPlans,
+    loadingPlans,
     mrrHistory,
     loadingMrrHistory,
     userGrowth,
@@ -259,5 +381,9 @@ export function useSuperAdmin() {
     auditLogs,
     loadingAuditLogs,
     logAction,
+    updateSchool,
+    updatingSchool: updateSchool.isPending,
+    updateSubscription,
+    updatingSubscription: updateSubscription.isPending,
   };
 }
