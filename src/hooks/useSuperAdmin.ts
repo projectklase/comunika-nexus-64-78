@@ -31,12 +31,18 @@ interface SchoolOverview {
   total_users: number;
   total_students: number;
   total_teachers: number;
+  admin_id: string | null;
+  admin_name: string | null;
+  admin_email: string | null;
+  school_order: number;
+  is_addon_school: boolean;
   subscription: {
     id: string;
     status: string;
     plan_name: string;
     plan_slug: string;
     price_cents: number;
+    addon_school_price_cents: number;
     max_students: number;
     included_schools: number;
     addon_schools: number;
