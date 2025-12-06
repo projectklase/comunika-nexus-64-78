@@ -402,12 +402,12 @@ export function NotificationPanel() {
       return (
         <div className="space-y-3 pb-4 w-full max-w-full overflow-hidden">
           {/* Tab actions */}
-          <div className="flex items-center justify-between gap-2 sticky top-0 bg-background/95 backdrop-blur-sm px-2 py-2 mb-3 border-b border-border/20 rounded-lg overflow-hidden">
-            <div className="flex items-center gap-2 min-w-0 flex-shrink">
+          <div className="sticky top-0 bg-background/95 backdrop-blur-sm px-3 py-2 mb-3 border-b border-border/20 rounded-lg">
+            <div className="flex items-center gap-2">
               {tabUnreadCount > 0 ? (
                 <>
                   <div className="w-2 h-2 bg-destructive rounded-full animate-pulse flex-shrink-0" />
-                  <span className="text-sm font-medium text-destructive truncate">
+                  <span className="text-sm font-medium text-destructive">
                     {tabUnreadCount} não lida{tabUnreadCount !== 1 ? 's' : ''}
                   </span>
                 </>
@@ -424,10 +424,10 @@ export function NotificationPanel() {
                 variant="outline"
                 size="sm"
                 onClick={() => markAllAsRead(tab)}
-                className="text-xs h-7 px-2 bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 whitespace-nowrap flex-shrink-0"
+                className="text-xs h-7 mt-2 w-full bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
               >
-                <CheckCheck className="w-3 h-3 mr-1" />
-                Marcar lidas
+                <CheckCheck className="w-3 h-3 mr-1.5" />
+                Marcar como lidas
               </Button>
             )}
           </div>
