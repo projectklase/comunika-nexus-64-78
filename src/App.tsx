@@ -14,6 +14,8 @@ import { CalendarProviders } from "@/providers/CalendarProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ConditionalNotificationProvider } from "@/components/ConditionalNotificationProvider";
 import { ModalManagerProvider } from "@/components/ui/app-dialog";
+import { SuperAdminGuard } from "@/components/SuperAdminGuard";
+import { PlatformLayout } from "@/layouts/PlatformLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -64,6 +66,7 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
+import PlatformDashboard from "./pages/platform/PlatformDashboard";
 
 const queryClient = new QueryClient();
 
@@ -469,6 +472,16 @@ const App = () => (
                 <PostFallback />
               </ProtectedRoute>
             } />
+            
+            {/* Platform Super Admin Routes */}
+            <Route path="/platform" element={
+              <SuperAdminGuard>
+                <PlatformLayout />
+              </SuperAdminGuard>
+            }>
+              <Route index element={<PlatformDashboard />} />
+            </Route>
+            
             <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
