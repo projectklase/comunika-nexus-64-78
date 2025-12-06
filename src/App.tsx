@@ -17,7 +17,6 @@ import { ModalManagerProvider } from "@/components/ui/app-dialog";
 import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { PlatformLayout } from "@/layouts/PlatformLayout";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import SecretariaFeed from "./pages/SecretariaFeed";
@@ -88,7 +87,6 @@ const App = () => (
               <BrowserRouter>
             <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
