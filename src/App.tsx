@@ -69,6 +69,7 @@ import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
 import PlatformSchools from "./pages/platform/PlatformSchools";
 import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
+import PlatformAdmins from "./pages/platform/PlatformAdmins";
 
 const queryClient = new QueryClient();
 
