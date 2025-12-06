@@ -3,7 +3,7 @@ import { ROUTES } from '@/constants/routes';
 import { Post } from '@/types/post';
 import { parseYmdLocal } from '@/lib/date-helpers';
 
-export type UserRole = 'aluno' | 'professor' | 'secretaria' | 'administrador';
+export type UserRole = 'aluno' | 'professor' | 'secretaria' | 'administrador' | 'superadmin';
 export type FocusType = 'post' | 'holiday';
 
 export interface CalendarLinkParams {
