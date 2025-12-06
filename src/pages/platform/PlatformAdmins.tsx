@@ -5,14 +5,16 @@ import {
   Filter,
   Building2,
   GraduationCap,
-  ChevronRight,
   CheckCircle,
   XCircle,
   Clock,
   AlertTriangle,
   Mail,
   Phone,
-  CreditCard
+  CreditCard,
+  Key,
+  Eye,
+  MoreVertical
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,10 +29,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { SubscriptionManagementModal } from '@/components/platform/SubscriptionManagementModal';
+import { AdminPasswordResetModal } from '@/components/platform/AdminPasswordResetModal';
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -65,6 +77,7 @@ export default function PlatformAdmins() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [passwordResetModalOpen, setPasswordResetModalOpen] = useState(false);
 
   const filteredAdmins = adminsOverview?.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -82,6 +95,49 @@ export default function PlatformAdmins() {
   const handleManageSubscription = (admin: any) => {
     setSelectedAdmin(admin);
     setSubscriptionModalOpen(true);
+  };
+
+  const handlePasswordReset = (admin: any) => {
+    setSelectedAdmin(admin);
+    setPasswordResetModalOpen(true);
+  };
+
+  const handleImpersonate = async (admin: any) => {
+    try {
+      // Log impersonation start
+      await supabase.rpc('log_impersonation', {
+        p_target_admin_id: admin.id,
+        p_action: 'IMPERSONATION_START',
+      });
+      
+      // Store impersonation data in sessionStorage
+      sessionStorage.setItem('impersonation', JSON.stringify({
+        adminId: admin.id,
+        adminName: admin.name,
+        adminEmail: admin.email,
+        startedAt: new Date().toISOString(),
+      }));
+
+      // Get one of the admin's schools
+      const { data: membership } = await supabase
+        .from('school_memberships')
+        .select('school_id, schools(slug)')
+        .eq('user_id', admin.id)
+        .eq('role', 'administrador')
+        .limit(1)
+        .single();
+
+      if (membership?.schools) {
+        const schoolSlug = (membership.schools as any).slug;
+        toast.success(`Visualizando como ${admin.name}`);
+        window.open(`/${schoolSlug}/admin/dashboard?impersonate=true`, '_blank');
+      } else {
+        toast.error('Administrador não possui escola vinculada');
+      }
+    } catch (error) {
+      console.error('Impersonation error:', error);
+      toast.error('Erro ao iniciar visualização');
+    }
   };
 
   return (
@@ -209,15 +265,28 @@ export default function PlatformAdmins() {
                   </div>
 
                   {/* Actions */}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="shrink-0 bg-white/5 border-white/10 hover:bg-white/10"
-                    onClick={() => handleManageSubscription(admin)}
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Assinatura
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="shrink-0 bg-white/5 border-white/10">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleManageSubscription(admin)}>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Gerenciar Assinatura
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePasswordReset(admin)}>
+                        <Key className="w-4 h-4 mr-2" />
+                        Redefinir Senha
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleImpersonate(admin)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        Visualizar Como
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardContent>
             </Card>
@@ -225,7 +294,7 @@ export default function PlatformAdmins() {
         )}
       </div>
 
-      {/* Subscription Management Modal */}
+      {/* Modals */}
       <SubscriptionManagementModal
         open={subscriptionModalOpen}
         onOpenChange={setSubscriptionModalOpen}
@@ -235,6 +304,11 @@ export default function PlatformAdmins() {
           setSubscriptionModalOpen(false);
         }}
       />
+
+      <AdminPasswordResetModal
+        open={passwordResetModalOpen}
+        onOpenChange={setPasswordResetModalOpen}
+        admin={selectedAdmin}
+      />
     </div>
   );
-}
