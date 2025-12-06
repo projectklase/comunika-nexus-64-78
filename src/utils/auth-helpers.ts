@@ -39,7 +39,8 @@ export function getRoleRoutePrefix(role: UserRole): string {
     'administrador': 'admin',
     'secretaria': 'secretaria',
     'professor': 'professor',
-    'aluno': 'aluno'
+    'aluno': 'aluno',
+    'superadmin': 'platform'
   };
   return roleMap[role];
 }

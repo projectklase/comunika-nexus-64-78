@@ -3,7 +3,7 @@ import { ROUTES } from '@/constants/routes';
 import { format } from 'date-fns';
 import { UnifiedCalendarLinks } from '@/utils/unified-calendar-links';
 
-export type UserRole = 'aluno' | 'professor' | 'secretaria' | 'administrador';
+export type UserRole = 'aluno' | 'professor' | 'secretaria' | 'administrador' | 'superadmin';
 
 /**
  * Unified post link builder

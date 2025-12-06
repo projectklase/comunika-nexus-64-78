@@ -59,6 +59,12 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user || isAuthLoading) return;
 
+    // Superadmin vai direto para /platform
+    if (user.role === 'superadmin') {
+      navigate('/platform', { replace: true });
+      return;
+    }
+
     // Apenas secretaria usa este Dashboard.tsx
     if (user.role !== 'secretaria') {
       const routePrefix = getRoleRoutePrefix(user.role);
