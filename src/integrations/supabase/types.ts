@@ -298,6 +298,39 @@ export type Database = {
           },
         ]
       }
+      broadcast_messages: {
+        Row: {
+          channel: string
+          id: string
+          message: string
+          sent_at: string
+          sent_by: string
+          target_ids: string[] | null
+          target_type: string
+          title: string
+        }
+        Insert: {
+          channel?: string
+          id?: string
+          message: string
+          sent_at?: string
+          sent_by: string
+          target_ids?: string[] | null
+          target_type: string
+          title: string
+        }
+        Update: {
+          channel?: string
+          id?: string
+          message?: string
+          sent_at?: string
+          sent_by?: string
+          target_ids?: string[] | null
+          target_type?: string
+          title?: string
+        }
+        Relationships: []
+      }
       card_packs: {
         Row: {
           cards_received: string[]
@@ -2033,6 +2066,62 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          admin_id: string | null
+          assigned_to: string | null
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          school_id: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          school_id?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          school_id?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_logs: {
         Row: {
           context: Json | null
@@ -2301,6 +2390,16 @@ export type Database = {
             }
             Returns: undefined
           }
+      create_broadcast: {
+        Args: {
+          p_channel?: string
+          p_message: string
+          p_target_ids?: string[]
+          p_target_type: string
+          p_title: string
+        }
+        Returns: string
+      }
       end_turn: {
         Args: { p_battle_id: string; p_player_id: string }
         Returns: Json
@@ -2385,6 +2484,10 @@ export type Database = {
         }[]
       }
       get_subscription_plans: { Args: never; Returns: Json }
+      get_support_tickets: {
+        Args: { p_priority?: string; p_status?: string }
+        Returns: Json
+      }
       get_user_growth: { Args: never; Returns: Json }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       grant_koin_bonus: {
@@ -2414,6 +2517,10 @@ export type Database = {
         Returns: Json
       }
       leave_battle_queue: { Args: { p_user_id: string }; Returns: undefined }
+      log_impersonation: {
+        Args: { p_action: string; p_target_admin_id: string }
+        Returns: boolean
+      }
       log_superadmin_action: {
         Args: {
           p_action: string
@@ -2492,6 +2599,14 @@ export type Database = {
           p_trial_ends_at?: string
         }
         Returns: Json
+      }
+      update_ticket_status: {
+        Args: {
+          p_resolution_notes?: string
+          p_status: string
+          p_ticket_id: string
+        }
+        Returns: boolean
       }
       user_has_school_access: {
         Args: { _school_id: string; _user_id: string }
