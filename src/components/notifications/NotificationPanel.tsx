@@ -295,7 +295,7 @@ export function NotificationPanel() {
           </div>
           
             {/* Action buttons */}
-            <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
+            <div className="flex flex-wrap gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
               {notification.link && (
                 <Button
                   size="sm"
@@ -400,7 +400,7 @@ export function NotificationPanel() {
     }
     
       return (
-        <div className="space-y-3 pb-4 w-full max-w-full overflow-hidden">
+        <div className="space-y-3 pb-4 w-full max-w-full overflow-hidden box-border">
           {/* Tab actions */}
           <div className="sticky top-0 bg-background/95 backdrop-blur-sm px-3 py-2 mb-3 border-b border-border/20 rounded-lg">
             <div className="flex items-center gap-2">
@@ -515,13 +515,13 @@ export function NotificationPanel() {
         </div>
         
         <TabsContent value="novidades" className="mt-0 flex-1 overflow-hidden">
-        <ScrollArea className="h-full px-6 overflow-hidden">
+          <ScrollArea className="h-full px-4 overflow-hidden">
             {renderTabContent('novidades')}
           </ScrollArea>
         </TabsContent>
         
         <TabsContent value="importantes" className="mt-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full px-6 overflow-hidden">
+          <ScrollArea className="h-full px-4 overflow-hidden">
             {renderTabContent('importantes')}
           </ScrollArea>
         </TabsContent>
