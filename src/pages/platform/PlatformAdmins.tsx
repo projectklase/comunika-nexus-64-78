@@ -14,7 +14,8 @@ import {
   CreditCard,
   Key,
   Eye,
-  MoreVertical
+  MoreVertical,
+  UserPlus
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { SubscriptionManagementModal } from '@/components/platform/SubscriptionManagementModal';
 import { AdminPasswordResetModal } from '@/components/platform/AdminPasswordResetModal';
+import { CreateAdministratorModal } from '@/components/platform/CreateAdministratorModal';
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -78,6 +80,7 @@ export default function PlatformAdmins() {
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [passwordResetModalOpen, setPasswordResetModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const filteredAdmins = adminsOverview?.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -153,9 +156,15 @@ export default function PlatformAdmins() {
             {adminsOverview?.length || 0} administradores na plataforma
           </p>
         </div>
-        <Button onClick={() => refetchAdminsOverview()} variant="outline" size="sm">
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => refetchAdminsOverview()} variant="outline" size="sm">
+            Atualizar
+          </Button>
+          <Button onClick={() => setCreateModalOpen(true)} size="sm">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Novo Administrador
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -309,6 +318,15 @@ export default function PlatformAdmins() {
         open={passwordResetModalOpen}
         onOpenChange={setPasswordResetModalOpen}
         admin={selectedAdmin}
+      />
+
+      <CreateAdministratorModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSuccess={() => {
+          refetchAdminsOverview();
+          setCreateModalOpen(false);
+        }}
       />
     </div>
   );
