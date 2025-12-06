@@ -22,7 +22,7 @@ export function DashboardCard({
   variant = 'default'
 }: DashboardCardProps) {
   const variantClasses = {
-    default: 'glass-card',
+    default: 'glass-card border border-white/10 hover:border-white/20',
     primary: 'glass-card border-primary/30 neon-glow',
     secondary: 'glass-card border-secondary/30 shadow-[0_0_20px_hsl(var(--secondary)/0.3)]',
     success: 'glass-card border-success/30 shadow-[0_0_20px_hsl(var(--success)/0.3)]'
@@ -36,7 +36,7 @@ export function DashboardCard({
   };
 
   return (
-    <Card className={`${variantClasses[variant]} hover:scale-105 transition-all duration-300`}>
+    <Card className={`${variantClasses[variant]} hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-foreground">
           {title}
