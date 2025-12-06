@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
 import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
-import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, AlertCircle, Clock, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
+import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, AlertTriangle, AlertCircle, Clock, Calendar, MessageSquare, BookOpen } from 'lucide-react';
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
@@ -30,7 +30,7 @@ const Login = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [remainingLockTime, setRemainingLockTime] = useState(0);
-  const { user, login, isLoading, createDemoUser } = useAuth();
+  const { user, login, isLoading } = useAuth();
   const { toast } = useToast();
   const { isLocked, getRemainingLockTime, recordFailedAttempt, resetAttempts, getAttemptsRemaining } = useLoginRateLimit();
   const { rememberEmail: savedRememberEmail, lastEmail, setLastEmail, updateSetting } = useUserSettingsStore();
@@ -296,45 +296,6 @@ const Login = () => {
     }
   };
 
-  const quickLogin = async (role: string = 'secretaria') => {
-    if (isFormSubmitting) return;
-    
-    setFormError('');
-    setIsSubmitting(true);
-    
-    try {
-      // ✅ Credenciais reais
-      const credentials = {
-        secretaria: { email: 'secretaria@comunika.com', password: '123456', name: 'Maria Silva' },
-        professor: { email: 'julianegrini@gmail.com', password: 'Prof9105!', name: 'Juliane Grini' },
-        aluno: { email: 'alinemenezes@gmail.com', password: 'Praia-Chuva-Lua-814$', name: 'Aline Menezes' },
-        administrador: { email: 'admin.klase@comunika.com', password: 'NexusAdmin#2025!', name: 'Admin Klase' }
-      };
-      
-      const { email, password, name } = credentials[role as keyof typeof credentials];
-      console.log(`QuickLogin attempt for ${role}: ${email}`);
-      
-      // ✅ Tenta login direto com credenciais reais (contas já existem no banco)
-      const result = await login(email, password);
-      
-      console.log(`QuickLogin result for ${role}:`, result);
-      
-      if (result.success) {
-        toast({
-          title: "Login realizado com sucesso!",
-          description: `Bem-vindo(a), ${name}!`,
-        });
-      } else {
-        console.error(`Login failed for ${role}: ${result.error}`);
-        setFormError(result.error || `Erro ao fazer login rápido (${role}).`);
-        setIsSubmitting(false);
-      }
-    } catch (error) {
-      console.error('QuickLogin error:', error);
-      setFormError("Erro interno. Tente novamente.");
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -605,82 +566,6 @@ const Login = () => {
                 </div>
               </form>
 
-                {/* Registration Link */}
-                <div className="text-center pt-4">
-                  <p className="text-xs text-muted-foreground">
-                    Não tem uma conta?{' '}
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="text-xs text-primary hover:underline p-0 h-auto font-medium"
-                      disabled={isFormSubmitting}
-                      onClick={() => window.location.href = '/register'}
-                    >
-                      Criar conta
-                    </Button>
-                  </p>
-                </div>
-
-                {/* Demo Accounts */}
-                <div className="border-t border-border/30 pt-4 mt-5">
-                  <div className="text-center mb-3">
-                    <span className="text-xs text-muted-foreground">Contas de demonstração</span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('secretaria')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-foreground">Secretaria</div>
-                        <div className="text-xs text-muted-foreground truncate">secretaria@comunika.com</div>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('professor')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-foreground">Professor</div>
-                        <div className="text-xs text-muted-foreground truncate">julianegrini@gmail.com</div>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('aluno')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-foreground">Aluno</div>
-                        <div className="text-xs text-muted-foreground truncate">alinemenezes@gmail.com</div>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('administrador')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-primary/10 hover:bg-primary/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-primary/30 hover:border-primary/50"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-primary">Admin</div>
-                        <div className="text-xs text-primary/70 truncate">admin.klase@comunika.com</div>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-primary/70 group-hover:text-primary flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
-                    </button>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
