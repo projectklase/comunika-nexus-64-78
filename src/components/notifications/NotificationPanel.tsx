@@ -515,13 +515,13 @@ export function NotificationPanel() {
         </div>
         
         <TabsContent value="novidades" className="mt-0 flex-1 min-h-0">
-          <ScrollArea className="h-full px-4">
+          <ScrollArea className="max-h-[calc(80vh-200px)] px-4">
             {renderTabContent('novidades')}
           </ScrollArea>
         </TabsContent>
         
         <TabsContent value="importantes" className="mt-0 flex-1 min-h-0">
-          <ScrollArea className="h-full px-4">
+          <ScrollArea className="max-h-[calc(80vh-200px)] px-4">
             {renderTabContent('importantes')}
           </ScrollArea>
         </TabsContent>
