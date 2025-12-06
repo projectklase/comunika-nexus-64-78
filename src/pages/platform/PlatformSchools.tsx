@@ -230,7 +230,7 @@ export default function PlatformSchools() {
                               <TooltipTrigger>
                                 <AlertTriangle className="w-4 h-4 text-red-500" />
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
+                              <TooltipContent side="bottom" className="max-w-xs">
                                 <p className="text-red-400 font-medium">Inconsistência de cobrança!</p>
                                 <p className="text-xs">Mais escolas ativas do que o contratado. Verificar add-ons.</p>
                               </TooltipContent>
@@ -263,7 +263,7 @@ export default function PlatformSchools() {
                                 <p className="text-xs text-emerald-400/70">/mês</p>
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
+                            <TooltipContent side="bottom" className="max-w-md">
                               <div className="space-y-1">
                                 <p className="font-medium">Detalhamento:</p>
                                 <p className="text-xs">Plano base: {formatCurrency(group.subscription.price_cents)}</p>
