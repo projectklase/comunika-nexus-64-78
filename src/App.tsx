@@ -67,6 +67,8 @@ import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
+import PlatformSchools from "./pages/platform/PlatformSchools";
+import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
 
 const queryClient = new QueryClient();
 
@@ -480,6 +482,8 @@ const App = () => (
               </SuperAdminGuard>
             }>
               <Route index element={<PlatformDashboard />} />
+              <Route path="schools" element={<PlatformSchools />} />
+              <Route path="subscriptions" element={<PlatformSubscriptions />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

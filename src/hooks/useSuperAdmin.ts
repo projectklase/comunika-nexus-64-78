@@ -12,9 +12,60 @@ interface PlatformMetrics {
   total_students: number;
   total_subscriptions: number;
   active_subscriptions: number;
+  mrr_cents: number;
+  mrr_growth_pct: number;
+  arpu_cents: number;
   logins_today: number;
   logins_this_week: number;
   generated_at: string;
+}
+
+interface SchoolOverview {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  logo_url: string | null;
+  primary_color: string | null;
+  created_at: string;
+  total_users: number;
+  total_students: number;
+  total_teachers: number;
+  subscription: {
+    id: string;
+    status: string;
+    plan_name: string;
+    plan_slug: string;
+    price_cents: number;
+    max_students: number;
+    included_schools: number;
+    addon_schools: number;
+    started_at: string;
+    expires_at: string | null;
+    trial_ends_at: string | null;
+  } | null;
+}
+
+interface MrrHistoryItem {
+  month_date: string;
+  mrr_cents: number;
+}
+
+interface UserGrowthItem {
+  month_date: string;
+  new_users: number;
+  new_schools: number;
+}
+
+interface PlanDistributionItem {
+  plan_name: string;
+  plan_slug: string;
+  subscribers: number;
+}
+
+interface DailyLoginItem {
+  login_date: string;
+  logins: number;
 }
 
 interface PlatformAuditLog {
@@ -130,6 +181,61 @@ export function useSuperAdmin() {
     },
   });
 
+  // Get schools overview (from RPC)
+  const { data: schoolsOverview, isLoading: loadingSchoolsOverview, refetch: refetchSchoolsOverview } = useQuery({
+    queryKey: ['schools-overview'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_schools_overview');
+      if (error) throw error;
+      return data as unknown as SchoolOverview[];
+    },
+    enabled: isSuperAdmin === true,
+  });
+
+  // Get MRR history
+  const { data: mrrHistory, isLoading: loadingMrrHistory } = useQuery({
+    queryKey: ['mrr-history'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_mrr_history');
+      if (error) throw error;
+      return data as unknown as MrrHistoryItem[];
+    },
+    enabled: isSuperAdmin === true,
+  });
+
+  // Get user growth
+  const { data: userGrowth, isLoading: loadingUserGrowth } = useQuery({
+    queryKey: ['user-growth'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_user_growth');
+      if (error) throw error;
+      return data as unknown as UserGrowthItem[];
+    },
+    enabled: isSuperAdmin === true,
+  });
+
+  // Get plan distribution
+  const { data: planDistribution, isLoading: loadingPlanDistribution } = useQuery({
+    queryKey: ['plan-distribution'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_plan_distribution');
+      if (error) throw error;
+      return data as unknown as PlanDistributionItem[];
+    },
+    enabled: isSuperAdmin === true,
+  });
+
+  // Get daily logins
+  const { data: dailyLogins, isLoading: loadingDailyLogins } = useQuery({
+    queryKey: ['daily-logins'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_daily_logins');
+      if (error) throw error;
+      return data as unknown as DailyLoginItem[];
+    },
+    enabled: isSuperAdmin === true,
+  });
+
   return {
     isSuperAdmin,
     checkingStatus,
@@ -139,6 +245,17 @@ export function useSuperAdmin() {
     schools,
     loadingSchools,
     refetchSchools,
+    schoolsOverview,
+    loadingSchoolsOverview,
+    refetchSchoolsOverview,
+    mrrHistory,
+    loadingMrrHistory,
+    userGrowth,
+    loadingUserGrowth,
+    planDistribution,
+    loadingPlanDistribution,
+    dailyLogins,
+    loadingDailyLogins,
     auditLogs,
     loadingAuditLogs,
     logAction,

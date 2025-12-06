@@ -8,7 +8,8 @@ import {
   Calendar,
   RefreshCw,
   Shield,
-  ChevronRight
+  ChevronRight,
+  DollarSign
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,29 @@ import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(cents / 100);
+}
+
+function formatShortMonth(dateStr: string) {
+  const date = new Date(dateStr);
+  return format(date, 'MMM', { locale: ptBR });
+}
 
 function MetricCard({ 
   title, 
@@ -84,7 +108,17 @@ function MetricCard({
 }
 
 export default function PlatformDashboard() {
-  const { metrics, loadingMetrics, refetchMetrics, auditLogs, loadingAuditLogs } = useSuperAdmin();
+  const { 
+    metrics, 
+    loadingMetrics, 
+    refetchMetrics, 
+    auditLogs, 
+    loadingAuditLogs,
+    mrrHistory,
+    loadingMrrHistory,
+    dailyLogins,
+    loadingDailyLogins
+  } = useSuperAdmin();
 
   return (
     <div className="p-8 space-y-8">
@@ -115,8 +149,17 @@ export default function PlatformDashboard() {
         </div>
       </div>
 
-      {/* Main Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Main Metrics with MRR */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <MetricCard
+          title="MRR"
+          value={formatCurrency(metrics?.mrr_cents || 0)}
+          icon={DollarSign}
+          trend={metrics?.mrr_growth_pct ? `${metrics.mrr_growth_pct > 0 ? '+' : ''}${metrics.mrr_growth_pct}% vs mês anterior` : undefined}
+          loading={loadingMetrics}
+          href="/platform/subscriptions"
+          color="green"
+        />
         <MetricCard
           title="Total de Escolas"
           value={metrics?.total_schools || 0}
@@ -130,7 +173,7 @@ export default function PlatformDashboard() {
           value={metrics?.active_schools || 0}
           icon={Activity}
           loading={loadingMetrics}
-          color="green"
+          color="blue"
         />
         <MetricCard
           title="Assinaturas Ativas"
@@ -138,7 +181,7 @@ export default function PlatformDashboard() {
           icon={CreditCard}
           loading={loadingMetrics}
           href="/platform/subscriptions"
-          color="blue"
+          color="orange"
         />
         <MetricCard
           title="Total de Usuários"
@@ -232,6 +275,118 @@ export default function PlatformDashboard() {
         </Card>
       </div>
 
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* MRR History Chart */}
+        <Card className="glass-card border-white/10">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-green-500" />
+              Evolução do MRR
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingMrrHistory ? (
+              <Skeleton className="h-64 w-full" />
+            ) : mrrHistory && mrrHistory.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={mrrHistory}>
+                  <defs>
+                    <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis 
+                    dataKey="month_date" 
+                    tickFormatter={formatShortMonth}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <YAxis 
+                    tickFormatter={(v) => `R$${(v/100).toFixed(0)}`}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => [formatCurrency(value), 'MRR']}
+                    labelFormatter={(label) => format(new Date(label), "MMMM yyyy", { locale: ptBR })}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="mrr_cents" 
+                    stroke="hsl(var(--primary))" 
+                    fillOpacity={1} 
+                    fill="url(#colorMrr)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                Sem dados disponíveis
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Daily Logins Chart */}
+        <Card className="glass-card border-white/10">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-500" />
+              Logins Diários (30 dias)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingDailyLogins ? (
+              <Skeleton className="h-64 w-full" />
+            ) : dailyLogins && dailyLogins.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={dailyLogins}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis 
+                    dataKey="login_date" 
+                    tickFormatter={(d) => format(new Date(d), "dd/MM")}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => [value, 'Logins']}
+                    labelFormatter={(label) => format(new Date(label), "dd/MM/yyyy", { locale: ptBR })}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="logins" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                Sem dados disponíveis
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
@@ -258,13 +413,6 @@ export default function PlatformDashboard() {
               <Button variant="outline" className="w-full justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10">
                 <CreditCard className="w-4 h-4 text-green-500" />
                 Gerenciar Assinaturas
-                <ChevronRight className="w-4 h-4 ml-auto" />
-              </Button>
-            </Link>
-            <Link to="/platform/support">
-              <Button variant="outline" className="w-full justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10">
-                <Activity className="w-4 h-4 text-orange-500" />
-                Central de Suporte
                 <ChevronRight className="w-4 h-4 ml-auto" />
               </Button>
             </Link>

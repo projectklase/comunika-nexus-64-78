@@ -2313,11 +2313,14 @@ export type Database = {
         Args: { days_filter?: number; p_class_id: string }
         Returns: Json
       }
+      get_daily_logins: { Args: never; Returns: Json }
       get_evasion_risk_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
       }
       get_family_metrics: { Args: { school_id_param?: string }; Returns: Json }
+      get_mrr_history: { Args: never; Returns: Json }
+      get_plan_distribution: { Args: never; Returns: Json }
       get_platform_metrics: { Args: never; Returns: Json }
       get_post_read_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
@@ -2359,6 +2362,7 @@ export type Database = {
           total_xp: number
         }[]
       }
+      get_schools_overview: { Args: never; Returns: Json }
       get_student_challenges_with_progress: {
         Args: { p_student_id: string }
         Returns: {
@@ -2379,6 +2383,7 @@ export type Database = {
           xp_reward: number
         }[]
       }
+      get_user_growth: { Args: never; Returns: Json }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       grant_koin_bonus: {
         Args: {
