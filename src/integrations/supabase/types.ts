@@ -1317,6 +1317,45 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          superadmin_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          superadmin_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          superadmin_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       post_reads: {
         Row: {
           created_at: string
@@ -2279,6 +2318,7 @@ export type Database = {
         Returns: Json
       }
       get_family_metrics: { Args: { school_id_param?: string }; Returns: Json }
+      get_platform_metrics: { Args: never; Returns: Json }
       get_post_read_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
@@ -2361,11 +2401,22 @@ export type Database = {
         Args: { p_player1_deck_cards: string[]; p_player2_deck_cards: string[] }
         Returns: Json
       }
+      is_superadmin: { Args: { _user_id?: string }; Returns: boolean }
       join_battle_queue: {
         Args: { p_deck_id: string; p_school_id: string; p_user_id: string }
         Returns: Json
       }
       leave_battle_queue: { Args: { p_user_id: string }; Returns: undefined }
+      log_superadmin_action: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_entity_id?: string
+          p_entity_label?: string
+          p_entity_type: string
+        }
+        Returns: string
+      }
       open_card_pack: {
         Args: { p_is_free?: boolean; p_pack_type: string; p_user_id: string }
         Returns: Json
@@ -2423,7 +2474,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "secretaria" | "professor" | "aluno" | "administrador"
+      app_role:
+        | "secretaria"
+        | "professor"
+        | "aluno"
+        | "administrador"
+        | "superadmin"
       card_type: "MONSTER" | "TRAP" | "SPELL"
     }
     CompositeTypes: {
@@ -2552,7 +2608,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["secretaria", "professor", "aluno", "administrador"],
+      app_role: [
+        "secretaria",
+        "professor",
+        "aluno",
+        "administrador",
+        "superadmin",
+      ],
       card_type: ["MONSTER", "TRAP", "SPELL"],
     },
   },
