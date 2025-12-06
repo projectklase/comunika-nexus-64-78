@@ -400,9 +400,9 @@ export function NotificationPanel() {
     }
     
       return (
-        <div className="space-y-3 pb-4 w-full max-w-full box-border">
+        <div className="space-y-3 pb-4 w-full">
           {/* Tab actions */}
-          <div className="sticky top-0 bg-background/95 backdrop-blur-sm px-3 py-2 mb-3 border-b border-border/20 rounded-lg">
+          <div className="sticky top-0 bg-background/95 backdrop-blur-sm px-3 py-2 mb-3 border-b border-border/20 rounded-lg z-10">
             <div className="flex items-center gap-2">
               {tabUnreadCount > 0 ? (
                 <>
@@ -433,7 +433,7 @@ export function NotificationPanel() {
           </div>
           
           {/* Notifications list */}
-          <div className="space-y-2 w-full max-w-full">
+          <div className="space-y-2 w-full">
             {tabNotifications.map(renderNotification)}
           </div>
         </div>
@@ -514,14 +514,14 @@ export function NotificationPanel() {
           </TabsList>
         </div>
         
-        <TabsContent value="novidades" className="mt-0 flex-1 min-h-0">
-          <ScrollArea className="max-h-[calc(80vh-200px)] px-4">
+        <TabsContent value="novidades" className="mt-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-full px-4">
             {renderTabContent('novidades')}
           </ScrollArea>
         </TabsContent>
         
-        <TabsContent value="importantes" className="mt-0 flex-1 min-h-0">
-          <ScrollArea className="max-h-[calc(80vh-200px)] px-4">
+        <TabsContent value="importantes" className="mt-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-full px-4">
             {renderTabContent('importantes')}
           </ScrollArea>
         </TabsContent>
@@ -601,7 +601,7 @@ export function NotificationPanel() {
             className="absolute top-[70px] right-8 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-[440px] max-h-[80vh] flex flex-col p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70]">
+            <div className="w-[440px] h-[calc(80vh-90px)] flex flex-col bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70] overflow-hidden">
               {panelContent}
             </div>
           </div>
