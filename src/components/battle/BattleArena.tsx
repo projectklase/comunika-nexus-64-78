@@ -285,15 +285,19 @@ const [player1Profile, setPlayer1Profile] = useState<{
     }
   }, [duelStartComplete, isSetupPhase]);
 
-  // Sync timer start when overlays end (prevents timer jump)
+  // Sync timer start when overlays end - use backend timestamp for sync
   useEffect(() => {
     const overlaysActive = showDuelStart || showSetupAnnouncement;
     
     if (!overlaysActive && battle?.status === 'IN_PROGRESS') {
-      // When overlays finish, set the actual timer start to NOW
-      setActualTimerStart(new Date().toISOString());
+      // Use backend turn_started_at for synchronization, fallback to now if not available
+      if (battle.turn_started_at) {
+        setActualTimerStart(battle.turn_started_at);
+      } else {
+        setActualTimerStart(new Date().toISOString());
+      }
     }
-  }, [showDuelStart, showSetupAnnouncement, battle?.status]);
+  }, [showDuelStart, showSetupAnnouncement, battle?.status, battle?.turn_started_at]);
 
   // Reset timer when turn changes (after first turn)
   useEffect(() => {
@@ -492,25 +496,37 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const handleTurnTimeout = useCallback(async () => {
     if (!battle?.id || !forceTimeoutTurn) return;
     
-    try {
-      // Call the RPC to force turn switch
-      const result = await forceTimeoutTurn.mutateAsync(battle.id);
-      
-      // Show timeout overlay if turn actually passed
+    const showTimeoutResult = (result: any) => {
       if (result?.turn_passed || result?.timeout_occurred) {
-        // Determine next player name
         const nextPlayerName = result?.new_turn === 'PLAYER1' 
           ? (player1Profile?.name || 'Jogador 1')
           : (player2Profile?.name || 'Jogador 2');
         
         setTimeoutNextPlayerName(nextPlayerName);
         setShowTimeoutOverlay(true);
-        
-        // Auto-hide after 2.5 seconds
-        setTimeout(() => {
-          setShowTimeoutOverlay(false);
-        }, 2500);
+        setTimeout(() => setShowTimeoutOverlay(false), 2500);
       }
+    };
+    
+    try {
+      const result = await forceTimeoutTurn.mutateAsync(battle.id);
+      
+      // If turn passed, show overlay
+      if (result?.turn_passed || result?.timeout_occurred) {
+        showTimeoutResult(result);
+        return;
+      }
+      
+      // If not passed yet (race condition), retry after 1 second
+      console.log('Timeout not confirmed by backend, retrying in 1s...');
+      setTimeout(async () => {
+        try {
+          const retryResult = await forceTimeoutTurn.mutateAsync(battle.id);
+          showTimeoutResult(retryResult);
+        } catch (retryError) {
+          console.error('Retry timeout error:', retryError);
+        }
+      }, 1000);
     } catch (error) {
       console.error('Timeout error:', error);
     }

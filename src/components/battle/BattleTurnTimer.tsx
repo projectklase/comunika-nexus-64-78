@@ -36,6 +36,7 @@ export const BattleTurnTimer = ({
     }
 
     timeoutCalledRef.current = false;
+    let backupTimeoutId: NodeJS.Timeout | null = null;
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - new Date(turnStartedAt).getTime()) / 1000);
@@ -46,10 +47,18 @@ export const BattleTurnTimer = ({
         timeoutCalledRef.current = true;
         clearInterval(interval);
         onTimeoutRef.current?.();
+        
+        // Backup retry: if still at 0 after 2s, call timeout again
+        backupTimeoutId = setTimeout(() => {
+          onTimeoutRef.current?.();
+        }, 2000);
       }
     }, 100);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (backupTimeoutId) clearTimeout(backupTimeoutId);
+    };
   }, [turnStartedAt, maxSeconds, isPaused]);
 
   const progress = (remainingSeconds / maxSeconds) * 100;
