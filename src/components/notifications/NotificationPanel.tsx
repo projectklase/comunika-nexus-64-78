@@ -471,25 +471,6 @@ export function NotificationPanel() {
           Painel de notificações com {unreadCounts.total} não lidas
         </div>
         
-        {hasUnread && (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-foreground">
-                {unreadCounts.total} não lida{unreadCounts.total !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => await markAllAsRead()}
-              className="text-xs h-7 px-3 bg-glass/50 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
-            >
-              <CheckCheck className="w-3 h-3 mr-1.5" />
-              Marcar todas
-            </Button>
-          </div>
-        )}
       </div>
       
       {/* Tabs */}
@@ -620,7 +601,7 @@ export function NotificationPanel() {
             className="absolute top-[70px] right-8 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-[440px] p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70] overflow-hidden">
+            <div className="w-[440px] max-h-[80vh] flex flex-col p-0 bg-gradient-glass backdrop-blur-xl border border-border/30 rounded-xl shadow-3d-hover z-[70] overflow-hidden">
               {panelContent}
             </div>
           </div>
