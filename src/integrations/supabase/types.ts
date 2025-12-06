@@ -1350,6 +1350,51 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string
+          id: string
+          is_resolved: boolean | null
+          message: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type: string
+          id?: string
+          is_resolved?: boolean | null
+          message: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          id?: string
+          is_resolved?: boolean | null
+          message?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: []
+      }
       platform_audit_logs: {
         Row: {
           action: string
@@ -2404,6 +2449,7 @@ export type Database = {
         Args: { p_battle_id: string; p_player_id: string }
         Returns: Json
       }
+      generate_platform_alerts: { Args: never; Returns: number }
       get_admins_overview: { Args: never; Returns: Json }
       get_attendance_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
@@ -2419,8 +2465,10 @@ export type Database = {
         Returns: Json
       }
       get_family_metrics: { Args: { school_id_param?: string }; Returns: Json }
+      get_financial_metrics: { Args: never; Returns: Json }
       get_mrr_history: { Args: never; Returns: Json }
       get_plan_distribution: { Args: never; Returns: Json }
+      get_platform_alerts: { Args: { p_resolved?: boolean }; Returns: Json }
       get_platform_metrics: { Args: never; Returns: Json }
       get_post_read_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
@@ -2461,6 +2509,10 @@ export type Database = {
           student_name: string
           total_xp: number
         }[]
+      }
+      get_school_usage_analytics: {
+        Args: { p_school_id?: string }
+        Returns: Json
       }
       get_schools_overview: { Args: never; Returns: Json }
       get_student_challenges_with_progress: {
@@ -2578,6 +2630,7 @@ export type Database = {
         Args: { p_item_id: string; p_student_id: string }
         Returns: undefined
       }
+      resolve_platform_alert: { Args: { p_alert_id: string }; Returns: boolean }
       update_school_admin: {
         Args: {
           p_is_active?: boolean
