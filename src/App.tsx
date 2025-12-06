@@ -70,6 +70,7 @@ import PlatformDashboard from "./pages/platform/PlatformDashboard";
 import PlatformSchools from "./pages/platform/PlatformSchools";
 import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
 import PlatformAdmins from "./pages/platform/PlatformAdmins";
+import PlatformSupport from "./pages/platform/PlatformSupport";
 
 const queryClient = new QueryClient();
 
@@ -485,6 +486,8 @@ const App = () => (
               <Route index element={<PlatformDashboard />} />
               <Route path="schools" element={<PlatformSchools />} />
               <Route path="subscriptions" element={<PlatformSubscriptions />} />
+              <Route path="admins" element={<PlatformAdmins />} />
+              <Route path="support" element={<PlatformSupport />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
