@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Building2, Plus, Rocket, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Building2, Plus, Rocket, CheckCircle2, ExternalLink, MapPin } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,20 +18,32 @@ interface UpgradeSchoolModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Função para formatar valor em centavos para Reais
+const formatCurrency = (cents: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(cents / 100);
+};
+
 export function UpgradeSchoolModal({ open, onOpenChange }: UpgradeSchoolModalProps) {
-  const { limits, nextPlan } = useSubscription();
+  const { limits, nextPlan, allPlans } = useSubscription();
   const { toast } = useToast();
+
+  // Buscar o preço do addon do plano atual (ou do primeiro plano disponível)
+  const currentPlan = allPlans?.find(p => p.name === limits?.plan_name);
+  const addonPriceCents = currentPlan?.addon_school_price_cents || 49700; // Fallback para R$ 497,00
 
   const handleAddSchool = () => {
     toast({
-      title: "Função em desenvolvimento",
-      description: "Entre em contato para adicionar uma nova escola ao seu plano.",
+      title: "Expansão de Território",
+      description: "Entre em contato para adicionar uma nova unidade ao seu painel.",
     });
   };
 
   const handleUpgrade = () => {
     toast({
-      title: "Função em desenvolvimento",
+      title: "Upgrade de Plano",
       description: "Entre em contato para fazer upgrade do seu plano.",
     });
   };
@@ -93,36 +105,38 @@ export function UpgradeSchoolModal({ open, onOpenChange }: UpgradeSchoolModalPro
 
           {/* Opções de Upgrade */}
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Card A: Adicionar Escola */}
+            {/* Card A: Expansão de Território */}
             <Card className="glass-card p-6 border-primary/50 hover:border-primary transition-all relative overflow-hidden group">
               <Badge className="absolute top-4 right-4 bg-primary/20 text-primary border-primary/50">
-                Mais popular
+                Add-on
               </Badge>
               
               <div className="space-y-4">
                 <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mb-2">
-                  <Plus className="h-6 w-6 text-primary" />
+                  <MapPin className="h-6 w-6 text-primary" />
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-bold mb-1">Adicionar Unidade</h3>
+                  <h3 className="text-xl font-bold mb-1">Expansão de Território</h3>
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-2xl font-bold text-primary">+R$ 99,90</span>
+                    <span className="text-2xl font-bold text-primary">
+                      +{formatCurrency(addonPriceCents)}
+                    </span>
                     <span className="text-sm text-muted-foreground">/mês</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Compartilha a mesma capacidade de {limits?.max_students || 0} alunos
+                    Adicione uma nova unidade (filial) no mesmo painel
                   </p>
                 </div>
 
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>+1 escola adicional</span>
+                    <span>+1 escola no painel administrativo</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Capacidade de alunos compartilhada</span>
+                    <span>Capacidade de {limits?.max_students || 0} alunos compartilhada</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
@@ -135,7 +149,7 @@ export function UpgradeSchoolModal({ open, onOpenChange }: UpgradeSchoolModalPro
                   className="w-full glass-button group-hover:bg-primary/20"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Escola
+                  Adicionar Unidade
                 </Button>
               </div>
             </Card>
@@ -152,7 +166,7 @@ export function UpgradeSchoolModal({ open, onOpenChange }: UpgradeSchoolModalPro
                     <h3 className="text-xl font-bold mb-1">Upgrade: {nextPlan.name}</h3>
                     <div className="flex items-baseline gap-2 mb-2">
                       <span className="text-2xl font-bold text-accent">
-                        R$ {(nextPlan.price_cents / 100).toFixed(2)}
+                        {formatCurrency(nextPlan.price_cents)}
                       </span>
                       <span className="text-sm text-muted-foreground">/mês</span>
                     </div>
