@@ -32,20 +32,19 @@ export function usePosts(filter?: PostFilter) {
         .eq('school_id', currentSchool.id)  // ✅ FILTRO CRÍTICO
         .not('school_id', 'is', null);  // ✅ Dupla garantia: rejeitar NULL
 
-      // Aplica os filtros na consulta do Supabase (muito mais eficiente)
-      if (filter) {
-        if (filter.status) {
-          query = query.eq('status', filter.status);
-        } else {
-          // Por padrão, excluir ARCHIVED, CONCLUDED e SCHEDULED do feed ativo
-          query = query.not('status', 'in', '("ARCHIVED","CONCLUDED","SCHEDULED")');
-        }
-        if (filter.type) {
-          // Se o tipo for uma string com vírgulas, trata como um array
-          const types = filter.type.split(',').map(t => t.trim());
-          query = query.in('type', types);
-        }
-        // Adicione outros filtros aqui conforme necessário
+      // CORREÇÃO: Sempre excluir ARCHIVED, CONCLUDED e SCHEDULED por padrão
+      // a menos que um status específico seja requisitado explicitamente
+      if (filter?.status) {
+        query = query.eq('status', filter.status);
+      } else {
+        // Por padrão, excluir ARCHIVED, CONCLUDED e SCHEDULED do feed ativo
+        query = query.not('status', 'in', '("ARCHIVED","CONCLUDED","SCHEDULED")');
+      }
+
+      // Aplicar filtro de tipo separadamente (funciona mesmo se filter for undefined)
+      if (filter?.type) {
+        const types = filter.type.split(',').map(t => t.trim());
+        query = query.in('type', types);
       }
 
       // Ordena os resultados pelos mais recentes
