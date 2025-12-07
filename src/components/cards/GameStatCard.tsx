@@ -61,7 +61,7 @@ export function GameStatCard({
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.3, delay: delay * 0.08, ease: 'easeOut' }}
-      className="relative group"
+      className="relative group min-w-0 max-w-full overflow-hidden"
     >
       {/* Gradient border */}
       <div className={cn(
@@ -71,7 +71,7 @@ export function GameStatCard({
       
       {/* Card content */}
       <div className={cn(
-        "relative rounded-xl p-3 sm:p-4 backdrop-blur-md overflow-hidden",
+        "relative rounded-xl p-2.5 sm:p-4 backdrop-blur-md overflow-hidden",
         "bg-gradient-to-br",
         styles.gradient,
         "border border-white/10"
@@ -84,7 +84,7 @@ export function GameStatCard({
         {/* Header */}
         <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
           <div className={cn(
-            "p-1.5 sm:p-2 rounded-lg bg-black/20 backdrop-blur-sm",
+            "p-1.5 sm:p-2 rounded-lg bg-black/20 backdrop-blur-sm flex-shrink-0",
             styles.iconColor,
             styles.iconGlow,
             "transition-all duration-300 group-hover:scale-110",
@@ -92,11 +92,11 @@ export function GameStatCard({
           )}>
             {icon}
           </div>
-          <span className="text-xs sm:text-sm font-semibold text-foreground/80">{title}</span>
+          <span className="text-[10px] sm:text-sm font-semibold text-foreground/80 truncate min-w-0">{title}</span>
         </div>
 
         {/* Value */}
-        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">
+        <p className="text-base sm:text-xl lg:text-2xl font-bold text-foreground mb-0.5 sm:mb-1 truncate">
           {value}
         </p>
 
@@ -114,10 +114,10 @@ export function GameStatCard({
                 )}
               />
             </div>
-            <p className="text-[10px] sm:text-xs text-foreground/60">{subtitle}</p>
+            <p className="text-[9px] sm:text-xs text-foreground/60 truncate">{subtitle}</p>
           </div>
         ) : (
-          <p className="text-[10px] sm:text-xs text-foreground/60">{subtitle}</p>
+          <p className="text-[9px] sm:text-xs text-foreground/60 truncate">{subtitle}</p>
         )}
 
         {/* Level card special effect */}

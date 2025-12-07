@@ -145,7 +145,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden w-full max-w-full box-border">
+          <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-x-hidden w-full max-w-full box-border">
             {children}
           </main>
         </div>
