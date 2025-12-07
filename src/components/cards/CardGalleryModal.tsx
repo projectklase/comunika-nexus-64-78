@@ -38,10 +38,12 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className={cn(
-          // Mobile: fullscreen
-          "fixed inset-0 h-screen w-screen max-w-none rounded-none p-0",
-          // Desktop: modal normal
-          "sm:relative sm:inset-auto sm:max-w-6xl sm:h-[80vh] sm:rounded-lg sm:p-6",
+          // Mobile: fullscreen - sobrescrever posição do Radix
+          "w-full h-[100dvh] max-w-none rounded-none p-0",
+          "left-0 top-0 translate-x-0 translate-y-0",
+          // Desktop: modal centralizado
+          "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+          "sm:max-w-6xl sm:h-[80vh] sm:rounded-lg sm:p-6",
           "flex flex-col"
         )}>
           {/* Header */}

@@ -32,10 +32,11 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        // Mobile: bottom sheet
-        "fixed inset-x-0 bottom-0 top-auto h-[80vh] max-h-[80vh] rounded-t-xl rounded-b-none p-4",
-        // Desktop: centered modal
-        "sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+        // Mobile: bottom sheet - sobrescrever posição do Radix
+        "w-full h-auto max-h-[80vh] rounded-t-xl rounded-b-none p-4",
+        "left-0 bottom-0 top-auto translate-x-0 translate-y-0",
+        // Desktop: modal centralizado
+        "sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2",
         "sm:max-w-4xl sm:max-h-[90vh] sm:rounded-lg sm:p-6",
         "overflow-y-auto"
       )}>
