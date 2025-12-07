@@ -7,6 +7,7 @@ import { ProfessorFeedFilters } from '@/components/feed/ProfessorFeedFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useProfessorMetrics } from '@/hooks/useProfessorMetrics';
 import { useProfessorFeedFilters } from '@/hooks/useProfessorFeedFilters';
@@ -15,6 +16,7 @@ import { useScrollToPost } from '@/hooks/useScrollToPost';
 import { useCalendarNavigation } from '@/hooks/useCalendarNavigation';
 import { FeedNavigation } from '@/utils/feed-navigation';
 import { useSaved } from '@/hooks/useSaved';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Post, PostInput, PostType } from '@/types/post';
 import { 
   BookOpen, 
@@ -24,7 +26,8 @@ import {
   CheckCircle, 
   Calendar,
   Eye,
-  TrendingUp
+  TrendingUp,
+  SlidersHorizontal
 } from 'lucide-react';
 import { format, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,6 +39,8 @@ export default function ProfessorFeed() {
   const { savedIds } = useSaved();
   const { goToCalendarWithActivity } = useCalendarNavigation();
   const metrics = useProfessorMetrics();
+  const isMobile = useIsMobile();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   
   const { 
     createPost, 
@@ -49,7 +54,8 @@ export default function ProfessorFeed() {
 
   const { 
     filteredPosts, 
-    feedMetrics, 
+    feedMetrics,
+    filters,
     isLoading: isLoadingPosts,
     hideExpired,
     setHideExpired,
@@ -182,69 +188,103 @@ export default function ProfessorFeed() {
     return format(date, "dd 'de' MMM", { locale: ptBR });
   };
 
+  // Count active filters for mobile badge
+  const activeFiltersCount = [
+    filters.type !== 'all',
+    filters.period !== undefined,
+    filters.classId !== 'ALL'
+  ].filter(Boolean).length;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-6 space-y-6" role="main">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" role="main">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
-              <BookOpen className="h-6 w-6 text-primary" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-primary/20 border border-primary/30">
+              <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Feed do Professor
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                 Centralize suas atividades e ações pendentes
               </p>
             </div>
           </div>
 
-      {canEdit && (
-        <Button
-          onClick={() => navigate('/professor/atividades/nova')}
-          className="bg-primary hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Atividade
-        </Button>
-      )}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Mobile Filter Button */}
+            {isMobile && (
+              <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="flex-1 sm:flex-none min-h-11">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Filtros
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[85vh] rounded-t-xl">
+                  <SheetHeader>
+                    <SheetTitle>Filtros</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 overflow-y-auto max-h-[calc(85vh-80px)]">
+                    <ProfessorFeedFilters />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
+
+            {canEdit && (
+              <Button
+                onClick={() => navigate('/professor/atividades/nova')}
+                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 min-h-11"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="sm:inline">Nova Atividade</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Feed Metrics Overview */}
         <Card className="glass-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="h-5 w-5 text-primary" />
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-lg">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Visão Geral do Feed
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="text-center p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <div className="text-2xl font-bold text-primary">{feedMetrics.all}</div>
-                <div className="text-xs text-muted-foreground">Total</div>
+          <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+            <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
+              <div className="text-center p-2 sm:p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="text-lg sm:text-2xl font-bold text-primary">{feedMetrics.all}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Total</div>
               </div>
-              <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <div className="text-2xl font-bold text-blue-400">{feedMetrics.atividade}</div>
-                <div className="text-xs text-muted-foreground">Atividades</div>
+              <div className="text-center p-2 sm:p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <div className="text-lg sm:text-2xl font-bold text-blue-400">{feedMetrics.atividade}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Atividades</div>
               </div>
-              <div className="text-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                <div className="text-2xl font-bold text-orange-400">{feedMetrics.trabalho}</div>
-                <div className="text-xs text-muted-foreground">Trabalhos</div>
+              <div className="text-center p-2 sm:p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                <div className="text-lg sm:text-2xl font-bold text-orange-400">{feedMetrics.trabalho}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Trabalhos</div>
               </div>
-              <div className="text-center p-3 bg-red-500/10 rounded-lg border border-red-500/20">
-                <div className="text-2xl font-bold text-red-400">{feedMetrics.prova}</div>
-                <div className="text-xs text-muted-foreground">Provas</div>
+              <div className="text-center p-2 sm:p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                <div className="text-lg sm:text-2xl font-bold text-red-400">{feedMetrics.prova}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Provas</div>
               </div>
-              <div className="text-center p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                <div className="text-2xl font-bold text-purple-400">{feedMetrics.eventos}</div>
-                <div className="text-xs text-muted-foreground">Eventos</div>
+              <div className="text-center p-2 sm:p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                <div className="text-lg sm:text-2xl font-bold text-purple-400">{feedMetrics.eventos}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Eventos</div>
               </div>
-              <div className="text-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-                <div className="text-2xl font-bold text-yellow-400">{feedMetrics.agendados}</div>
-                <div className="text-xs text-muted-foreground">Agendados</div>
+              <div className="text-center p-2 sm:p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                <div className="text-lg sm:text-2xl font-bold text-yellow-400">{feedMetrics.agendados}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Agendados</div>
               </div>
             </div>
           </CardContent>
@@ -356,34 +396,36 @@ export default function ProfessorFeed() {
         )}
 
         {/* Main Content */}
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Filters */}
-          <div className="lg:col-span-1">
-            <ProfessorFeedFilters />
-          </div>
+        <div className="grid lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Filters - Desktop Only */}
+          {!isMobile && (
+            <div className="lg:col-span-1">
+              <ProfessorFeedFilters />
+            </div>
+          )}
 
           {/* Posts */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className={`${isMobile ? '' : 'lg:col-span-3'} space-y-4 sm:space-y-6`}>
             {isLoadingPosts ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Carregando posts...</p>
+              <div className="text-center py-8 sm:py-12">
+                <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-sm sm:text-base text-muted-foreground">Carregando posts...</p>
               </div>
             ) : filteredPosts.length === 0 ? (
-              <div className="text-center py-12 bg-muted/20 rounded-lg border border-border/50">
-                <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-medium mb-2 text-muted-foreground">
+              <div className="text-center py-8 sm:py-12 bg-muted/20 rounded-lg border border-border/50">
+                <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-base sm:text-lg font-medium mb-2 text-muted-foreground">
                   Nenhum post encontrado
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                   Não há posts que correspondam aos filtros atuais.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                  <Button variant="outline" onClick={() => setShowComposer(true)}>
+                <div className="flex flex-col sm:flex-row gap-2 justify-center px-4">
+                  <Button variant="outline" onClick={() => setShowComposer(true)} className="min-h-11">
                     <Plus className="h-4 w-4 mr-2" />
                     Criar Nova Atividade
                   </Button>
-                  <Button variant="outline" onClick={() => navigate('/professor/calendario')}>
+                  <Button variant="outline" onClick={() => navigate('/professor/calendario')} className="min-h-11">
                     <Calendar className="h-4 w-4 mr-2" />
                     Ver Calendário
                   </Button>

@@ -86,31 +86,29 @@ export default function ProfessorDashboard() {
   }, [professorClasses, currentSchool]);
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
             Bem-vindo, {user.name}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Gerencie suas turmas e atividades
           </p>
         </div>
         
-        <div className="flex gap-2">
-            <Button
-              onClick={() => navigate('/professor/atividades/nova')}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-lg hover:shadow-primary/25"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Atividade
-            </Button>
-        </div>
+        <Button
+          onClick={() => navigate('/professor/atividades/nova')}
+          className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 min-h-11"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Atividade
+        </Button>
       </div>
 
       {/* Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <DashboardCard
           title="Minhas Turmas"
           value={professorClasses.length}
@@ -145,7 +143,7 @@ export default function ProfessorDashboard() {
       </div>
 
       {/* Turmas Recentes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-white/15 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -246,33 +244,33 @@ export default function ProfessorDashboard() {
       </div>
 
       {/* Ações Rápidas */}
-      <Card className="max-w-fit mx-auto bg-card/50 backdrop-blur-sm border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+      <Card className="w-full sm:max-w-fit sm:mx-auto bg-card/50 backdrop-blur-sm border-white/10">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
             Ações Rápidas
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3 items-center justify-center">
-            <Button variant="outline" className="h-20 w-28 flex-col gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-3 items-center justify-center">
+            <Button variant="outline" className="h-16 w-full sm:h-20 sm:w-28 flex-col gap-1.5 sm:gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
               <Link to="/professor/turmas">
-                <Users className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="text-xs">Minhas Turmas</span>
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-[10px] sm:text-xs text-center">Turmas</span>
               </Link>
             </Button>
             
-            <Button variant="outline" className="h-20 w-28 flex-col gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
+            <Button variant="outline" className="h-16 w-full sm:h-20 sm:w-28 flex-col gap-1.5 sm:gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
               <Link to="/professor/calendario">
-                <Calendar className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="text-xs">Calendário</span>
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-[10px] sm:text-xs text-center">Calendário</span>
               </Link>
             </Button>
             
-            <Button variant="outline" className="h-20 w-28 flex-col gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
+            <Button variant="outline" className="h-16 w-full sm:h-20 sm:w-28 flex-col gap-1.5 sm:gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 hover:bg-white/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group" asChild>
               <Link to="/professor/atividades/nova">
-                <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="text-xs">Nova Atividade</span>
+                <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-[10px] sm:text-xs text-center">Atividade</span>
               </Link>
             </Button>
           </div>

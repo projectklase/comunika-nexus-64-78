@@ -55,19 +55,19 @@ export default function ProfessorClasses() {
   ];
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
             Minhas Turmas
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {allClasses.length} turma{allClasses.length !== 1 ? 's' : ''} atribuída{allClasses.length !== 1 ? 's' : ''}
           </p>
         </div>
         
-        <Button asChild>
+        <Button asChild className="w-full sm:w-auto min-h-11">
           <Link to="/professor/atividades/nova">
             <Plus className="h-4 w-4 mr-2" />
             Nova Atividade
@@ -77,11 +77,11 @@ export default function ProfessorClasses() {
 
       {/* Filtros */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-sm sm:text-lg">Filtros</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+          <div className="space-y-3 sm:space-y-4">
             {/* Busca */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -89,18 +89,19 @@ export default function ProfessorClasses() {
                 placeholder="Buscar por nome ou código..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 min-h-11"
               />
             </div>
             
             {/* Anos */}
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               <Button
                 variant={selectedYear === null ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedYear(null)}
+                className="text-xs sm:text-sm min-h-9"
               >
-                Todos os anos
+                Todos
               </Button>
               {availableYears.map(year => (
                 <Button
@@ -108,6 +109,7 @@ export default function ProfessorClasses() {
                   variant={selectedYear === year ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedYear(year)}
+                  className="text-xs sm:text-sm min-h-9"
                 >
                   {year}
                 </Button>
@@ -115,13 +117,14 @@ export default function ProfessorClasses() {
             </div>
             
             {/* Dias da semana */}
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               <Button
                 variant={selectedDay === null ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedDay(null)}
+                className="text-xs sm:text-sm min-h-9"
               >
-                Todos os dias
+                Todos
               </Button>
               {daysOfWeek.map(day => (
                 <Button
@@ -129,6 +132,7 @@ export default function ProfessorClasses() {
                   variant={selectedDay === day ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedDay(day)}
+                  className="text-xs sm:text-sm min-h-9"
                 >
                   {day.charAt(0).toUpperCase() + day.slice(1, 3)}
                 </Button>
@@ -175,7 +179,7 @@ export default function ProfessorClasses() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filteredClasses.map((schoolClass) => {
             const info = getClassDisplayInfo(schoolClass, levels, modalities);
             
@@ -222,19 +226,19 @@ export default function ProfessorClasses() {
                   
                   {/* Ações */}
                   <div className="flex gap-2">
-                    <Button asChild size="sm" className="flex-1">
+                    <Button asChild size="sm" className="flex-1 min-h-10">
                       <Link to={`/professor/turma/${schoolClass.id}`}>
-                        Abrir Turma
+                        Abrir
                       </Link>
                     </Button>
                     
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" asChild className="min-h-10 min-w-10">
                       <Link to={`/professor/atividades/nova?turma=${schoolClass.id}`}>
                         <FileText className="h-4 w-4" />
                       </Link>
                     </Button>
                     
-                    <Button variant="outline" size="sm" title="Exportar CSV">
+                    <Button variant="outline" size="sm" title="Exportar CSV" className="min-h-10 min-w-10">
                       <Download className="h-4 w-4" />
                     </Button>
                   </div>

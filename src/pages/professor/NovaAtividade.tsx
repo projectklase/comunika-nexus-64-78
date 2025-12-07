@@ -267,35 +267,35 @@ export default function NovaAtividade() {
   };
   
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Button variant="ghost" size="sm" asChild className="min-h-10">
             <Link to="/professor/atividades">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
+              <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Voltar</span>
             </Link>
           </Button>
           
           <div>
-            <h1 className="text-3xl font-bold gradient-text">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold gradient-text">
               {isEditMode ? 'Editar' : 'Nova'} {activityType === 'ATIVIDADE' ? 'Atividade' : 
                     activityType === 'TRABALHO' ? 'Trabalho' : 'Prova'}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
               {isEditMode ? 'Edite esta' : 'Crie uma nova'} {activityType.toLowerCase()} para suas turmas
             </p>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <TeacherPreferencesModal userId={user.id} onSave={handlePrefsUpdate} />
           <DraftModal userId={user.id} onLoadDraft={handleLoadDraft} />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Formulário */}
         <Card>
           <CardHeader>
@@ -376,7 +376,7 @@ export default function NovaAtividade() {
             {/* Data e Hora de Entrega */}
             <div className="space-y-4">
               <Label>Entrega & Prazo</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>Data do Prazo *</Label>
                   <Popover>
@@ -441,15 +441,15 @@ export default function NovaAtividade() {
             </div>
 
             {/* Ações */}
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" disabled={isSubmitting || professorClasses.length === 0}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
+              <Button type="submit" disabled={isSubmitting || professorClasses.length === 0} className="min-h-11 w-full sm:w-auto">
                 <Save className="h-4 w-4 mr-2" />
                 {isSubmitting ? (isEditMode ? 'Salvando...' : 'Criando...') : 
                  `${isEditMode ? 'Salvar' : 'Criar'} ${activityType === 'ATIVIDADE' ? 'Atividade' : 
                            activityType === 'TRABALHO' ? 'Trabalho' : 'Prova'}`}
               </Button>
               
-              <Button type="button" variant="outline" asChild>
+              <Button type="button" variant="outline" asChild className="min-h-11 w-full sm:w-auto">
                 <Link to="/professor/atividades">Cancelar</Link>
               </Button>
             </div>
@@ -457,8 +457,8 @@ export default function NovaAtividade() {
         </CardContent>
         </Card>
 
-        {/* Preview */}
-        <div className="space-y-4">
+        {/* Preview - Hidden on mobile, visible on desktop */}
+        <div className="space-y-4 hidden lg:block">
           <h3 className="text-lg font-semibold">Preview</h3>
           <ActivityPreviewCard
             type={activityType}
