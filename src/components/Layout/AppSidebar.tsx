@@ -42,6 +42,7 @@ import {
   Building2,
   Package,
   Sword,
+  CreditCard,
 } from 'lucide-react';
 
 const menuItems = {
@@ -50,6 +51,7 @@ const menuItems = {
     { title: 'Inteligência', url: '/admin/analytics', icon: BarChart3 },
     { title: 'Gerenciar Secretarias', url: '/admin/gerenciar-secretarias', icon: Shield },
     { title: 'Gerenciar Escolas', url: '/admin/gerenciar-escolas', icon: Building2 },
+    { title: 'Assinatura', url: '/admin/assinatura', icon: CreditCard },
     { title: 'Histórico', url: '/secretaria/historico', icon: History },
     { title: 'Calendário', url: '/secretaria/calendario', icon: Calendar },
     { title: 'Eventos', url: '/secretaria/eventos', icon: Calendar },

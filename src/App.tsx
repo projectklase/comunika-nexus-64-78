@@ -65,6 +65,7 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import EventosPage from "./pages/secretaria/EventosPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
+import AdminSubscriptionPage from "./pages/admin/AdminSubscriptionPage";
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
 import PlatformSchools from "./pages/platform/PlatformSchools";
 import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
@@ -136,6 +137,13 @@ const App = () => (
                 <AppLayout>
                   <SchoolsManagementPage />
                 </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin - Assinatura */}
+            <Route path="/admin/assinatura" element={
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <AdminSubscriptionPage />
               </ProtectedRoute>
             } />
             
