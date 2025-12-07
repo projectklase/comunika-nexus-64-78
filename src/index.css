@@ -2458,28 +2458,3 @@
     pointer-events: none;
   }
 }
-
-/* Prevenção de overflow horizontal em mobile */
-@media (max-width: 640px) {
-  body {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
-  }
-  
-  #root {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
-  }
-  
-  * {
-    box-sizing: border-box !important;
-  }
-  
-  img,
-  video,
-  canvas,
-  svg {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-}

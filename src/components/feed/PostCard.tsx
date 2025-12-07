@@ -368,64 +368,84 @@ export function PostCard({
       id={`post-${post.id}`} 
       data-important={isImportant}
       data-today={isPostToday}>
-        <CardHeader className={cn("p-3 sm:p-4 pb-2", compact && "pb-2 pt-3")} role="banner">
+        <CardHeader className={cn("p-2 sm:p-4 pb-2", compact && "pb-2 pt-2")} role="banner">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              {/* Badges com wrap */}
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                <Badge variant="outline" className={`shrink-0 text-xs ${getTypeColor(post.type)}`}>
-                  <span className="mr-1">{getTypeIcon(post.type)}</span>
-                  {compact ? post.type.substring(0, 3) : post.type}
+              {/* Badges - Grid em mobile, flex em desktop */}
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1 sm:gap-1.5 mb-2">
+                <Badge variant="outline" className={`shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 ${getTypeColor(post.type)}`}>
+                  <span className="mr-0.5 sm:mr-1">{getTypeIcon(post.type)}</span>
+                  {post.type.substring(0, 4)}
                 </Badge>
-                {/* FASE 2: Ocultar status em modo compacto, exceto se for agendado */}
-                {(!compact || post.status === 'SCHEDULED') && (
-                  <Badge variant="outline" className={`${getStatusColor(post.status)} ${compact && 'text-xs px-2'}`}>
-                    {compact && post.status === 'SCHEDULED' ? '⏰' : getStatusLabel(post.status)}
+                {/* Ocultar status em mobile, exceto se for agendado */}
+                {post.status === 'SCHEDULED' && (
+                  <Badge variant="outline" className={`${getStatusColor(post.status)} text-[10px] sm:text-xs px-1.5 py-0.5`}>
+                    ⏰ Agend.
                   </Badge>
                 )}
-                {isNewPost && <Badge className={`bg-primary/20 text-primary border-primary/30 ${compact ? 'text-xs px-2' : 'text-xs'}`}>Novo</Badge>}
+                {isNewPost && <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] sm:text-xs px-1.5 py-0.5">Novo</Badge>}
                 {isPostToday && (
-                  <Badge className="bg-yellow-500 text-black border-0 shadow-lg shadow-yellow-500/50 animate-pulse">
-                    <Star className="h-3 w-3 mr-1" />
+                  <Badge className="bg-yellow-500 text-black border-0 shadow-lg shadow-yellow-500/50 animate-pulse text-[10px] sm:text-xs px-1.5 py-0.5">
+                    <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
                     HOJE
                   </Badge>
                 )}
-                {isImportant && <Badge className="bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60 text-xs font-medium shadow-[var(--golden-glow)] backdrop-blur-sm">
-                    <Star className="h-3 w-3 mr-1 fill-[hsl(var(--golden-light))]" />
-                    Importante
+                {isImportant && <Badge className="bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60 text-[10px] sm:text-xs px-1.5 py-0.5 font-medium">
+                    <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 fill-[hsl(var(--golden-light))]" />
+                    Imp.
                   </Badge>}
-                {isPostSaved && <Badge variant="secondary" className="text-xs">
-                    <Bookmark className="h-3 w-3 mr-1" />
-                    Salvo
-                  </Badge>}
-                {delivery && <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="text-xs">
-                    {delivery.reviewStatus === "AGUARDANDO" && "Aguardando revisão"}
-                    {delivery.reviewStatus === "APROVADA" && "Aprovada"}
-                    {delivery.reviewStatus === "DEVOLVIDA" && "Devolvida"}
-                    {delivery.isLate && " (Atrasada)"}
-                  </Badge>}
-                 {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-xs">
-                    Atrasada
-                  </Badge>}
-                 
-                 {/* Badge de Limite de Convites - Só aparece para eventos com limite */}
-                 {post.type === "EVENTO" && post.eventCapacityEnabled && (
-                   <Badge variant="outline" className="text-xs gap-1 bg-purple-500/10 text-purple-300 border-purple-500/30">
-                     {post.eventCapacityType === 'PER_STUDENT' ? (
-                       <>
-                         <UserPlus className="h-3 w-3" />
-                         Limite: {post.eventMaxGuestsPerStudent} por aluno
-                       </>
-                     ) : (
-                       <>
-                         <Users className="h-3 w-3" />
-                         Capacidade: {post.eventMaxParticipants}
-                       </>
-                     )}
-                   </Badge>
-                 )}
-               </div>
-             </div>
+                {/* Desktop only badges */}
+                <div className="hidden sm:contents">
+                  {post.status !== 'SCHEDULED' && (
+                    <Badge variant="outline" className={`${getStatusColor(post.status)} text-xs`}>
+                      {getStatusLabel(post.status)}
+                    </Badge>
+                  )}
+                  {isPostSaved && <Badge variant="secondary" className="text-xs">
+                      <Bookmark className="h-3 w-3 mr-1" />
+                      Salvo
+                    </Badge>}
+                  {delivery && <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="text-xs">
+                      {delivery.reviewStatus === "AGUARDANDO" && "Aguardando revisão"}
+                      {delivery.reviewStatus === "APROVADA" && "Aprovada"}
+                      {delivery.reviewStatus === "DEVOLVIDA" && "Devolvida"}
+                      {delivery.isLate && " (Atrasada)"}
+                    </Badge>}
+                  {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-xs">
+                      Atrasada
+                    </Badge>}
+                  {post.type === "EVENTO" && post.eventCapacityEnabled && (
+                    <Badge variant="outline" className="text-xs gap-1 bg-purple-500/10 text-purple-300 border-purple-500/30">
+                      {post.eventCapacityType === 'PER_STUDENT' ? (
+                        <>
+                          <UserPlus className="h-3 w-3" />
+                          Limite: {post.eventMaxGuestsPerStudent} por aluno
+                        </>
+                      ) : (
+                        <>
+                          <Users className="h-3 w-3" />
+                          Capacidade: {post.eventMaxParticipants}
+                        </>
+                      )}
+                    </Badge>
+                  )}
+                </div>
+                {/* Mobile only: badges críticos resumidos */}
+                <div className="contents sm:hidden">
+                  {isPostSaved && <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                      <Bookmark className="h-2.5 w-2.5" />
+                    </Badge>}
+                  {delivery && <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0.5">
+                      {delivery.reviewStatus === "AGUARDANDO" && "⏳"}
+                      {delivery.reviewStatus === "APROVADA" && "✓"}
+                      {delivery.reviewStatus === "DEVOLVIDA" && "↩"}
+                    </Badge>}
+                  {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
+                      Atraso
+                    </Badge>}
+                </div>
+              </div>
+            </div>
 
             {canEdit && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -447,13 +467,10 @@ export function PostCard({
           </h3>
         </CardHeader>
 
-        <CardContent className={cn("space-y-4", compact && "space-y-2 pt-2")} role="main">
-          {/* FASE 2: Body preview - mais curto em modo compacto */}
+        <CardContent className={cn("p-2 sm:p-4 pt-0 space-y-3 sm:space-y-4", compact && "space-y-2")} role="main">
+          {/* Body preview - mais curto em mobile */}
           {post.body && (
-            <p className={cn(
-              "text-muted-foreground text-sm leading-relaxed",
-              compact ? "line-clamp-2" : "line-clamp-3"
-            )}>{post.body}</p>
+            <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3">{post.body}</p>
           )}
 
           {/* Event details */}
@@ -564,79 +581,74 @@ export function PostCard({
               </div>
             </div>}
 
-          {/* Action Buttons */}
-          {user && <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-3 border-t border-border/50 w-full">
-            {/* Botão de leitura universal - Abre drawer (previne exploits) */}
+          {/* Action Buttons - Compacto em mobile */}
+          {user && <div className="flex items-center gap-1 sm:gap-2 pt-2 sm:pt-3 border-t border-border/50 w-full">
+            {/* Botão de leitura */}
             <Button 
               size="sm" 
               variant={isNewPost ? "default" : "ghost"}
               onClick={() => setIsDetailDrawerOpen(true)}
               className={cn(
-                "text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9",
+                "h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3",
                 isNewPost && "bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               )}
               aria-label={isNewPost ? "Ler post completo" : "Post já lido"}
             >
-              {isNewPost ? (
-                <>
-                  <Eye className="h-3 w-3 sm:mr-1" />
-                  <span className="hidden sm:inline">Ler agora</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-3 w-3 sm:mr-1" />
-                  <span className="hidden sm:inline">Lido</span>
-                </>
-              )}
+              {isNewPost ? <Eye className="h-3.5 w-3.5" /> : <CheckCircle className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline sm:ml-1">{isNewPost ? "Ler" : "Lido"}</span>
             </Button>
 
-              {/* Activity Actions - Only for students */}
-              {isActivity && user.role === "aluno" && <>
-                  {!delivery ? <Button size="xs" onClick={() => setIsDrawerEntregaOpen(true)} className="text-xs bg-green-600 hover:bg-green-700 text-white focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3" aria-label="Marcar entregue">
-                      <Upload className="h-3 w-3 sm:mr-1" />
-                      <span className="hidden sm:inline">Entregar</span>
-                    </Button> : delivery.reviewStatus === "DEVOLVIDA" ? <Button size="sm" variant="outline" onClick={() => setIsDrawerEntregaOpen(true)} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3" aria-label="Reenviar atividade">
-                      <Upload className="h-3 w-3 sm:mr-1" />
-                      <span className="hidden sm:inline">Reenviar</span>
-                    </Button> : null}
+            {/* Activity Actions - Only for students */}
+            {isActivity && user.role === "aluno" && <>
+              {!delivery ? (
+                <Button size="sm" onClick={() => setIsDrawerEntregaOpen(true)} className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3 bg-green-600 hover:bg-green-700 text-white" aria-label="Entregar">
+                  <Upload className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline sm:ml-1">Entregar</span>
+                </Button>
+              ) : delivery.reviewStatus === "DEVOLVIDA" ? (
+                <Button size="sm" variant="outline" onClick={() => setIsDrawerEntregaOpen(true)} className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3" aria-label="Reenviar">
+                  <Upload className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline sm:ml-1">Reenviar</span>
+                </Button>
+              ) : null}
 
-                  <Button size="sm" variant="ghost" onClick={() => {
-              if (user) {
-                recordPostView(post.id, user, "feed", post.classIds?.[0] || post.classId);
-              }
-              setIsDetailDrawerOpen(true);
-            }} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3" aria-label="Ver instruções da atividade">
-                    <FileText className="h-3 w-3 sm:mr-1" />
-                    <span className="hidden sm:inline">Instruções</span>
-                  </Button>
-
-                  {/* Go to Calendar - for activities - hidden on mobile */}
-                  {post.dueAt && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 hidden sm:flex" aria-label="Ir para calendário na data de entrega">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      Calendário
-                    </Button>}
-                </>}
-
-              {/* Go to Calendar - for events - hidden on mobile */}
-              {post.type === "EVENTO" && post.eventStartAt && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 hidden sm:flex" aria-label="Ir para calendário na data do evento">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Calendário
-                </Button>}
-
-
-              {/* Save/Unsave Toggle */}
-              <Button size="sm" variant="ghost" onClick={handleSaveToggle} className={cn("text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3", isPostSaved ? "text-primary" : "text-muted-foreground hover:text-foreground")} aria-label={isPostSaved ? "Remover dos salvos" : "Salvar para depois"}>
-                {isPostSaved ? <BookmarkCheck className="h-3 w-3 sm:mr-1" /> : <Bookmark className="h-3 w-3 sm:mr-1" />}
-                <span className="hidden sm:inline">{isPostSaved ? "Salvo" : "Salvar"}</span>
+              <Button size="sm" variant="ghost" onClick={() => {
+                if (user) recordPostView(post.id, user, "feed", post.classIds?.[0] || post.classId);
+                setIsDetailDrawerOpen(true);
+              }} className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3" aria-label="Instruções">
+                <FileText className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline sm:ml-1">Instruções</span>
               </Button>
 
-              {/* View Invitations - for EVENTO with invitations enabled (Secretaria only) - hidden on mobile */}
-              {post.type === "EVENTO" && post.allowInvitations && canEdit && onViewInvitations && <Button size="sm" variant="outline" onClick={() => onViewInvitations(post)} className="text-xs text-purple-400 border-purple-500/50 hover:bg-purple-500/10 focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 min-h-9 hidden sm:flex" aria-label="Ver convites recebidos">
-                  <Users className="h-3 w-3 mr-1" />
-                  Ver Convites
-                </Button>}
+              {/* Calendário - desktop only */}
+              {post.dueAt && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="hidden sm:flex h-9 px-3 text-xs">
+                <Calendar className="h-3 w-3 mr-1" />
+                Calendário
+              </Button>}
+            </>}
 
-            </div>}
+            {/* Calendário eventos - desktop only */}
+            {post.type === "EVENTO" && post.eventStartAt && (
+              <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="hidden sm:flex h-9 px-3 text-xs">
+                <Calendar className="h-3 w-3 mr-1" />
+                Calendário
+              </Button>
+            )}
+
+            {/* Save Toggle */}
+            <Button size="sm" variant="ghost" onClick={handleSaveToggle} className={cn("h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3 ml-auto", isPostSaved ? "text-primary" : "text-muted-foreground")} aria-label={isPostSaved ? "Remover" : "Salvar"}>
+              {isPostSaved ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline sm:ml-1">{isPostSaved ? "Salvo" : "Salvar"}</span>
+            </Button>
+
+            {/* Ver Convites - desktop only */}
+            {post.type === "EVENTO" && post.allowInvitations && canEdit && onViewInvitations && (
+              <Button size="sm" variant="outline" onClick={() => onViewInvitations(post)} className="hidden sm:flex h-9 px-3 text-xs text-purple-400 border-purple-500/50 hover:bg-purple-500/10">
+                <Users className="h-3 w-3 mr-1" />
+                Ver Convites
+              </Button>
+            )}
+          </div>}
 
           {/* Footer */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-border/50 mt-3">
