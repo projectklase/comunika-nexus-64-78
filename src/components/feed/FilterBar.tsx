@@ -292,25 +292,25 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
 
   return (
     <div className="w-full space-y-3">
-      {/* Quick Filters - Scroll Horizontal em Mobile */}
-        <div className="w-full overflow-x-auto -mx-3 sm:mx-0">
-          <div className="flex gap-2 pb-2 px-3 sm:px-0 w-max sm:w-full">
-            {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
-              <Button
-                key={key}
-                variant={filters.quickFilter === key ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleQuickFilter(key)}
-                className="shrink-0 h-9 px-3 text-xs sm:text-sm whitespace-nowrap min-w-fit"
-                aria-pressed={filters.quickFilter === key}
-                aria-label={`Filtro ${label}`}
-              >
-                <Icon className="h-3.5 w-3.5 mr-1.5" />
-                {label}
-              </Button>
-            ))}
-          </div>
+      {/* Quick Filters - Desktop only inline, Mobile usa botão único */}
+      {!isMobile && (
+        <div className="flex gap-2 flex-wrap">
+          {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
+            <Button
+              key={key}
+              variant={filters.quickFilter === key ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleQuickFilter(key)}
+              className="h-9 px-3 text-sm"
+              aria-pressed={filters.quickFilter === key}
+              aria-label={`Filtro ${label}`}
+            >
+              <Icon className="h-3.5 w-3.5 mr-1.5" />
+              {label}
+            </Button>
+          ))}
         </div>
+      )}
 
       {/* Search + Filtros */}
       <div className="flex gap-2 w-full">
@@ -327,15 +327,41 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
           </div>
         </div>
         
-        {/* Mobile: Sheet de filtros */}
+        {/* Mobile: Botão único que abre modal com TODOS os filtros */}
         {isMobile ? (
           <MobileFilterSheet activeFiltersCount={countActiveFilters()}>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Quick Filters em grid dentro do modal */}
+              <div>
+                <h4 className="font-medium text-sm mb-3">Tipo de Post</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
+                    <Button
+                      key={key}
+                      variant={filters.quickFilter === key ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleQuickFilter(key)}
+                      className="h-10 justify-start text-sm"
+                      aria-pressed={filters.quickFilter === key}
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Filtros Avançados */}
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">Filtros Avançados</h4>
                 {advancedFiltersContent}
               </div>
-              <Separator className="my-4" />
+              
+              <Separator />
+              
+              {/* Preferências */}
               <div>
                 <h4 className="font-medium text-sm mb-3">Preferências</h4>
                 {preferencesContent}
