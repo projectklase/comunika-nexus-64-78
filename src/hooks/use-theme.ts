@@ -12,7 +12,8 @@ export type ThemeOption =
   | 'theme_forest_mystic'
   | 'theme_midnight_aurora'
   | 'theme_volcanic_fire'
-  | 'theme_sakura_dreams';
+  | 'theme_sakura_dreams'
+  | 'theme_cyberpunk_city';
 
 export interface ThemeConfig {
   value: ThemeOption;
@@ -115,7 +116,8 @@ function applyTheme(theme: ThemeOption) {
       'theme_forest_mystic',
       'theme_midnight_aurora',
       'theme_volcanic_fire',
-      'theme_sakura_dreams'
+      'theme_sakura_dreams',
+      'theme_cyberpunk_city'
     ];
     if (darkThemes.includes(theme)) {
       root.classList.add('dark');

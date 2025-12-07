@@ -17,7 +17,8 @@ interface UserSettings {
     | 'theme_forest_mystic'
     | 'theme_midnight_aurora'
     | 'theme_volcanic_fire'
-    | 'theme_sakura_dreams';
+    | 'theme_sakura_dreams'
+    | 'theme_cyberpunk_city';
   nexusPreferences: {
     defaultFocusDuration: number;
     enableMorningWindow: boolean;

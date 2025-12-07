@@ -1319,6 +1319,195 @@
       0 2px 4px hsl(280 45% 5% / 0.8);
   }
 
+  /* ============================================
+     THEME: CYBERPUNK CITY
+     Futuristic neon city theme with WCAG AA/AAA compliance
+     ============================================ */
+
+  /* Cyberpunk City - Base color variables */
+  [data-theme="theme_cyberpunk_city"] {
+    --background: 250 50% 6%;
+    --foreground: 200 20% 95%;
+    
+    --card: 270 45% 12%;
+    --card-foreground: 200 20% 92%;
+    
+    --popover: 270 45% 10%;
+    --popover-foreground: 200 20% 92%;
+    
+    --primary: 330 100% 60%;
+    --primary-foreground: 330 100% 98%;
+    
+    --secondary: 185 100% 45%;
+    --secondary-foreground: 185 100% 95%;
+    
+    --accent: 300 80% 55%;
+    --accent-foreground: 300 80% 95%;
+    
+    --muted: 270 30% 18%;
+    --muted-foreground: 200 15% 80%;
+    
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 270 40% 25%;
+    --input: 270 40% 20%;
+    --ring: 330 100% 60%;
+    
+    --sidebar-background: 250 50% 5%;
+    --sidebar-foreground: 200 20% 90%;
+    --sidebar-primary: 330 100% 60%;
+    --sidebar-primary-foreground: 330 100% 98%;
+    --sidebar-accent: 185 100% 45%;
+    --sidebar-accent-foreground: 185 100% 95%;
+    --sidebar-border: 270 40% 20%;
+    --sidebar-ring: 330 100% 60%;
+  }
+
+  /* Cyberpunk City - Background with neon city image */
+  [data-theme="theme_cyberpunk_city"] {
+    background-image: url('/themes/cyberpunk-neon-city.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+
+  /* Cyberpunk City - Dark overlay for uniform contrast */
+  [data-theme="theme_cyberpunk_city"] #root::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      hsl(250 50% 3% / 0.40) 0%,
+      hsl(250 50% 5% / 0.30) 50%,
+      hsl(250 50% 3% / 0.45) 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  [data-theme="theme_cyberpunk_city"] #root > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Cyberpunk City - Glassmorphism cards with high opacity for WCAG */
+  [data-theme="theme_cyberpunk_city"] .glass,
+  [data-theme="theme_cyberpunk_city"] .glass-card,
+  [data-theme="theme_cyberpunk_city"] [class*="Card"] {
+    background: hsl(270 45% 10% / 0.90) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid hsl(330 80% 50% / 0.15) !important;
+    box-shadow: 
+      0 0 20px hsl(330 100% 50% / 0.08),
+      0 4px 20px hsl(250 50% 3% / 0.6),
+      inset 0 0 0 1px hsl(185 100% 50% / 0.05);
+  }
+
+  /* Cyberpunk City - Text shadows for legibility */
+  [data-theme="theme_cyberpunk_city"] main h1:not(.gradient-text),
+  [data-theme="theme_cyberpunk_city"] main h2:not(.gradient-text),
+  [data-theme="theme_cyberpunk_city"] main h3:not(.gradient-text) {
+    text-shadow: 
+      0 0 15px hsl(250 50% 3% / 0.95),
+      0 2px 4px hsl(250 50% 3% / 0.9);
+    color: hsl(200 20% 95%) !important;
+  }
+
+  /* Cyberpunk City - Neon gradient text */
+  [data-theme="theme_cyberpunk_city"] .gradient-text {
+    background: linear-gradient(135deg, 
+      hsl(330 100% 75%) 0%,
+      hsl(185 100% 70%) 50%,
+      hsl(300 80% 75%) 100%
+    ) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    filter: drop-shadow(0 1px 2px hsl(250 50% 3% / 0.6))
+            drop-shadow(0 0 10px hsl(330 100% 50% / 0.3));
+  }
+
+  /* Cyberpunk City - Paragraphs and muted text contrast */
+  [data-theme="theme_cyberpunk_city"] p,
+  [data-theme="theme_cyberpunk_city"] span,
+  [data-theme="theme_cyberpunk_city"] .text-muted-foreground {
+    text-shadow: 
+      0 0 8px hsl(250 50% 3% / 0.9),
+      0 1px 2px hsl(250 50% 3% / 0.8);
+  }
+
+  [data-theme="theme_cyberpunk_city"] .text-muted-foreground {
+    color: hsl(200 15% 80%) !important;
+  }
+
+  /* Cyberpunk City - Card text enhancements */
+  [data-theme="theme_cyberpunk_city"] [class*="Card"] .text-xs,
+  [data-theme="theme_cyberpunk_city"] [class*="Card"] .text-sm,
+  [data-theme="theme_cyberpunk_city"] [class*="Card"] .uppercase {
+    color: hsl(200 15% 78%) !important;
+    text-shadow: 0 1px 3px hsl(250 50% 3% / 0.8);
+  }
+
+  [data-theme="theme_cyberpunk_city"] [class*="Card"] .text-2xl,
+  [data-theme="theme_cyberpunk_city"] [class*="Card"] .text-3xl,
+  [data-theme="theme_cyberpunk_city"] [class*="Card"] .text-4xl {
+    text-shadow: 
+      0 0 15px hsl(250 50% 3% / 0.9),
+      0 2px 4px hsl(250 50% 3% / 0.8);
+  }
+
+  /* Cyberpunk City - Neon glow effects on interactive elements */
+  [data-theme="theme_cyberpunk_city"] button:hover,
+  [data-theme="theme_cyberpunk_city"] a:hover {
+    box-shadow: 0 0 15px hsl(330 100% 50% / 0.4);
+  }
+
+  /* Cyberpunk City - Focus ring neon */
+  [data-theme="theme_cyberpunk_city"] *:focus-visible {
+    outline: 2px solid hsl(185 100% 50%);
+    outline-offset: 2px;
+    box-shadow: 0 0 10px hsl(185 100% 50% / 0.5);
+  }
+
+  /* Cyberpunk City - Progress bars with neon gradient */
+  [data-theme="theme_cyberpunk_city"] [role="progressbar"] > div {
+    background: linear-gradient(90deg, 
+      hsl(330 100% 55%) 0%, 
+      hsl(185 100% 50%) 100%
+    ) !important;
+    box-shadow: 0 0 10px hsl(330 100% 50% / 0.5);
+  }
+
+  /* Cyberpunk City - Sidebar styling */
+  [data-theme="theme_cyberpunk_city"] aside,
+  [data-theme="theme_cyberpunk_city"] [data-sidebar] {
+    background: hsl(250 50% 5% / 0.95) !important;
+    border-right: 1px solid hsl(330 80% 50% / 0.2) !important;
+  }
+
+  [data-theme="theme_cyberpunk_city"] [data-sidebar] [data-active="true"] {
+    background: hsl(330 100% 50% / 0.15) !important;
+    border-left: 3px solid hsl(330 100% 60%) !important;
+    box-shadow: inset 0 0 20px hsl(330 100% 50% / 0.1);
+  }
+
+  /* Cyberpunk City - Foreground text brightness */
+  [data-theme="theme_cyberpunk_city"] main .text-foreground,
+  [data-theme="theme_cyberpunk_city"] main h1:not(.gradient-text),
+  [data-theme="theme_cyberpunk_city"] main h2:not(.gradient-text),
+  [data-theme="theme_cyberpunk_city"] main h3:not(.gradient-text) {
+    color: hsl(200 20% 95%) !important;
+  }
+
+  /* Cyberpunk City - Clock and accent elements */
+  [data-theme="theme_cyberpunk_city"] .text-purple-500,
+  [data-theme="theme_cyberpunk_city"] .text-purple-400 {
+    color: hsl(185 100% 70%) !important;
+    text-shadow: 0 0 12px hsl(250 50% 3% / 0.95);
+  }
+
 @layer base {
   * {
     @apply border-border;
