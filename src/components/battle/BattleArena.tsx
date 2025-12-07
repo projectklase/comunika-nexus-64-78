@@ -113,7 +113,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const isSetupPhase = gameState?.is_setup_phase === true;
   const hasAttackedThisTurn = gameState?.has_attacked_this_turn === true;
   const hasPlayedCardThisTurn = gameState?.has_played_card_this_turn === true;
-  const currentTurnNumber = gameState?.turn_number || 1;
+  const currentTurnNumber = Number(gameState?.turn_number) || 1;
 
   // Fetch player profiles with loading state - refetch on battle change
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
@@ -548,7 +548,12 @@ const [player1Profile, setPlayer1Profile] = useState<{
     
     // Execute attack after animation starts
     setTimeout(async () => {
-      await attack.mutateAsync(battle.id);
+      try {
+        await attack.mutateAsync(battle.id);
+      } catch (error: any) {
+        toast.error(error?.message || 'Erro ao atacar');
+        setAttackAnimation(null);
+      }
     }, 500);
     
     // Clear animation after it completes
@@ -742,7 +747,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
         <BattleActionButtons 
           canPlayCard={selectedCard !== null && isMyTurn() && !hasPlayedCardThisTurn} 
-          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase && !hasAttackedThisTurn && myField?.monster?.summoned_on_turn !== currentTurnNumber} 
+          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase && !hasAttackedThisTurn && Number(myField?.monster?.summoned_on_turn) !== currentTurnNumber} 
           isMyTurn={isMyTurn()} 
           onPlayCard={handlePlayCard} 
           onAttack={handleAttack} 
@@ -750,7 +755,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           isSetupPhase={isSetupPhase}
           hasAttackedThisTurn={hasAttackedThisTurn}
           hasPlayedCardThisTurn={hasPlayedCardThisTurn}
-          hasSummoningSickness={myField?.monster && myField.monster.summoned_on_turn === currentTurnNumber}
+          hasSummoningSickness={myField?.monster && Number(myField.monster.summoned_on_turn) === currentTurnNumber}
         />
 
         {/* Duel Start Announcement */}
