@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom"
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -11,7 +12,7 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
-  return (
+  const toasterContent = (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
@@ -30,4 +31,10 @@ export function Toaster() {
       <ToastViewport />
     </ToastProvider>
   )
+
+  // Renderiza fora do #root, diretamente no body
+  // Isso escapa do stacking context do #root nos temas premium
+  return typeof document !== 'undefined' 
+    ? createPortal(toasterContent, document.body)
+    : toasterContent
 }
