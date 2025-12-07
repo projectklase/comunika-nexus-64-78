@@ -291,12 +291,12 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* FASE 3: Quick Filters - Chips scrolláveis no mobile */}
-      <div className="glass-card p-4 rounded-xl border border-border/50">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium flex items-center gap-2">
-            <Filter className="h-4 w-4" />
+      <div className="glass-card p-3 sm:p-4 rounded-xl border border-border/50">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Filtros Rápidos
           </h3>
           {!isMobile && (
@@ -325,13 +325,13 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
               size="sm"
               onClick={() => handleQuickFilter(key)}
               className={cn(
-                "text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                isMobile && "flex-shrink-0"
+                "text-xs min-h-10 sm:min-h-11 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                isMobile && "flex-shrink-0 px-3"
               )}
               aria-pressed={filters.quickFilter === key}
               aria-label={`Filtro ${label}`}
             >
-              <Icon className="h-3 w-3 mr-1" />
+              <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
               {label}
             </Button>
           ))}
@@ -351,7 +351,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
               placeholder="Buscar posts..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-10 bg-background/50 border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="pl-10 min-h-11 bg-background/50 border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               aria-label="Campo de busca"
             />
           </div>
@@ -389,7 +389,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         </div>
       ) : (
         // Desktop: filtros inline
-        <div className="glass-card p-4 rounded-xl border border-border/50 space-y-4">
+        <div className="glass-card p-3 sm:p-4 rounded-xl border border-border/50 space-y-3 sm:space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
             {advancedFiltersContent}
           </div>

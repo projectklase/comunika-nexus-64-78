@@ -28,11 +28,11 @@ export function SmartFilterStatus({
 
   return (
     <Card className={`glass-card border-border/50 ${className}`}>
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-            <span className="text-sm text-muted-foreground">
+      <CardContent className="p-2.5 sm:p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary animate-pulse" />
+            <span className="text-xs sm:text-sm text-muted-foreground">
               Feed inteligente ativo
             </span>
             <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">
@@ -44,25 +44,25 @@ export function SmartFilterStatus({
             variant="ghost"
             size="sm"
             onClick={onToggleExpired}
-            className="h-8 text-xs hover:bg-muted/50"
+            className="h-9 min-h-[44px] text-xs hover:bg-muted/50 w-full sm:w-auto justify-center"
           >
             {hideExpired ? (
               <>
-                <Eye className="h-3 w-3 mr-1" />
+                <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5" />
                 Mostrar todos
               </>
             ) : (
               <>
-                <EyeOff className="h-3 w-3 mr-1" />
+                <EyeOff className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5" />
                 Ocultar passados
               </>
             )}
           </Button>
         </div>
         
-        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          <span>
+        <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3 shrink-0" />
+          <span className="leading-tight">
             Posts expirados e avisos antigos são automaticamente ocultados
           </span>
         </div>

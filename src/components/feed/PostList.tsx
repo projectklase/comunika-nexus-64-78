@@ -65,13 +65,13 @@ export function PostList({ posts, isLoading = false, canEdit, onArchive, onDupli
   
   if (posts.length === 0) {
     return (
-      <div className="text-center py-12" role="status" aria-live="polite">
-        <div className="glass-card p-8 rounded-xl border border-border/50 max-w-md mx-auto">
-          <div className="text-4xl mb-4" aria-hidden="true">📭</div>
-          <h3 className="text-lg font-medium text-foreground mb-2">
+      <div className="text-center py-8 sm:py-12" role="status" aria-live="polite">
+        <div className="glass-card p-6 sm:p-8 rounded-xl border border-border/50 max-w-md mx-auto">
+          <div className="text-3xl sm:text-4xl mb-3 sm:mb-4" aria-hidden="true">📭</div>
+          <h3 className="text-base sm:text-lg font-medium text-foreground mb-1.5 sm:mb-2">
             Nenhum post encontrado
           </h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs sm:text-sm">
             Não há posts correspondentes aos filtros selecionados.
           </p>
         </div>
@@ -80,9 +80,9 @@ export function PostList({ posts, isLoading = false, canEdit, onArchive, onDupli
   }
 
   return (
-    <div className="space-y-6" role="feed" aria-label="Lista de posts">
+    <div className="space-y-4 sm:space-y-6" role="feed" aria-label="Lista de posts">
       {/* FASE 2: Espaçamento menor em mobile */}
-      <div className={`${isMobile ? 'space-y-3' : 'space-y-4'}`} role="list">
+      <div className="space-y-3 sm:space-y-4" role="list">
         {visiblePosts.map((post, index) => (
           <div key={post.id} role="listitem">
             <PostCard
@@ -104,43 +104,41 @@ export function PostList({ posts, isLoading = false, canEdit, onArchive, onDupli
       {/* Pagination */}
       {totalPages > 1 && (
         <nav 
-          className="flex items-center justify-center gap-4 pt-4" 
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-4" 
           aria-label="Navegação de páginas"
           role="navigation"
         >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToPrevPage}
-            disabled={currentPage === 0}
-            className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label="Página anterior"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Anterior
-          </Button>
-          
-          <div className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
-            <span>
-              Página {currentPage + 1} de {totalPages}
-            </span>
-            <span aria-hidden="true">•</span>
-            <span>
-              {posts.length} posts total
-            </span>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPrevPage}
+              disabled={currentPage === 0}
+              className="flex items-center gap-1.5 sm:gap-2 min-h-11 px-3 sm:px-4 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label="Página anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Anterior</span>
+            </Button>
+            
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground" aria-live="polite">
+              <span>{currentPage + 1} de {totalPages}</span>
+              <span className="hidden sm:inline" aria-hidden="true">•</span>
+              <span className="hidden sm:inline">{posts.length} posts</span>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage >= totalPages - 1}
+              className="flex items-center gap-1.5 sm:gap-2 min-h-11 px-3 sm:px-4 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label="Próxima página"
+            >
+              <span className="hidden sm:inline">Próxima</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToNextPage}
-            disabled={currentPage >= totalPages - 1}
-            className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label="Próxima página"
-          >
-            Próxima
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </nav>
       )}
     </div>
