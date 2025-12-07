@@ -2,10 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Card, CardRarity, CardCategory, RARITY_LABELS, CATEGORY_LABELS } from '@/types/cards';
-import { CardThumbnail } from './CardThumbnail';
+import { CardDisplay } from './CardDisplay';
 import { CardDetailModal } from './CardDetailModal';
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, Lock, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -81,11 +81,11 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className={cn(
-          // Mobile: fullscreen com contenção total
-          "fixed inset-0 w-full h-[100dvh] max-w-[100vw] rounded-none p-0",
-          "overflow-hidden box-border",
+          // Mobile: fullscreen
+          "w-full h-[100dvh] max-w-none rounded-none p-0",
+          "left-0 top-0 translate-x-0 translate-y-0",
           // Desktop: modal centralizado
-          "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+          "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
           "sm:max-w-6xl sm:h-[80vh] sm:rounded-lg sm:p-6",
           "flex flex-col"
         )}>
@@ -99,15 +99,15 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
             </DialogTitle>
           </DialogHeader>
 
-          {/* Busca compacta */}
+          {/* Busca fixa no topo */}
           <div className="px-3 sm:px-0 py-2 sm:py-0 flex-shrink-0">
-            <div className="relative max-w-full">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar..."
+                placeholder="Buscar cartas..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 h-9 text-sm w-full"
+                className="pl-9 h-11"
               />
             </div>
           </div>
@@ -141,27 +141,40 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
             <FiltersContent />
           </div>
 
-          {/* Grid de Cartas - Galeria de Fotos */}
-          <ScrollArea className="flex-1 px-2 sm:px-0 mt-2 sm:mt-0 overflow-hidden">
-            <div className="max-w-full overflow-hidden">
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3 pb-4">
-                {filteredCards.map(card => (
-                  <CardThumbnail
-                    key={card.id}
-                    card={card}
-                    isOwned={userCards.has(card.id)}
-                    quantity={userCards.get(card.id) || 0}
-                    onClick={() => setDetailCard(card)}
-                  />
-                ))}
-              </div>
-              
-              {filteredCards.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground text-sm">
-                  Nenhuma carta encontrada
-                </div>
-              )}
+          {/* Grid de Cartas */}
+          <ScrollArea className="flex-1 px-3 sm:px-0 mt-2 sm:mt-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 pb-4 place-items-center">
+              {filteredCards.map(card => {
+                const isOwned = userCards.has(card.id);
+                return (
+                  <div key={card.id} className="relative aspect-[7/11] w-full">
+                    <CardDisplay
+                      card={card}
+                      size="sm"
+                      quantity={userCards.get(card.id)}
+                      onClick={() => setDetailCard(card)}
+                      className={cn(
+                        "w-full h-full",
+                        !isOwned && 'opacity-30 grayscale'
+                      )}
+                    />
+                    {!isOwned && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="bg-black/50 rounded-full p-2">
+                          <Lock className="w-5 h-5 text-gray-400" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+            
+            {filteredCards.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                Nenhuma carta encontrada
+              </div>
+            )}
           </ScrollArea>
 
           {/* Footer com estatísticas */}
