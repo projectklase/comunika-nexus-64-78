@@ -78,21 +78,19 @@ export const CardDisplay = ({
     setIsHovering(true);
   }, []);
 
-  // Touch handlers for mobile devices - with scroll prevention
-  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    e.preventDefault(); // Previne scroll
+  // Touch handlers for mobile devices - NÃO previne scroll do modal
+  const handleTouchStart = useCallback(() => {
+    if (size !== 'md' && size !== 'lg') return;
     setIsHovering(true);
-  }, []);
+  }, [size]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    e.preventDefault(); // Previne scroll durante movimento
     if (!cardRef.current || size === 'xs' || size === 'sm') return;
     const touch = e.touches[0];
     applyTiltEffect(touch.clientX, touch.clientY);
   }, [applyTiltEffect, size]);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    e.preventDefault();
+  const handleTouchEnd = useCallback(() => {
     handleMouseLeave();
   }, [handleMouseLeave]);
 
@@ -206,7 +204,7 @@ export const CardDisplay = ({
       onTouchEnd={enable3DHover ? handleTouchEnd : undefined}
       style={enable3DHover ? tiltStyle : undefined}
       className={cn(
-        'relative rounded-xl overflow-hidden cursor-pointer touch-none',
+        'relative rounded-xl overflow-hidden cursor-pointer touch-manipulation',
         !enable3DHover && 'transition-all duration-300 hover:scale-105 hover:-translate-y-2',
         rarityWrapperClass,
         sizeClasses[size],
