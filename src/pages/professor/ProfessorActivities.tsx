@@ -39,8 +39,16 @@ import {
   Clock,
   Users,
   Plus,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MoreVertical
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 import { format, isAfter, isBefore, startOfDay, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -482,16 +490,16 @@ export default function ProfessorActivities() {
               variant="outline"
               onClick={() => exportActivities(finalFilteredPosts)}
               disabled={finalFilteredPosts.length === 0}
-              className="flex-1 sm:flex-none min-h-11"
+              className="flex-1 sm:flex-none min-h-11 justify-center"
             >
-              <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              <span className="sm:hidden">Exportar</span>
               <span className="hidden sm:inline">Exportar ({finalFilteredPosts.length})</span>
             </Button>
-            <Button asChild className="flex-1 sm:flex-none min-h-11">
+            <Button asChild className="flex-1 sm:flex-none min-h-11 justify-center">
               <Link to="/professor/atividades/nova">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Nova Atividade</span>
-                <span className="sm:hidden">Nova</span>
+                <Plus className="h-4 w-4 mr-2" />
+                <span>+ Nova</span>
               </Link>
             </Button>
           </div>
@@ -541,46 +549,52 @@ export default function ProfessorActivities() {
                 onOpenChange={() => toggleGroup(group.classId)}
               >
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors p-3 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                      {/* Linha 1: Chevron + Nome + Badge de contagem */}
                       <div className="flex items-center gap-2">
                         {openGroups.has(group.classId) ? (
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown className="h-4 w-4 shrink-0" />
                         ) : (
-                          <ChevronRight className="h-4 w-4" />
+                          <ChevronRight className="h-4 w-4 shrink-0" />
                         )}
-                        <Users className="h-5 w-5" />
-                        <CardTitle className="text-lg">{group.className}</CardTitle>
-                        <Badge variant="secondary">
-                          {group.activities.length} atividade(s)
+                        <Users className="h-5 w-5 shrink-0" />
+                        <CardTitle className="text-base sm:text-lg truncate">{group.className}</CardTitle>
+                        <Badge variant="secondary" className="shrink-0">
+                          {group.activities.length}
                         </Badge>
                       </div>
 
-                      {/* Chips de resumo */}
-                      <div className="flex gap-2 flex-wrap">
+                      {/* Linha 2 no mobile: Chips de status em grid 2x2 */}
+                      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1 sm:gap-2 pl-6 sm:pl-0">
                         {group.counters.pendentes > 0 && (
-                          <Badge className={statusColors.pendentes}>
-                            {group.counters.pendentes} Pendentes
+                          <Badge className={cn(statusColors.pendentes, "text-xs justify-center")}>
+                            <span className="sm:hidden">{group.counters.pendentes} Pend.</span>
+                            <span className="hidden sm:inline">{group.counters.pendentes} Pendentes</span>
                           </Badge>
                         )}
                         {group.counters.aguardandoAprovacao > 0 && (
-                          <Badge className={statusColors.aguardandoAprovacao}>
-                            {group.counters.aguardandoAprovacao} Aguardando
+                          <Badge className={cn(statusColors.aguardandoAprovacao, "text-xs justify-center")}>
+                            <span className="sm:hidden">{group.counters.aguardandoAprovacao} Aguard.</span>
+                            <span className="hidden sm:inline">{group.counters.aguardandoAprovacao} Aguardando</span>
                           </Badge>
                         )}
                         {group.counters.aprovadas > 0 && (
-                          <Badge className={statusColors.aprovadas}>
-                            {group.counters.aprovadas} Aprovadas
+                          <Badge className={cn(statusColors.aprovadas, "text-xs justify-center")}>
+                            <span className="sm:hidden">{group.counters.aprovadas} Aprov.</span>
+                            <span className="hidden sm:inline">{group.counters.aprovadas} Aprovadas</span>
                           </Badge>
                         )}
                         {group.counters.devolvidas > 0 && (
-                          <Badge className={statusColors.devolvidas}>
-                            {group.counters.devolvidas} Devolvidas
+                          <Badge className={cn(statusColors.devolvidas, "text-xs justify-center")}>
+                            <span className="sm:hidden">{group.counters.devolvidas} Dev.</span>
+                            <span className="hidden sm:inline">{group.counters.devolvidas} Devolvidas</span>
                           </Badge>
                         )}
                         {group.counters.atrasadas > 0 && (
-                          <Badge className={statusColors.atrasadas}>
-                            {group.counters.atrasadas} Atrasadas
+                          <Badge className={cn(statusColors.atrasadas, "text-xs justify-center")}>
+                            <span className="sm:hidden">{group.counters.atrasadas} Atras.</span>
+                            <span className="hidden sm:inline">{group.counters.atrasadas} Atrasadas</span>
                           </Badge>
                         )}
                       </div>
@@ -589,113 +603,126 @@ export default function ProfessorActivities() {
                 </CollapsibleTrigger>
 
                 <CollapsibleContent>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 p-3 sm:p-6 sm:pt-0">
                     <div className="space-y-3">
                       {group.activities.map(activity => {
                         const typeConfig = activityTypeConfig[activity.type as keyof typeof activityTypeConfig];
                         const TypeIcon = typeConfig.icon;
+                        const metrics = deliveryMetrics[activity.id];
+                        const isOverdue = activity.dueAt && isBefore(new Date(activity.dueAt), startOfDay(new Date()));
                         
                         return (
                           <div
                             key={activity.id}
-                            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors gap-3"
                           >
-                            <div className="flex items-center gap-4 flex-1">
-                              {/* Badge de tipo */}
-                              <div className={cn("flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium", typeConfig.color)}>
+                            {/* Linha 1 Mobile: Badge + Título */}
+                            <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+                              <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0", typeConfig.color)}>
                                 <TypeIcon className="h-3 w-3" />
-                                {typeConfig.label}
+                                <span className="hidden sm:inline">{typeConfig.label}</span>
                               </div>
-
-                              {/* Informações da atividade */}
-                               <div className="flex-1">
-                                <h4 className="font-medium">{activity.title}</h4>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                  {activity.dueAt && (
-                                    <div className="flex items-center gap-2">
-                                      <Calendar className="h-3 w-3" />
-                                      <span>{formatRelativeDate(activity.dueAt)}</span>
-                                      <span>•</span>
-                                      <span>{format(new Date(activity.dueAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-                                    </div>
-                                  )}
-                                  {activity.activityMeta?.peso !== null && activity.activityMeta?.peso !== undefined && activity.activityMeta?.usePeso !== false && (
-                                    <div className="flex items-center gap-1">
-                                      <span>•</span>
-                                      <span>Peso: {activity.activityMeta.peso}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Contadores reais do delivery store */}
-                              <div className="flex items-center gap-4 text-sm">
-                                {(() => {
-                                  const metrics = deliveryMetrics[activity.id];
-                                  return (
-                                    <>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics?.aprovadas || 0}</div>
-                                        <div className="text-muted-foreground">Aprovadas</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics?.aguardando || 0}</div>
-                                        <div className="text-muted-foreground">Aguardando</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics?.naoEntregue || 0}</div>
-                                        <div className="text-muted-foreground">Pendentes</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="font-medium">{metrics?.atrasadas || 0}</div>
-                                        <div className="text-muted-foreground">Atrasadas</div>
-                                      </div>
-                                    </>
-                                  );
-                                })()}
+                              
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm sm:text-base truncate">{activity.title}</h4>
+                                {activity.dueAt && (
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                                    <Calendar className="h-3 w-3 shrink-0" />
+                                    <span className={cn(isOverdue && "text-destructive font-medium")}>
+                                      {formatRelativeDate(activity.dueAt)}
+                                    </span>
+                                    <span className="hidden sm:inline">•</span>
+                                    <span className="hidden sm:inline">{format(new Date(activity.dueAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
-                            {/* Ações rápidas */}
-                            <div className="flex items-center gap-1 ml-4">
-                              <Button size="sm" variant="ghost" asChild>
-                                <Link to={`/professor/turma/${group.classId}/atividade/${activity.id}`}>
-                                  <Eye className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => handleEditActivity(activity.id)}
-                                title="Editar atividade"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => handleDuplicateActivity(activity.id)}
-                                title="Duplicar atividade"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => handleDownloadActivity(activity.id)}
-                                title="Baixar entregas"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => handleDeleteActivity(activity.id, activity.title)}
-                                title="Excluir atividade"
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Archive className="h-4 w-4" />
-                              </Button>
+                            {/* Linha 2 Mobile: Métricas em linha compacta + Ações */}
+                            <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 pl-0 sm:pl-4">
+                              {/* Métricas compactas no mobile */}
+                              <div className="flex gap-3 text-xs sm:text-sm">
+                                <span className="text-success" title="Aprovadas">{metrics?.aprovadas || 0}✓</span>
+                                <span className="text-primary" title="Aguardando">{metrics?.aguardando || 0}⏳</span>
+                                <span className="text-muted-foreground" title="Pendentes">{metrics?.naoEntregue || 0}⏸</span>
+                                <span className="text-destructive" title="Atrasadas">{metrics?.atrasadas || 0}!</span>
+                              </div>
+                              
+                              {/* Ações: Menu dropdown no mobile */}
+                              <div className="sm:hidden">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="bg-popover">
+                                    <DropdownMenuItem asChild>
+                                      <Link to={`/professor/turma/${group.classId}/atividade/${activity.id}`}>
+                                        <Eye className="h-4 w-4 mr-2" /> Ver Entregas
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleEditActivity(activity.id)}>
+                                      <Edit className="h-4 w-4 mr-2" /> Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDuplicateActivity(activity.id)}>
+                                      <Copy className="h-4 w-4 mr-2" /> Duplicar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDownloadActivity(activity.id)}>
+                                      <Download className="h-4 w-4 mr-2" /> Baixar Entregas
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      onClick={() => handleDeleteActivity(activity.id, activity.title)}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Archive className="h-4 w-4 mr-2" /> Arquivar
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                              
+                              {/* Desktop: Botões inline */}
+                              <div className="hidden sm:flex items-center gap-1">
+                                <Button size="sm" variant="ghost" asChild>
+                                  <Link to={`/professor/turma/${group.classId}/atividade/${activity.id}`}>
+                                    <Eye className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => handleEditActivity(activity.id)}
+                                  title="Editar atividade"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => handleDuplicateActivity(activity.id)}
+                                  title="Duplicar atividade"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => handleDownloadActivity(activity.id)}
+                                  title="Baixar entregas"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => handleDeleteActivity(activity.id, activity.title)}
+                                  title="Excluir atividade"
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Archive className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         );
