@@ -43,7 +43,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           "sm:rounded-lg sm:p-6 sm:border sm:border-gray-700",
           // Layout base
           "flex flex-col overflow-hidden overscroll-none",
-          "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
+          "bg-black/80 backdrop-blur-xl"
         )}
         style={{ position: 'fixed' }}
       >
