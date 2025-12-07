@@ -36,6 +36,9 @@ export function usePosts(filter?: PostFilter) {
       if (filter) {
         if (filter.status) {
           query = query.eq('status', filter.status);
+        } else {
+          // Por padrão, excluir ARCHIVED, CONCLUDED e SCHEDULED do feed ativo
+          query = query.not('status', 'in', '("ARCHIVED","CONCLUDED","SCHEDULED")');
         }
         if (filter.type) {
           // Se o tipo for uma string com vírgulas, trata como um array

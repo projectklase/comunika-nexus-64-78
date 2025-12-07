@@ -118,19 +118,17 @@ class PostStore {
       query = query.eq('school_id', profile.current_school_id);
       query = query.not('school_id', 'is', null);
 
-      // Exclude SCHEDULED posts by default unless specifically filtering for them
-      if (!filter?.status || filter.status !== "SCHEDULED") {
-        query = query.neq("status", "SCHEDULED");
+      // Filter by status - exclude ARCHIVED, CONCLUDED and SCHEDULED by default
+      if (filter?.status) {
+        query = query.eq("status", filter.status);
+      } else {
+        // Por padrão, excluir ARCHIVED, CONCLUDED e SCHEDULED do feed ativo
+        query = query.not('status', 'in', '("ARCHIVED","CONCLUDED","SCHEDULED")');
       }
 
       // Filter by type
       if (filter?.type) {
         query = query.eq("type", filter.type);
-      }
-
-      // Filter by status
-      if (filter?.status) {
-        query = query.eq("status", filter.status);
       }
 
       // Filter by classId
