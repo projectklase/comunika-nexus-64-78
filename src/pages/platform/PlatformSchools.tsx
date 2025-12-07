@@ -88,13 +88,19 @@ export default function PlatformSchools() {
       groups[key].schools.push(school);
     });
 
-    // Calculate costs and check for inconsistencies
+    // Calculate costs and check for inconsistencies (with discounts)
     Object.values(groups).forEach(group => {
       if (group.subscription) {
         const baseCost = group.subscription.price_cents;
         const addonSchoolsCount = group.subscription.addon_schools_count || 0;
         const addonCost = addonSchoolsCount * (group.subscription.addon_school_price_cents || 49700);
-        group.totalMonthlyCost = baseCost + addonCost;
+        const subtotal = baseCost + addonCost;
+        
+        // Apply discounts
+        const discountPercent = group.subscription.discount_percent || 0;
+        const discountCents = group.subscription.discount_cents || 0;
+        const percentDiscount = Math.round(subtotal * (discountPercent / 100));
+        group.totalMonthlyCost = Math.max(0, subtotal - percentDiscount - discountCents);
         
         // Check inconsistency: more schools than included + addon
         const totalAllowed = (group.subscription.included_schools || 1) + addonSchoolsCount;
@@ -255,7 +261,12 @@ export default function PlatformSchools() {
                           </div>
                           <Tooltip>
                             <TooltipTrigger>
-                              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+                              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 relative">
+                                {(group.subscription.discount_percent > 0 || group.subscription.discount_cents > 0) && (
+                                  <span className="absolute -top-2 -right-2 bg-purple-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-medium">
+                                    {group.subscription.discount_percent > 0 ? `-${group.subscription.discount_percent}%` : 'DESC'}
+                                  </span>
+                                )}
                                 <p className="text-lg font-bold text-emerald-400 flex items-center gap-1">
                                   <DollarSign className="w-4 h-4" />
                                   {formatCurrency(group.totalMonthlyCost)}
@@ -270,6 +281,21 @@ export default function PlatformSchools() {
                                 {group.subscription.addon_schools_count > 0 && (
                                   <p className="text-xs">
                                     Add-ons ({group.subscription.addon_schools_count}x): {formatCurrency(group.subscription.addon_schools_count * (group.subscription.addon_school_price_cents || 49700))}
+                                  </p>
+                                )}
+                                {group.subscription.discount_percent > 0 && (
+                                  <p className="text-xs text-purple-400">
+                                    Desconto ({group.subscription.discount_percent}%): -{formatCurrency(Math.round((group.subscription.price_cents + (group.subscription.addon_schools_count || 0) * (group.subscription.addon_school_price_cents || 49700)) * group.subscription.discount_percent / 100))}
+                                  </p>
+                                )}
+                                {group.subscription.discount_cents > 0 && (
+                                  <p className="text-xs text-purple-400">
+                                    Desconto fixo: -{formatCurrency(group.subscription.discount_cents)}
+                                  </p>
+                                )}
+                                {group.subscription.discount_reason && (
+                                  <p className="text-xs text-purple-300 italic">
+                                    "{group.subscription.discount_reason}"
                                   </p>
                                 )}
                                 <p className="text-xs font-medium border-t border-white/10 pt-1">

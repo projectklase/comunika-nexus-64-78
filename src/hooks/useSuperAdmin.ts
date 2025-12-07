@@ -339,6 +339,9 @@ export function useSuperAdmin() {
       addonSchoolsCount?: number;
       trialEndsAt?: string | null;
       expiresAt?: string | null;
+      discountPercent?: number;
+      discountCents?: number;
+      discountReason?: string | null;
     }) => {
       const { data, error } = await supabase.rpc('update_subscription_admin', {
         p_admin_id: params.adminId,
@@ -347,6 +350,9 @@ export function useSuperAdmin() {
         p_addon_schools_count: params.addonSchoolsCount ?? null,
         p_trial_ends_at: params.trialEndsAt || null,
         p_expires_at: params.expiresAt || null,
+        p_discount_percent: params.discountPercent ?? null,
+        p_discount_cents: params.discountCents ?? null,
+        p_discount_reason: params.discountReason || null,
       });
       
       if (error) throw error;
