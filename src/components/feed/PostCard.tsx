@@ -454,7 +454,7 @@ export function PostCard({
               </div>
             </div>
 
-            {canEdit && <DropdownMenu>
+            {canEdit && <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
