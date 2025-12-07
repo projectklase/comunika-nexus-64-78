@@ -143,7 +143,7 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
 
           {/* Grid de Cartas */}
           <ScrollArea className="flex-1 px-3 sm:px-0 mt-2 sm:mt-0">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 pb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 pb-4 justify-items-center">
               {filteredCards.map(card => {
                 const isOwned = userCards.has(card.id);
                 return (
