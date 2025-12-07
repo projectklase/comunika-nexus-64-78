@@ -355,7 +355,7 @@ export function PostCard({
       // Efeito hover apenas em desktop
       !compact && "hover:shadow-xl",
       isImportant && [
-        "relative overflow-hidden",
+        "relative",
         "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
         "shadow-[var(--golden-silhouette)]",
         "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
