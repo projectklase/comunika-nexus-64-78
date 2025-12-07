@@ -28,31 +28,31 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`grid w-full ${canAccessSchoolSettings ? 'grid-cols-6' : 'grid-cols-5'}`}>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Perfil
+        <TabsList className="flex w-full overflow-x-auto gap-1 p-1">
+          <TabsTrigger value="profile" className="flex items-center gap-2 flex-1 min-w-fit px-3">
+            <User className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Perfil</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Segurança
+          <TabsTrigger value="security" className="flex items-center gap-2 flex-1 min-w-fit px-3">
+            <Shield className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Segurança</span>
           </TabsTrigger>
-          <TabsTrigger value="login" className="flex items-center gap-2">
-            <LogIn className="h-4 w-4" />
-            Login
+          <TabsTrigger value="login" className="flex items-center gap-2 flex-1 min-w-fit px-3">
+            <LogIn className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Login</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Notificações
+          <TabsTrigger value="notifications" className="flex items-center gap-2 flex-1 min-w-fit px-3">
+            <Bell className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Notificações</span>
           </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Preferências
+          <TabsTrigger value="preferences" className="flex items-center gap-2 flex-1 min-w-fit px-3">
+            <Settings className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Preferências</span>
           </TabsTrigger>
           {canAccessSchoolSettings && (
-            <TabsTrigger value="school" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Escola
+            <TabsTrigger value="school" className="flex items-center gap-2 flex-1 min-w-fit px-3">
+              <Settings className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Escola</span>
             </TabsTrigger>
           )}
         </TabsList>
