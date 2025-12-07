@@ -8,6 +8,7 @@ import { PreferencesTab } from '@/components/settings/PreferencesTab';
 import { LoginPreferencesTab } from '@/components/settings/LoginPreferencesTab';
 import { SchoolEvaluationTab } from '@/components/settings/SchoolEvaluationTab';
 import { useAuth } from '@/contexts/AuthContext';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 import { User, Settings, Shield, Bell, LogIn } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -41,10 +42,12 @@ export default function SettingsPage() {
             <LogIn className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Login</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2 flex-1 min-w-fit px-3">
-            <Bell className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">Notificações</span>
-          </TabsTrigger>
+          {isFeatureEnabled('NOTIF_SETTINGS_TAB_ENABLED') && (
+            <TabsTrigger value="notifications" className="flex items-center gap-2 flex-1 min-w-fit px-3">
+              <Bell className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Notificações</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="preferences" className="flex items-center gap-2 flex-1 min-w-fit px-3">
             <Settings className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Preferências</span>
@@ -110,22 +113,24 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Configurações de Notificação
-              </CardTitle>
-              <CardDescription>
-                Configure como e quando você recebe notificações
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NotificationsTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {isFeatureEnabled('NOTIF_SETTINGS_TAB_ENABLED') && (
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Configurações de Notificação
+                </CardTitle>
+                <CardDescription>
+                  Configure como e quando você recebe notificações
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NotificationsTab />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="preferences">
           <Card>
