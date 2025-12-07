@@ -488,10 +488,7 @@ export function PostCard({
                     type="button"
                     className="h-8 w-8 p-0" 
                     aria-label="Opções do post"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
+                    onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
