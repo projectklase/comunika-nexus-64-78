@@ -1,12 +1,13 @@
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 import { AttachmentGrid } from '@/components/attachments/AttachmentGrid';
 import { PostInsights } from './PostInsights';
 import { PostReadInsights } from './PostReadInsights';
@@ -329,14 +330,14 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent 
-        className="max-h-[80vh] sm:max-h-[95vh] rounded-t-2xl sm:rounded-t-lg"
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent 
+        className="w-[95vw] sm:w-full max-w-2xl h-[85vh] sm:h-auto sm:max-h-[90vh] rounded-2xl flex flex-col overflow-hidden [&>button]:hidden p-0"
         role="dialog"
         aria-labelledby="post-detail-title"
         aria-describedby="post-detail-description"
       >
-        <DrawerHeader>
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/50">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <Badge variant="outline" className={`${getTypeColor(post.type)} font-medium`}>
@@ -351,37 +352,50 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
               )}
             </div>
             
-            {/* Calendar Navigation Button */}
-            {((post.type === 'EVENTO' && post.eventStartAt) || (isActivity && post.dueAt)) && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleGoToCalendar}
-                className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                aria-label={post.type === 'EVENTO' ? "Ir para calendário na data do evento" : "Ir para calendário na data de entrega"}
+            <div className="flex items-center gap-2">
+              {/* Calendar Navigation Button */}
+              {((post.type === 'EVENTO' && post.eventStartAt) || (isActivity && post.dueAt)) && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleGoToCalendar}
+                  className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  aria-label={post.type === 'EVENTO' ? "Ir para calendário na data do evento" : "Ir para calendário na data de entrega"}
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ir para calendário</span>
+                </Button>
+              )}
+              
+              {/* Close Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-9 w-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20"
+                aria-label="Fechar"
               >
-                <Calendar className="h-4 w-4" />
-                Ir para calendário
+                <X className="h-4 w-4" />
               </Button>
-            )}
+            </div>
           </div>
           
-          <DrawerTitle 
+          <DialogTitle 
             id="post-detail-title"
             className="text-left text-xl leading-tight"
           >
             {post.title}
-          </DrawerTitle>
+          </DialogTitle>
           
-          <DrawerDescription
+          <DialogDescription
             id="post-detail-description"
             className="text-left"
           >
             Por {post.authorName} • {formatDate(post.createdAt)}
-          </DrawerDescription>
-        </DrawerHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="px-6 flex-1 overflow-y-auto space-y-6" role="main">
+        <div className="px-6 pb-6 flex-1 overflow-y-auto space-y-6" role="main">
           {/* Body */}
           {post.body && (
             <div className="prose prose-sm max-w-none">
@@ -519,7 +533,7 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
             </div>
           )}
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
