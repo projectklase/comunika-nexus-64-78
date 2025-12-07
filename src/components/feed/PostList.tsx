@@ -80,11 +80,10 @@ export function PostList({ posts, isLoading = false, canEdit, onArchive, onDupli
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6" role="feed" aria-label="Lista de posts">
-      {/* FASE 2: Espaçamento menor em mobile */}
+    <div className="w-full space-y-3 sm:space-y-4" role="feed" aria-label="Lista de posts">
       <div className="space-y-3 sm:space-y-4" role="list">
-        {visiblePosts.map((post, index) => (
-          <div key={post.id} role="listitem">
+        {visiblePosts.map((post) => (
+          <div key={post.id} role="listitem" className="w-full">
             <PostCard
               post={post}
               canEdit={canEdit}
@@ -95,7 +94,7 @@ export function PostList({ posts, isLoading = false, canEdit, onArchive, onDupli
               onUpdate={onUpdate}
               onInviteFriend={onInviteFriend}
               onViewInvitations={onViewInvitations}
-              compact={isMobile} // FASE 2: Passa modo compacto para mobile
+              compact={isMobile}
             />
           </div>
         ))}
