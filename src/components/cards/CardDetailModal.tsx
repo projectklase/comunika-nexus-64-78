@@ -40,9 +40,9 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
         "sm:max-w-4xl sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:p-6",
         "flex flex-col overflow-hidden"
       )}>
-        {/* Header flutuante sobre a carta */}
-        <DialogHeader className="absolute top-3 left-3 right-12 z-10 sm:relative sm:top-auto sm:left-auto sm:right-auto sm:pb-0">
-          <DialogTitle className="flex items-center gap-2 text-lg sm:text-2xl flex-wrap">
+        {/* Header flutuante centralizado sobre a carta */}
+        <DialogHeader className="absolute top-3 left-0 right-12 z-10 sm:relative sm:top-auto sm:left-auto sm:right-auto sm:pb-0">
+          <DialogTitle className="flex items-center justify-center gap-2 text-lg sm:text-2xl flex-wrap text-center px-3">
             <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{card.name}</span>
             <Badge variant="secondary" className={cn('text-xs sm:text-base px-2 sm:px-3 py-0.5 sm:py-1 border-2 shadow-lg', frameColors.inner)}>
               {RARITY_LABELS[card.rarity]}
@@ -50,8 +50,8 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           </DialogTitle>
         </DialogHeader>
 
-        {/* Conteúdo scrollável com padding top para header flutuante em mobile */}
-        <div className="flex-1 overflow-y-auto pt-12 px-3 pb-3 sm:pt-0 sm:px-0 sm:pb-0">
+        {/* Conteúdo scrollável com padding bottom maior para não cortar informações */}
+        <div className="flex-1 overflow-y-auto pt-12 px-3 pb-6 sm:pt-0 sm:px-0 sm:pb-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Left Column: Card Preview + Quantity */}
             <div className="flex flex-col items-center gap-3 sm:pt-6 sm:sticky sm:top-6 self-start">
