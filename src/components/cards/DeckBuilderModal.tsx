@@ -10,6 +10,7 @@ import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Search, Plus, Minus, Trash2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface DeckBuilderModalProps {
   isOpen: boolean;
@@ -103,37 +104,47 @@ export const DeckBuilderModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className={cn(
+          // Mobile: fullscreen
+          "fixed inset-0 h-screen w-screen max-w-none rounded-none p-0",
+          // Desktop: modal normal
+          "sm:relative sm:inset-auto sm:max-w-6xl sm:h-[85vh] sm:rounded-lg sm:p-6",
+          "flex flex-col"
+        )}>
+          <DialogHeader className="px-3 pt-3 sm:px-0 sm:pt-0 flex-shrink-0">
+            <DialogTitle className="text-lg sm:text-xl">
               {existingDeck ? 'Editar Deck' : 'Novo Deck'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid md:grid-cols-[1fr,300px] gap-4 flex-1 overflow-hidden">
-            {/* Lado Esquerdo: Seleção de Cartas */}
-            <div className="flex flex-col gap-3 overflow-hidden">
-              <div className="space-y-2">
-                <Label>Nome do Deck</Label>
-                <Input
-                  placeholder="Meu Deck Épico"
-                  value={deckName}
-                  onChange={(e) => setDeckName(e.target.value)}
-                />
-              </div>
+          {/* Nome do deck */}
+          <div className="px-3 sm:px-0 flex-shrink-0 space-y-1">
+            <Label className="text-xs sm:text-sm">Nome do Deck</Label>
+            <Input
+              placeholder="Meu Deck Épico"
+              value={deckName}
+              onChange={(e) => setDeckName(e.target.value)}
+              className="h-10 sm:h-11"
+            />
+          </div>
 
-              <div className="relative">
+          {/* Layout principal */}
+          <div className="flex-1 flex flex-col sm:grid sm:grid-cols-[1fr,300px] gap-3 sm:gap-4 overflow-hidden pb-[32vh] sm:pb-0">
+            
+            {/* Coleção disponível - scrollable */}
+            <div className="flex-1 overflow-hidden flex flex-col px-3 sm:px-0">
+              <div className="relative mb-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar cartas..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-10"
                 />
               </div>
-
+              
               <ScrollArea className="flex-1">
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3 pb-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 pb-4">
                   {availableCards.map(card => {
                     const inDeck = getCardCountInDeck(card.id);
                     const owned = userCards.get(card.id) || 0;
@@ -142,14 +153,14 @@ export const DeckBuilderModal = ({
                       <div key={card.id} className="relative group">
                         <CardDisplay
                           card={card}
-                          size="sm"
+                          size="xs"
                           className="cursor-pointer"
                           onClick={() => handleAddCard(card.id)}
                         />
                         
                         {/* Botão de info para ver detalhes */}
                         <button
-                          className="absolute top-1 right-1 p-1 rounded-full bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          className="absolute top-1 right-1 p-1.5 sm:p-1 rounded-full bg-background/80 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10 min-w-[28px] min-h-[28px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                           onClick={(e) => {
                             e.stopPropagation();
                             setDetailCard(card);
@@ -158,13 +169,13 @@ export const DeckBuilderModal = ({
                           <Info className="w-3 h-3" />
                         </button>
                         
-                        <div className="absolute -top-2 -left-2 space-y-1">
+                        <div className="absolute -top-1 -left-1 space-y-0.5">
                           {inDeck > 0 && (
-                            <Badge className="bg-primary text-primary-foreground">
+                            <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
                               {inDeck}x
                             </Badge>
                           )}
-                          <div className="text-xs text-muted-foreground bg-background/90 rounded px-1">
+                          <div className="text-[10px] text-muted-foreground bg-background/90 rounded px-1">
                             {inDeck}/{owned}
                           </div>
                         </div>
@@ -175,49 +186,65 @@ export const DeckBuilderModal = ({
               </ScrollArea>
             </div>
 
-            {/* Lado Direito: Deck Atual */}
-            <div className="border-l pl-4 flex flex-col gap-3 overflow-hidden">
-              <div>
-                <h3 className="font-semibold mb-2">Deck Atual</h3>
-                <div className="flex items-center justify-between text-sm">
-                  <span>{selectedCards.length}/15 cartas</span>
-                  <Badge variant={selectedCards.length >= 5 ? 'default' : 'destructive'}>
-                    {selectedCards.length >= 5 ? 'Válido' : 'Mín. 5'}
-                  </Badge>
-                </div>
+            {/* Deck atual - fixed bottom em mobile */}
+            <div className={cn(
+              // Mobile: fixed bottom, 30% da tela
+              "fixed bottom-0 left-0 right-0 h-[30vh] bg-background border-t p-3 z-50",
+              // Desktop: relative sidebar
+              "sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:h-auto sm:border-l sm:border-t-0 sm:pl-4 sm:z-auto",
+              "flex flex-col"
+            )}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm sm:text-base font-bold">{selectedCards.length}/15 cartas</h3>
+                <Badge variant={selectedCards.length >= 5 ? 'default' : 'destructive'} className="text-[10px] sm:text-xs">
+                  {selectedCards.length >= 5 ? 'Válido' : 'Mín. 5'}
+                </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="p-2 rounded bg-orange-500/10">
-                  <p className="text-muted-foreground text-xs">ATK Total</p>
+              {/* Stats compactos */}
+              <div className="grid grid-cols-2 gap-2 mb-2 text-xs sm:text-sm">
+                <div className="p-1.5 sm:p-2 rounded bg-orange-500/10">
+                  <p className="text-muted-foreground text-[10px]">ATK</p>
                   <p className="font-bold">{totalAtk}</p>
                 </div>
-                <div className="p-2 rounded bg-blue-500/10">
-                  <p className="text-muted-foreground text-xs">DEF Total</p>
+                <div className="p-1.5 sm:p-2 rounded bg-blue-500/10">
+                  <p className="text-muted-foreground text-[10px]">DEF</p>
                   <p className="font-bold">{totalDef}</p>
                 </div>
               </div>
 
-              <ScrollArea className="flex-1">
-                <div className="space-y-2">
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="space-y-1.5 sm:space-y-2">
                   {uniqueCards.map(({ card, count }) => card && (
                     <div 
                       key={card.id} 
-                      className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-2 p-1.5 sm:p-2 rounded border cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => setDetailCard(card)}
                     >
-                      <CardDisplay card={card} size="sm" className="w-16 h-20" showStats={false} />
+                      <CardDisplay card={card} size="xs" className="w-10 h-14 sm:w-16 sm:h-20" showStats={false} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{card.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {card.atk} ATK / {card.def} DEF
+                        <p className="text-xs sm:text-sm font-semibold truncate">{card.name}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
+                          {card.atk}/{card.def}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-0.5 sm:gap-1">
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6"
+                          className="h-7 w-7 sm:h-6 sm:w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveCard(card.id);
+                          }}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="text-center text-xs sm:text-sm font-bold min-w-[16px]">{count}</span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 sm:h-6 sm:w-6"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddCard(card.id);
@@ -226,41 +253,41 @@ export const DeckBuilderModal = ({
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
-                        <span className="text-center text-sm font-bold">{count}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveCard(card.id);
-                          }}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               </ScrollArea>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedCards([])}
-                disabled={selectedCards.length === 0}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Limpar Deck
-              </Button>
+              {/* Ações do deck em mobile */}
+              <div className="flex gap-2 mt-2 sm:mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCards([])}
+                  disabled={selectedCards.length === 0}
+                  className="flex-1 sm:flex-none h-9 sm:h-8 text-xs"
+                >
+                  <Trash2 className="w-3 h-3 mr-1 sm:mr-2" />
+                  Limpar
+                </Button>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={selectedCards.length < 5}
+                  className="flex-1 h-9 sm:hidden text-xs"
+                >
+                  Salvar
+                </Button>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
+          {/* Footer - apenas desktop */}
+          <DialogFooter className="hidden sm:flex px-0 pt-3 flex-shrink-0">
+            <Button variant="outline" onClick={onClose} className="h-10">
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={selectedCards.length < 5}>
+            <Button onClick={handleSave} disabled={selectedCards.length < 5} className="h-10">
               Salvar Deck
             </Button>
           </DialogFooter>
