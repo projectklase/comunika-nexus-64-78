@@ -456,30 +456,26 @@ export function PostCard({
             </div>
 
             {canEdit && (
-              <div className="relative">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      type="button"
-                      className="h-8 w-8 p-0 relative" 
-                      aria-label="Opções do post"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="end"
-                    side="bottom"
-                    className="glass-card border-border/50 z-50"
-                    sideOffset={8}
-                    alignOffset={0}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    type="button"
+                    className="h-8 w-8 p-0" 
+                    aria-label="Opções do post"
                   >
-                    <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end"
+                  className="glass-card border-border/50"
+                  sideOffset={4}
+                >
+                  <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 
