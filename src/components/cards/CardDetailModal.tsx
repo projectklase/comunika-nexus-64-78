@@ -32,9 +32,9 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        // Mobile: fullscreen
-        "w-full h-[100dvh] max-h-[100dvh] rounded-none p-3",
-        "left-0 top-0 translate-x-0 translate-y-0",
+        // Mobile: bottom sheet ocupando mais espaço
+        "w-full h-[85vh] max-h-[85vh] rounded-t-xl rounded-b-none p-3",
+        "left-0 bottom-0 top-auto translate-x-0 translate-y-0",
         // Desktop: modal centralizado
         "sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2",
         "sm:max-w-4xl sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:p-6",
@@ -49,15 +49,14 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4">
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Left Column: Card Preview + Quantity */}
-            <div className="flex flex-col items-center gap-3 pt-6 sm:pt-6 sm:sticky sm:top-6 self-start max-w-full px-4">
+            <div className="flex flex-col items-center gap-3 sm:pt-6 sm:sticky sm:top-6 self-start">
               <CardDisplay 
                 card={card} 
-                size="sm"
+                size="md"
                 showStats={true}
-                className="sm:!w-44 sm:!h-72"
               />
               
               {/* Badge de quantidade compacto */}
