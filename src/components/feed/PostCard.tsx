@@ -345,7 +345,7 @@ export function PostCard({
   
   return <>
     <Card className={cn(
-      "w-full overflow-hidden transition-all duration-300 border",
+      "w-full max-w-full overflow-hidden box-border transition-all duration-300 border",
       // Borda lateral colorida por tipo
       !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
       isNewPost && "border-l-4 border-l-primary",
@@ -565,7 +565,7 @@ export function PostCard({
             </div>}
 
           {/* Action Buttons */}
-          {user && <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-3 border-t border-border/50">
+          {user && <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-3 border-t border-border/50 w-full">
             {/* Botão de leitura universal - Abre drawer (previne exploits) */}
             <Button 
               size="sm" 
@@ -641,7 +641,7 @@ export function PostCard({
           {/* Footer */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-border/50 mt-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-              <span className="truncate flex-1 min-w-0">{post.authorName}</span>
+              <span className="truncate max-w-[150px]">{post.authorName}</span>
               <span className="shrink-0">•</span>
               <span className="shrink-0">{formatDate(post.createdAt)}</span>
             </div>
