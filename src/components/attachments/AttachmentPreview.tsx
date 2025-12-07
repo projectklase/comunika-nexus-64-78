@@ -160,11 +160,11 @@ export function AttachmentPreview({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <DialogTitle className="text-lg font-semibold text-foreground truncate">
-                {currentAttachment.name}
+                {postTitle || "Anexo"}
               </DialogTitle>
-              {postTitle && (
-                <p className="text-sm text-muted-foreground mt-1 truncate">
-                  De: {postTitle}
+              {attachments.length > 1 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Imagem {currentIndex + 1} de {attachments.length}
                 </p>
               )}
             </div>
