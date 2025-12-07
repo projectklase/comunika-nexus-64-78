@@ -345,7 +345,7 @@ export function PostCard({
   
   return <>
       <Card className={cn(
-        "glass-card overflow-hidden transition-all duration-300 border",
+        "glass-card overflow-hidden transition-all duration-300 border w-full max-w-full",
         // FASE 5: Borda lateral colorida por tipo
         !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
         isNewPost && "border-l-4 border-l-primary",
@@ -372,7 +372,7 @@ export function PostCard({
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3 flex-1">
               {/* FASE 2: Menos badges em modo compacto */}
-              <div className={cn("flex items-center gap-2", compact ? "gap-1.5 flex-nowrap overflow-x-auto" : "flex-wrap")}>
+              <div className={cn("flex items-center gap-2 max-w-full", compact ? "gap-1.5 flex-wrap" : "flex-wrap")}>
                 <Badge variant="outline" className={`${getTypeColor(post.type)} ${compact ? 'text-xs px-2' : 'font-medium'}`}>
                   <span className="mr-1">{getTypeIcon(post.type)}</span>
                   {compact ? post.type.substring(0, 3) : post.type}
@@ -457,17 +457,17 @@ export function PostCard({
           )}
 
           {/* Event details */}
-          {post.type === "EVENTO" && (post.eventStartAt || post.eventLocation) && <div className="space-y-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-              {post.eventStartAt && <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-purple-400" />
-                  <span className="text-purple-300">
+          {post.type === "EVENTO" && (post.eventStartAt || post.eventLocation) && <div className="space-y-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 overflow-hidden">
+              {post.eventStartAt && <div className="flex items-start gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
+                  <span className="text-purple-300 break-words">
                     {formatEventDate(post.eventStartAt)}
-                    {post.eventEndAt && ` - ${formatEventDate(post.eventEndAt)}`}
+                    {post.eventEndAt && <span className="block sm:inline"> até {formatEventDate(post.eventEndAt)}</span>}
                   </span>
                 </div>}
-              {post.eventLocation && <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-purple-400" />
-                  <span className="text-purple-300">{post.eventLocation}</span>
+              {post.eventLocation && <div className="flex items-start gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
+                  <span className="text-purple-300 break-words">{post.eventLocation}</span>
                 </div>}
             </div>}
 
@@ -565,39 +565,39 @@ export function PostCard({
             </div>}
 
           {/* Action Buttons */}
-          {user && <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border/50">
+          {user && <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-3 border-t border-border/50 max-w-full overflow-hidden">
             {/* Botão de leitura universal - Abre drawer (previne exploits) */}
             <Button 
               size="sm" 
               variant={isNewPost ? "default" : "ghost"}
               onClick={() => setIsDetailDrawerOpen(true)}
               className={cn(
-                "text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                "text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9",
                 isNewPost && "bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               )}
               aria-label={isNewPost ? "Ler post completo" : "Post já lido"}
             >
               {isNewPost ? (
                 <>
-                  <Eye className="h-3 w-3 mr-1" />
-                  Ler agora
+                  <Eye className="h-3 w-3 sm:mr-1" />
+                  <span className="hidden sm:inline">Ler agora</span>
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Lido
+                  <CheckCircle className="h-3 w-3 sm:mr-1" />
+                  <span className="hidden sm:inline">Lido</span>
                 </>
               )}
             </Button>
 
               {/* Activity Actions - Only for students */}
               {isActivity && user.role === "aluno" && <>
-                  {!delivery ? <Button size="xs" onClick={() => setIsDrawerEntregaOpen(true)} className="text-xs bg-green-600 hover:bg-green-700 text-white focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 min-w-0 max-w-[6rem] sm:max-w-[8rem]" aria-label="Marcar entregue">
-                      <Upload className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate text-xs">Entregar</span>
-                    </Button> : delivery.reviewStatus === "DEVOLVIDA" ? <Button size="sm" variant="outline" onClick={() => setIsDrawerEntregaOpen(true)} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Reenviar atividade">
-                      <Upload className="h-3 w-3 mr-1" />
-                      Reenviar
+                  {!delivery ? <Button size="xs" onClick={() => setIsDrawerEntregaOpen(true)} className="text-xs bg-green-600 hover:bg-green-700 text-white focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3" aria-label="Marcar entregue">
+                      <Upload className="h-3 w-3 sm:mr-1" />
+                      <span className="hidden sm:inline">Entregar</span>
+                    </Button> : delivery.reviewStatus === "DEVOLVIDA" ? <Button size="sm" variant="outline" onClick={() => setIsDrawerEntregaOpen(true)} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3" aria-label="Reenviar atividade">
+                      <Upload className="h-3 w-3 sm:mr-1" />
+                      <span className="hidden sm:inline">Reenviar</span>
                     </Button> : null}
 
                   <Button size="sm" variant="ghost" onClick={() => {
@@ -605,33 +605,33 @@ export function PostCard({
                 recordPostView(post.id, user, "feed", post.classIds?.[0] || post.classId);
               }
               setIsDetailDrawerOpen(true);
-            }} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Ver instruções da atividade">
-                    <FileText className="h-3 w-3 mr-1" />
-                    Ver instruções
+            }} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3" aria-label="Ver instruções da atividade">
+                    <FileText className="h-3 w-3 sm:mr-1" />
+                    <span className="hidden sm:inline">Instruções</span>
                   </Button>
 
-                  {/* Go to Calendar - for activities */}
-                  {post.dueAt && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Ir para calendário na data de entrega">
+                  {/* Go to Calendar - for activities - hidden on mobile */}
+                  {post.dueAt && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 hidden sm:flex" aria-label="Ir para calendário na data de entrega">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Ir para calendário
+                      Calendário
                     </Button>}
                 </>}
 
-              {/* Go to Calendar - for events */}
-              {post.type === "EVENTO" && post.eventStartAt && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Ir para calendário na data do evento">
+              {/* Go to Calendar - for events - hidden on mobile */}
+              {post.type === "EVENTO" && post.eventStartAt && <Button size="sm" variant="outline" onClick={handleGoToCalendar} className="text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 hidden sm:flex" aria-label="Ir para calendário na data do evento">
                   <Calendar className="h-3 w-3 mr-1" />
-                  Ir para calendário
+                  Calendário
                 </Button>}
 
 
               {/* Save/Unsave Toggle */}
-              <Button size="sm" variant="ghost" onClick={handleSaveToggle} className={`text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${isPostSaved ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} aria-label={isPostSaved ? "Remover dos salvos" : "Salvar para depois"}>
-                {isPostSaved ? <BookmarkCheck className="h-3 w-3 mr-1" /> : <Bookmark className="h-3 w-3 mr-1" />}
-                {isPostSaved ? "Salvo" : "Salvar"}
+              <Button size="sm" variant="ghost" onClick={handleSaveToggle} className={cn("text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-9 px-2 sm:px-3", isPostSaved ? "text-primary" : "text-muted-foreground hover:text-foreground")} aria-label={isPostSaved ? "Remover dos salvos" : "Salvar para depois"}>
+                {isPostSaved ? <BookmarkCheck className="h-3 w-3 sm:mr-1" /> : <Bookmark className="h-3 w-3 sm:mr-1" />}
+                <span className="hidden sm:inline">{isPostSaved ? "Salvo" : "Salvar"}</span>
               </Button>
 
-              {/* View Invitations - for EVENTO with invitations enabled (Secretaria only) */}
-              {post.type === "EVENTO" && post.allowInvitations && canEdit && onViewInvitations && <Button size="sm" variant="outline" onClick={() => onViewInvitations(post)} className="text-xs text-purple-400 border-purple-500/50 hover:bg-purple-500/10 focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2" aria-label="Ver convites recebidos">
+              {/* View Invitations - for EVENTO with invitations enabled (Secretaria only) - hidden on mobile */}
+              {post.type === "EVENTO" && post.allowInvitations && canEdit && onViewInvitations && <Button size="sm" variant="outline" onClick={() => onViewInvitations(post)} className="text-xs text-purple-400 border-purple-500/50 hover:bg-purple-500/10 focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 min-h-9 hidden sm:flex" aria-label="Ver convites recebidos">
                   <Users className="h-3 w-3 mr-1" />
                   Ver Convites
                 </Button>}
@@ -639,16 +639,16 @@ export function PostCard({
             </div>}
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-3">
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span>{post.authorName}</span>
-              <div className="flex items-center gap-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-border/50 mt-3 max-w-full overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-4 text-xs text-muted-foreground min-w-0">
+              <span className="truncate max-w-[100px] sm:max-w-[150px]">{post.authorName}</span>
+              <div className="flex items-center gap-1 shrink-0">
                 <Clock className="h-3 w-3" />
                 {formatDate(post.createdAt)}
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-xs shrink-0">
               {user && <PostReadInsights post={post} currentUser={user} />}
               {renderAudienceInfo()}
             </div>

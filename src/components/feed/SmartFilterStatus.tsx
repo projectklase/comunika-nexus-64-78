@@ -60,10 +60,10 @@ export function SmartFilterStatus({
           </Button>
         </div>
         
-        <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3 shrink-0" />
-          <span className="leading-tight">
-            Posts expirados e avisos antigos são automaticamente ocultados
+        <div className="flex items-start gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3 shrink-0 mt-0.5" />
+          <span className="leading-tight break-words">
+            Posts expirados são ocultados automaticamente
           </span>
         </div>
       </CardContent>
