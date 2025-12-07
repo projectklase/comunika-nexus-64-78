@@ -42,7 +42,8 @@ import {
   Plus,
   FileSpreadsheet,
   MoreVertical,
-  CheckCircle2
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -567,6 +568,74 @@ export default function ProfessorActivities() {
             </CardContent>
           </Card>
         )}
+
+        {/* Legenda de Status e Ações */}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
+              <HelpCircle className="h-4 w-4" />
+              <span className="text-xs">Legenda</span>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg mt-2 border border-border/50">
+              {/* Status de Entregas */}
+              <div>
+                <h4 className="font-medium text-sm mb-2">Status de Entregas</h4>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-success text-success-foreground flex items-center justify-center text-[10px] font-bold">✓</span>
+                    <span className="text-muted-foreground">Aprovadas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">⏳</span>
+                    <span className="text-muted-foreground">Aguardando análise</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">⏸</span>
+                    <span className="text-muted-foreground">Pendentes (não entregues)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[10px] font-bold">!</span>
+                    <span className="text-muted-foreground">Atrasadas</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Ações Disponíveis */}
+              <div>
+                <h4 className="font-medium text-sm mb-2">Ações</h4>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Ver entregas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Editar atividade</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Duplicar</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Baixar entregas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                    <span className="text-muted-foreground">Concluir atividade</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Archive className="h-3.5 w-3.5 text-destructive" />
+                    <span className="text-muted-foreground">Arquivar</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
       {/* Lista de Atividades Agrupadas */}
       <div className="space-y-4">
