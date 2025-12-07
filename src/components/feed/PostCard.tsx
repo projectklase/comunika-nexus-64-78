@@ -110,20 +110,15 @@ export function PostCard({
       // Salva a posição atual do scroll
       const scrollY = window.scrollY;
       
-      // Previne qualquer scroll
-      const preventScroll = () => {
-        window.scrollTo(0, scrollY);
-      };
+      // Pequeno delay para deixar o dropdown abrir primeiro
+      const timeoutId = setTimeout(() => {
+        // Restaura a posição se houver mudança
+        if (window.scrollY !== scrollY) {
+          window.scrollTo(0, scrollY);
+        }
+      }, 50);
       
-      // Adiciona listeners
-      window.addEventListener('scroll', preventScroll, { passive: false });
-      document.body.style.overflow = 'hidden';
-      
-      // Cleanup
-      return () => {
-        window.removeEventListener('scroll', preventScroll);
-        document.body.style.overflow = '';
-      };
+      return () => clearTimeout(timeoutId);
     }
   }, [dropdownOpen]);
   
@@ -488,7 +483,11 @@ export function PostCard({
                     type="button"
                     className="h-8 w-8 p-0" 
                     aria-label="Opções do post"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setDropdownOpen(true);
+                    }}
                     onPointerDown={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
