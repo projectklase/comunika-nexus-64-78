@@ -815,58 +815,7 @@
      PREMIUM THEMES - Gamification Unlockables
      ======================================== */
 
-  /* Theme Premium: Cyberpunk Neon */
-  [data-theme="theme_cyberpunk_neon"] {
-    --background: 280 30% 8%;
-    --foreground: 300 20% 98%;
-    
-    --card: 280 30% 10%;
-    --card-foreground: 300 20% 98%;
-    --glass: 280 35% 12%;
-    --glass-border: 300 100% 50%;
-    
-    --popover: 280 35% 12%;
-    --popover-foreground: 300 20% 98%;
-    
-    --primary: 300 100% 50%;
-    --primary-foreground: 280 10% 5%;
-    --primary-glow: 300 100% 60%;
-    
-    --secondary: 330 100% 60%;
-    --secondary-foreground: 280 10% 5%;
-    --secondary-glow: 330 100% 70%;
-    
-    --success: 180 100% 50%;
-    --success-foreground: 280 10% 5%;
-    --success-glow: 180 100% 60%;
-    
-    --muted: 280 20% 15%;
-    --muted-foreground: 300 15% 70%;
-    
-    --accent: 180 100% 50%;
-    --accent-foreground: 280 10% 5%;
-    
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    
-    --border: 280 30% 20%;
-    --input: 280 30% 18%;
-    --ring: 300 100% 50%;
-    
-    --golden: 300 100% 50%;
-    --golden-light: 300 100% 60%;
-    --golden-dark: 300 80% 40%;
-    --golden-muted: 300 60% 30%;
-    
-    --sidebar-background: 280 30% 8%;
-    --sidebar-foreground: 300 20% 98%;
-    --sidebar-primary: 300 100% 50%;
-    --sidebar-primary-foreground: 280 10% 5%;
-    --sidebar-accent: 280 25% 15%;
-    --sidebar-accent-foreground: 300 20% 98%;
-    --sidebar-border: 280 30% 20%;
-    --sidebar-ring: 300 100% 50%;
-  }
+  /* Theme Premium: Cyberpunk Neon - REMOVED - replaced by Cyberpunk City with background image */
 
   /* Theme Premium: Ocean Breeze */
   [data-theme="theme_ocean_breeze"] {
