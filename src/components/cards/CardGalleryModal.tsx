@@ -2,10 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Card, CardRarity, CardCategory, RARITY_LABELS, CATEGORY_LABELS } from '@/types/cards';
-import { CardDisplay } from './CardDisplay';
+import { CardThumbnail } from './CardThumbnail';
 import { CardDetailModal } from './CardDetailModal';
 import { useState, useMemo } from 'react';
-import { Search, Lock, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -141,32 +141,18 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
             <FiltersContent />
           </div>
 
-          {/* Grid de Cartas */}
-          <ScrollArea className="flex-1 px-3 sm:px-0 mt-2 sm:mt-0 overflow-hidden">
-            <div className="max-w-full overflow-hidden">
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3 sm:gap-4 pb-4 justify-items-center">
-                {filteredCards.map(card => {
-                  const isOwned = userCards.has(card.id);
-                  return (
-                    <div key={card.id} className="relative w-fit">
-                    <CardDisplay
-                      card={card}
-                      size="sm"
-                      quantity={userCards.get(card.id)}
-                      onClick={() => setDetailCard(card)}
-                      className={cn(!isOwned && 'opacity-30 grayscale')}
-                    />
-                    {!isOwned && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="bg-black/50 rounded-full p-2">
-                          <Lock className="w-5 h-5 text-gray-400" />
-                        </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Grid de Cartas - Galeria de Fotos */}
+          <ScrollArea className="flex-1 px-2 sm:px-0 mt-2 sm:mt-0">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3 pb-4">
+              {filteredCards.map(card => (
+                <CardThumbnail
+                  key={card.id}
+                  card={card}
+                  isOwned={userCards.has(card.id)}
+                  quantity={userCards.get(card.id) || 0}
+                  onClick={() => setDetailCard(card)}
+                />
+              ))}
             </div>
             
             {filteredCards.length === 0 && (
