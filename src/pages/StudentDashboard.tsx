@@ -199,7 +199,7 @@ const StudentDashboard = memo(function StudentDashboard() {
             {/* 1. Mini Calendário */}
             <section 
               aria-labelledby="mini-calendar-section"
-              className="animate-in fade-in slide-in-from-right-4 duration-500"
+              className="hidden lg:block animate-in fade-in slide-in-from-right-4 duration-500"
             >
               <MiniCalendarDashboard
                 posts={posts}
@@ -230,7 +230,7 @@ const StudentDashboard = memo(function StudentDashboard() {
             {/* 3. Minhas Turmas */}
             <section 
               aria-labelledby="classes-section"
-              className="animate-in fade-in slide-in-from-right-4 duration-700 delay-150"
+              className="hidden lg:block animate-in fade-in slide-in-from-right-4 duration-700 delay-150"
             >
               <MyClassesCard posts={posts} />
             </section>
