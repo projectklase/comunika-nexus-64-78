@@ -121,6 +121,15 @@ export default function ProfessorActivities() {
     activityId: null,
     activityTitle: ''
   });
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    activityId: string | null;
+    activityTitle: string;
+  }>({
+    isOpen: false,
+    activityId: null,
+    activityTitle: ''
+  });
 
   // Data hooks - always called in same order
   const { posts: allPosts } = usePosts();
@@ -345,18 +354,23 @@ export default function ProfessorActivities() {
     navigate(`/professor/atividades/nova?edit=${activityId}`);
   };
 
-  // Handler: Excluir (com confirmação)
-  const handleDeleteActivity = async (activityId: string, activityTitle: string) => {
-    const confirmed = window.confirm(
-      `Tem certeza que deseja excluir a atividade "${activityTitle}"?\n\n` +
-      `Esta ação não pode ser desfeita e excluirá todas as entregas dos alunos.`
-    );
-    
-    if (!confirmed) return;
+  // Handler: Abrir modal de confirmação para excluir
+  const handleDeleteActivity = (activityId: string, activityTitle: string) => {
+    setDeleteDialog({
+      isOpen: true,
+      activityId,
+      activityTitle
+    });
+  };
+
+  // Handler: Executar exclusão após confirmação
+  const executeDeleteActivity = async () => {
+    if (!deleteDialog.activityId) return;
     
     try {
-      await deletePost(activityId);
+      await deletePost(deleteDialog.activityId);
       toast.success('Atividade excluída com sucesso!');
+      setDeleteDialog({ isOpen: false, activityId: null, activityTitle: '' });
     } catch (error) {
       console.error('Erro ao excluir atividade:', error);
       toast.error('Erro ao excluir atividade.');
@@ -799,6 +813,23 @@ export default function ProfessorActivities() {
         cancelText="Cancelar"
         onConfirm={executeConcludeActivity}
         variant="default"
+        isAsync={true}
+      />
+
+      {/* Modal de confirmação para excluir atividade */}
+      <ConfirmDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteDialog({ isOpen: false, activityId: null, activityTitle: '' });
+          }
+        }}
+        title="Excluir Atividade"
+        description={`Tem certeza que deseja excluir "${deleteDialog.activityTitle}"? Esta ação não pode ser desfeita e excluirá todas as entregas dos alunos.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={executeDeleteActivity}
+        variant="destructive"
         isAsync={true}
       />
     </div>

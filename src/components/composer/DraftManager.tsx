@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { 
   FileText, 
   Clock, 
@@ -52,17 +53,30 @@ export function DraftManager({
   const { toast } = useToast();
   const [showDrafts, setShowDrafts] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<DraftData | null>(null);
+  const [loadDraftDialog, setLoadDraftDialog] = useState<{
+    isOpen: boolean;
+    draft: DraftData | null;
+  }>({
+    isOpen: false,
+    draft: null
+  });
 
   const handleLoadDraft = (draft: DraftData) => {
     if (hasUnsavedChanges) {
-      const confirm = window.confirm(
-        'Você tem alterações não salvas. Deseja carregar o rascunho mesmo assim?'
-      );
-      if (!confirm) return;
+      setLoadDraftDialog({
+        isOpen: true,
+        draft
+      });
+      return;
     }
 
+    executeLoadDraft(draft);
+  };
+
+  const executeLoadDraft = (draft: DraftData) => {
     onLoadDraft(draft);
     setShowDrafts(false);
+    setLoadDraftDialog({ isOpen: false, draft: null });
     
     toast({
       title: 'Rascunho carregado',
@@ -188,6 +202,26 @@ export function DraftManager({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Load draft confirmation dialog (when unsaved changes exist) */}
+      <ConfirmDialog
+        open={loadDraftDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setLoadDraftDialog({ isOpen: false, draft: null });
+          }
+        }}
+        title="Alterações Não Salvas"
+        description="Você tem alterações não salvas que serão perdidas ao carregar este rascunho. Deseja continuar?"
+        confirmText="Carregar Mesmo Assim"
+        cancelText="Cancelar"
+        onConfirm={() => {
+          if (loadDraftDialog.draft) {
+            executeLoadDraft(loadDraftDialog.draft);
+          }
+        }}
+        variant="warning"
+      />
     </div>
   );
 }
