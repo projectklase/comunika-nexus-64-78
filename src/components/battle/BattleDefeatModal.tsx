@@ -232,7 +232,7 @@ export function BattleDefeatModal({
 
                   {/* Action Buttons */}
                   <motion.div
-                    className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-2 sm:pt-4"
+                    className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center w-full pt-2 sm:pt-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1.7 }}
@@ -240,14 +240,14 @@ export function BattleDefeatModal({
                     <Button
                       variant="outline"
                       onClick={() => setShowDetailsModal(true)}
-                      className="border-primary/50 hover:bg-primary/10 text-sm"
+                      className="w-full sm:w-auto border-primary/50 hover:bg-primary/10 text-sm"
                     >
                       <ScrollText className="w-4 h-4 mr-2" />
                       Ver Detalhes
                     </Button>
                     <Button
                       onClick={onTryAgain}
-                      className="bg-primary hover:bg-primary/80 text-sm"
+                      className="w-full sm:w-auto bg-primary hover:bg-primary/80 text-sm"
                     >
                       <Swords className="w-4 h-4 mr-2" />
                       Tentar Novamente
@@ -258,7 +258,7 @@ export function BattleDefeatModal({
                     variant="ghost"
                     size="sm"
                     onClick={() => onOpenChange(false)}
-                    className="text-muted-foreground hover:text-foreground text-xs sm:text-sm"
+                    className="w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm"
                   >
                     Fechar
                   </Button>
