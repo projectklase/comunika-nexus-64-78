@@ -49,19 +49,19 @@ export function MyClassesCard({ posts }: MyClassesCardProps) {
   if (classesData.length === 0) {
     return (
       <Card className="glass-card border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Minhas Turmas
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Acesso rápido às suas turmas
           </CardDescription>
         </CardHeader>
-        <CardContent className="py-8">
+        <CardContent className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="text-center">
-            <Users className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Você não está matriculado em nenhuma turma
             </p>
           </div>
@@ -72,38 +72,38 @@ export function MyClassesCard({ posts }: MyClassesCardProps) {
 
   return (
     <Card className="glass-card border-border/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-primary" />
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           Minhas Turmas
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           {totalClasses} {totalClasses === 1 ? 'turma ativa' : 'turmas ativas'}
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-1.5 sm:space-y-2 px-4 sm:px-6">
         {classesData.map((classItem) => (
           <div
             key={classItem.id}
             className={cn(
-              "p-3 rounded-lg border cursor-pointer transition-all duration-200",
+              "p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-all duration-200",
               "hover:bg-muted/30 hover:border-primary/30 hover:shadow-md",
               "glass-subtle"
             )}
             onClick={() => handleClassClick(classItem.id)}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className={cn(
-                  "flex items-center justify-center w-10 h-10 rounded-lg border",
+                  "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg border flex-shrink-0",
                   classItem.color
                 )}>
-                  <BookOpen className="h-5 w-5" />
+                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 
-                <div>
-                  <h4 className="font-medium text-sm text-foreground">
+                <div className="min-w-0">
+                  <h4 className="font-medium text-sm text-foreground truncate">
                     {classItem.name}
                   </h4>
                   {classItem.pendingCount > 0 ? (
@@ -118,7 +118,7 @@ export function MyClassesCard({ posts }: MyClassesCardProps) {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {classItem.pendingCount > 0 && (
                   <Badge variant="secondary" className="text-xs">
                     {classItem.pendingCount}
@@ -135,7 +135,7 @@ export function MyClassesCard({ posts }: MyClassesCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-center text-xs text-muted-foreground hover:text-foreground"
+              className="w-full justify-center text-xs text-muted-foreground hover:text-foreground min-h-11"
               onClick={() => navigate(ROUTES.ALUNO.FEED)}
             >
               Ver todas as turmas ({totalClasses})

@@ -65,18 +65,18 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
   const getPostIcon = (type: string) => {
     switch (type) {
       case 'PROVA':
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
+        return <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive" />;
       case 'TRABALHO':
-        return <FileText className="h-4 w-4 text-warning" />;
+        return <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-warning" />;
       case 'ATIVIDADE':
-        return <BookOpen className="h-4 w-4 text-primary" />;
+        return <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />;
       case 'EVENTO':
-        return <Calendar className="h-4 w-4 text-secondary" />;
+        return <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-secondary" />;
       case 'AVISO':
       case 'COMUNICADO':
-        return <Bell className="h-4 w-4 text-info" />;
+        return <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-info" />;
       default:
-        return <Clock className="h-4 w-4" />;
+        return <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
     }
   };
 
@@ -100,12 +100,12 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
 
   if (weekDays.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">🎉</div>
-        <h3 className="text-xl font-semibold text-foreground mb-2">
+      <div className="text-center py-8 sm:py-12">
+        <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🎉</div>
+        <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
           Semana tranquila!
         </h3>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Aproveite para revisar conteúdos passados e se organizar.
         </p>
       </div>
@@ -129,12 +129,12 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
             )}
           >
             <AccordionTrigger className={cn(
-              "px-4 py-3 hover:no-underline",
+              "px-3 sm:px-4 py-2 sm:py-3 hover:no-underline",
               dayGroup.isSpecial && isToday(dayGroup.date) && "text-[hsl(var(--golden))] font-semibold",
               dayGroup.isSpecial && !isToday(dayGroup.date) && "text-primary font-medium"
             )}>
               <div className="flex items-center justify-between w-full mr-4">
-                <span className="text-base">{dayGroup.label}</span>
+                <span className="text-sm sm:text-base">{dayGroup.label}</span>
                 <div className="flex items-center gap-2">
                   <Badge 
                     variant="secondary" 
@@ -152,20 +152,20 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
               </div>
             </AccordionTrigger>
           
-          <AccordionContent className="px-4 pb-4">
+          <AccordionContent className="px-3 sm:px-4 pb-3 sm:pb-4">
             <div className="space-y-2">
               {dayGroup.posts.map((post) => (
                 <div
                   key={post.id}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border transition-all duration-200",
+                    "flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border transition-all duration-200",
                     "hover:bg-muted/30 hover:border-primary/30 cursor-pointer",
                     "glass-subtle"
                   )}
                   onClick={() => onOpenPost(post)}
                 >
                   <div className={cn(
-                    "flex items-center justify-center w-8 h-8 rounded-full border",
+                    "flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex-shrink-0",
                     getTypeColor(post.type)
                   )}>
                     {getPostIcon(post.type)}
@@ -190,7 +190,7 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
                         }
                       </span>
                       {post.classId && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
                           Turma {post.classId.slice(-4)}
                         </span>
                       )}
@@ -200,14 +200,14 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-xs"
+                    className="h-9 min-w-[44px] px-2 text-xs flex-shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       onGoToCalendar(post);
                     }}
                   >
-                    <Calendar className="h-3 w-3 mr-1" />
-                    Ver
+                    <Calendar className="h-3.5 w-3.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Ver</span>
                   </Button>
                 </div>
               ))}

@@ -54,13 +54,13 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
   const getPostIcon = (type: string) => {
     switch (type) {
       case 'EVENTO':
-        return <Calendar className="h-4 w-4" />;
+        return <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
       case 'PROVA':
       case 'TRABALHO':
       case 'ATIVIDADE':
-        return <Clock className="h-4 w-4" />;
+        return <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
       default:
-        return <Bell className="h-4 w-4" />;
+        return <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
     }
   };
 
@@ -79,19 +79,19 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
   if (importantPosts.length === 0) {
     return (
       <Card className="glass-card border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-[hsl(var(--golden))]" />
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Star className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(var(--golden))]" />
             Importantes
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Comunicações marcadas como importantes
           </CardDescription>
         </CardHeader>
-        <CardContent className="py-8">
+        <CardContent className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="text-center">
-            <Bell className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">
+            <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Nenhuma notificação importante no momento
             </p>
           </div>
@@ -102,22 +102,22 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
 
   return (
     <Card className="glass-card border-border/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Star className="h-5 w-5 text-[hsl(var(--golden))]" />
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Star className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(var(--golden))]" />
           Importantes
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           Últimas comunicações marcadas como importantes
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 sm:space-y-3 px-4 sm:px-6">
         {importantPosts.map((post) => (
           <div
             key={post.id}
             className={cn(
-              "relative overflow-hidden p-4 rounded-lg border cursor-pointer transition-all duration-200",
+              "relative overflow-hidden p-3 sm:p-4 rounded-lg border cursor-pointer transition-all duration-200",
               "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
               "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
               "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none",
@@ -125,20 +125,20 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
             )}
             onClick={() => handleNotificationClick(post)}
           >
-            <div className="relative z-10 flex items-start gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[hsl(var(--golden))]/20 border border-[hsl(var(--golden))]/30">
+            <div className="relative z-10 flex items-start gap-2 sm:gap-3">
+              <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[hsl(var(--golden))]/20 border border-[hsl(var(--golden))]/30 flex-shrink-0">
                 {getPostIcon(post.type)}
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                   <Badge 
                     variant="outline" 
                     className="text-xs bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60"
                   >
                     {post.type}
                   </Badge>
-                  <Badge className="bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60 text-xs font-medium shadow-[var(--golden-glow)] backdrop-blur-sm">
+                  <Badge className="bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60 text-xs font-medium shadow-[var(--golden-glow)] backdrop-blur-sm hidden sm:flex">
                     <Star className="h-3 w-3 mr-1 fill-[hsl(var(--golden-light))]" />
                     Importante
                   </Badge>
@@ -151,12 +151,12 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{getDateDisplay(post)}</span>
                   {post.classId && (
-                    <span>Turma {post.classId.slice(-4)}</span>
+                    <span className="hidden sm:inline">Turma {post.classId.slice(-4)}</span>
                   )}
                 </div>
               </div>
               
-              <ArrowRight className="h-4 w-4 text-[hsl(var(--golden))] opacity-70" />
+              <ArrowRight className="h-4 w-4 text-[hsl(var(--golden))] opacity-70 flex-shrink-0" />
             </div>
           </div>
         ))}
@@ -166,7 +166,7 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-center text-xs text-muted-foreground hover:text-foreground"
+            className="w-full justify-center text-xs text-muted-foreground hover:text-foreground min-h-11"
             onClick={() => navigate('/notifications')}
           >
             Ver todas as notificações

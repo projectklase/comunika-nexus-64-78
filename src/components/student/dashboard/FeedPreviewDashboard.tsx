@@ -27,18 +27,18 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
   const getPostIcon = (type: string) => {
     switch (type) {
       case 'PROVA':
-        return <AlertCircle className="h-4 w-4" />;
+        return <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
       case 'TRABALHO':
-        return <FileText className="h-4 w-4" />;
+        return <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
       case 'ATIVIDADE':
-        return <BookOpen className="h-4 w-4" />;
+        return <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
       case 'EVENTO':
-        return <Calendar className="h-4 w-4" />;
+        return <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
       case 'AVISO':
       case 'COMUNICADO':
-        return <Bell className="h-4 w-4" />;
+        return <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
       default:
-        return <Newspaper className="h-4 w-4" />;
+        return <Newspaper className="h-3.5 w-3.5 sm:h-4 sm:w-4" />;
     }
   };
 
@@ -84,19 +84,19 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
   if (recentPosts.length === 0) {
     return (
       <Card className="glass-card border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Newspaper className="h-5 w-5 text-primary" />
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Newspaper className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Últimas Atualizações
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Novos posts e comunicados
           </CardDescription>
         </CardHeader>
-        <CardContent className="py-8">
+        <CardContent className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="text-center">
-            <Newspaper className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">
+            <Newspaper className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Nenhuma atualização recente
             </p>
           </div>
@@ -107,37 +107,37 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
 
   return (
     <Card className="glass-card border-border/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Newspaper className="h-5 w-5 text-primary" />
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Newspaper className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           Últimas Atualizações
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           Novos posts e comunicados da sua escola
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 sm:space-y-3 px-4 sm:px-6">
         {recentPosts.map((post) => (
           <div
             key={post.id}
             className={cn(
-              "relative overflow-hidden p-4 rounded-lg border cursor-pointer transition-all duration-200",
+              "relative overflow-hidden p-3 sm:p-4 rounded-lg border cursor-pointer transition-all duration-200",
               "hover:bg-muted/30 hover:border-primary/30 hover:shadow-md",
               "glass-subtle"
             )}
             onClick={() => onOpenPost(post)}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2 sm:gap-3">
               <div className={cn(
-                "flex items-center justify-center w-10 h-10 rounded-lg border",
+                "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg border flex-shrink-0",
                 getTypeColor(post.type)
               )}>
                 {getPostIcon(post.type)}
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                   <Badge 
                     variant="outline" 
                     className="text-xs"
@@ -146,7 +146,7 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
                   </Badge>
                   {post.meta?.importante && (
                     <Badge 
-                      className="text-xs bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden))] border-[hsl(var(--golden))]/30"
+                      className="text-xs bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden))] border-[hsl(var(--golden))]/30 hidden sm:flex"
                     >
                       ⭐ Importante
                     </Badge>
@@ -157,7 +157,7 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
                   {post.title}
                 </h4>
                 
-                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                <p className="text-xs text-muted-foreground mb-2 line-clamp-2 hidden sm:block">
                   {getContentPreview(post)}
                 </p>
                 
@@ -167,7 +167,7 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
                     {getDateDisplay(post)}
                   </div>
                   {post.classId && (
-                    <span>Turma {post.classId.slice(-4)}</span>
+                    <span className="hidden sm:inline">Turma {post.classId.slice(-4)}</span>
                   )}
                 </div>
               </div>
@@ -182,7 +182,7 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-center text-xs text-muted-foreground hover:text-foreground"
+            className="w-full justify-center text-xs text-muted-foreground hover:text-foreground min-h-11"
             onClick={() => navigate(ROUTES.ALUNO.FEED)}
           >
             Ver tudo no Feed

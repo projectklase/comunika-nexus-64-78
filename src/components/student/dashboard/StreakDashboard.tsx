@@ -94,26 +94,26 @@ export function StreakDashboard() {
 
   return (
     <Card className="glass-card border-border/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Flame className={cn("h-5 w-5", getStreakColor(streak))} />
+      <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Flame className={cn("h-4 w-4 sm:h-5 sm:w-5", getStreakColor(streak))} />
           Streak Diário
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           Mantenha sua consistência de estudos
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
         {/* Main Streak Display */}
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2">
-            <span className="text-3xl font-bold">
+            <span className="text-2xl sm:text-3xl font-bold">
               {streak}
             </span>
             <div className="text-center">
               <div className="text-xs text-muted-foreground">dias</div>
-              <Flame className={cn("h-6 w-6 mx-auto", getStreakColor(streak))} />
+              <Flame className={cn("h-5 w-5 sm:h-6 sm:w-6 mx-auto", getStreakColor(streak))} />
             </div>
           </div>
           
@@ -137,7 +137,7 @@ export function StreakDashboard() {
           onClick={handleCheckIn}
           disabled={hasCheckedInToday}
           className={cn(
-            "w-full transition-all duration-200",
+            "w-full min-h-11 transition-all duration-200",
             hasCheckedInToday 
               ? "bg-success/20 text-success border-success/30 cursor-not-allowed"
               : "bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
@@ -158,13 +158,13 @@ export function StreakDashboard() {
         </Button>
 
         {/* Weekly Progress */}
-        <div className="border-t border-border/50 pt-4">
+        <div className="border-t border-border/50 pt-3 sm:pt-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted-foreground">Progresso semanal</span>
-            <span className="text-sm font-medium">{weekProgress}/7</span>
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground">Progresso semanal</span>
+            <span className="text-xs sm:text-sm font-medium">{weekProgress}/7</span>
           </div>
           
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
             {weekDates.map((date, index) => {
               const dayLabels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
               const dayOfWeek = new Date(date).getDay();
@@ -174,7 +174,7 @@ export function StreakDashboard() {
                 <div
                   key={date}
                   className={cn(
-                    "aspect-square flex items-center justify-center text-xs rounded border",
+                    "aspect-square flex items-center justify-center text-xs rounded border min-h-[32px]",
                     isComplete
                       ? "bg-primary/20 border-primary/30 text-primary"
                       : "bg-muted/20 border-border text-muted-foreground"
@@ -189,7 +189,7 @@ export function StreakDashboard() {
 
         {/* XP Display */}
         <div className="text-center text-xs text-muted-foreground">
-          <Gift className="h-4 w-4 inline mr-1" />
+          <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1" />
           Total: {xp} XP acumulados
         </div>
       </CardContent>

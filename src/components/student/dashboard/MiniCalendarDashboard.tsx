@@ -69,29 +69,29 @@ export function MiniCalendarDashboard({ posts, onDayClick, selectedDate }: MiniC
 
   return (
     <Card className="glass-card border-border/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
+      <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           Mini Calendário
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           Visão semanal dos seus compromissos
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
         {/* Week Navigation */}
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigateWeek('prev')}
-            className="h-8 w-8 p-0"
+            className="h-9 w-9 sm:h-8 sm:w-8 p-0"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <div className="text-sm font-medium text-center">
+          <div className="text-xs sm:text-sm font-medium text-center">
             {weekLabel}
           </div>
           
@@ -99,7 +99,7 @@ export function MiniCalendarDashboard({ posts, onDayClick, selectedDate }: MiniC
             variant="ghost"
             size="sm"
             onClick={() => navigateWeek('next')}
-            className="h-8 w-8 p-0"
+            className="h-9 w-9 sm:h-8 sm:w-8 p-0"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -125,7 +125,7 @@ export function MiniCalendarDashboard({ posts, onDayClick, selectedDate }: MiniC
                 key={index}
                 onClick={() => onDayClick(dayInfo.date)}
                 className={cn(
-                  "relative aspect-square p-1 text-xs rounded-lg transition-all duration-200",
+                  "relative aspect-square p-1 text-xs rounded-lg transition-all duration-200 min-h-[44px]",
                   "hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50",
                   dayIsToday && "bg-primary/10 text-primary font-semibold ring-1 ring-primary/30",
                   dayIsSelected && "bg-primary/20 ring-2 ring-primary/50",
@@ -167,7 +167,7 @@ export function MiniCalendarDashboard({ posts, onDayClick, selectedDate }: MiniC
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-4 pt-2 border-t border-border/50">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-2 border-t border-border/50">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <div className="w-2 h-2 bg-primary rounded-full" />
             Atividades

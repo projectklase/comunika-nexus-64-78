@@ -59,7 +59,7 @@ export function WelcomeStatusCard({ posts }: WelcomeStatusCardProps) {
           status: 'urgente',
           message: `ATENÇÃO: Prova hoje!`,
           variant: 'destructive',
-          icon: <AlertCircle className="h-5 w-5" />,
+          icon: <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />,
           count: todayActivities.length
         };
       }
@@ -67,7 +67,7 @@ export function WelcomeStatusCard({ posts }: WelcomeStatusCardProps) {
         status: 'urgente',
         message: `${todayActivities.length} ${todayActivities.length === 1 ? 'atividade para hoje' : 'atividades para hoje'}`,
         variant: 'warning',
-        icon: <Clock className="h-5 w-5" />,
+        icon: <Clock className="h-4 w-4 sm:h-5 sm:w-5" />,
         count: todayActivities.length
       };
     }
@@ -77,7 +77,7 @@ export function WelcomeStatusCard({ posts }: WelcomeStatusCardProps) {
         status: 'pendente',
         message: `${upcomingActivities.length} ${upcomingActivities.length === 1 ? 'atividade próxima' : 'atividades próximas'}`,
         variant: 'warning',
-        icon: <Clock className="h-5 w-5" />,
+        icon: <Clock className="h-4 w-4 sm:h-5 sm:w-5" />,
         count: upcomingActivities.length
       };
     }
@@ -86,7 +86,7 @@ export function WelcomeStatusCard({ posts }: WelcomeStatusCardProps) {
       status: 'em-dia',
       message: 'Você está em dia!',
       variant: 'default',
-      icon: <CheckCircle2 className="h-5 w-5" />
+      icon: <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
     };
   }, [posts]);
 
@@ -122,21 +122,21 @@ export function WelcomeStatusCard({ posts }: WelcomeStatusCardProps) {
       "hover:shadow-lg",
       styles.glow
     )}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between gap-4">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
+              <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
                 {greeting}, {user?.name?.split(' ')[0]}!
               </h2>
               {statusData.status === 'em-dia' && (
-                <Flame className="h-5 w-5 text-orange-500 animate-pulse" />
+                <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 animate-pulse" />
               )}
             </div>
             
             <div className="flex items-center gap-2 mt-3">
               <div className={cn(
-                "flex items-center justify-center w-10 h-10 rounded-full border",
+                "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border",
                 styles.badge
               )}>
                 {statusData.icon}
@@ -157,7 +157,7 @@ export function WelcomeStatusCard({ posts }: WelcomeStatusCardProps) {
             <Badge 
               variant="outline" 
               className={cn(
-                "text-lg font-bold h-12 w-12 rounded-full flex items-center justify-center",
+                "text-base sm:text-lg font-bold h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center self-start sm:self-auto",
                 styles.badge
               )}
             >
