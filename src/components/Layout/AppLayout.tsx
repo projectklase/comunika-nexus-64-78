@@ -50,13 +50,9 @@ export function AppLayout({ children }: AppLayoutProps) {
     // Only apply premium theme if user is authenticated
     if (!user) return;
     
-    // Verificar se o usuário tem tema grátis explicitamente selecionado no localStorage
-    const localTheme = useUserSettingsStore.getState().currentTheme;
-    const isFreeThemeSelected = !localTheme.startsWith('theme_');
-    
-    // Só aplicar tema premium se não houver tema grátis explicitamente selecionado
-    if (isFreeThemeSelected) return;
-    
+    // Sempre verificar o banco de dados por tema premium equipado
+    // O logout reseta o localStorage para dark-neon, então após novo login
+    // devemos sempre priorizar o tema equipado no banco
     const equippedTheme = getEquippedItem('THEME');
     if (equippedTheme?.unlockable?.identifier) {
       // Dynamically import to avoid circular dependency
