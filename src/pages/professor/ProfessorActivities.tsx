@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePostActions } from '@/hooks/usePostActions';
 import { toast } from 'sonner';
 import { ActivityFilters } from '@/components/activities/ActivityFilters';
+import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { useSelectValidation } from '@/hooks/useSelectValidation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileFilterSheet } from '@/components/feed/MobileFilterSheet';
@@ -111,6 +112,15 @@ export default function ProfessorActivities() {
   const [selectedClass, setSelectedClass] = useState<string>(DEFAULT_TOKENS.ALL_CLASSES);
   const [sortBy, setSortBy] = useState<'dueAt' | 'createdAt' | 'title'>(DEFAULT_TOKENS.DUE_DATE);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  const [concludeDialog, setConcludeDialog] = useState<{
+    isOpen: boolean;
+    activityId: string | null;
+    activityTitle: string;
+  }>({
+    isOpen: false,
+    activityId: null,
+    activityTitle: ''
+  });
 
   // Data hooks - always called in same order
   const { posts: allPosts } = usePosts();
@@ -393,17 +403,22 @@ export default function ProfessorActivities() {
     }
   };
 
-  // Handler: Concluir Atividade
-  const handleConcludeActivity = async (activityId: string, activityTitle: string) => {
-    const confirmed = window.confirm(
-      `Concluir a atividade "${activityTitle}"?\n\n` +
-      `A atividade sairá do feed ativo e será arquivada automaticamente em 10 dias.`
-    );
-    
-    if (!confirmed) return;
+  // Handler: Abrir modal de confirmação para concluir
+  const handleConcludeActivity = (activityId: string, activityTitle: string) => {
+    setConcludeDialog({
+      isOpen: true,
+      activityId,
+      activityTitle
+    });
+  };
+
+  // Handler: Executar conclusão após confirmação
+  const executeConcludeActivity = async () => {
+    if (!concludeDialog.activityId) return;
     
     try {
-      await concludePost(activityId);
+      await concludePost(concludeDialog.activityId);
+      setConcludeDialog({ isOpen: false, activityId: null, activityTitle: '' });
     } catch (error) {
       console.error('Erro ao concluir atividade:', error);
       toast.error('Erro ao concluir atividade.');
@@ -769,6 +784,23 @@ export default function ProfessorActivities() {
         )}
         </div>
       </div>
+
+      {/* Modal de confirmação para concluir atividade */}
+      <ConfirmDialog
+        open={concludeDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConcludeDialog({ isOpen: false, activityId: null, activityTitle: '' });
+          }
+        }}
+        title="Concluir Atividade"
+        description={`Tem certeza que deseja concluir "${concludeDialog.activityTitle}"? A atividade sairá do feed ativo e será arquivada automaticamente em 10 dias.`}
+        confirmText="Concluir"
+        cancelText="Cancelar"
+        onConfirm={executeConcludeActivity}
+        variant="default"
+        isAsync={true}
+      />
     </div>
   );
 }
