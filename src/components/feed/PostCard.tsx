@@ -345,7 +345,7 @@ export function PostCard({
   
   return <>
     <Card className={cn(
-      "w-full max-w-full overflow-hidden box-border transition-all duration-300 border",
+      "group w-full max-w-full overflow-hidden box-border transition-all duration-300 border",
       // Borda lateral colorida por tipo
       !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
       isNewPost && "border-l-4 border-l-primary",
@@ -456,7 +456,7 @@ export function PostCard({
 
             {canEdit && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Opções do post">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Opções do post">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
