@@ -29,7 +29,7 @@ export function GameDeckCard({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: delay * 0.08, ease: 'easeOut' }}
-      className="relative group min-w-[280px] sm:min-w-[320px] max-w-[320px]"
+      className="relative group flex-shrink-0 min-w-[240px] sm:min-w-[320px] max-w-[280px] sm:max-w-[320px]"
     >
       {/* Gradient border */}
       <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-br from-violet-500/30 via-purple-500/30 to-pink-500/30 opacity-50 group-hover:opacity-100 transition-opacity duration-300 blur-[1px]" />
@@ -38,7 +38,7 @@ export function GameDeckCard({
       <div className="relative rounded-xl backdrop-blur-md overflow-hidden bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-white/10">
         {/* Header */}
         <div className="p-3 sm:p-4 pb-2 sm:pb-3 flex items-center justify-between border-b border-white/5">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
             {isFavorite && (
               <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 flex-shrink-0 drop-shadow-[0_0_4px_rgba(250,204,21,0.5)]" />
             )}
@@ -50,9 +50,9 @@ export function GameDeckCard({
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0 hover:bg-white/10"
+                className="h-8 w-8 flex-shrink-0 hover:bg-white/10"
               >
-                <MoreVertical className="h-5 w-5 sm:h-4 sm:w-4" />
+                <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-md border-white/10">
@@ -73,8 +73,8 @@ export function GameDeckCard({
         <div className="p-3 sm:p-4 pt-2 sm:pt-3">
           <div className="flex items-center gap-2 mb-2 sm:mb-3">
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-violet-400" />
-              <span className="text-xs sm:text-sm font-medium text-foreground/80">{cardCount} cartas</span>
+              <div className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium text-foreground/80 whitespace-nowrap">{cardCount} cartas</span>
             </div>
           </div>
 
