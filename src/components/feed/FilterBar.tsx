@@ -293,8 +293,8 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   return (
     <div className="w-full space-y-3">
       {/* Quick Filters - Scroll Horizontal em Mobile */}
-      <div className="w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-        <div className="flex gap-2 min-w-min pb-2 sm:pb-0 sm:flex-wrap">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
+        <div className="flex gap-2">
           {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
             <Button
               key={key}
@@ -321,7 +321,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
               placeholder="Buscar posts..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-10 h-10 w-full bg-background/50 border-border/50"
+              className="pl-10 h-9 w-full bg-background/50 border-border/50"
               aria-label="Campo de busca"
             />
           </div>
