@@ -32,18 +32,15 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        // Mobile: bottom sheet - sobrescrever posição do Radix
-        "w-full h-auto max-h-[80vh] rounded-t-xl rounded-b-none p-4",
+        // Mobile: bottom sheet ocupando mais espaço
+        "w-full h-[85vh] max-h-[85vh] rounded-t-xl rounded-b-none p-3",
         "left-0 bottom-0 top-auto translate-x-0 translate-y-0",
         // Desktop: modal centralizado
         "sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2",
-        "sm:max-w-4xl sm:max-h-[90vh] sm:rounded-lg sm:p-6",
-        "overflow-y-auto"
+        "sm:max-w-4xl sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:p-6",
+        "flex flex-col overflow-hidden"
       )}>
-        {/* Handle para arrastar (mobile) */}
-        <div className="sm:hidden w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-3" />
-
-        <DialogHeader className="pb-2 sm:pb-0">
+        <DialogHeader className="flex-shrink-0 pb-2 sm:pb-0">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-2xl flex-wrap">
             {card.name}
             <Badge variant="secondary" className={cn('text-xs sm:text-base px-2 sm:px-3 py-0.5 sm:py-1 border-2', frameColors.inner)}>
@@ -52,24 +49,24 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {/* Left Column: Card Preview + Quantity */}
-          <div className="flex flex-col items-center gap-2 sm:gap-3 sm:pt-6 sm:sticky sm:top-6 self-start">
-            <CardDisplay 
-              card={card} 
-              size="sm"
-              showStats={true}
-              className="max-h-[25vh] sm:max-h-none transform-none hover:transform-none"
-            />
-            
-            {/* Badge de quantidade compacto */}
-            {quantity !== undefined && quantity > 0 && (
-              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 bg-yellow-500/10 rounded-full border border-yellow-500/30">
-                <span className="text-[10px] sm:text-xs text-yellow-300/70">Na coleção:</span>
-                <span className="text-xs sm:text-sm font-bold text-yellow-300">{quantity}x</span>
-              </div>
-            )}
-          </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            {/* Left Column: Card Preview + Quantity */}
+            <div className="flex flex-col items-center gap-3 sm:pt-6 sm:sticky sm:top-6 self-start">
+              <CardDisplay 
+                card={card} 
+                size="md"
+                showStats={true}
+              />
+              
+              {/* Badge de quantidade compacto */}
+              {quantity !== undefined && quantity > 0 && (
+                <div className="flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 bg-yellow-500/10 rounded-full border border-yellow-500/30">
+                  <span className="text-[10px] sm:text-xs text-yellow-300/70">Na coleção:</span>
+                  <span className="text-xs sm:text-sm font-bold text-yellow-300">{quantity}x</span>
+                </div>
+              )}
+            </div>
 
           {/* Right Column: Details */}
           <div className="space-y-3 sm:space-y-4">
@@ -167,6 +164,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
               </div>
             )}
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
