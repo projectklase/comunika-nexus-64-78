@@ -462,7 +462,10 @@ export function PostCard({
                     type="button"
                     className="h-8 w-8 p-0" 
                     aria-label="Opções do post"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
                     onPointerDown={(e) => e.stopPropagation()}
                   >
                     <MoreVertical className="h-4 w-4" />
@@ -472,6 +475,9 @@ export function PostCard({
                   align="end" 
                   className="glass-card border-border/50"
                   onCloseAutoFocus={(e) => e.preventDefault()}
+                  sideOffset={5}
+                  avoidCollisions={true}
+                  collisionPadding={8}
                 >
                   <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
                 </DropdownMenuContent>
