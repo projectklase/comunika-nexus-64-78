@@ -155,7 +155,7 @@ export function AttachmentPreview({
         onClose();
       }
     }}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] h-[95vh] sm:h-auto p-0 bg-black/95 border-border/50 flex flex-col">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] h-[95vh] sm:h-auto p-0 bg-black/95 border-border/50 flex flex-col [&>button]:hidden">
         <DialogHeader className="p-4 bg-gradient-to-r from-background/95 to-background/90 backdrop-blur-sm border-b border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -296,6 +296,17 @@ export function AttachmentPreview({
               </div>
             )}
           </div>
+        </div>
+        
+        {/* Botão Fechar Glassmórfico */}
+        <div className="flex justify-center py-4">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/30 shadow-lg transition-all duration-200"
+          >
+            <X className="h-6 w-6 text-white" />
+          </Button>
         </div>
         
         {/* Footer with file info */}
