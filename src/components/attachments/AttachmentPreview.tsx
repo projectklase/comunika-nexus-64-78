@@ -155,7 +155,7 @@ export function AttachmentPreview({
         onClose();
       }
     }}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-border/50">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] h-[95vh] sm:h-auto p-0 bg-black/95 border-border/50 flex flex-col">
         <DialogHeader className="p-4 bg-gradient-to-r from-background/95 to-background/90 backdrop-blur-sm border-b border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -230,7 +230,7 @@ export function AttachmentPreview({
           </div>
         </DialogHeader>
         
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden min-h-0">
           {/* Navigation arrows */}
           {attachments.length > 1 && (
             <>
@@ -253,12 +253,12 @@ export function AttachmentPreview({
             </>
           )}
           
-          <div className="h-full flex items-center justify-center p-4">
+          <div className="h-full max-h-[calc(95vh-160px)] sm:max-h-[calc(95vh-140px)] flex items-center justify-center p-2 sm:p-4 overflow-auto">
             {isImage ? (
               <img
                 src={currentAttachment.url}
                 alt={currentAttachment.name}
-                className="max-w-full max-h-full object-contain transition-transform duration-200"
+                className="max-w-full max-h-[calc(95vh-180px)] sm:max-h-[calc(95vh-160px)] object-contain transition-transform duration-200"
                 style={{
                   transform: `scale(${imageScale}) rotate(${imageRotation}deg)`
                 }}
