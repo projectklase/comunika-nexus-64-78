@@ -1456,69 +1456,13 @@
     ) !important;
   }
 
-  /* Cyberpunk City - Neon pulse animation */
-  @keyframes cyberpunk-pulse {
-    0%, 100% {
-      box-shadow: 
-        inset -2px 0 8px hsl(185 80% 50% / 0.15),
-        2px 0 12px hsl(330 100% 60% / 0.2),
-        4px 0 20px hsl(185 80% 50% / 0.1);
-    }
-    50% {
-      box-shadow: 
-        inset -2px 0 12px hsl(330 100% 60% / 0.2),
-        2px 0 18px hsl(185 80% 50% / 0.3),
-        6px 0 30px hsl(330 100% 60% / 0.15);
-    }
-  }
-
-  /* Cyberpunk City - Scan line animation */
-  @keyframes cyberpunk-scan {
-    0% { transform: translateY(-100%); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(calc(100vh - 80px)); opacity: 0; }
-  }
-
-  /* Cyberpunk City - Sidebar styling with premium neon border */
+  /* Cyberpunk City - Sidebar styling */
   [data-theme="theme_cyberpunk_city"] aside,
   [data-theme="theme_cyberpunk_city"] [data-sidebar],
   [data-theme="theme_cyberpunk_city"] .sidebar {
     background: hsl(250 50% 5% / 0.92) !important;
     backdrop-filter: blur(12px) !important;
-    /* Gradient neon border: rosa → roxo → ciano */
-    border-right: 2px solid transparent !important;
-    border-image: linear-gradient(
-      180deg, 
-      hsl(330 100% 60%) 0%,
-      hsl(285 80% 55%) 25%,
-      hsl(185 80% 50%) 50%,
-      hsl(285 80% 55%) 75%,
-      hsl(330 100% 60%) 100%
-    ) 1 !important;
-    /* Pulsating glow effect */
-    animation: cyberpunk-pulse 3s ease-in-out infinite;
-    position: relative;
-  }
-
-  /* Cyberpunk City - Animated scan line on sidebar edge */
-  [data-theme="theme_cyberpunk_city"] aside::after,
-  [data-theme="theme_cyberpunk_city"] [data-sidebar]::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 3px;
-    height: 80px;
-    background: linear-gradient(
-      180deg, 
-      transparent 0%, 
-      hsl(185 100% 70% / 0.9) 50%, 
-      transparent 100%
-    );
-    animation: cyberpunk-scan 4s linear infinite;
-    pointer-events: none;
-    z-index: 50;
+    border-right: 1px solid hsl(330 100% 60% / 0.5) !important;
   }
 
   [data-theme="theme_cyberpunk_city"] [data-sidebar] [data-active="true"] {
