@@ -6,7 +6,6 @@ export type ThemeOption =
   | 'dark-serene' 
   | 'light' 
   | 'high-contrast'
-  | 'theme_cyberpunk_neon'
   | 'theme_ocean_breeze'
   | 'theme_sunset_gradient'
   | 'theme_forest_mystic'
@@ -110,7 +109,6 @@ function applyTheme(theme: ThemeOption) {
     const darkThemes = [
       'dark-serene', 
       'high-contrast',
-      'theme_cyberpunk_neon',
       'theme_ocean_breeze',
       'theme_sunset_gradient',
       'theme_forest_mystic',

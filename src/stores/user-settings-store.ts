@@ -11,7 +11,6 @@ interface UserSettings {
     | 'dark-serene' 
     | 'light' 
     | 'high-contrast'
-    | 'theme_cyberpunk_neon'
     | 'theme_ocean_breeze'
     | 'theme_sunset_gradient'
     | 'theme_forest_mystic'
