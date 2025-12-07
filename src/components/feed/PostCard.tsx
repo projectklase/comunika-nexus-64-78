@@ -596,13 +596,13 @@ export function PostCard({
               variant={isNewPost ? "default" : "ghost"}
               onClick={() => setIsDetailDrawerOpen(true)}
               className={cn(
-                "h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3",
+                "h-8 px-2 sm:h-9 sm:px-3 gap-1",
                 isNewPost && "bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               )}
               aria-label={isNewPost ? "Ler post completo" : "Post já lido"}
             >
               {isNewPost ? <Eye className="h-3.5 w-3.5" /> : <CheckCircle className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline sm:ml-1">{isNewPost ? "Ler" : "Lido"}</span>
+              <span className="text-xs sm:text-sm">{isNewPost ? "Ler" : "Lido"}</span>
             </Button>
 
             {/* Activity Actions - Only for students */}
