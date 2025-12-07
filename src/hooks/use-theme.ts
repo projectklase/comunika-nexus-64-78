@@ -11,7 +11,8 @@ export type ThemeOption =
   | 'theme_sunset_gradient'
   | 'theme_forest_mystic'
   | 'theme_midnight_aurora'
-  | 'theme_volcanic_fire';
+  | 'theme_volcanic_fire'
+  | 'theme_sakura_dreams';
 
 export interface ThemeConfig {
   value: ThemeOption;
@@ -113,7 +114,8 @@ function applyTheme(theme: ThemeOption) {
       'theme_sunset_gradient',
       'theme_forest_mystic',
       'theme_midnight_aurora',
-      'theme_volcanic_fire'
+      'theme_volcanic_fire',
+      'theme_sakura_dreams'
     ];
     if (darkThemes.includes(theme)) {
       root.classList.add('dark');
