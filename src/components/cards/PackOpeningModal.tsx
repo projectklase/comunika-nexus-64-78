@@ -135,10 +135,12 @@ export const PackOpeningModal = ({
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className={cn(
-          // Mobile: fullscreen
-          "fixed inset-0 h-screen w-screen max-w-none rounded-none p-4 sm:p-6",
-          // Desktop: modal normal
-          "sm:relative sm:inset-auto sm:max-w-4xl sm:h-auto sm:rounded-lg",
+          // Mobile: fullscreen - sobrescrever posição do Radix
+          "w-full h-[100dvh] max-w-none rounded-none p-4",
+          "left-0 top-0 translate-x-0 translate-y-0",
+          // Desktop: modal centralizado
+          "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+          "sm:max-w-4xl sm:h-auto sm:max-h-[85vh] sm:rounded-lg sm:p-6",
           "flex flex-col overflow-y-auto"
         )}>
           <DialogHeader className="flex-shrink-0">

@@ -105,10 +105,12 @@ export const DeckBuilderModal = ({
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className={cn(
-          // Mobile: fullscreen
-          "fixed inset-0 h-screen w-screen max-w-none rounded-none p-0",
-          // Desktop: modal normal
-          "sm:relative sm:inset-auto sm:max-w-6xl sm:h-[85vh] sm:rounded-lg sm:p-6",
+          // Mobile: fullscreen - sobrescrever posição do Radix
+          "w-full h-[100dvh] max-w-none rounded-none p-0",
+          "left-0 top-0 translate-x-0 translate-y-0",
+          // Desktop: modal centralizado
+          "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+          "sm:max-w-6xl sm:h-[85vh] sm:rounded-lg sm:p-6",
           "flex flex-col"
         )}>
           <DialogHeader className="px-3 pt-3 sm:px-0 sm:pt-0 flex-shrink-0">
@@ -129,7 +131,7 @@ export const DeckBuilderModal = ({
           </div>
 
           {/* Layout principal */}
-          <div className="flex-1 flex flex-col sm:grid sm:grid-cols-[1fr,300px] gap-3 sm:gap-4 overflow-hidden pb-[32vh] sm:pb-0">
+          <div className="flex-1 flex flex-col sm:grid sm:grid-cols-[1fr,300px] gap-3 sm:gap-4 overflow-hidden">
             
             {/* Coleção disponível - scrollable */}
             <div className="flex-1 overflow-hidden flex flex-col px-3 sm:px-0">
