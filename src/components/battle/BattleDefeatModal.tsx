@@ -232,7 +232,7 @@ export function BattleDefeatModal({
 
                   {/* Action Buttons */}
                   <motion.div
-                    className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center w-full pt-2 sm:pt-4"
+                    className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:justify-center w-full pt-2 sm:pt-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1.7 }}
