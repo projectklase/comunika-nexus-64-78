@@ -13,10 +13,10 @@ import { standardizeSelectValue, validateSelectItemValue } from '@/utils/select-
 interface ActivityFiltersProps {
   selectedType?: ActivityType;
   selectedStatus?: PostStatus;
-  selectedDeadline?: 'upcoming' | 'overdue' | 'today';
+  selectedDeadline?: 'upcoming' | 'deadline_passed' | 'today';
   onTypeChange: (type?: ActivityType) => void;
   onStatusChange: (status?: PostStatus) => void;
-  onDeadlineChange: (deadline?: 'upcoming' | 'overdue' | 'today') => void;
+  onDeadlineChange: (deadline?: 'upcoming' | 'deadline_passed' | 'today') => void;
   onClearAll: () => void;
 }
 
@@ -29,13 +29,14 @@ const activityTypes = [
 const statusOptions = [
   { value: 'PUBLISHED' as const, label: 'Publicado' },
   { value: 'SCHEDULED' as const, label: 'Agendado' },
+  { value: 'CONCLUDED' as const, label: 'Concluída' },
   { value: 'ARCHIVED' as const, label: 'Arquivado' }
 ];
 
 const deadlineOptions = [
   { value: 'today' as const, label: 'Vence hoje' },
   { value: 'upcoming' as const, label: 'Próximos' },
-  { value: 'overdue' as const, label: 'Atrasados' }
+  { value: 'deadline_passed' as const, label: 'Prazo encerrado' }
 ];
 
 export function ActivityFilters({
@@ -105,7 +106,7 @@ export function ActivityFilters({
             if (standardized === DEFAULT_SELECT_TOKENS.ALL_PERIODS) {
               onDeadlineChange(undefined);
             } else {
-              onDeadlineChange(value as 'upcoming' | 'overdue' | 'today');
+              onDeadlineChange(value as 'upcoming' | 'deadline_passed' | 'today');
             }
           }}
         >

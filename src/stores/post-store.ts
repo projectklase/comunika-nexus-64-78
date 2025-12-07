@@ -450,6 +450,74 @@ class PostStore {
     return true;
   }
 
+  async conclude(id: string): Promise<boolean> {
+    const { data: postData, error: fetchError } = await supabase.from("posts").select("*").eq("id", id).single();
+
+    if (fetchError || !postData) {
+      console.error("Error fetching post for conclude:", fetchError);
+      return false;
+    }
+
+    const post = this.dbRowToPost(postData);
+    const beforeStatus = post.status;
+
+    // Set concluded_at timestamp in meta for archival tracking
+    const concludedAt = new Date().toISOString();
+    const updatedMeta = {
+      ...post.meta,
+      concluded_at: concludedAt
+    };
+
+    const { error } = await supabase
+      .from("posts")
+      .update({ 
+        status: "CONCLUDED",
+        meta: updatedMeta
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error concluding post:", error);
+      return false;
+    }
+
+    this.notifySubscribers();
+
+    // Log audit event
+    try {
+      logAudit({
+        action: "CONCLUDE",
+        entity: "POST",
+        entity_id: id,
+        entity_label: post.title,
+        scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
+        class_name:
+          post.audience === "CLASS" && post.classIds?.length
+            ? await this.getClassNameFromId(post.classIds[0])
+            : undefined,
+        meta: {
+          fields: ["status"],
+          post_type: post.type,
+          subtype: post.type,
+          status_before: beforeStatus,
+          status_after: "CONCLUDED",
+          concluded_at: concludedAt,
+        },
+        diff_json: {
+          status: { before: beforeStatus, after: "CONCLUDED" },
+        },
+        actor_id: post.authorId || "user-professor",
+        actor_name: post.authorName,
+        actor_email: "user@escola.com",
+        actor_role: "PROFESSOR",
+      });
+    } catch (error) {
+      console.error("Erro ao registrar evento de auditoria:", error);
+    }
+
+    return true;
+  }
+
   async getById(id: string): Promise<Post | null> {
     try {
       const { data, error } = await supabase.from("posts").select("*").eq("id", id).single();

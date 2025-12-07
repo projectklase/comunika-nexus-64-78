@@ -90,6 +90,31 @@ export function usePostActions() {
     }
   };
 
+  const concludePost = async (id: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const success = await postStore.conclude(id);
+      if (success) {
+        toast({
+          title: "Atividade concluída",
+          description: "A atividade foi concluída e sairá do feed ativo. Será arquivada em 10 dias.",
+        });
+        return true;
+      } else {
+        throw new Error('Falha ao concluir atividade');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro ao concluir atividade",
+        description: error instanceof Error ? error.message : "Erro desconhecido ao concluir atividade.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const deletePost = async (id: string): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -197,6 +222,7 @@ export function usePostActions() {
     createPost,
     updatePost,
     archivePost,
+    concludePost,
     deletePost,
     duplicatePost,
     getPostForEdit,
