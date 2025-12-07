@@ -13,6 +13,8 @@ import { usePostActions } from '@/hooks/usePostActions';
 import { toast } from 'sonner';
 import { ActivityFilters } from '@/components/activities/ActivityFilters';
 import { useSelectValidation } from '@/hooks/useSelectValidation';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileFilterSheet } from '@/components/feed/MobileFilterSheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +91,7 @@ export default function ProfessorActivities() {
   const { exportActivities } = useActivityExport();
   const { loadClasses } = useClassStore();
   const { loadPeople } = usePeopleStore();
+  const isMobile = useIsMobile();
   
   // Validate Select components in development
   useSelectValidation('ProfessorActivities');
@@ -370,119 +373,145 @@ export default function ProfessorActivities() {
     }
   };
 
-  return (
-    <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
-      {/* Breadcrumbs - Hidden on mobile */}
-      <Breadcrumb className="hidden sm:block">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/professor/dashboard">Professor</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Atividades</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+  // Contador de filtros ativos para mobile
+  const activeFiltersCount = useMemo(() => {
+    return [
+      filters.type,
+      filters.status,
+      filters.deadline,
+      searchQuery,
+      selectedClass !== DEFAULT_TOKENS.ALL_CLASSES ? selectedClass : null
+    ].filter(Boolean).length;
+  }, [filters.type, filters.status, filters.deadline, searchQuery, selectedClass]);
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">Minhas Atividades</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Gerencie todas as atividades das suas turmas
-          </p>
+  // Conteúdo dos filtros (reutilizado entre desktop e mobile)
+  const FiltersContent = () => (
+    <div className="space-y-3 sm:space-y-4">
+      {/* Linha 1: Busca e Turma */}
+      <div className="flex flex-col gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por título ou descrição..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 min-h-11"
+          />
         </div>
         
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline"
-            onClick={() => exportActivities(finalFilteredPosts)}
-            disabled={finalFilteredPosts.length === 0}
-            className="flex-1 sm:flex-none min-h-11"
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Select 
+            value={selectedClass} 
+            onValueChange={setSelectedClass}
+            disabled={!hasClasses}
           >
-            <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Exportar ({finalFilteredPosts.length})</span>
-          </Button>
-          <Button asChild className="flex-1 sm:flex-none min-h-11">
-            <Link to="/professor/atividades/nova">
-              <Plus className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Nova Atividade</span>
-              <span className="sm:hidden">Nova</span>
-            </Link>
-          </Button>
+            <SelectTrigger className="w-full sm:w-[200px] min-h-11 sm:min-h-10">
+              <SelectValue 
+                placeholder={hasClasses ? "Todas as turmas" : "Nenhuma turma atribuída"} 
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={DEFAULT_TOKENS.ALL_CLASSES}>
+                {hasClasses ? 'Todas as turmas' : 'Nenhuma turma disponível'}
+              </SelectItem>
+              {professorClasses.map(schoolClass => {
+                if (!schoolClass.id) return null;
+                const stringId = String(schoolClass.id);
+                return (
+                  <SelectItem key={stringId} value={stringId}>
+                    {schoolClass.name}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[160px] min-h-11 sm:min-h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={DEFAULT_TOKENS.DUE_DATE}>Prazo</SelectItem>
+              <SelectItem value={DEFAULT_TOKENS.CREATED_DATE}>Criação</SelectItem>
+              <SelectItem value={DEFAULT_TOKENS.ALPHABETICAL}>Alfabética</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Filtros */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <CardTitle className="text-sm sm:text-lg">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6 pt-0 sm:pt-0">
-          {/* Linha 1: Busca e Turma */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por título ou descrição..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select 
-              value={selectedClass} 
-              onValueChange={setSelectedClass}
-              disabled={!hasClasses}
-            >
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue 
-                  placeholder={hasClasses ? "Todas as turmas" : "Nenhuma turma atribuída"} 
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={DEFAULT_TOKENS.ALL_CLASSES}>
-                  {hasClasses ? 'Todas as turmas' : 'Nenhuma turma disponível'}
-                </SelectItem>
-                {professorClasses.map(schoolClass => {
-                  // Convert ID to string and skip items without ID
-                  if (!schoolClass.id) return null;
-                  const stringId = String(schoolClass.id);
-                  return (
-                    <SelectItem key={stringId} value={stringId}>
-                      {schoolClass.name}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+      {/* Linha 2: Filtros de Atividade */}
+      <ActivityFilters
+        selectedType={filters.type}
+        selectedStatus={filters.status}
+        selectedDeadline={filters.deadline}
+        onTypeChange={setTypeFilter}
+        onStatusChange={setStatusFilter}
+        onDeadlineChange={setDeadlineFilter}
+        onClearAll={clearAllFilters}
+      />
+    </div>
+  );
 
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={DEFAULT_TOKENS.DUE_DATE}>Prazo</SelectItem>
-                <SelectItem value={DEFAULT_TOKENS.CREATED_DATE}>Criação</SelectItem>
-                <SelectItem value={DEFAULT_TOKENS.ALPHABETICAL}>Alfabética</SelectItem>
-              </SelectContent>
-            </Select>
+  return (
+    <div className="flex flex-col h-full w-full max-w-full overflow-x-hidden">
+      <div className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
+        {/* Breadcrumbs - Hidden on mobile */}
+        <Breadcrumb className="hidden sm:block">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/professor/dashboard">Professor</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Atividades</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">Minhas Atividades</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Gerencie todas as atividades das suas turmas
+            </p>
           </div>
+          
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button 
+              variant="outline"
+              onClick={() => exportActivities(finalFilteredPosts)}
+              disabled={finalFilteredPosts.length === 0}
+              className="flex-1 sm:flex-none min-h-11"
+            >
+              <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Exportar ({finalFilteredPosts.length})</span>
+            </Button>
+            <Button asChild className="flex-1 sm:flex-none min-h-11">
+              <Link to="/professor/atividades/nova">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nova Atividade</span>
+                <span className="sm:hidden">Nova</span>
+              </Link>
+            </Button>
+          </div>
+        </div>
 
-          {/* Linha 2: Filtros de Atividade */}
-          <ActivityFilters
-            selectedType={filters.type}
-            selectedStatus={filters.status}
-            selectedDeadline={filters.deadline}
-            onTypeChange={setTypeFilter}
-            onStatusChange={setStatusFilter}
-            onDeadlineChange={setDeadlineFilter}
-            onClearAll={clearAllFilters}
-          />
-        </CardContent>
-      </Card>
+        {/* Filtros - Condicional Mobile/Desktop */}
+        {isMobile ? (
+          <MobileFilterSheet activeFiltersCount={activeFiltersCount}>
+            <FiltersContent />
+          </MobileFilterSheet>
+        ) : (
+          <Card>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-sm sm:text-lg">Filtros</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <FiltersContent />
+            </CardContent>
+          </Card>
+        )}
 
       {/* Lista de Atividades Agrupadas */}
       <div className="space-y-4">
@@ -678,6 +707,7 @@ export default function ProfessorActivities() {
             </Card>
           ))
         )}
+        </div>
       </div>
     </div>
   );

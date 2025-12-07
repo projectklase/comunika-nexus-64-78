@@ -51,9 +51,9 @@ export function ActivityFilters({
   const hasFilters = selectedType || selectedStatus || selectedDeadline;
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+    <div className="flex flex-col gap-4 items-start w-full">
       {/* Type Filter */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 w-full">
         {activityTypes.map(({ type, label, icon: Icon, color }) => (
           <Button
             key={type}
@@ -61,7 +61,7 @@ export function ActivityFilters({
             size="sm"
             onClick={() => onTypeChange(selectedType === type ? undefined : type)}
             className={cn(
-              "h-8 gap-2",
+              "h-8 min-h-10 sm:min-h-8 gap-2 flex-1 sm:flex-none",
               selectedType === type && "shadow-sm"
             )}
           >
@@ -73,7 +73,7 @@ export function ActivityFilters({
       </div>
 
       {/* Status and Deadline Filters */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 w-full">
         <Select 
           value={standardizeSelectValue(selectedStatus, 'status')} 
           onValueChange={(value) => {
@@ -85,7 +85,7 @@ export function ActivityFilters({
             }
           }}
         >
-          <SelectTrigger className="w-[140px] h-8">
+          <SelectTrigger className="w-full sm:w-[140px] h-8 min-h-10 sm:min-h-8">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -109,7 +109,7 @@ export function ActivityFilters({
             }
           }}
         >
-          <SelectTrigger className="w-[140px] h-8">
+          <SelectTrigger className="w-full sm:w-[140px] h-8 min-h-10 sm:min-h-8">
             <SelectValue placeholder="Prazo" />
           </SelectTrigger>
           <SelectContent>
