@@ -440,7 +440,7 @@ export function PostCard({
           </div>
 
           <h3 id={`post-title-${post.id}`} className={cn(
-            "font-semibold text-foreground leading-tight transition-colors",
+            "font-semibold text-foreground leading-tight transition-colors line-clamp-2 break-words",
             compact ? "text-base mt-2" : "text-lg group-hover:text-primary"
           )} data-post-title>
             {post.title}
@@ -565,7 +565,7 @@ export function PostCard({
             </div>}
 
           {/* Action Buttons */}
-          {user && <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-3 border-t border-border/50 max-w-full overflow-hidden">
+          {user && <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-3 border-t border-border/50">
             {/* Botão de leitura universal - Abre drawer (previne exploits) */}
             <Button 
               size="sm" 
@@ -639,13 +639,11 @@ export function PostCard({
             </div>}
 
           {/* Footer */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-border/50 mt-3 max-w-full overflow-hidden">
-            <div className="flex items-center gap-2 sm:gap-4 text-xs text-muted-foreground min-w-0">
-              <span className="truncate max-w-[100px] sm:max-w-[150px]">{post.authorName}</span>
-              <div className="flex items-center gap-1 shrink-0">
-                <Clock className="h-3 w-3" />
-                {formatDate(post.createdAt)}
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-border/50 mt-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+              <span className="truncate flex-1 min-w-0">{post.authorName}</span>
+              <span className="shrink-0">•</span>
+              <span className="shrink-0">{formatDate(post.createdAt)}</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs shrink-0">

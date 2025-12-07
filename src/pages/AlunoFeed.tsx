@@ -117,43 +117,38 @@ export default function AlunoFeed() {
   };
 
   return (
-    <div className="w-full min-h-screen">
-      <div className="w-full max-w-full px-3 sm:px-4 lg:px-6">
-        <div className="space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-primary/20 border border-primary/30 w-fit shrink-0">
-              <Rss className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold gradient-text">Feed do Aluno</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Acompanhe as últimas atualizações da escola
-              </p>
-            </div>
+    <div className="w-full">
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-primary/20 border border-primary/30 w-fit shrink-0">
+            <Rss className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
-
-          {/* FilterBar */}
-          <FilterBar onFilterChange={setFilter} />
-          
-          {/* SmartFilterStatus */}
-          <SmartFilterStatus
-            totalPosts={allPosts.length}
-            filteredPosts={processedPosts.length}
-            hideExpired={preferences.hideExpired !== false}
-            onToggleExpired={handleToggleExpired}
-          />
-          
-          {/* PostList */}
-          <PostList
-            key={updateKey}
-            posts={processedPosts}
-            isLoading={isLoading}
-            onUpdate={handleUpdate}
-            pageSize={preferences.pageSize}
-            onInviteFriend={handleInviteFriend}
-          />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold gradient-text">Feed do Aluno</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Acompanhe as últimas atualizações da escola
+            </p>
+          </div>
         </div>
+
+        <FilterBar onFilterChange={setFilter} />
+        
+        <SmartFilterStatus
+          totalPosts={allPosts.length}
+          filteredPosts={processedPosts.length}
+          hideExpired={preferences.hideExpired !== false}
+          onToggleExpired={handleToggleExpired}
+        />
+        
+        <PostList
+          key={updateKey}
+          posts={processedPosts}
+          isLoading={isLoading}
+          onUpdate={handleUpdate}
+          pageSize={preferences.pageSize}
+          onInviteFriend={handleInviteFriend}
+        />
       </div>
       
       {/* Invite Friends Modal */}
