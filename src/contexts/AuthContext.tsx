@@ -293,6 +293,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       root.classList.remove('dark');
       root.classList.add('dark'); // Default theme is dark-neon
       
+      // Reset theme in zustand store to default so next login doesn't see stale premium theme identifier
+      import('@/stores/user-settings-store').then(({ useUserSettingsStore }) => {
+        useUserSettingsStore.getState().updateSetting('currentTheme', 'dark-neon');
+      });
+      
       // Invalidate React Query cache to prevent re-applying cached theme
       queryClient.removeQueries({ queryKey: ['user-unlocks'] });
       queryClient.removeQueries({ queryKey: ['unlockables'] });
