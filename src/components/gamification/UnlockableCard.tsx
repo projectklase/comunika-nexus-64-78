@@ -1,6 +1,7 @@
-import { Lock, Check } from 'lucide-react';
+import { Lock, Check, Zap, Flame, Target, Coins } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { UnlockBadge } from './UnlockBadge';
 import { cn } from '@/lib/utils';
 import { Unlockable } from '@/hooks/useUnlockables';
@@ -19,6 +20,13 @@ interface UnlockableCardProps {
   };
 }
 
+const REQUIREMENT_CONFIG = {
+  xp: { icon: Zap, label: 'XP', color: 'text-amber-500' },
+  streak: { icon: Flame, label: 'Streak', color: 'text-orange-500' },
+  challenges: { icon: Target, label: 'Desafios', color: 'text-blue-500' },
+  koins: { icon: Coins, label: 'Koins', color: 'text-yellow-500' },
+};
+
 export function UnlockableCard({
   unlockable,
   isUnlocked,
@@ -32,7 +40,7 @@ export function UnlockableCard({
 
     if (unlockable.required_xp) {
       requirements.push({
-        label: 'XP',
+        type: 'xp' as const,
         value: unlockable.required_xp,
         current: currentStats?.xp || 0,
         met: (currentStats?.xp || 0) >= unlockable.required_xp,
@@ -40,15 +48,15 @@ export function UnlockableCard({
     }
     if (unlockable.required_streak_days) {
       requirements.push({
-        label: 'Streak',
-        value: `${unlockable.required_streak_days} dias`,
+        type: 'streak' as const,
+        value: unlockable.required_streak_days,
         current: currentStats?.streak || 0,
         met: (currentStats?.streak || 0) >= unlockable.required_streak_days,
       });
     }
     if (unlockable.required_challenges_completed) {
       requirements.push({
-        label: 'Desafios',
+        type: 'challenges' as const,
         value: unlockable.required_challenges_completed,
         current: currentStats?.challengesCompleted || 0,
         met: (currentStats?.challengesCompleted || 0) >= unlockable.required_challenges_completed,
@@ -56,7 +64,7 @@ export function UnlockableCard({
     }
     if (unlockable.required_koins_earned) {
       requirements.push({
-        label: 'Koins Ganhos',
+        type: 'koins' as const,
         value: unlockable.required_koins_earned,
         current: currentStats?.koinsEarned || 0,
         met: (currentStats?.koinsEarned || 0) >= unlockable.required_koins_earned,
@@ -71,8 +79,8 @@ export function UnlockableCard({
   return (
     <Card
       className={cn(
-        'relative overflow-hidden border-2 transition-all hover:scale-105',
-        isUnlocked ? 'border-primary/50 shadow-lg shadow-primary/10' : 'border-muted opacity-75',
+        'relative overflow-hidden border-2 transition-all hover:scale-[1.02]',
+        isUnlocked ? 'border-primary/50 shadow-lg shadow-primary/10' : 'border-muted opacity-90',
         isEquipped && 'ring-2 ring-primary ring-offset-2 ring-offset-background'
       )}
     >
@@ -84,12 +92,12 @@ export function UnlockableCard({
         </div>
       )}
 
-      {/* Lock Overlay */}
+      {/* Lock Overlay - mais sutil para ver requisitos */}
       {!isUnlocked && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="text-center space-y-2">
-            <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="text-sm text-muted-foreground font-medium">Bloqueado</p>
+        <div className="absolute top-2 left-2 z-10">
+          <div className="flex items-center gap-1 rounded-full bg-muted/90 backdrop-blur-sm px-2 py-1 text-xs font-medium text-muted-foreground">
+            <Lock className="h-3 w-3" />
+            Bloqueado
           </div>
         </div>
       )}
@@ -122,18 +130,37 @@ export function UnlockableCard({
           </div>
         )}
 
-        {/* Requirements */}
+        {/* Requirements com barras de progresso */}
         {showRequirements && requirements.length > 0 && (
-          <div className="space-y-1.5 pt-2 border-t">
-            <p className="text-xs font-semibold text-muted-foreground">Requisitos:</p>
-            {requirements.map((req, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">{req.label}:</span>
-                <span className={cn('font-medium', req.met ? 'text-green-500' : 'text-amber-500')}>
-                  {req.current} / {req.value}
-                </span>
-              </div>
-            ))}
+          <div className="space-y-2 pt-2 border-t">
+            <p className="text-xs font-semibold text-muted-foreground">Requisitos para desbloquear:</p>
+            {requirements.map((req, idx) => {
+              const config = REQUIREMENT_CONFIG[req.type];
+              const Icon = config.icon;
+              const progress = Math.min((req.current / req.value) * 100, 100);
+              
+              return (
+                <div key={idx} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className={cn('flex items-center gap-1 font-medium', config.color)}>
+                      <Icon className="h-3 w-3" />
+                      {config.label}
+                    </span>
+                    <span className={cn('font-semibold', req.met ? 'text-green-500' : 'text-muted-foreground')}>
+                      {req.current} / {req.value}
+                      {req.met && <Check className="h-3 w-3 inline ml-1" />}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={progress} 
+                    className={cn(
+                      'h-1.5',
+                      req.met && '[&>div]:bg-green-500'
+                    )}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
 
