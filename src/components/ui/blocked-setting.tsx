@@ -59,8 +59,8 @@ export function BlockedSetting({
 
   return (
     <Card className={cn("bg-background/30 backdrop-blur-sm border-muted", className)} onClick={onClick}>
-      <CardContent className="flex items-center justify-between p-4 opacity-60">
-        <div className="space-y-1 flex-1">
+      <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 opacity-60">
+        <div className="space-y-1 flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {icon}
             <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -75,7 +75,7 @@ export function BlockedSetting({
               </Tooltip>
             </Label>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs text-muted-foreground">
               {description}
             </p>
@@ -108,7 +108,7 @@ export function BlockedSetting({
             {reason}
           </p>
         </div>
-        <div className="ml-4">
+        <div className="self-end sm:self-center sm:ml-4">
           {renderControl()}
         </div>
       </CardContent>
