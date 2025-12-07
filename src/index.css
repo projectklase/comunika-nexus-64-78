@@ -1375,18 +1375,20 @@
     color: hsl(200 20% 95%) !important;
   }
 
-  /* Cyberpunk City - Neon gradient text */
+  /* Cyberpunk City - Gradient text simplified to white */
   [data-theme="theme_cyberpunk_city"] .gradient-text {
-    background: linear-gradient(135deg, 
-      hsl(330 100% 75%) 0%,
-      hsl(185 100% 70%) 50%,
-      hsl(300 80% 75%) 100%
-    ) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-    filter: drop-shadow(0 1px 2px hsl(250 50% 3% / 0.6))
-            drop-shadow(0 0 10px hsl(330 100% 50% / 0.3));
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: hsl(0 0% 95%) !important;
+    background-clip: unset !important;
+    filter: none !important;
+    color: hsl(0 0% 95%) !important;
+  }
+
+  /* Cyberpunk City - Pink icons to white for consistency */
+  [data-theme="theme_cyberpunk_city"] .text-pink-400,
+  [data-theme="theme_cyberpunk_city"] .text-pink-500 {
+    color: hsl(0 0% 90%) !important;
   }
 
   /* Cyberpunk City - Paragraphs and muted text contrast */
