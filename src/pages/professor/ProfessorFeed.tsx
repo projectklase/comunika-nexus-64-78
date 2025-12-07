@@ -27,7 +27,9 @@ import {
   Calendar,
   Eye,
   TrendingUp,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Pencil,
+  Archive
 } from 'lucide-react';
 import { format, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -356,17 +358,58 @@ export default function ProfessorFeed() {
                 </div>
               )}
 
-              {/* Atrasadas */}
+              {/* Atrasadas - Lista Acionável */}
               {metrics.overdueActivities.length > 0 && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-red-400" />
-                      <span className="font-medium text-red-400">
-                        {metrics.overdueActivities.length} atividade{metrics.overdueActivities.length > 1 ? 's' : ''} atrasada{metrics.overdueActivities.length > 1 ? 's' : ''}
-                      </span>
+                <div className="space-y-2">
+                  <h4 className="font-medium flex items-center gap-2 text-red-400">
+                    <AlertTriangle className="h-4 w-4" />
+                    Atrasadas ({metrics.overdueActivities.length})
+                  </h4>
+                  {metrics.overdueActivities.slice(0, 3).map(activity => (
+                    <div key={activity.id} className="flex items-center justify-between p-2 sm:p-3 bg-red-500/10 border border-red-500/20 rounded">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{activity.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Venceu {activity.dueAt && formatDueDate(activity.dueAt)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleViewActivity(activity)}
+                          title="Ver atividade"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleEdit(activity.id)}
+                          title="Editar prazo"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleArchive(activity.id)}
+                          title="Arquivar"
+                        >
+                          <Archive className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  ))}
+                  {metrics.overdueActivities.length > 3 && (
+                    <Button 
+                      variant="link" 
+                      className="text-red-400 text-xs p-0 h-auto"
+                      onClick={() => navigate('/professor/atividades?status=overdue')}
+                    >
+                      Ver todas as {metrics.overdueActivities.length} atrasadas →
+                    </Button>
+                  )}
                 </div>
               )}
 
