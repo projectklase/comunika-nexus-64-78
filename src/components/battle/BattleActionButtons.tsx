@@ -122,18 +122,18 @@ const ActionButton = ({
   };
   
   const displayLabel = isCompleted && completedLabel ? completedLabel : label;
-  const displayIcon = isCompleted ? <Check className="w-4 h-4" /> : icon;
+  const displayIcon = isCompleted ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : icon;
   
   const isDisabledState = disabled || isLoading || isCompleted || isBlocked || isSummoning;
   
   return (
-    <div className="relative flex-1 group">
+    <div className="relative flex-1 min-w-0 group">
       <motion.button
         onClick={onClick}
         disabled={isDisabledState}
         className={`
-          w-full flex items-center justify-center gap-2 
-          px-4 py-3 rounded-xl font-semibold text-white
+          w-full flex items-center justify-center gap-1 sm:gap-2 
+          px-2 sm:px-4 py-2 sm:py-3 rounded-xl font-semibold text-white
           transition-all duration-300
           bg-gradient-to-r ${getGradient()} ${getGlow()} ${getHoverGlow()}
           ${isDisabledState ? 'cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
@@ -181,25 +181,26 @@ const ActionButton = ({
         )}
         
         {/* Icon container */}
-        <div className={`p-1.5 rounded-lg ${getIconBg()}`}>
+        <div className={`p-1 sm:p-1.5 rounded-lg ${getIconBg()} flex-shrink-0`}>
           {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
           ) : (
             <motion.div
               animate={!isDisabledState ? { rotate: [0, 5, -5, 0] } : isSummoning ? { scale: [1, 1.1, 1] } : {}}
               transition={{ duration: 2, repeat: Infinity }}
+              className="[&>svg]:w-3 [&>svg]:h-3 sm:[&>svg]:w-4 sm:[&>svg]:h-4"
             >
               {displayIcon}
             </motion.div>
           )}
         </div>
         
-        <span className="relative z-10 text-sm">{displayLabel}</span>
+        <span className="relative z-10 text-[11px] sm:text-sm truncate">{displayLabel}</span>
       </motion.button>
       
       {/* Tooltip - shows on hover when there's a tooltip message */}
       {tooltip && (
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-white font-medium bg-black/90 px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 border border-indigo-500/30">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-white font-medium bg-black/90 px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 border border-indigo-500/30 hidden sm:block">
           {tooltip}
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black/90 rotate-45 border-r border-b border-indigo-500/30" />
         </div>
@@ -248,9 +249,9 @@ export const BattleActionButtons = ({
   };
   
   const getAttackIcon = () => {
-    if (isSetupPhase) return <Shield className="w-4 h-4" />;
-    if (hasSummoningSickness) return <Moon className="w-4 h-4" />;
-    return <Swords className="w-4 h-4" />;
+    if (isSetupPhase) return <Shield className="w-3 h-3 sm:w-4 sm:h-4" />;
+    if (hasSummoningSickness) return <Moon className="w-3 h-3 sm:w-4 sm:h-4" />;
+    return <Swords className="w-3 h-3 sm:w-4 sm:h-4" />;
   };
   
   // Get tooltip for attack button
@@ -263,18 +264,18 @@ export const BattleActionButtons = ({
   if (!isMyTurn) {
     return (
       <motion.div 
-        className="flex items-center justify-center p-4 bg-muted/10 backdrop-blur-sm rounded-xl border border-border/20"
+        className="flex items-center justify-center p-2 sm:p-4 bg-muted/10 backdrop-blur-sm rounded-xl border border-border/20"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
           >
-            <Loader2 className="w-5 h-5 text-muted-foreground" />
+            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           </motion.div>
-          <p className="text-sm text-muted-foreground">Aguardando turno do oponente...</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Aguardando turno do oponente...</p>
         </div>
       </motion.div>
     );
@@ -291,12 +292,12 @@ export const BattleActionButtons = ({
       <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/10 via-red-500/10 to-blue-500/10 rounded-2xl blur-lg" />
       
       {/* Main container */}
-      <div className="relative flex items-center gap-3 p-4 bg-background/60 backdrop-blur-md rounded-xl border border-primary/20">
+      <div className="relative flex items-stretch gap-2 sm:gap-3 p-2 sm:p-4 bg-background/60 backdrop-blur-md rounded-xl border border-primary/20">
         <ActionButton
           onClick={onPlayCard}
           disabled={!canPlayCard}
           variant="play"
-          icon={<Hand className="w-4 h-4" />}
+          icon={<Hand className="w-3 h-3 sm:w-4 sm:h-4" />}
           label="Jogar Carta"
           completedLabel="✓ Jogada"
           isLoading={isLoading}
@@ -319,7 +320,7 @@ export const BattleActionButtons = ({
           onClick={onEndTurn}
           disabled={false}
           variant="endTurn"
-          icon={<ArrowRight className="w-4 h-4" />}
+          icon={<ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />}
           label={shouldHighlightEndTurn ? "⚡ Passar" : "Passar"}
           isLoading={isLoading}
           isHighlighted={shouldHighlightEndTurn}
