@@ -4,7 +4,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PostComposer } from '@/components/feed/PostComposer';
 import { PostList } from '@/components/feed/PostList';
 import { ProfessorFeedFilters } from '@/components/feed/ProfessorFeedFilters';
-import { SmartFilterStatus } from '@/components/feed/SmartFilterStatus';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -365,14 +364,6 @@ export default function ProfessorFeed() {
 
           {/* Posts */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Smart Filter Status */}
-            <SmartFilterStatus
-              totalPosts={totalPosts}
-              filteredPosts={filteredPosts.length}
-              hideExpired={hideExpired}
-              onToggleExpired={() => setHideExpired(!hideExpired)}
-            />
-            
             {isLoadingPosts ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>

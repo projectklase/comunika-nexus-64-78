@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { Rss } from 'lucide-react';
 import { FilterBar } from '@/components/feed/FilterBar';
 import { PostList } from '@/components/feed/PostList';
-import { SmartFilterStatus } from '@/components/feed/SmartFilterStatus';
 import { InviteFriendsModal } from '@/components/aluno/InviteFriendsModal';
 import { usePosts } from '@/hooks/usePosts';
 import { useSaved } from '@/hooks/useSaved';
@@ -110,9 +109,6 @@ export default function AlunoFeed() {
     setUpdateKey(prev => prev + 1);
   };
 
-  const handleToggleExpired = () => {
-    updatePreferences({ hideExpired: !preferences.hideExpired });
-  };
 
   const handleInviteFriend = (post: Post) => {
     setSelectedEventForInvite(post);
@@ -136,13 +132,6 @@ export default function AlunoFeed() {
         </div>
 
         <FilterBar onFilterChange={setFilter} />
-        
-        <SmartFilterStatus
-          totalPosts={allPosts.length}
-          filteredPosts={processedPosts.length}
-          hideExpired={preferences.hideExpired !== false}
-          onToggleExpired={handleToggleExpired}
-        />
         
         <PostList
           key={updateKey}
