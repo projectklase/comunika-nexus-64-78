@@ -1,41 +1,11 @@
-/* Fix para Radix Dropdown Menu positioning */
+/* Fix para Radix Dropdown Menu - Mínimo Invasivo */
 
-/* Garante que o portal tem o z-index correto */
+/* 1. Z-index alto para garantir que o dropdown fica acima de tudo */
 [data-radix-popper-content-wrapper] {
-  z-index: 50 !important;
+  z-index: 9999 !important;
 }
 
-/* Força recálculo de posição após render */
+/* 2. Garantir fundo sólido (não transparente) */
 [data-radix-dropdown-menu-content] {
-  transform-origin: var(--radix-dropdown-menu-content-transform-origin) !important;
-}
-
-/* Garante que o trigger é posicionável */
-[data-radix-dropdown-menu-trigger] {
-  position: relative !important;
-  scroll-margin: 0 !important;
-}
-
-/* Previne que transforms nos pais afetem o posicionamento */
-[data-radix-dropdown-menu-content] {
-  position: fixed !important;
-  will-change: transform !important;
-}
-
-/* Remove scroll behavior durante interação com dropdown */
-body:has([data-state="open"][role="menu"]) {
-  overflow: hidden !important;
-  scroll-behavior: auto !important;
-}
-
-/* Previne scroll ao focar no trigger */
-[data-radix-dropdown-menu-trigger]:focus,
-[data-radix-dropdown-menu-trigger]:focus-visible {
-  scroll-margin: 0 !important;
-}
-
-/* Debug: esconde dropdown se aparecer em 0,0 */
-[data-radix-dropdown-menu-content][style*="left: 0px"][style*="top: 0px"] {
-  opacity: 0 !important;
-  pointer-events: none !important;
+  background-color: hsl(var(--popover)) !important;
 }
