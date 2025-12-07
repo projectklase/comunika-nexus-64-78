@@ -95,6 +95,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTurnStartRef = useRef<string | null>(null);
   const lastTrapTimestampRef = useRef<string>('0');
+  const lastAttackTimestampRef = useRef<string>('0');
   const prevMyMonsterRef = useRef<string | null>(null);
   const prevOpponentMonsterRef = useRef<string | null>(null);
   
@@ -356,6 +357,75 @@ const [player1Profile, setPlayer1Profile] = useState<{
     }
   }, [battleLog, playSpellSound, allCards]);
 
+  // Detect opponent attacks from battle_log using timestamp (same pattern as traps)
+  useEffect(() => {
+    if (!battleLog || battleLog.length === 0) return;
+    
+    // Find attack entries: ATTACK_MONSTER or DIRECT_ATTACK
+    const attackEntries = battleLog.filter((log: any) => 
+      (log.type === 'ATTACK_MONSTER' || log.type === 'DIRECT_ATTACK') &&
+      log.logged_at
+    );
+    
+    if (attackEntries.length === 0) return;
+    
+    // Sort by timestamp to get the most recent
+    const sortedAttacks = [...attackEntries].sort((a: any, b: any) => 
+      parseFloat(b.logged_at || '0') - parseFloat(a.logged_at || '0')
+    );
+    const latestAttack = sortedAttacks[0];
+    const latestTimestamp = latestAttack.logged_at || '0';
+    
+    // Only process if this attack is newer than the last one we processed
+    if (parseFloat(latestTimestamp) > parseFloat(lastAttackTimestampRef.current)) {
+      // Determine if this attack was from the opponent (not from us)
+      const attackerIsPlayer1 = latestAttack.attacker_player === 'PLAYER1';
+      const weArePlayer1 = isPlayer1;
+      const isOpponentAttack = attackerIsPlayer1 !== weArePlayer1;
+      
+      // Only show animation if opponent attacked (we didn't initiate it)
+      if (isOpponentAttack) {
+        // Find card data for the animation
+        const attackerMonsterName = latestAttack.attacker;
+        const defenderMonsterName = latestAttack.defender;
+        
+        // Find monster cards from allCards
+        const attackerCard = allCards?.find(c => 
+          c.name?.toLowerCase() === attackerMonsterName?.toLowerCase()
+        );
+        const defenderCard = allCards?.find(c => 
+          c.name?.toLowerCase() === defenderMonsterName?.toLowerCase()
+        );
+        
+        // Set up animation data for opponent attack
+        setAttackAnimation({
+          attackerName: attackerMonsterName || 'Monstro Inimigo',
+          attackerImage: attackerCard?.image_url,
+          attackerAtk: attackerCard?.atk || latestAttack.damage || 0,
+          defenderName: defenderMonsterName || 'Seu Monstro',
+          defenderImage: defenderCard?.image_url,
+          damage: latestAttack.damage || 0,
+          isCritical: (latestAttack.damage || 0) >= 30
+        });
+        
+        // Play sounds for opponent attack too
+        playSwooshSound();
+        setTimeout(() => {
+          playAttackSound();
+          triggerShake();
+        }, 900);
+        
+        // Clear animation after it completes
+        setTimeout(() => {
+          setAttackAnimation(null);
+        }, 2000);
+      }
+      
+      // Update the last processed timestamp regardless of who attacked
+      lastAttackTimestampRef.current = latestTimestamp;
+    }
+  }, [battleLog, isPlayer1, allCards, playSwooshSound, playAttackSound, triggerShake]);
+
   // Detect defeated monsters
   useEffect(() => {
     const currentMyMonster = myField?.monster?.id || null;
@@ -485,6 +555,11 @@ const [player1Profile, setPlayer1Profile] = useState<{
     setTimeout(() => {
       setAttackAnimation(null);
     }, 2000);
+    
+    // Mark our attack timestamp to prevent double animation from log detection
+    setTimeout(() => {
+      lastAttackTimestampRef.current = (Date.now() / 1000).toString();
+    }, 100);
   };
 
   const handleAbandonBattle = async () => {
