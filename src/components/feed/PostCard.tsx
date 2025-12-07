@@ -456,7 +456,14 @@ export function PostCard({
 
             {canEdit && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Opções do post">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    type="button"
+                    className="h-8 w-8 p-0" 
+                    aria-label="Opções do post"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
