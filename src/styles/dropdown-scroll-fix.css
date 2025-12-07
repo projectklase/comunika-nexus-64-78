@@ -1,0 +1,24 @@
+/* Previne scroll ao abrir Radix Dropdown */
+[data-radix-popper-content-wrapper] {
+  position: fixed !important;
+}
+
+/* Força posicionamento correto do dropdown */
+[data-radix-dropdown-menu-content] {
+  position: fixed !important;
+  z-index: 50 !important;
+}
+
+/* Remove scroll behavior durante interação com dropdown */
+body:has([data-state="open"][role="menu"]) {
+  overflow: hidden !important;
+}
+
+/* Previne scroll ao focar no trigger */
+[data-radix-dropdown-menu-trigger]:focus {
+  scroll-margin: 0 !important;
+}
+
+[data-radix-dropdown-menu-trigger]:focus-visible {
+  scroll-margin: 0 !important;
+}
