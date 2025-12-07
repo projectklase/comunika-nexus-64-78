@@ -32,24 +32,26 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        // Mobile: bottom sheet ocupando mais espaço
-        "w-full h-[85vh] max-h-[85vh] rounded-t-xl rounded-b-none p-3",
+        // Mobile: bottom sheet ocupando mais espaço - p-0 para controle interno
+        "w-full h-[85vh] max-h-[85vh] rounded-t-xl rounded-b-none p-0",
         "left-0 bottom-0 top-auto translate-x-0 translate-y-0",
         // Desktop: modal centralizado
         "sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2",
         "sm:max-w-4xl sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:p-6",
         "flex flex-col overflow-hidden"
       )}>
-        <DialogHeader className="flex-shrink-0 pb-2 sm:pb-0">
+        {/* Header flutuante sobre a carta */}
+        <DialogHeader className="absolute top-3 left-3 right-12 z-10 sm:relative sm:top-auto sm:left-auto sm:right-auto sm:pb-0">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-2xl flex-wrap">
-            {card.name}
-            <Badge variant="secondary" className={cn('text-xs sm:text-base px-2 sm:px-3 py-0.5 sm:py-1 border-2', frameColors.inner)}>
+            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{card.name}</span>
+            <Badge variant="secondary" className={cn('text-xs sm:text-base px-2 sm:px-3 py-0.5 sm:py-1 border-2 shadow-lg', frameColors.inner)}>
               {RARITY_LABELS[card.rarity]}
             </Badge>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        {/* Conteúdo scrollável com padding top para header flutuante em mobile */}
+        <div className="flex-1 overflow-y-auto pt-12 px-3 pb-3 sm:pt-0 sm:px-0 sm:pb-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Left Column: Card Preview + Quantity */}
             <div className="flex flex-col items-center gap-3 sm:pt-6 sm:sticky sm:top-6 self-start">
@@ -68,8 +70,8 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
               )}
             </div>
 
-          {/* Right Column: Details */}
-          <div className="space-y-3 sm:space-y-4">
+          {/* Right Column: Details - com overflow containment */}
+          <div className="space-y-3 sm:space-y-4 overflow-hidden max-w-full">
             {/* Card Info */}
             <div className={cn(
               'p-2 sm:p-3 rounded-lg border-2',
