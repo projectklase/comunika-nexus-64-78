@@ -1,9 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { useUnlockables } from '@/hooks/useUnlockables';
 import { UnlockableCard } from './UnlockableCard';
-import { useStudentGamification } from '@/stores/studentGamification';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface ThemeGalleryModalProps {
   open: boolean;
@@ -11,6 +14,7 @@ interface ThemeGalleryModalProps {
 }
 
 export function ThemeGalleryModal({ open, onOpenChange }: ThemeGalleryModalProps) {
+  const { user } = useAuth();
   const {
     getUnlocksByType,
     isUnlocked,
@@ -18,22 +22,51 @@ export function ThemeGalleryModal({ open, onOpenChange }: ThemeGalleryModalProps
     equipItem,
     isEquipping,
     isLoading,
+    checkAchievements,
+    isCheckingAchievements,
   } = useUnlockables();
 
-  const { xp, streak } = useStudentGamification();
+  // Buscar estatísticas reais do banco de dados
+  const { data: realStats, isLoading: isLoadingStats } = useQuery({
+    queryKey: ['user-real-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      // Buscar perfil
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_xp, current_streak_days, best_streak_days, koins')
+        .eq('id', user.id)
+        .single();
+      
+      // Contar desafios completados
+      const { count: challengesCompleted } = await supabase
+        .from('student_challenges')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', user.id)
+        .eq('status', 'COMPLETED');
+      
+      return {
+        xp: profile?.total_xp || 0,
+        streak: profile?.best_streak_days || 0, // RPC usa best_streak_days
+        challengesCompleted: challengesCompleted || 0,
+        koinsEarned: profile?.koins || 0,
+      };
+    },
+    enabled: !!user?.id && open,
+  });
 
   const themes = getUnlocksByType('THEME');
   const equippedTheme = getEquippedItem('THEME');
 
-  // Mock data for challenges and koins (você pode integrar com hooks reais)
-  const currentStats = {
-    xp,
-    streak,
-    challengesCompleted: 0, // TODO: integrar com hook de desafios
-    koinsEarned: 0, // TODO: integrar com koin transactions
+  const currentStats = realStats || {
+    xp: 0,
+    streak: 0,
+    challengesCompleted: 0,
+    koinsEarned: 0,
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingStats) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
@@ -57,7 +90,31 @@ export function ThemeGalleryModal({ open, onOpenChange }: ThemeGalleryModalProps
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="h-[60vh] pr-4">
+        {/* Botão Verificar Conquistas */}
+        <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50 border">
+          <div className="text-sm">
+            <p className="font-medium">Suas estatísticas</p>
+            <p className="text-xs text-muted-foreground">
+              ⚡ {currentStats.xp} XP • 🔥 {currentStats.streak} dias streak • 🎯 {currentStats.challengesCompleted} desafios
+            </p>
+          </div>
+          <Button 
+            onClick={() => checkAchievements()}
+            disabled={isCheckingAchievements}
+            size="sm"
+            variant="outline"
+            className="shrink-0"
+          >
+            {isCheckingAchievements ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-2" />
+            )}
+            Verificar Conquistas
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[50vh] pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {themes.map((theme) => (
               <UnlockableCard
