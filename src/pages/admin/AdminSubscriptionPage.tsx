@@ -27,6 +27,7 @@ import {
   ArrowUpRight,
   Plus,
   Loader2,
+  UsersRound,
 } from 'lucide-react';
 
 const KLASE_FEATURES = [
@@ -44,6 +45,7 @@ const KLASE_FEATURES = [
   { icon: History, label: 'Histórico Completo' },
   { icon: BarChart, label: 'Relatórios e Analytics' },
   { icon: MessageCircle, label: 'Suporte Prioritário' },
+  { icon: UsersRound, label: 'Colaboradores Ilimitados' },
 ];
 
 const PLAN_BADGES: Record<string, { color: string; icon: typeof Crown }> = {
