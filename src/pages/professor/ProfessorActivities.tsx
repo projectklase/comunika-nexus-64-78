@@ -281,6 +281,17 @@ export default function ProfessorActivities() {
     });
   }, [user, selectedClass, sortBy, searchQuery, isInitialized]);
 
+  // Contador de filtros ativos para mobile (MUST be before early return)
+  const activeFiltersCount = useMemo(() => {
+    return [
+      filters.type,
+      filters.status,
+      filters.deadline,
+      searchQuery,
+      selectedClass !== DEFAULT_TOKENS.ALL_CLASSES ? selectedClass : null
+    ].filter(Boolean).length;
+  }, [filters.type, filters.status, filters.deadline, searchQuery, selectedClass]);
+
   // Early return AFTER all hooks
   if (!user || !isInitialized) {
     return null;
@@ -372,17 +383,6 @@ export default function ProfessorActivities() {
       toast.error('Erro ao arquivar atividade.');
     }
   };
-
-  // Contador de filtros ativos para mobile
-  const activeFiltersCount = useMemo(() => {
-    return [
-      filters.type,
-      filters.status,
-      filters.deadline,
-      searchQuery,
-      selectedClass !== DEFAULT_TOKENS.ALL_CLASSES ? selectedClass : null
-    ].filter(Boolean).length;
-  }, [filters.type, filters.status, filters.deadline, searchQuery, selectedClass]);
 
   // Conteúdo dos filtros (reutilizado entre desktop e mobile)
   const FiltersContent = () => (
