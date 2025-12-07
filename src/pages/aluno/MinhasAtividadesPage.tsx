@@ -6,7 +6,7 @@ import { useStudentDeliveries } from '@/hooks/useStudentDeliveries';
 import { PostCard } from '@/components/feed/PostCard';
 import { ActivityFiltersBar } from '@/components/aluno/ActivityFiltersBar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ClipboardList } from 'lucide-react';
 import { DeliveryStatus } from '@/types/delivery';
 import { ActivityType } from '@/types/post';
 
@@ -73,11 +73,11 @@ export function MinhasAtividadesPage() {
 
   if (studentClassIds.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <p className="text-lg font-medium text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-full p-4 sm:p-8 text-center">
+        <p className="text-base sm:text-lg font-medium text-muted-foreground">
           Você ainda não está matriculado em nenhuma turma.
         </p>
-        <p className="text-sm text-muted-foreground mt-2">
+        <p className="text-xs sm:text-sm text-muted-foreground mt-2">
           Entre em contato com a secretaria para mais informações.
         </p>
       </div>
@@ -130,15 +130,24 @@ export function MinhasAtividadesPage() {
   const emptyState = getEmptyStateMessage();
 
   return (
-    <div className="flex flex-col h-full">
-      <header className="p-6 border-b border-border/50 glass">
-        <h1 className="text-3xl font-bold gradient-text">Minhas Atividades</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Todas as atividades das suas turmas
-        </p>
+    <div className="flex flex-col h-full w-full max-w-full overflow-x-hidden">
+      {/* Header responsivo */}
+      <header className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 border-b border-border/50 glass">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+            <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold gradient-text">Minhas Atividades</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Todas as atividades das suas turmas
+            </p>
+          </div>
+        </div>
       </header>
-      <ScrollArea className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+
+      <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+        <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4 lg:space-y-6">
           {/* Barra de Filtros */}
           {relevantActivities.length > 0 && (
             <ActivityFiltersBar
@@ -152,26 +161,26 @@ export function MinhasAtividadesPage() {
 
           {/* Lista de Atividades */}
           {filteredActivities.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredActivities.map((activity) => (
                 <PostCard post={activity.post} key={activity.post.id} />
               ))}
             </div>
           ) : relevantActivities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 p-8 text-center glass rounded-lg border border-border/50">
-              <p className="text-lg font-medium text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-48 sm:h-64 p-4 sm:p-8 text-center glass rounded-lg border border-border/50">
+              <p className="text-base sm:text-lg font-medium text-muted-foreground">
                 Nenhuma atividade encontrada.
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                 Quando seus professores publicarem novas atividades, elas aparecerão aqui.
               </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 p-8 text-center glass rounded-lg border border-border/50">
-              <p className="text-lg font-medium text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-48 sm:h-64 p-4 sm:p-8 text-center glass rounded-lg border border-border/50">
+              <p className="text-base sm:text-lg font-medium text-muted-foreground">
                 {emptyState.title}
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                 {emptyState.description}
               </p>
             </div>
