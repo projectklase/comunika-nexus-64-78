@@ -44,7 +44,9 @@ const DialogContent = React.forwardRef<
         "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
         "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         "sm:rounded-lg",
-        "touch-none select-none",
+        "touch-manipulation select-none",
+        "max-h-[100dvh]",
+        "overflow-x-hidden",
         className
       )}
       {...props}

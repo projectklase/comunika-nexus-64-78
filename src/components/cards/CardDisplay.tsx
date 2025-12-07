@@ -96,9 +96,9 @@ export const CardDisplay = ({
 
   const sizeClasses = {
     xs: 'w-12 h-16',
-    sm: 'w-full h-full', // Herda do container para grids responsivos
+    sm: 'w-full h-full max-w-[180px] max-h-[280px]', // Limite máximo + responsivo para mobile
     md: 'w-40 h-64 sm:w-44 sm:h-72',
-    lg: 'w-52 h-80 sm:w-56 sm:h-[22rem]' // Extra grande para visualização no modal
+    lg: 'w-52 h-80 sm:w-56 sm:h-[22rem]'
   };
 
   const statSizes = {

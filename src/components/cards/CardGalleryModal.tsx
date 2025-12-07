@@ -143,31 +143,45 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
 
           {/* Grid de Cartas */}
           <ScrollArea className="flex-1 px-3 sm:px-0 mt-2 sm:mt-0">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 pb-4 place-items-center">
-              {filteredCards.map(card => {
-                const isOwned = userCards.has(card.id);
-                return (
-                  <div key={card.id} className="relative aspect-[7/11] w-full">
-                    <CardDisplay
-                      card={card}
-                      size="sm"
-                      quantity={userCards.get(card.id)}
-                      onClick={() => setDetailCard(card)}
+            <div className="w-full max-w-full overflow-hidden">
+              <div className={cn(
+                "grid gap-2 sm:gap-4 pb-4",
+                "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+                "w-full max-w-[100vw]",
+                "mx-auto place-items-center"
+              )}>
+                {filteredCards.map(card => {
+                  const isOwned = userCards.has(card.id);
+                  return (
+                    <div 
+                      key={card.id} 
                       className={cn(
-                        "w-full h-full",
-                        !isOwned && 'opacity-30 grayscale'
+                        "relative aspect-[7/11]",
+                        "w-full min-w-0",
+                        "max-w-[180px]"
                       )}
-                    />
-                    {!isOwned && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="bg-black/50 rounded-full p-2">
-                          <Lock className="w-5 h-5 text-gray-400" />
+                    >
+                      <CardDisplay
+                        card={card}
+                        size="sm"
+                        quantity={userCards.get(card.id)}
+                        onClick={() => setDetailCard(card)}
+                        className={cn(
+                          "w-full h-full",
+                          !isOwned && 'opacity-30 grayscale'
+                        )}
+                      />
+                      {!isOwned && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="bg-black/50 rounded-full p-2">
+                            <Lock className="w-5 h-5 text-gray-400" />
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             
             {filteredCards.length === 0 && (
