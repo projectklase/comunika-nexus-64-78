@@ -22,22 +22,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Anti-overflow protection for mobile */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-@media (max-width: 640px) {
-  body {
-    overflow-x: hidden;
-  }
-  
-  #root {
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
-}
-
 /* Scrollbar hide utility */
 .scrollbar-hide {
   -ms-overflow-style: none;

@@ -372,54 +372,54 @@ export function PostCard({
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               {/* Badges com wrap */}
-              <div className="flex flex-wrap gap-1.5 mb-2 min-w-0 flex-1">
-                <Badge variant="outline" className={`shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 ${getTypeColor(post.type)}`}>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                <Badge variant="outline" className={`shrink-0 text-xs ${getTypeColor(post.type)}`}>
                   <span className="mr-1">{getTypeIcon(post.type)}</span>
                   {compact ? post.type.substring(0, 3) : post.type}
                 </Badge>
                 {/* FASE 2: Ocultar status em modo compacto, exceto se for agendado */}
                 {(!compact || post.status === 'SCHEDULED') && (
-                  <Badge variant="outline" className={`shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 ${getStatusColor(post.status)}`}>
+                  <Badge variant="outline" className={`${getStatusColor(post.status)} ${compact && 'text-xs px-2'}`}>
                     {compact && post.status === 'SCHEDULED' ? '⏰' : getStatusLabel(post.status)}
                   </Badge>
                 )}
-                {isNewPost && <Badge className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 bg-primary/20 text-primary border-primary/30">Novo</Badge>}
+                {isNewPost && <Badge className={`bg-primary/20 text-primary border-primary/30 ${compact ? 'text-xs px-2' : 'text-xs'}`}>Novo</Badge>}
                 {isPostToday && (
-                  <Badge className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 bg-yellow-500 text-black border-0 shadow-lg shadow-yellow-500/50 animate-pulse">
+                  <Badge className="bg-yellow-500 text-black border-0 shadow-lg shadow-yellow-500/50 animate-pulse">
                     <Star className="h-3 w-3 mr-1" />
                     HOJE
                   </Badge>
                 )}
-                {isImportant && <Badge className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60 font-medium shadow-[var(--golden-glow)] backdrop-blur-sm">
+                {isImportant && <Badge className="bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden-light))] border-[hsl(var(--golden))]/60 text-xs font-medium shadow-[var(--golden-glow)] backdrop-blur-sm">
                     <Star className="h-3 w-3 mr-1 fill-[hsl(var(--golden-light))]" />
                     Importante
                   </Badge>}
-                {isPostSaved && <Badge variant="secondary" className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5">
+                {isPostSaved && <Badge variant="secondary" className="text-xs">
                     <Bookmark className="h-3 w-3 mr-1" />
                     Salvo
                   </Badge>}
-                {delivery && <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5">
+                {delivery && <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="text-xs">
                     {delivery.reviewStatus === "AGUARDANDO" && "Aguardando revisão"}
                     {delivery.reviewStatus === "APROVADA" && "Aprovada"}
                     {delivery.reviewStatus === "DEVOLVIDA" && "Devolvida"}
                     {delivery.isLate && " (Atrasada)"}
                   </Badge>}
-                 {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5">
+                 {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-xs">
                     Atrasada
                   </Badge>}
                  
                  {/* Badge de Limite de Convites - Só aparece para eventos com limite */}
                  {post.type === "EVENTO" && post.eventCapacityEnabled && (
-                   <Badge variant="outline" className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 gap-1 bg-purple-500/10 text-purple-300 border-purple-500/30">
+                   <Badge variant="outline" className="text-xs gap-1 bg-purple-500/10 text-purple-300 border-purple-500/30">
                      {post.eventCapacityType === 'PER_STUDENT' ? (
                        <>
                          <UserPlus className="h-3 w-3" />
-                         Limite: {post.eventMaxGuestsPerStudent}
+                         Limite: {post.eventMaxGuestsPerStudent} por aluno
                        </>
                      ) : (
                        <>
                          <Users className="h-3 w-3" />
-                         Cap: {post.eventMaxParticipants}
+                         Capacidade: {post.eventMaxParticipants}
                        </>
                      )}
                    </Badge>
