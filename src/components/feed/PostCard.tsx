@@ -472,6 +472,7 @@ export function PostCard({
                   align="end"
                   className="glass-card border-border/50"
                   sideOffset={4}
+                  onCloseAutoFocus={(e) => e.preventDefault()}
                 >
                   <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
                 </DropdownMenuContent>
