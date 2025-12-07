@@ -60,7 +60,7 @@ export function GameStatCard({
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.4, delay: delay * 0.1, ease: 'easeOut' }}
+      transition={{ duration: 0.3, delay: delay * 0.08, ease: 'easeOut' }}
       className="relative group"
     >
       {/* Gradient border */}
@@ -71,7 +71,7 @@ export function GameStatCard({
       
       {/* Card content */}
       <div className={cn(
-        "relative rounded-xl p-4 backdrop-blur-md overflow-hidden",
+        "relative rounded-xl p-3 sm:p-4 backdrop-blur-md overflow-hidden",
         "bg-gradient-to-br",
         styles.gradient,
         "border border-white/10"
@@ -82,46 +82,47 @@ export function GameStatCard({
         </div>
 
         {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
           <div className={cn(
-            "p-2 rounded-lg bg-black/20 backdrop-blur-sm",
+            "p-1.5 sm:p-2 rounded-lg bg-black/20 backdrop-blur-sm",
             styles.iconColor,
             styles.iconGlow,
-            "transition-all duration-300 group-hover:scale-110"
+            "transition-all duration-300 group-hover:scale-110",
+            "[&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5"
           )}>
             {icon}
           </div>
-          <span className="text-sm font-medium text-foreground/80">{title}</span>
+          <span className="text-xs sm:text-sm font-semibold text-foreground/80">{title}</span>
         </div>
 
         {/* Value */}
-        <p className="text-2xl font-bold text-foreground mb-1">
+        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">
           {value}
         </p>
 
         {/* Subtitle or Progress */}
         {progress !== undefined ? (
-          <div className="space-y-1">
-            <div className="h-1.5 bg-black/30 rounded-full overflow-hidden">
+          <div className="space-y-0.5 sm:space-y-1">
+            <div className="h-1.5 sm:h-2 bg-black/30 rounded-full overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.8, delay: delay * 0.1 + 0.3 }}
+                transition={{ duration: 0.8, delay: delay * 0.08 + 0.3 }}
                 className={cn(
                   "h-full rounded-full bg-gradient-to-r",
                   styles.border
                 )}
               />
             </div>
-            <p className="text-xs text-foreground/60">{subtitle}</p>
+            <p className="text-[10px] sm:text-xs text-foreground/60">{subtitle}</p>
           </div>
         ) : (
-          <p className="text-xs text-foreground/60">{subtitle}</p>
+          <p className="text-[10px] sm:text-xs text-foreground/60">{subtitle}</p>
         )}
 
         {/* Level card special effect */}
         {variant === 'level' && (
-          <div className="absolute -top-4 -right-4 w-16 h-16 bg-yellow-500/10 rounded-full blur-xl animate-pulse" />
+          <div className="absolute -top-4 -right-4 w-12 h-12 sm:w-16 sm:h-16 bg-yellow-500/10 rounded-full blur-xl animate-pulse" />
         )}
       </div>
     </motion.div>
