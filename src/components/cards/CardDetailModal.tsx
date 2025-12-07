@@ -31,27 +31,32 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn(
-        // Mobile: tela cheia sem bordas
-        "w-screen h-screen max-h-screen rounded-none p-0 m-0",
-        "fixed inset-0 translate-x-0 translate-y-0",
-        // Desktop: modal elegante centralizado
-        "sm:w-auto sm:h-auto sm:max-w-4xl sm:max-h-[90vh]",
-        "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
-        "sm:rounded-lg sm:p-6",
-        // Layout base
-        "flex flex-col overflow-hidden",
-        "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900",
-        "border-0 sm:border sm:border-gray-700"
-      )}>
-        {/* Header fixo no topo */}
+      <DialogContent 
+        className={cn(
+          // Mobile: tela cheia fixa sem bordas
+          "w-screen h-[100dvh] max-h-[100dvh] rounded-none p-0 m-0 border-0",
+          "inset-0 left-0 right-0 top-0 bottom-0",
+          "translate-x-0 translate-y-0",
+          // Desktop: modal elegante centralizado
+          "sm:w-auto sm:h-auto sm:max-w-4xl sm:max-h-[90vh]",
+          "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+          "sm:rounded-lg sm:p-6 sm:border sm:border-gray-700",
+          // Layout base
+          "flex flex-col overflow-hidden overscroll-none",
+          "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
+        )}
+        style={{ position: 'fixed' }}
+      >
+        {/* Header fixo no topo - com safe area padding */}
         <DialogHeader className={cn(
-          "relative z-10 px-4 pt-4 pb-2 shrink-0",
-          "bg-gray-900/95 backdrop-blur-sm border-b border-gray-800",
-          "sm:bg-transparent sm:border-0 sm:pb-4"
+          "shrink-0 px-4 pt-12 pb-3",
+          "bg-gray-900/98 backdrop-blur-sm border-b border-gray-800",
+          "sm:bg-transparent sm:border-0 sm:pt-0 sm:pb-4 sm:px-0"
         )}>
           <DialogTitle className="flex items-center justify-center gap-2 text-lg sm:text-2xl flex-wrap text-center">
-            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] break-words">{card.name}</span>
+            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] break-words max-w-[200px] sm:max-w-none">
+              {card.name}
+            </span>
             <Badge 
               variant="secondary" 
               className={cn(
@@ -64,25 +69,19 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           </DialogTitle>
         </DialogHeader>
 
-        {/* Conteúdo scrollável com overflow prevention */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-0 max-w-full">
+        {/* Conteúdo scrollável - apenas esta área tem scroll */}
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y px-4 py-4 sm:px-0 sm:py-0"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-6 sm:gap-6 pb-6">
             
-            {/* Coluna da Carta */}
-            <div className="flex flex-col items-center gap-3 sm:pt-6 sm:sticky sm:top-6 self-start w-full">
-              {/* Mobile: carta grande para visualização */}
-              <div className="sm:hidden">
+            {/* Coluna da Carta - MAIOR no mobile */}
+            <div className="flex flex-col items-center gap-3 sm:sticky sm:top-6 self-start">
+              <div className="w-full max-w-[280px] sm:max-w-none flex justify-center">
                 <CardDisplay 
                   card={card} 
                   size="lg"
-                  showStats={true}
-                />
-              </div>
-              {/* Desktop: tamanho médio */}
-              <div className="hidden sm:block">
-                <CardDisplay 
-                  card={card} 
-                  size="md"
                   showStats={true}
                 />
               </div>
