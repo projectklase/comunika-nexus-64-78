@@ -345,7 +345,7 @@ const Login = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_0)] bg-[length:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
       
       {/* Container with max width and centered */}
-      <div className="relative z-10 min-h-screen w-full max-w-[1360px] mx-auto">
+      <div className="relative z-10 min-h-screen w-full max-w-[1360px] mx-auto px-4 sm:px-6 overflow-hidden">
         
         {/* Main grid layout - 12 columns system */}
         <div className="min-h-screen grid lg:grid-cols-12 lg:gap-x-8 xl:gap-x-10 2xl:gap-x-12 items-center py-6 lg:py-10">
@@ -403,7 +403,7 @@ const Login = () => {
           </div>
           
           {/* Hero mobile version - md only */}
-          <div className="block md:block lg:hidden px-6 py-8 text-center">
+          <div className="block md:block lg:hidden px-4 sm:px-6 py-6 sm:py-8 text-center">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
               Comunicação escolar, <span className="text-primary/90">sem atrito</span>
             </h1>
@@ -413,13 +413,9 @@ const Login = () => {
           </div>
           
           {/* Login Card - col-span-5 on lg+ */}
-          <div className="flex items-center justify-center px-4 lg:col-span-5 lg:px-6 py-4 lg:py-8">
+          <div className="flex items-center justify-center px-0 lg:col-span-5 lg:px-6 py-4 lg:py-8 w-full">
             <Card 
-              className="w-full border-border/30 bg-card/95 backdrop-blur-sm shadow-lg"
-              style={{ 
-                maxWidth: 'clamp(360px, 28vw, 440px)',
-                minWidth: '360px'
-              }}
+              className="w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg"
             >
               <CardHeader className="text-center space-y-3 px-6 py-6">
                 <div className="flex items-center justify-center gap-2 mb-1">
