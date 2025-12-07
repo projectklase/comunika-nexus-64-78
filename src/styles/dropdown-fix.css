@@ -1,0 +1,22 @@
+/* Previne scroll ao abrir dropdown menus */
+[data-radix-popper-content-wrapper] {
+  position: fixed !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Garante que o dropdown não cause reflow */
+[data-radix-dropdown-menu-content] {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
+/* Previne scroll focus */
+[data-radix-dropdown-menu-trigger] {
+  scroll-margin: 0 !important;
+}
+
+/* Desabilita smooth scroll durante dropdown */
+body:has([data-state="open"][data-radix-dropdown-menu-content]) {
+  scroll-behavior: auto !important;
+}

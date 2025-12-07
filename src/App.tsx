@@ -16,6 +16,7 @@ import { ConditionalNotificationProvider } from "@/components/ConditionalNotific
 import { ModalManagerProvider } from "@/components/ui/app-dialog";
 import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { PlatformLayout } from "@/layouts/PlatformLayout";
+import './styles/dropdown-fix.css';
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";

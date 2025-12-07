@@ -101,6 +101,32 @@ export function PostCard({
     description: "",
     postId: ""
   });
+  
+  // Estado para controlar o dropdown e prevenir scroll
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  
+  useEffect(() => {
+    if (dropdownOpen) {
+      // Salva a posição atual do scroll
+      const scrollY = window.scrollY;
+      
+      // Previne qualquer scroll
+      const preventScroll = () => {
+        window.scrollTo(0, scrollY);
+      };
+      
+      // Adiciona listeners
+      window.addEventListener('scroll', preventScroll, { passive: false });
+      document.body.style.overflow = 'hidden';
+      
+      // Cleanup
+      return () => {
+        window.removeEventListener('scroll', preventScroll);
+        document.body.style.overflow = '';
+      };
+    }
+  }, [dropdownOpen]);
+  
   // Memoize expensive computations
   const [delivery, setDelivery] = useState<any>(null);
   useEffect(() => {
@@ -454,7 +480,7 @@ export function PostCard({
               </div>
             </div>
 
-            {canEdit && <DropdownMenu modal={false}>
+            {canEdit && <DropdownMenu modal={false} open={dropdownOpen} onOpenChange={setDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
@@ -466,18 +492,27 @@ export function PostCard({
                       e.stopPropagation();
                       e.preventDefault();
                     }}
-                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
-                  align="end" 
+                  align="end"
+                  side="bottom"
                   className="glass-card border-border/50"
                   onCloseAutoFocus={(e) => e.preventDefault()}
+                  onEscapeKeyDown={() => setDropdownOpen(false)}
+                  onPointerDownOutside={() => setDropdownOpen(false)}
+                  onInteractOutside={(e) => {
+                    e.preventDefault();
+                    setDropdownOpen(false);
+                  }}
                   sideOffset={5}
-                  avoidCollisions={true}
-                  collisionPadding={8}
+                  collisionPadding={20}
                 >
                   <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
                 </DropdownMenuContent>
