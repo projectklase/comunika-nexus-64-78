@@ -463,11 +463,16 @@ export function PostCard({
                     className="h-8 w-8 p-0" 
                     aria-label="Opções do post"
                     onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="glass-card border-border/50">
+                <DropdownMenuContent 
+                  align="end" 
+                  className="glass-card border-border/50"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                >
                   <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
                 </DropdownMenuContent>
               </DropdownMenu>}
