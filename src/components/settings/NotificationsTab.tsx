@@ -57,7 +57,7 @@ export function NotificationsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* Notification Channels */}
       <Card>
         <CardHeader>
@@ -92,7 +92,7 @@ export function NotificationsTab() {
               onClick={() => trackBlockedFeatureView('email_notifications')}
             />
           ) : (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
@@ -102,11 +102,13 @@ export function NotificationsTab() {
                   Receba notificações por e-mail
                 </p>
               </div>
-              <Switch
-                id="email-notifications"
-                checked={notifications.email}
-                onCheckedChange={() => handleToggle('email')}
-              />
+              <div className="self-end sm:self-center">
+                <Switch
+                  id="email-notifications"
+                  checked={notifications.email}
+                  onCheckedChange={() => handleToggle('email')}
+                />
+              </div>
             </div>
           )}
 
@@ -134,7 +136,7 @@ export function NotificationsTab() {
               onClick={() => trackBlockedFeatureView('push_notifications')}
             />
           ) : (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Smartphone className="h-4 w-4 text-muted-foreground" />
@@ -144,17 +146,19 @@ export function NotificationsTab() {
                   Receba notificações push no navegador
                 </p>
               </div>
-              <Switch
-                id="push-notifications"
-                checked={notifications.push}
-                onCheckedChange={() => handleToggle('push')}
-              />
+              <div className="self-end sm:self-center">
+                <Switch
+                  id="push-notifications"
+                  checked={notifications.push}
+                  onCheckedChange={() => handleToggle('push')}
+                />
+              </div>
             </div>
           )}
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
@@ -164,11 +168,13 @@ export function NotificationsTab() {
                 Receba um resumo das atividades do dia
               </p>
             </div>
-            <Switch
-              id="daily-summary"
-              checked={notifications.dailySummary}
-              onCheckedChange={() => handleToggle('dailySummary')}
-            />
+            <div className="self-end sm:self-center">
+              <Switch
+                id="daily-summary"
+                checked={notifications.dailySummary}
+                onCheckedChange={() => handleToggle('dailySummary')}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -185,7 +191,7 @@ export function NotificationsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -195,16 +201,18 @@ export function NotificationsTab() {
                 Novos posts e comunicados importantes
               </p>
             </div>
-            <Switch
-              id="posts-notifications"
-              checked={notifications.posts}
-              onCheckedChange={() => handleToggle('posts')}
-            />
+            <div className="self-end sm:self-center">
+              <Switch
+                id="posts-notifications"
+                checked={notifications.posts}
+                onCheckedChange={() => handleToggle('posts')}
+              />
+            </div>
           </div>
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -214,16 +222,18 @@ export function NotificationsTab() {
                 Notificações sobre atividades e prazos de entrega
               </p>
             </div>
-            <Switch
-              id="activities-notifications"
-              checked={notifications.activities}
-              onCheckedChange={() => handleToggle('activities')}
-            />
+            <div className="self-end sm:self-center">
+              <Switch
+                id="activities-notifications"
+                checked={notifications.activities}
+                onCheckedChange={() => handleToggle('activities')}
+              />
+            </div>
           </div>
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -233,11 +243,13 @@ export function NotificationsTab() {
                 Lembretes de vencimentos e agendamentos
               </p>
             </div>
-            <Switch
-              id="reminders-notifications"
-              checked={notifications.reminders}
-              onCheckedChange={() => handleToggle('reminders')}
-            />
+            <div className="self-end sm:self-center">
+              <Switch
+                id="reminders-notifications"
+                checked={notifications.reminders}
+                onCheckedChange={() => handleToggle('reminders')}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
