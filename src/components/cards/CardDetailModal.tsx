@@ -37,10 +37,10 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           "w-screen h-[100dvh] max-h-[100dvh] rounded-none p-0 m-0 border-0",
           "inset-0 left-0 right-0 top-0 bottom-0",
           "translate-x-0 translate-y-0",
-          // Desktop: modal elegante centralizado
-          "sm:w-auto sm:h-auto sm:max-w-4xl sm:max-h-[90vh]",
+          // Desktop: modal elegante centralizado - EXPANDIDO
+          "sm:w-[90vw] sm:max-w-5xl sm:h-auto sm:max-h-[90vh]",
           "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
-          "sm:rounded-lg sm:p-6 sm:border sm:border-gray-700",
+          "sm:rounded-xl sm:p-8 sm:border-2 sm:border-gray-600",
           // Layout base
           "flex flex-col overflow-hidden overscroll-none",
           "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
@@ -74,7 +74,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y px-4 py-4 sm:px-0 sm:py-0"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-6 pb-4 sm:pb-6">
+          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-8 pb-4 sm:pb-8">
             
             {/* Coluna da Carta - CENTRALIZADA */}
             <div className="flex flex-col items-center justify-center gap-3 w-full sm:sticky sm:top-6 sm:self-start">
@@ -102,7 +102,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
             </div>
 
             {/* Coluna de Detalhes - apenas desktop para info duplicada */}
-            <div className="space-y-3 sm:space-y-4 overflow-hidden max-w-full min-w-0 pb-6">
+            <div className="space-y-3 sm:space-y-5 overflow-hidden max-w-full min-w-0 pb-6">
               
               {/* Card Info - apenas desktop (já está na carta no mobile) */}
               <div className={cn(
@@ -111,7 +111,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
                 frameColors.outer,
                 frameColors.glow
               )}>
-                <div className="bg-gray-900/90 rounded p-3 space-y-2 overflow-hidden">
+                <div className="bg-gray-900/90 rounded p-3 sm:p-4 space-y-2 sm:space-y-3 overflow-hidden">
                   <div className="min-w-0">
                     <p className="text-xs text-gray-400">Categoria</p>
                     <p className="font-semibold text-base text-white truncate">{CATEGORY_LABELS[card.category]}</p>
@@ -130,22 +130,22 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
 
               {/* Description - apenas desktop (mobile mostra acima) */}
               {card.description && (
-                <div className="hidden sm:block p-3 bg-gray-800/50 rounded-lg border border-gray-700 w-full overflow-hidden">
-                  <p className="text-xs text-gray-400 mb-1">Descrição</p>
+                <div className="hidden sm:block p-3 sm:p-4 bg-gray-800/50 rounded-lg border border-gray-700 w-full overflow-hidden">
+                  <p className="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Descrição</p>
                   <p className="text-sm text-gray-200 break-words whitespace-pre-wrap">{card.description}</p>
                 </div>
               )}
 
               {/* Stats - apenas desktop (já visíveis na carta) */}
-              <div className="hidden sm:grid grid-cols-2 gap-3 w-full">
-                <div className="flex items-center gap-2 p-3 bg-gradient-to-br from-orange-600/20 to-orange-900/20 rounded-lg border-2 border-orange-500/50 overflow-hidden">
+              <div className="hidden sm:grid grid-cols-2 gap-4 w-full">
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-orange-600/20 to-orange-900/20 rounded-lg border-2 border-orange-500/50 overflow-hidden">
                   <Zap className="w-6 h-6 text-orange-400 fill-orange-400 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[10px] text-orange-300 uppercase tracking-wide">Ataque</p>
                     <p className="text-2xl font-bold text-white">{card.atk}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-gradient-to-br from-blue-600/20 to-blue-900/20 rounded-lg border-2 border-blue-500/50 overflow-hidden">
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-600/20 to-blue-900/20 rounded-lg border-2 border-blue-500/50 overflow-hidden">
                   <Shield className="w-6 h-6 text-blue-400 fill-blue-400 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[10px] text-blue-300 uppercase tracking-wide">Defesa</p>
