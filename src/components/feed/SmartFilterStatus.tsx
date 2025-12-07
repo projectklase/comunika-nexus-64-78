@@ -27,7 +27,7 @@ export function SmartFilterStatus({
   }
 
   return (
-    <Card className={`glass-card border-border/50 ${className}`}>
+    <Card className={`glass-card border-border/50 overflow-hidden w-full max-w-full ${className}`}>
       <CardContent className="p-2.5 sm:p-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
