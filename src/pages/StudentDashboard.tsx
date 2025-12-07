@@ -137,14 +137,14 @@ const StudentDashboard = memo(function StudentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="container mx-auto px-4 py-6" role="main">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 overflow-x-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6" role="main">
         
         {/* Main Layout - 2 Columns: 65% Main + 35% Sidebar */}
-        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 sm:gap-5 lg:gap-6">
           
           {/* ========== COLUNA PRINCIPAL (65%) ========== */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-5 lg:space-y-6">
             
             {/* 1. Saudação + Status */}
             <section 
@@ -159,9 +159,9 @@ const StudentDashboard = memo(function StudentDashboard() {
               aria-labelledby="next-days-section"
               className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h2 id="next-days-section" className="text-xl font-semibold flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 id="next-days-section" className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Próximos 7 dias
                 </h2>
               </div>
@@ -194,7 +194,7 @@ const StudentDashboard = memo(function StudentDashboard() {
           </div>
           
           {/* ========== COLUNA LATERAL (35%) ========== */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-5 lg:space-y-6">
             
             {/* 1. Mini Calendário */}
             <section 
@@ -213,10 +213,10 @@ const StudentDashboard = memo(function StudentDashboard() {
               aria-labelledby="progress-section"
               className="animate-in fade-in slide-in-from-right-4 duration-700 delay-75"
             >
-              <div className="glass-card border-border/50 rounded-lg p-6 space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Seu Progresso</h3>
+              <div className="glass-card border-border/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <h3 className="text-base sm:text-lg font-semibold">Seu Progresso</h3>
                 </div>
                 
                 <ProgressStripDashboard posts={posts} />
