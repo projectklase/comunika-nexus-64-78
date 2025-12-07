@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   ArrowLeft, 
   FileText, 
@@ -23,8 +24,7 @@ import {
   Eye,
   MessageSquare,
   Download,
-  BarChart3,
-  RefreshCw
+  BarChart3
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -273,50 +273,73 @@ export default function ActivityDetail() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-4">
+      {/* Header - Responsivo */}
+      <div className="flex flex-col gap-4">
+        {/* Linha 1: Voltar + Ações */}
+        <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" asChild className="p-0 h-auto">
             <Link to="/professor/atividades">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar às Atividades
+              <span className="hidden sm:inline">Voltar às Atividades</span>
+              <span className="sm:hidden">Voltar</span>
             </Link>
           </Button>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className={cn("flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium", typeConfig.color)}>
-                <TypeIcon className="h-4 w-4" />
-                {typeConfig.label}
-              </div>
-              <Badge variant="outline">
-                <Users className="h-3 w-3 mr-1" />
-                {schoolClass.name}
-              </Badge>
-            </div>
-            <h1 className="text-3xl font-bold gradient-text">{activity.title}</h1>
-            {activity.body && (
-              <p className="text-muted-foreground max-w-3xl">{activity.body}</p>
-            )}
+          {/* Ações - Mobile: ícones | Desktop: com texto */}
+          <div className="flex items-center gap-2">
+            {/* Exportar CSV */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={handleExportCSV} className="sm:hidden min-h-11 min-w-11">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Exportar CSV</TooltipContent>
+            </Tooltip>
+            <Button variant="outline" onClick={handleExportCSV} className="hidden sm:flex">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+
+            {/* Ver Turma */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" asChild className="sm:hidden min-h-11 min-w-11">
+                  <Link to={`/professor/turma/${classId}`}>
+                    <Eye className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Ver Turma</TooltipContent>
+            </Tooltip>
+            <Button asChild className="hidden sm:flex">
+              <Link to={`/professor/turma/${classId}`}>
+                <Eye className="h-4 w-4 mr-2" />
+                Ver Turma
+              </Link>
+            </Button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setRefreshTrigger(prev => prev + 1)}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar Entregas
-          </Button>
-          <Button variant="outline" onClick={handleExportCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
-          <Button asChild>
-            <Link to={`/professor/turma/${classId}`}>
-              <Eye className="h-4 w-4 mr-2" />
-              Ver Turma
-            </Link>
-          </Button>
+        {/* Linha 2: Badges */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className={cn("flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium", typeConfig.color)}>
+            <TypeIcon className="h-4 w-4" />
+            {typeConfig.label}
+          </div>
+          <Badge variant="outline">
+            <Users className="h-3 w-3 mr-1" />
+            {schoolClass.name}
+          </Badge>
         </div>
+
+        {/* Linha 3: Título responsivo */}
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">{activity.title}</h1>
+        
+        {/* Linha 4: Descrição */}
+        {activity.body && (
+          <p className="text-sm sm:text-base text-muted-foreground max-w-3xl">{activity.body}</p>
+        )}
       </div>
 
       {/* KPIs */}
