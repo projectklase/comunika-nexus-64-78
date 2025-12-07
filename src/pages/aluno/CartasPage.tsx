@@ -64,23 +64,23 @@ export default function CartasPage() {
 
   return (
     <AppLayout>
-      <div className="container max-w-7xl mx-auto p-6 space-y-6">
+      <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-6 space-y-4 sm:space-y-6 mx-auto lg:max-w-7xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2 sm:gap-0">
           <div>
-            <h1 className="text-3xl font-bold">Sistema de Cartas</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">Sistema de Cartas</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Colecione, construa decks e batalhe!
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-yellow-500" />
-            <span className="text-xl font-bold">{user?.total_xp || 0} XP</span>
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
+            <span className="text-base sm:text-xl font-bold">{user?.total_xp || 0} XP</span>
           </div>
         </div>
 
         {/* Estatísticas */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <GameStatCard
             icon={<BookOpen className="w-5 h-5" />}
             title="Coleção"
@@ -121,7 +121,7 @@ export default function CartasPage() {
         </div>
 
         {/* Ações Rápidas */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <GameActionButton
             icon={<Package className="w-full h-full" />}
             title="Abrir Pacotes"
@@ -163,9 +163,9 @@ export default function CartasPage() {
         {/* Meus Decks */}
         {decks.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold mb-4">Meus Decks</h2>
+            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Meus Decks</h2>
             <ScrollArea className="w-full">
-              <div className="flex gap-4 pb-4">
+              <div className="flex gap-3 sm:gap-4 pb-3 sm:pb-4">
                 {decks.map((deck, idx) => (
                   <GameDeckCard
                     key={deck.id}
@@ -201,14 +201,14 @@ export default function CartasPage() {
         {/* Cartas Recentes */}
         {userCards.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold mb-4">Cartas Recentes</h2>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Cartas Recentes</h2>
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3 lg:gap-4">
               {userCards.slice(0, 8).map(uc => uc.card && (
                 <CardDisplay 
                   key={uc.id} 
                   card={uc.card} 
                   quantity={uc.quantity}
-                  size="sm"
+                  size="xs"
                   onClick={() => setSelectedCard(uc.card!)}
                 />
               ))}
