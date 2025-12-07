@@ -1196,15 +1196,30 @@
     background-repeat: no-repeat;
   }
 
+  /* Sakura Dreams - Make containers transparent to show background */
+  [data-theme="theme_sakura_dreams"] #root,
+  [data-theme="theme_sakura_dreams"] #root > div,
+  [data-theme="theme_sakura_dreams"] .min-h-screen,
+  [data-theme="theme_sakura_dreams"] .bg-background {
+    background: transparent !important;
+  }
+
+  /* Sakura Dreams - Semi-transparent content area for legibility */
+  [data-theme="theme_sakura_dreams"] main {
+    background: hsl(280 45% 10% / 0.7) !important;
+    backdrop-filter: blur(8px);
+  }
+
   [data-theme="theme_sakura_dreams"] .sidebar,
   [data-theme="theme_sakura_dreams"] [data-sidebar] {
-    background: hsl(280 45% 8% / 0.85);
+    background: hsl(280 45% 8% / 0.85) !important;
     backdrop-filter: blur(12px);
   }
 
   [data-theme="theme_sakura_dreams"] .glass,
-  [data-theme="theme_sakura_dreams"] .glass-card {
-    background: hsl(280 40% 12% / 0.75);
+  [data-theme="theme_sakura_dreams"] .glass-card,
+  [data-theme="theme_sakura_dreams"] [class*="Card"] {
+    background: hsl(280 40% 12% / 0.75) !important;
     backdrop-filter: blur(16px);
   }
 
