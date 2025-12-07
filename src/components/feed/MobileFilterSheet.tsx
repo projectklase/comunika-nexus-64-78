@@ -16,7 +16,7 @@ export function MobileFilterSheet({ children, activeFiltersCount }: MobileFilter
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full sm:w-auto flex items-center gap-2 justify-center relative"
+          className="w-full flex items-center gap-2 justify-center min-h-11 relative"
         >
           <SlidersHorizontal className="h-4 w-4" />
           <span>Filtros</span>
@@ -30,11 +30,11 @@ export function MobileFilterSheet({ children, activeFiltersCount }: MobileFilter
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Filtros e Preferências</SheetTitle>
+      <SheetContent side="bottom" className="h-[90vh] sm:h-[85vh] overflow-y-auto px-4 sm:px-6">
+        <SheetHeader className="pb-3 sm:pb-4">
+          <SheetTitle className="text-base sm:text-lg">Filtros e Preferências</SheetTitle>
         </SheetHeader>
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
           {children}
         </div>
       </SheetContent>

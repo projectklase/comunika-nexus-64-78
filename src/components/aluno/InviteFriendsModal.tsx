@@ -324,23 +324,23 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-purple-400" />
-            Convidar Amigo para {event.title}
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[425px] max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="pb-2 sm:pb-3">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
+            <span className="line-clamp-1">Convidar para {event.title}</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Preencha os dados do amigo e responsável para enviar o convite.
           </DialogDescription>
         </DialogHeader>
 
         {/* Contador de Convites - Só aparece se houver limite configurado */}
         {capacityCheck && capacityCheck.max && (
-          <div className="px-6 py-4 border-b border-border/50 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+          <div className="py-3 sm:py-4 border-b border-border/50 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg -mx-1 px-3 sm:px-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Seus convites para este evento
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Seus convites
               </span>
               <Badge variant={
                 !capacityCheck.canInvite 
@@ -381,15 +381,16 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
           {/* Nome do Amigo */}
-          <div className="space-y-2">
-            <Label htmlFor="friendName">Nome do Amigo *</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="friendName" className="text-xs sm:text-sm">Nome do Amigo *</Label>
             <Input
               id="friendName"
               placeholder="Ex: João Silva"
               {...register('friendName')}
               disabled={isSubmitting}
+              className="min-h-11"
             />
             {errors.friendName && (
               <p className="text-sm text-destructive">{errors.friendName.message}</p>
