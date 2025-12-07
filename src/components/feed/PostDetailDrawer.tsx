@@ -331,7 +331,7 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
       <DrawerContent 
-        className="max-h-[95vh]"
+        className="max-h-[80vh] sm:max-h-[95vh] rounded-t-2xl sm:rounded-t-lg"
         role="dialog"
         aria-labelledby="post-detail-title"
         aria-describedby="post-detail-description"
