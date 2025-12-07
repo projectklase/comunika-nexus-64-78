@@ -243,103 +243,104 @@ export default function ProfessorClassDetail() {
   };
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+        <Button variant="ghost" size="sm" asChild className="min-h-10">
           <Link to="/professor/turmas">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
+            <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Voltar</span>
           </Link>
         </Button>
         
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold gradient-text">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold gradient-text truncate">
               {schoolClass.name}
             </h1>
             {schoolClass.year && (
-              <Badge variant="secondary">{schoolClass.year}</Badge>
+              <Badge variant="secondary" className="text-xs sm:text-sm">{schoolClass.year}</Badge>
             )}
           </div>
           
-          <p className="text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">
             {info.schedule} • {info.levelModality}
           </p>
         </div>
         
-        <div className="flex gap-2">
-          <Button asChild>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button asChild className="flex-1 sm:flex-none min-h-11">
             <Link to={`/professor/atividades/nova?turma=${schoolClass.id}`}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Atividade
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Nova Atividade</span>
+              <span className="sm:hidden">Nova</span>
             </Link>
           </Button>
           
-            <Button variant="outline" asChild>
-              <Link to="/professor/calendario">
-                <Calendar className="h-4 w-4 mr-2" />
-                Ver no Calendário
-              </Link>
-            </Button>
+          <Button variant="outline" asChild className="flex-1 sm:flex-none min-h-11">
+            <Link to="/professor/calendario">
+              <Calendar className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Calendário</span>
+            </Link>
+          </Button>
         </div>
       </div>
       
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="activities">Atividades</TabsTrigger>
-          <TabsTrigger value="deliveries">Entregas</TabsTrigger>
-          <TabsTrigger value="students">Alunos</TabsTrigger>
+      <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+        <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Visão Geral</TabsTrigger>
+          <TabsTrigger value="activities" className="text-xs sm:text-sm">Atividades</TabsTrigger>
+          <TabsTrigger value="deliveries" className="text-xs sm:text-sm">Entregas</TabsTrigger>
+          <TabsTrigger value="students" className="text-xs sm:text-sm">Alunos</TabsTrigger>
           {attendanceEnabled && (
-            <TabsTrigger value="attendance">
-              <ClipboardList className="h-4 w-4 mr-2" />
-              Chamada
+            <TabsTrigger value="attendance" className="text-xs sm:text-sm">
+              <ClipboardList className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Chamada</span>
             </TabsTrigger>
           )}
         </TabsList>
         
         {/* Visão Geral */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4 sm:space-y-6">
           {/* KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                    <AlertCircle className="h-6 w-6 text-orange-600" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4">
+                  <div className="p-1.5 sm:p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                    <AlertCircle className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{metrics.pendingDeliveries}</p>
-                    <p className="text-sm text-muted-foreground">Entregas Pendentes</p>
+                  <div className="text-center sm:text-left">
+                    <p className="text-lg sm:text-2xl font-bold">{metrics.pendingDeliveries}</p>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground">Pendentes</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <Clock className="h-6 w-6 text-blue-600" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4">
+                  <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                    <Clock className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{metrics.weeklyDeadlines}</p>
-                    <p className="text-sm text-muted-foreground">Prazos esta Semana</p>
+                  <div className="text-center sm:text-left">
+                    <p className="text-lg sm:text-2xl font-bold">{metrics.weeklyDeadlines}</p>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground">Prazos</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <FileText className="h-6 w-6 text-green-600" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4">
+                  <div className="p-1.5 sm:p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                    <FileText className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{metrics.publishedActivities}</p>
-                    <p className="text-sm text-muted-foreground">Atividades Publicadas</p>
+                  <div className="text-center sm:text-left">
+                    <p className="text-lg sm:text-2xl font-bold">{metrics.publishedActivities}</p>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground">Publicadas</p>
                   </div>
                 </div>
               </CardContent>

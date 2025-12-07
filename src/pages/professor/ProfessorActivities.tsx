@@ -371,9 +371,9 @@ export default function ProfessorActivities() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumb>
+    <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
+      {/* Breadcrumbs - Hidden on mobile */}
+      <Breadcrumb className="hidden sm:block">
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink href="/professor/dashboard">Professor</BreadcrumbLink>
@@ -386,27 +386,29 @@ export default function ProfessorActivities() {
       </Breadcrumb>
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Minhas Atividades</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">Minhas Atividades</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Gerencie todas as atividades das suas turmas
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button 
             variant="outline"
             onClick={() => exportActivities(finalFilteredPosts)}
             disabled={finalFilteredPosts.length === 0}
+            className="flex-1 sm:flex-none min-h-11"
           >
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Exportar ({finalFilteredPosts.length})
+            <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Exportar ({finalFilteredPosts.length})</span>
           </Button>
-          <Button asChild>
+          <Button asChild className="flex-1 sm:flex-none min-h-11">
             <Link to="/professor/atividades/nova">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Atividade
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Nova Atividade</span>
+              <span className="sm:hidden">Nova</span>
             </Link>
           </Button>
         </div>
@@ -414,10 +416,10 @@ export default function ProfessorActivities() {
 
       {/* Filtros */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-sm sm:text-lg">Filtros</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6 pt-0 sm:pt-0">
           {/* Linha 1: Busca e Turma */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
