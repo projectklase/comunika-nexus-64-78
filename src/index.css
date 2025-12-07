@@ -1133,6 +1133,81 @@
     --sidebar-ring: 10 90% 55%;
   }
 
+  /* Theme Premium: Sakura Dreams - COM IMAGEM DE FUNDO */
+  [data-theme="theme_sakura_dreams"] {
+    /* Cores extraídas da imagem - Rosa/Roxo suave */
+    --background: 280 45% 10%;
+    --foreground: 330 30% 95%;
+    
+    --card: 280 40% 12%;
+    --card-foreground: 330 30% 95%;
+    --glass: 280 45% 14%;
+    --glass-border: 330 80% 70%;
+    
+    --popover: 280 45% 14%;
+    --popover-foreground: 330 30% 95%;
+    
+    --primary: 330 80% 70%;
+    --primary-foreground: 280 20% 10%;
+    --primary-glow: 330 80% 80%;
+    
+    --secondary: 290 70% 60%;
+    --secondary-foreground: 280 20% 10%;
+    --secondary-glow: 290 70% 70%;
+    
+    --success: 340 75% 65%;
+    --success-foreground: 280 20% 10%;
+    --success-glow: 340 75% 75%;
+    
+    --muted: 280 30% 16%;
+    --muted-foreground: 330 20% 70%;
+    
+    --accent: 340 75% 65%;
+    --accent-foreground: 280 20% 10%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 280 35% 22%;
+    --input: 280 35% 20%;
+    --ring: 330 80% 70%;
+    
+    --golden: 330 80% 70%;
+    --golden-light: 330 80% 80%;
+    --golden-dark: 330 60% 50%;
+    --golden-muted: 330 40% 35%;
+    
+    --sidebar-background: 280 45% 8%;
+    --sidebar-foreground: 330 30% 95%;
+    --sidebar-primary: 330 80% 70%;
+    --sidebar-primary-foreground: 280 20% 10%;
+    --sidebar-accent: 280 40% 16%;
+    --sidebar-accent-foreground: 330 30% 95%;
+    --sidebar-border: 280 35% 22%;
+    --sidebar-ring: 330 80% 70%;
+  }
+
+  /* Sakura Dreams - Background Image Application */
+  [data-theme="theme_sakura_dreams"] body {
+    background-image: url('/themes/sakura-dreams-bg.png');
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  [data-theme="theme_sakura_dreams"] .sidebar,
+  [data-theme="theme_sakura_dreams"] [data-sidebar] {
+    background: hsl(280 45% 8% / 0.85);
+    backdrop-filter: blur(12px);
+  }
+
+  [data-theme="theme_sakura_dreams"] .glass,
+  [data-theme="theme_sakura_dreams"] .glass-card {
+    background: hsl(280 40% 12% / 0.75);
+    backdrop-filter: blur(16px);
+  }
+
 @layer base {
   * {
     @apply border-border;
