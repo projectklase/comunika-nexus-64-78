@@ -293,24 +293,24 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   return (
     <div className="w-full space-y-3">
       {/* Quick Filters - Scroll Horizontal em Mobile */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
-        <div className="flex gap-2">
-          {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
-            <Button
-              key={key}
-              variant={filters.quickFilter === key ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleQuickFilter(key)}
-              className="shrink-0 h-9 px-3 text-xs sm:text-sm whitespace-nowrap"
-              aria-pressed={filters.quickFilter === key}
-              aria-label={`Filtro ${label}`}
-            >
-              <Icon className="h-3.5 w-3.5 mr-1.5" />
-              {label}
-            </Button>
-          ))}
+        <div className="w-full overflow-x-auto -mx-3 sm:mx-0">
+          <div className="flex gap-2 pb-2 px-3 sm:px-0 w-max sm:w-full">
+            {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
+              <Button
+                key={key}
+                variant={filters.quickFilter === key ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleQuickFilter(key)}
+                className="shrink-0 h-9 px-3 text-xs sm:text-sm whitespace-nowrap min-w-fit"
+                aria-pressed={filters.quickFilter === key}
+                aria-label={`Filtro ${label}`}
+              >
+                <Icon className="h-3.5 w-3.5 mr-1.5" />
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
 
       {/* Search + Filtros */}
       <div className="flex gap-2 w-full">
