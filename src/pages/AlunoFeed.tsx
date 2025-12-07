@@ -117,7 +117,7 @@ export default function AlunoFeed() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden w-full max-w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="p-1.5 sm:p-2 rounded-lg bg-primary/20 border border-primary/30 w-fit">
