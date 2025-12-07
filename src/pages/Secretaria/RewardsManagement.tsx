@@ -11,6 +11,7 @@ import { RedemptionHistory } from '@/components/rewards/RedemptionHistory';
 import { BonusEventModal } from '@/components/rewards/BonusEventModal';
 import { AdminKoinHistoryModal } from '@/components/rewards/AdminKoinHistoryModal';
 import { RewardsAnalytics } from '@/components/rewards/RewardsAnalytics';
+import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { useRewardsStore } from '@/stores/rewards-store';
 import { RewardItem } from '@/types/rewards';
 import { useSchool } from '@/contexts/SchoolContext';
@@ -80,6 +81,15 @@ export default function RewardsManagement() {
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [activeTab, setActiveTab] = useState('items');
+  const [deleteItemDialog, setDeleteItemDialog] = useState<{
+    isOpen: boolean;
+    itemId: string | null;
+    itemName: string;
+  }>({
+    isOpen: false,
+    itemId: null,
+    itemName: ''
+  });
 
   // Check for URL params to determine active tab
   useEffect(() => {
@@ -129,14 +139,23 @@ export default function RewardsManagement() {
       return;
     }
 
-    if (window.confirm(`Tem certeza que deseja excluir "${item.name}"?`)) {
-      deleteItem(itemId);
-      toast({
-        title: "Item excluído",
-        description: "O item foi removido da loja.",
-        duration: 3000
-      });
-    }
+    setDeleteItemDialog({
+      isOpen: true,
+      itemId,
+      itemName: item.name
+    });
+  };
+
+  const executeDeleteItem = () => {
+    if (!deleteItemDialog.itemId) return;
+    
+    deleteItem(deleteItemDialog.itemId);
+    toast({
+      title: "Item excluído",
+      description: "O item foi removido da loja.",
+      duration: 3000
+    });
+    setDeleteItemDialog({ isOpen: false, itemId: null, itemName: '' });
   };
 
   return (
@@ -346,6 +365,22 @@ export default function RewardsManagement() {
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
         transactions={enhancedTransactions}
+      />
+
+      {/* Modal de confirmação para excluir item */}
+      <ConfirmDialog
+        open={deleteItemDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteItemDialog({ isOpen: false, itemId: null, itemName: '' });
+          }
+        }}
+        title="Excluir Item"
+        description={`Tem certeza que deseja excluir "${deleteItemDialog.itemName}"? O item será removido permanentemente da loja.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={executeDeleteItem}
+        variant="destructive"
       />
     </div>
   );
