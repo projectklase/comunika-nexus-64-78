@@ -94,10 +94,10 @@ export const CardDisplay = ({
   }, [handleMouseLeave]);
 
   const sizeClasses = {
-    xs: 'w-10 h-14',
-    sm: 'w-32 h-52',
-    md: 'w-44 h-72',
-    lg: 'w-52 h-80'
+    xs: 'w-12 h-16', // increased from w-10 h-14 for better touch target
+    sm: 'w-28 h-44 sm:w-32 sm:h-52', // responsive
+    md: 'w-40 h-64 sm:w-44 sm:h-72',
+    lg: 'w-48 h-72 sm:w-52 sm:h-80'
   };
 
   const statSizes = {
