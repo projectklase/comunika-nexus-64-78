@@ -54,7 +54,7 @@ export function DeleteDeckConfirmModal({
   return (
     <Dialog open={open} onOpenChange={loading ? undefined : onOpenChange}>
       <DialogContent 
-        className="sm:max-w-[500px] border-destructive/50 bg-background/95 backdrop-blur-md"
+        className="w-[95vw] max-w-[500px] p-4 sm:p-6 border-destructive/50 bg-background/95 backdrop-blur-md"
         onPointerDownOutside={loading ? (e) => e.preventDefault() : undefined}
         onEscapeKeyDown={loading ? (e) => e.preventDefault() : undefined}
       >
@@ -130,12 +130,13 @@ export function DeleteDeckConfirmModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex-col gap-3 sm:flex-row sm:gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={handleCancel}
             disabled={loading}
+            className="w-full sm:w-auto h-11 sm:h-10 order-2 sm:order-1"
           >
             Cancelar
           </Button>
@@ -144,6 +145,7 @@ export function DeleteDeckConfirmModal({
             variant="destructive"
             onClick={handleConfirm}
             disabled={!isConfirmationValid || loading}
+            className="w-full sm:w-auto h-11 sm:h-10 order-1 sm:order-2"
           >
             {loading ? 'Excluindo...' : '🗑️ Excluir Permanentemente'}
           </Button>
