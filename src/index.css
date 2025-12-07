@@ -22,6 +22,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Card Game Animations */
 @keyframes card-shine {
   0% { background-position: -200% 0; }

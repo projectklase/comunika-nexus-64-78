@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const canAccessSchoolSettings = user?.role === 'secretaria';
 
   return (
-    <div className="container max-w-6xl mx-auto p-6 space-y-6">
+    <div className="container max-w-6xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold gradient-text">Configurações</h1>
@@ -28,7 +28,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="flex w-full overflow-x-auto gap-1 p-1">
+        <TabsList className="flex w-full gap-1 p-1 overflow-x-auto scrollbar-hide">
           <TabsTrigger value="profile" className="flex items-center gap-2 flex-1 min-w-fit px-3">
             <User className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Perfil</span>
