@@ -92,15 +92,6 @@ export function UnlockableCard({
         </div>
       )}
 
-      {/* Lock Overlay - mais sutil para ver requisitos */}
-      {!isUnlocked && (
-        <div className="absolute top-2 left-2 z-10">
-          <div className="flex items-center gap-1 rounded-full bg-muted/90 backdrop-blur-sm px-2 py-1 text-xs font-medium text-muted-foreground">
-            <Lock className="h-3 w-3" />
-            Bloqueado
-          </div>
-        </div>
-      )}
 
       <div className="p-4 space-y-3">
         {/* Header */}
