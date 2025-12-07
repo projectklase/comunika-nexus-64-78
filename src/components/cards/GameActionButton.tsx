@@ -54,16 +54,17 @@ export function GameActionButton({
     <motion.button
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: delay * 0.1, ease: 'easeOut' }}
+      transition={{ duration: 0.3, delay: delay * 0.08, ease: 'easeOut' }}
       whileHover={{ scale: 1.02, y: -4 }}
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={cn(
-        "relative group w-full h-auto flex flex-col items-center gap-3 p-6 rounded-xl overflow-hidden",
+        "relative group w-full min-h-[120px] sm:min-h-[140px] flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-6 rounded-xl overflow-hidden",
         "bg-gradient-to-br",
         styles.gradient,
         "border border-white/20",
         "transition-all duration-300",
+        "active:scale-[0.98]",
         "focus:outline-none focus:ring-2 focus:ring-white/30"
       )}
       style={{
@@ -86,27 +87,27 @@ export function GameActionButton({
       {/* Icon container */}
       <motion.div 
         className={cn(
-          "relative p-3 rounded-xl backdrop-blur-sm",
+          "relative p-2.5 sm:p-3 rounded-xl backdrop-blur-sm",
           styles.iconBg,
           "border border-white/10"
         )}
         whileHover={{ rotate: [0, -10, 10, 0] }}
         transition={{ duration: 0.5 }}
       >
-        <div className="w-8 h-8 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
+        <div className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
           {icon}
         </div>
       </motion.div>
 
       {/* Text */}
       <div className="relative text-center z-10">
-        <p className="font-bold text-white text-lg drop-shadow-md">{title}</p>
-        <p className="text-xs text-white/70">{subtitle}</p>
+        <p className="font-bold text-white text-sm sm:text-base lg:text-lg drop-shadow-md">{title}</p>
+        <p className="text-[10px] sm:text-xs text-white/70">{subtitle}</p>
       </div>
 
-      {/* Badge */}
+      {/* Badge - min 20x20px */}
       {badge && badge > 0 && (
-        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full min-w-[20px] h-5 sm:min-w-[24px] sm:h-6 flex items-center justify-center px-1 shadow-lg">
           {badge > 99 ? '99+' : badge}
         </div>
       )}
