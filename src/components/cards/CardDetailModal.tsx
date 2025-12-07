@@ -38,7 +38,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           "inset-0 left-0 right-0 top-0 bottom-0",
           "translate-x-0 translate-y-0",
           // Desktop: modal elegante centralizado com tamanho expandido
-          "sm:w-[760px] sm:h-[680px] sm:max-w-4xl sm:max-h-[90vh]",
+          "sm:w-[820px] sm:h-[680px] sm:max-w-4xl sm:max-h-[90vh]",
           "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
           "sm:rounded-lg sm:p-6 sm:border sm:border-gray-700",
           // Layout base
