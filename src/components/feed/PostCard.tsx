@@ -371,16 +371,18 @@ export function PostCard({
         <CardHeader className={cn("p-2 sm:p-4 pb-2", compact && "pb-2 pt-2")} role="banner">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              {/* Badges - Grid em mobile, flex em desktop */}
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1 sm:gap-1.5 mb-2">
+              {/* Badges - Flex wrap em todos os tamanhos */}
+              <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-2">
                 <Badge variant="outline" className={`shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 ${getTypeColor(post.type)}`}>
                   <span className="mr-0.5 sm:mr-1">{getTypeIcon(post.type)}</span>
-                  {post.type === 'ATIVIDADE' ? 'Ativ.' : 
-                   post.type === 'TRABALHO' ? 'Trab.' : 
-                   post.type === 'PROVA' ? 'Prova' :
-                   post.type === 'EVENTO' ? 'Evento' :
-                   post.type === 'AVISO' ? 'Aviso' :
-                   post.type === 'COMUNICADO' ? 'Comunic.' : post.type}
+                  {/* Mobile: abreviação */}
+                  <span className="sm:hidden">
+                    {post.type === 'ATIVIDADE' ? 'Ativ.' : 
+                     post.type === 'TRABALHO' ? 'Trab.' : 
+                     post.type === 'COMUNICADO' ? 'Com.' : post.type}
+                  </span>
+                  {/* Desktop: nome completo */}
+                  <span className="hidden sm:inline">{post.type}</span>
                 </Badge>
                 {/* Ocultar status em mobile, exceto se for agendado */}
                 {post.status === 'SCHEDULED' && (
@@ -410,12 +412,14 @@ export function PostCard({
                       <Bookmark className="h-3 w-3 mr-1" />
                       Salvo
                     </Badge>}
-                  {delivery && <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="text-xs">
-                      {delivery.reviewStatus === "AGUARDANDO" && "Aguardando revisão"}
-                      {delivery.reviewStatus === "APROVADA" && "Aprovada"}
-                      {delivery.reviewStatus === "DEVOLVIDA" && "Devolvida"}
+                  {delivery && delivery.reviewStatus && (
+                    <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="text-xs">
+                      {delivery.reviewStatus === "AGUARDANDO" ? "Aguardando revisão" :
+                       delivery.reviewStatus === "APROVADA" ? "Aprovada" :
+                       delivery.reviewStatus === "DEVOLVIDA" ? "Devolvida" : null}
                       {delivery.isLate && " (Atrasada)"}
-                    </Badge>}
+                    </Badge>
+                  )}
                   {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-xs">
                       Atrasada
                     </Badge>}
