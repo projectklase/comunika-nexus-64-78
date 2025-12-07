@@ -19,6 +19,9 @@ export type Database = {
           addon_schools_count: number
           admin_id: string
           created_at: string
+          discount_cents: number | null
+          discount_percent: number | null
+          discount_reason: string | null
           expires_at: string | null
           id: string
           plan_id: string
@@ -33,6 +36,9 @@ export type Database = {
           addon_schools_count?: number
           admin_id: string
           created_at?: string
+          discount_cents?: number | null
+          discount_percent?: number | null
+          discount_reason?: string | null
           expires_at?: string | null
           id?: string
           plan_id: string
@@ -47,6 +53,9 @@ export type Database = {
           addon_schools_count?: number
           admin_id?: string
           created_at?: string
+          discount_cents?: number | null
+          discount_percent?: number | null
+          discount_reason?: string | null
           expires_at?: string | null
           id?: string
           plan_id?: string
@@ -2646,12 +2655,15 @@ export type Database = {
         Args: {
           p_addon_schools_count?: number
           p_admin_id: string
+          p_discount_cents?: number
+          p_discount_percent?: number
+          p_discount_reason?: string
           p_expires_at?: string
           p_plan_id?: string
           p_status?: string
           p_trial_ends_at?: string
         }
-        Returns: Json
+        Returns: undefined
       }
       update_ticket_status: {
         Args: {

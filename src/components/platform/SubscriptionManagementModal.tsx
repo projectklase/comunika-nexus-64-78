@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { Loader2, CreditCard, Calendar, Building2, Users } from 'lucide-react';
+import { Loader2, CreditCard, Calendar, Building2, Users, Percent, Tag, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -48,12 +49,14 @@ export function SubscriptionManagementModal({
     addon_schools_count: 0,
     trial_ends_at: '',
     expires_at: '',
+    discount_percent: 0,
+    discount_cents: 0,
+    discount_reason: '',
   });
 
   useEffect(() => {
     if (admin?.subscription) {
       const sub = admin.subscription;
-      // Find plan ID from plans list
       const plan = subscriptionPlans?.find(p => p.slug === sub.plan_slug);
       
       setFormData({
@@ -62,6 +65,9 @@ export function SubscriptionManagementModal({
         addon_schools_count: sub.addon_schools || 0,
         trial_ends_at: sub.trial_ends_at ? format(new Date(sub.trial_ends_at), "yyyy-MM-dd'T'HH:mm") : '',
         expires_at: sub.expires_at ? format(new Date(sub.expires_at), "yyyy-MM-dd'T'HH:mm") : '',
+        discount_percent: sub.discount_percent || 0,
+        discount_cents: sub.discount_cents || 0,
+        discount_reason: sub.discount_reason || '',
       });
     } else {
       setFormData({
@@ -70,17 +76,51 @@ export function SubscriptionManagementModal({
         addon_schools_count: 0,
         trial_ends_at: '',
         expires_at: '',
+        discount_percent: 0,
+        discount_cents: 0,
+        discount_reason: '',
       });
     }
   }, [admin, subscriptionPlans]);
 
   const selectedPlan = subscriptionPlans?.find(p => p.id === formData.plan_id);
 
+  // Calculate costs with discounts
+  const costBreakdown = useMemo(() => {
+    if (!selectedPlan) return null;
+
+    const baseCost = selectedPlan.price_cents;
+    const addonCost = formData.addon_schools_count * (selectedPlan.addon_school_price_cents || 49700);
+    const subtotal = baseCost + addonCost;
+    
+    const percentDiscount = Math.round(subtotal * (formData.discount_percent / 100));
+    const fixedDiscount = formData.discount_cents;
+    const totalDiscount = percentDiscount + fixedDiscount;
+    
+    const finalTotal = Math.max(0, subtotal - totalDiscount);
+
+    return {
+      baseCost,
+      addonCost,
+      subtotal,
+      percentDiscount,
+      fixedDiscount,
+      totalDiscount,
+      finalTotal,
+    };
+  }, [selectedPlan, formData.addon_schools_count, formData.discount_percent, formData.discount_cents]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!admin?.id || !formData.plan_id) {
       toast.error('Selecione um plano');
+      return;
+    }
+
+    // Validate discount reason if discount is applied
+    if ((formData.discount_percent > 0 || formData.discount_cents > 0) && !formData.discount_reason.trim()) {
+      toast.error('Informe o motivo do desconto');
       return;
     }
 
@@ -92,6 +132,9 @@ export function SubscriptionManagementModal({
         addonSchoolsCount: formData.addon_schools_count,
         trialEndsAt: formData.trial_ends_at || null,
         expiresAt: formData.expires_at || null,
+        discountPercent: formData.discount_percent,
+        discountCents: formData.discount_cents,
+        discountReason: formData.discount_reason || null,
       });
       toast.success('Assinatura atualizada com sucesso');
       onSuccess();
@@ -102,7 +145,7 @@ export function SubscriptionManagementModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg glass-card border-white/10">
+      <DialogContent className="sm:max-w-lg glass-card border-white/10 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-primary" />
@@ -204,6 +247,110 @@ export function SubscriptionManagementModal({
               </p>
             )}
           </div>
+
+          {/* Discount Section */}
+          <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20 space-y-4">
+            <div className="flex items-center gap-2 text-purple-400">
+              <Tag className="w-4 h-4" />
+              <Label className="text-purple-400 font-medium">Desconto Negociado</Label>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  <Percent className="w-3 h-3" /> Percentual
+                </Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.discount_percent}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      discount_percent: Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
+                    }))}
+                    className="bg-white/5 border-white/10 pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm">Valor Fixo (R$)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={(formData.discount_cents / 100).toFixed(2)}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    discount_cents: Math.max(0, Math.round(parseFloat(e.target.value) * 100) || 0)
+                  }))}
+                  className="bg-white/5 border-white/10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">Motivo do Desconto *</Label>
+              <Textarea
+                value={formData.discount_reason}
+                onChange={(e) => setFormData(prev => ({ ...prev, discount_reason: e.target.value }))}
+                placeholder="Ex: Parceria com prefeitura, negociação especial..."
+                className="bg-white/5 border-white/10 min-h-[60px] resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Cost Summary */}
+          {costBreakdown && (
+            <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-2">
+              <div className="flex items-center gap-2 mb-3">
+                <Receipt className="w-4 h-4 text-primary" />
+                <Label className="font-medium">Resumo do Valor</Label>
+              </div>
+              
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Plano {selectedPlan?.name}</span>
+                  <span>{formatCurrency(costBreakdown.baseCost)}</span>
+                </div>
+                
+                {costBreakdown.addonCost > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">+ {formData.addon_schools_count} escola(s) adicional(is)</span>
+                    <span>{formatCurrency(costBreakdown.addonCost)}</span>
+                  </div>
+                )}
+                
+                {costBreakdown.percentDiscount > 0 && (
+                  <div className="flex justify-between text-purple-400">
+                    <span>- Desconto ({formData.discount_percent}%)</span>
+                    <span>-{formatCurrency(costBreakdown.percentDiscount)}</span>
+                  </div>
+                )}
+                
+                {costBreakdown.fixedDiscount > 0 && (
+                  <div className="flex justify-between text-purple-400">
+                    <span>- Desconto fixo</span>
+                    <span>-{formatCurrency(costBreakdown.fixedDiscount)}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between pt-2 border-t border-white/10 font-bold text-base">
+                  <span>Total Mensal</span>
+                  <span className="text-emerald-400">{formatCurrency(costBreakdown.finalTotal)}</span>
+                </div>
+
+                {costBreakdown.totalDiscount > 0 && (
+                  <p className="text-xs text-purple-400 text-right">
+                    Economia: {formatCurrency(costBreakdown.totalDiscount)}/mês
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Trial End Date */}
           <div className="space-y-2">
