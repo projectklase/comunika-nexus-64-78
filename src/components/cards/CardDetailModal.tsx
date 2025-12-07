@@ -74,17 +74,15 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
           className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y px-4 py-4 sm:px-0 sm:py-0"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-6 sm:gap-6 pb-6">
+          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-6 pb-4 sm:pb-6">
             
-            {/* Coluna da Carta - MAIOR no mobile */}
-            <div className="flex flex-col items-center gap-3 sm:sticky sm:top-6 self-start">
-              <div className="w-full max-w-[280px] sm:max-w-none flex justify-center">
-                <CardDisplay 
-                  card={card} 
-                  size="lg"
-                  showStats={true}
-                />
-              </div>
+            {/* Coluna da Carta - CENTRALIZADA */}
+            <div className="flex flex-col items-center justify-center gap-3 w-full sm:sticky sm:top-6 sm:self-start">
+              <CardDisplay 
+                card={card} 
+                size="lg"
+                showStats={true}
+              />
               
               {/* Badge de quantidade */}
               {quantity !== undefined && quantity > 0 && (
@@ -93,27 +91,36 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
                   <span className="text-base font-bold text-yellow-300">{quantity}x</span>
                 </div>
               )}
+
+              {/* Mobile: Descrição logo após a carta */}
+              {card.description && (
+                <div className="sm:hidden p-3 bg-gray-800/50 rounded-lg border border-gray-700 w-full max-w-[280px]">
+                  <p className="text-xs text-gray-400 mb-1">Descrição</p>
+                  <p className="text-sm text-gray-200 break-words whitespace-pre-wrap">{card.description}</p>
+                </div>
+              )}
             </div>
 
-            {/* Coluna de Detalhes - com overflow containment */}
+            {/* Coluna de Detalhes - apenas desktop para info duplicada */}
             <div className="space-y-3 sm:space-y-4 overflow-hidden max-w-full min-w-0 pb-6">
-              {/* Card Info */}
+              
+              {/* Card Info - apenas desktop (já está na carta no mobile) */}
               <div className={cn(
-                'p-2 sm:p-3 rounded-lg border-2 w-full overflow-hidden',
+                'hidden sm:block p-3 rounded-lg border-2 w-full overflow-hidden',
                 'bg-gradient-to-br',
                 frameColors.outer,
                 frameColors.glow
               )}>
-                <div className="bg-gray-900/90 rounded p-2 sm:p-3 space-y-1.5 sm:space-y-2 overflow-hidden">
+                <div className="bg-gray-900/90 rounded p-3 space-y-2 overflow-hidden">
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs text-gray-400">Categoria</p>
-                    <p className="font-semibold text-sm sm:text-base text-white truncate">{CATEGORY_LABELS[card.category]}</p>
+                    <p className="text-xs text-gray-400">Categoria</p>
+                    <p className="font-semibold text-base text-white truncate">{CATEGORY_LABELS[card.category]}</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs text-gray-400">Nível Necessário</p>
-                    <p className="font-semibold text-sm sm:text-base flex items-center gap-1 text-white flex-wrap">
+                    <p className="text-xs text-gray-400">Nível Necessário</p>
+                    <p className="font-semibold text-base flex items-center gap-1 text-white flex-wrap">
                       {Array.from({ length: Math.min(5, Math.ceil(card.required_level / 20)) }).map((_, i) => (
-                        <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 fill-yellow-400 text-yellow-400 shrink-0" />
+                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400 shrink-0" />
                       ))}
                       <span className="ml-1">Nível {card.required_level}</span>
                     </p>
@@ -121,66 +128,64 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Description - apenas desktop (mobile mostra acima) */}
               {card.description && (
-                <div className="p-2 sm:p-3 bg-gray-800/50 rounded-lg border border-gray-700 w-full overflow-hidden">
-                  <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5 sm:mb-1">Descrição</p>
-                  <p className="text-xs sm:text-sm text-gray-200 break-words whitespace-pre-wrap">{card.description}</p>
+                <div className="hidden sm:block p-3 bg-gray-800/50 rounded-lg border border-gray-700 w-full overflow-hidden">
+                  <p className="text-xs text-gray-400 mb-1">Descrição</p>
+                  <p className="text-sm text-gray-200 break-words whitespace-pre-wrap">{card.description}</p>
                 </div>
               )}
 
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full">
-                <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-gradient-to-br from-orange-600/20 to-orange-900/20 rounded-lg border-2 border-orange-500/50 overflow-hidden">
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 fill-orange-400 shrink-0" />
+              {/* Stats - apenas desktop (já visíveis na carta) */}
+              <div className="hidden sm:grid grid-cols-2 gap-3 w-full">
+                <div className="flex items-center gap-2 p-3 bg-gradient-to-br from-orange-600/20 to-orange-900/20 rounded-lg border-2 border-orange-500/50 overflow-hidden">
+                  <Zap className="w-6 h-6 text-orange-400 fill-orange-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] sm:text-[10px] text-orange-300 uppercase tracking-wide">Ataque</p>
-                    <p className="text-xl sm:text-2xl font-bold text-white">{card.atk}</p>
+                    <p className="text-[10px] text-orange-300 uppercase tracking-wide">Ataque</p>
+                    <p className="text-2xl font-bold text-white">{card.atk}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-gradient-to-br from-blue-600/20 to-blue-900/20 rounded-lg border-2 border-blue-500/50 overflow-hidden">
-                  <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 fill-blue-400 shrink-0" />
+                <div className="flex items-center gap-2 p-3 bg-gradient-to-br from-blue-600/20 to-blue-900/20 rounded-lg border-2 border-blue-500/50 overflow-hidden">
+                  <Shield className="w-6 h-6 text-blue-400 fill-blue-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] sm:text-[10px] text-blue-300 uppercase tracking-wide">Defesa</p>
-                    <p className="text-xl sm:text-2xl font-bold text-white">{card.def}</p>
+                    <p className="text-[10px] text-blue-300 uppercase tracking-wide">Defesa</p>
+                    <p className="text-2xl font-bold text-white">{card.def}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Special Effects */}
+              {/* Special Effects - sempre visível (info expandida) */}
               {card.effects.length > 0 && (
-                <div className="space-y-1.5 sm:space-y-2 w-full overflow-hidden">
-                  <p className="text-[10px] sm:text-xs text-gray-400 font-semibold">Efeitos Especiais</p>
-                  <div className="space-y-1.5 sm:space-y-2">
+                <div className="space-y-2 w-full overflow-hidden">
+                  <p className="text-xs text-gray-400 font-semibold">Efeitos Especiais</p>
+                  <div className="space-y-2">
                     {card.effects.map((effect, index) => {
                       const mechanics = EFFECT_MECHANICS[effect.type as CardEffectType];
                       return (
-                        <div key={index} className="p-2 sm:p-3 bg-gradient-to-br from-purple-600/20 to-purple-900/20 rounded-lg border border-purple-500/50 overflow-hidden">
-                          {/* Header do efeito */}
-                          <div className="flex items-start gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                            <span className="text-base sm:text-xl shrink-0">{getEffectIcon(effect.type)}</span>
+                        <div key={index} className="p-3 bg-gradient-to-br from-purple-600/20 to-purple-900/20 rounded-lg border border-purple-500/50 overflow-hidden">
+                          <div className="flex items-start gap-2 mb-2">
+                            <span className="text-xl shrink-0">{getEffectIcon(effect.type)}</span>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                <p className="font-bold text-purple-300 uppercase tracking-wide text-xs sm:text-sm">{effect.type}</p>
-                                <span className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-purple-300/70 shrink-0">
-                                  <Sparkles className="w-2 h-2 sm:w-2.5 sm:h-2.5" /> Poder: {effect.value}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-bold text-purple-300 uppercase tracking-wide text-sm">{effect.type}</p>
+                                <span className="flex items-center gap-1 text-[10px] text-purple-300/70 shrink-0">
+                                  <Sparkles className="w-2.5 h-2.5" /> Poder: {effect.value}
                                 </span>
                               </div>
-                              <p className="text-[10px] sm:text-xs text-gray-300 mt-0.5 break-words">{effect.description}</p>
+                              <p className="text-xs text-gray-300 mt-1 break-words">{effect.description}</p>
                             </div>
                           </div>
 
-                          {/* Mecânicas */}
                           {mechanics && (
-                            <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-0.5 sm:gap-y-1 pt-1.5 sm:pt-2 border-t border-purple-500/20 text-[9px] sm:text-[10px]">
-                              <span className="flex items-center gap-0.5 sm:gap-1 text-yellow-300/80">
-                                <Zap className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0" /> {mechanics.activation}
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 border-t border-purple-500/20 text-[10px]">
+                              <span className="flex items-center gap-1 text-yellow-300/80">
+                                <Zap className="w-2.5 h-2.5 shrink-0" /> {mechanics.activation}
                               </span>
-                              <span className="flex items-center gap-0.5 sm:gap-1 text-cyan-300/80">
-                                <Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0" /> {mechanics.duration}
+                              <span className="flex items-center gap-1 text-cyan-300/80">
+                                <Clock className="w-2.5 h-2.5 shrink-0" /> {mechanics.duration}
                               </span>
-                              <span className="flex items-center gap-0.5 sm:gap-1 text-red-300/80">
-                                <Target className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0" /> {mechanics.consumption}
+                              <span className="flex items-center gap-1 text-red-300/80">
+                                <Target className="w-2.5 h-2.5 shrink-0" /> {mechanics.consumption}
                               </span>
                             </div>
                           )}
