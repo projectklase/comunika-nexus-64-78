@@ -1216,6 +1216,27 @@
     backdrop-filter: blur(12px);
   }
 
+  /* Sakura Dreams - Dark overlay on background for better WCAG contrast */
+  [data-theme="theme_sakura_dreams"] #root::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      hsl(280 50% 5% / 0.35) 0%,
+      hsl(280 50% 8% / 0.25) 50%,
+      hsl(280 50% 5% / 0.40) 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Sakura Dreams - Ensure content stays above overlay */
+  [data-theme="theme_sakura_dreams"] #root > * {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Sakura Dreams - Higher opacity cards for WCAG compliance */
   [data-theme="theme_sakura_dreams"] .glass,
   [data-theme="theme_sakura_dreams"] .glass-card,
