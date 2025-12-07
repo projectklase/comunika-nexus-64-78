@@ -68,6 +68,9 @@ export default function AlunoFeed() {
   const processedPosts = useMemo(() => {
     let posts = [...allPosts];
     
+    // SEMPRE remover posts arquivados do feed do aluno
+    posts = posts.filter(post => post.status !== 'ARCHIVED');
+    
     // Apply smart filtering to remove expired posts (unless showing saved or preference disabled)
     if (!filter.saved && preferences.hideExpired !== false) {
       posts = SmartPostFilters.getSmartFeed(posts, {

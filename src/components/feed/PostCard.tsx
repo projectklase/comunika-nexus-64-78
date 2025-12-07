@@ -375,14 +375,7 @@ export function PostCard({
               <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-2">
                 <Badge variant="outline" className={`shrink-0 text-[10px] sm:text-xs px-1.5 py-0.5 ${getTypeColor(post.type)}`}>
                   <span className="mr-0.5 sm:mr-1">{getTypeIcon(post.type)}</span>
-                  {/* Mobile: abreviação */}
-                  <span className="sm:hidden">
-                    {post.type === 'ATIVIDADE' ? 'Ativ.' : 
-                     post.type === 'TRABALHO' ? 'Trab.' : 
-                     post.type === 'COMUNICADO' ? 'Com.' : post.type}
-                  </span>
-                  {/* Desktop: nome completo */}
-                  <span className="hidden sm:inline">{post.type}</span>
+                  {post.type}
                 </Badge>
                 {/* Ocultar status em mobile, exceto se for agendado */}
                 {post.status === 'SCHEDULED' && (
@@ -445,10 +438,13 @@ export function PostCard({
                       <Bookmark className="h-2.5 w-2.5" />
                     </Badge>}
                   {delivery && delivery.reviewStatus && (
-                    <Badge variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0.5">
-                      {delivery.reviewStatus === "AGUARDANDO" ? "⏳" :
-                       delivery.reviewStatus === "APROVADA" ? "✓" :
-                       delivery.reviewStatus === "DEVOLVIDA" ? "↩" : null}
+                    <Badge 
+                      variant={delivery.reviewStatus === "APROVADA" ? "default" : "secondary"} 
+                      className="text-[10px] px-1.5 py-0.5"
+                    >
+                      {delivery.reviewStatus === "AGUARDANDO" && "Em revisão"}
+                      {delivery.reviewStatus === "APROVADA" && "Aprovada"}
+                      {delivery.reviewStatus === "DEVOLVIDA" && "Devolvida"}
                     </Badge>
                   )}
                   {isActivity && !delivery && isOverdue && <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
