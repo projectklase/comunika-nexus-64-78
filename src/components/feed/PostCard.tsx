@@ -345,22 +345,22 @@ export function PostCard({
   
   return <>
     <Card className={cn(
-      "glass-card overflow-hidden transition-all duration-300 border w-full max-w-full box-border",
-        // FASE 5: Borda lateral colorida por tipo
-        !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
-        isNewPost && "border-l-4 border-l-primary",
-        isPostToday && "border-2 border-yellow-500/50 bg-yellow-500/5 shadow-yellow-500/20 shadow-lg",
-        "border-border/50",
-        // Efeito hover apenas em desktop
-        !compact && "hover:shadow-xl",
-        isImportant && [
-          "relative overflow-hidden",
-          "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
-          "shadow-[var(--golden-silhouette)]",
-          "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
-          "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none"
-        ]
-      )}
+      "w-full overflow-hidden transition-all duration-300 border",
+      // Borda lateral colorida por tipo
+      !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
+      isNewPost && "border-l-4 border-l-primary",
+      isPostToday && "border-2 border-yellow-500/50 bg-yellow-500/5 shadow-yellow-500/20 shadow-lg",
+      "border-border/50",
+      // Efeito hover apenas em desktop
+      !compact && "hover:shadow-xl",
+      isImportant && [
+        "relative overflow-hidden",
+        "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
+        "shadow-[var(--golden-silhouette)]",
+        "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
+        "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none"
+      ]
+    )}
       role="article" 
       aria-labelledby={`post-title-${post.id}`} 
       tabIndex={0} 
@@ -368,12 +368,12 @@ export function PostCard({
       id={`post-${post.id}`} 
       data-important={isImportant}
       data-today={isPostToday}>
-        <CardHeader className={cn("pb-3", compact && "pb-2 pt-3")} role="banner">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              {/* FASE 2: Menos badges em modo compacto */}
-              <div className={cn("flex items-center gap-2 max-w-full overflow-hidden", compact ? "gap-1.5 flex-wrap" : "flex-wrap")}>
-                <Badge variant="outline" className={`${getTypeColor(post.type)} ${compact ? 'text-xs px-2' : 'font-medium'}`}>
+        <CardHeader className={cn("p-3 sm:p-4 pb-2", compact && "pb-2 pt-3")} role="banner">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              {/* Badges com wrap */}
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                <Badge variant="outline" className={`shrink-0 text-xs ${getTypeColor(post.type)}`}>
                   <span className="mr-1">{getTypeIcon(post.type)}</span>
                   {compact ? post.type.substring(0, 3) : post.type}
                 </Badge>

@@ -169,7 +169,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
     return count;
   };
 
-  // FASE 3: Conteúdo dos filtros avançados (reutilizável em mobile sheet)
+  // Conteúdo dos filtros avançados (reutilizável em mobile sheet)
   const advancedFiltersContent = (
     <>
       {/* Search */}
@@ -179,7 +179,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
           placeholder="Buscar por título, autor..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="pl-10 bg-background/50 border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="pl-10 h-10 w-full bg-background/50 border-border/50"
           aria-label="Campo de busca"
         />
       </div>
@@ -191,12 +191,12 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         disabled={allClasses.length === 0}
       >
         <SelectTrigger 
-          className="w-full sm:w-[180px] bg-background/50 border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="w-full sm:w-[180px] h-10 bg-background/50 border-border/50"
           aria-label="Selecionar turma"
         >
           <SelectValue placeholder="Turma" />
         </SelectTrigger>
-        <SelectContent className="glass-card border-border/50">
+        <SelectContent>
           <SelectItem value={DEFAULT_SELECT_TOKENS.ALL_CLASSES}>
             {allClasses.length === 0 ? 'Nenhuma turma atribuída' : 'Todas as turmas'}
           </SelectItem>
@@ -213,7 +213,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         variant="outline"
         size="sm"
         onClick={clearAllFilters}
-        className="text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 w-full sm:w-auto"
+        className="h-10 w-full sm:w-auto"
         disabled={!filters.query && filters.quickFilter === 'all' && classSelector.isDefault()}
         aria-label="Limpar todos os filtros"
       >
@@ -291,72 +291,44 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   );
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      {/* FASE 3: Quick Filters - Chips scrolláveis no mobile */}
-      <div className="glass-card p-3 sm:p-4 rounded-xl border border-border/50 overflow-hidden w-full max-w-full">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
-            <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            Filtros Rápidos
-          </h3>
-          {!isMobile && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowPreferences(!showPreferences)}
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              aria-label="Abrir configurações de preferências"
-              aria-expanded={showPreferences}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        
-        {/* FASE 3: Scrollable chips em mobile, wrapped em desktop */}
-        <div className={cn(
-          "flex gap-2",
-          isMobile ? "overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide max-w-full" : "flex-wrap"
-        )} role="group" aria-label="Filtros rápidos">
+    <div className="w-full space-y-3">
+      {/* Quick Filters - Scroll Horizontal em Mobile */}
+      <div className="w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 min-w-min pb-2 sm:pb-0 sm:flex-wrap">
           {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
             <Button
               key={key}
               variant={filters.quickFilter === key ? "default" : "outline"}
               size="sm"
               onClick={() => handleQuickFilter(key)}
-              className={cn(
-                "text-xs min-h-10 sm:min-h-11 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                isMobile && "flex-shrink-0 px-3"
-              )}
+              className="shrink-0 h-9 px-3 text-xs sm:text-sm whitespace-nowrap"
               aria-pressed={filters.quickFilter === key}
               aria-label={`Filtro ${label}`}
             >
-              <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+              <Icon className="h-3.5 w-3.5 mr-1.5" />
               {label}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* FASE 3: Preferências - Desktop inline, Mobile em sheet */}
-      {!isMobile && showPreferences && preferencesContent}
-
-      {/* FASE 3: Filtros avançados - Desktop inline, Mobile em sheet */}
-      {isMobile ? (
-        <div className="flex flex-col gap-3">
-          {/* Busca sempre visível em mobile */}
+      {/* Search + Filtros */}
+      <div className="flex gap-2 w-full">
+        <div className="flex-1 min-w-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar posts..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-10 min-h-11 bg-background/50 border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="pl-10 h-10 w-full bg-background/50 border-border/50"
               aria-label="Campo de busca"
             />
           </div>
-
-          {/* Sheet com filtros e preferências */}
+        </div>
+        
+        {/* Mobile: Sheet de filtros */}
+        {isMobile ? (
           <MobileFilterSheet activeFiltersCount={countActiveFilters()}>
             <div className="space-y-4">
               <div className="space-y-3">
@@ -370,57 +342,71 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
               </div>
             </div>
           </MobileFilterSheet>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPreferences(!showPreferences)}
+            className="h-10 px-3 shrink-0"
+            aria-label="Preferências"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
-          {/* Active filters badges em mobile */}
-          {countActiveFilters() > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              {filters.query && (
-                <Badge variant="secondary" className="bg-secondary/20 text-secondary-foreground text-xs">
-                  "{filters.query}"
-                </Badge>
-              )}
-              {!classSelector.isDefault() && (
-                <Badge variant="secondary" className="bg-purple/20 text-purple-300 text-xs">
-                  {allClasses.find(c => c.id === filters.classId)?.name}
-                </Badge>
-              )}
-            </div>
-          )}
+      {/* Desktop: Preferências inline */}
+      {!isMobile && showPreferences && preferencesContent}
+
+      {/* Desktop: Filtros avançados inline */}
+      {!isMobile && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select 
+            value={classSelector.value} 
+            onValueChange={classSelector.setValue}
+            disabled={allClasses.length === 0}
+          >
+            <SelectTrigger className="w-[180px] h-10 bg-background/50 border-border/50">
+              <SelectValue placeholder="Turma" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={DEFAULT_SELECT_TOKENS.ALL_CLASSES}>
+                {allClasses.length === 0 ? 'Nenhuma turma' : 'Todas as turmas'}
+              </SelectItem>
+              {allClasses.map(cls => (
+                <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearAllFilters}
+            className="h-10"
+            disabled={!filters.query && filters.quickFilter === 'all' && classSelector.isDefault()}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Limpar
+          </Button>
         </div>
-      ) : (
-        // Desktop: filtros inline
-        <div className="glass-card p-3 sm:p-4 rounded-xl border border-border/50 space-y-3 sm:space-y-4">
-          <div className="flex items-center gap-4 flex-wrap">
-            {advancedFiltersContent}
-          </div>
+      )}
 
-          {/* Active Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground">Filtros:</span>
-            
-            <Badge variant="secondary" className="bg-primary/20 text-primary text-xs">
-              {getQuickFilterLabel()}
+      {/* Active Filters Badges */}
+      {(filters.query || !classSelector.isDefault() || filters.quickFilter !== 'all') && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Filtros:</span>
+          <Badge variant="secondary" className="shrink-0 text-xs bg-primary/20 text-primary">
+            {getQuickFilterLabel()}
+          </Badge>
+          {filters.query && (
+            <Badge variant="secondary" className="shrink-0 text-xs">"{filters.query}"</Badge>
+          )}
+          {!classSelector.isDefault() && (
+            <Badge variant="secondary" className="shrink-0 text-xs">
+              {allClasses.find(c => c.id === filters.classId)?.name}
             </Badge>
-            
-            {filters.query && (
-              <Badge variant="secondary" className="bg-secondary/20 text-secondary-foreground text-xs">
-                Busca: "{filters.query}"
-              </Badge>
-            )}
-            
-            {!classSelector.isDefault() && (
-              <Badge variant="secondary" className="bg-purple/20 text-purple-300 text-xs">
-                Turma: {allClasses.find(c => c.id === filters.classId)?.name}
-              </Badge>
-            )}
-
-            {preferences.hideRead && (
-              <Badge variant="secondary" className="bg-accent/20 text-accent-foreground text-xs">
-                <EyeOff className="h-3 w-3 mr-1" />
-                Sem lidos
-              </Badge>
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>
