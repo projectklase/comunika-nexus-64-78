@@ -1321,6 +1321,20 @@
     background-attachment: fixed;
   }
 
+  /* Cyberpunk City - Make containers transparent to show background */
+  [data-theme="theme_cyberpunk_city"] #root,
+  [data-theme="theme_cyberpunk_city"] #root > div,
+  [data-theme="theme_cyberpunk_city"] .min-h-screen,
+  [data-theme="theme_cyberpunk_city"] .bg-background {
+    background: transparent !important;
+  }
+
+  /* Cyberpunk City - Transparent main to show background image */
+  [data-theme="theme_cyberpunk_city"] main {
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
   /* Cyberpunk City - Dark overlay for uniform contrast */
   [data-theme="theme_cyberpunk_city"] #root::before {
     content: "";
@@ -1431,9 +1445,11 @@
 
   /* Cyberpunk City - Sidebar styling */
   [data-theme="theme_cyberpunk_city"] aside,
-  [data-theme="theme_cyberpunk_city"] [data-sidebar] {
-    background: hsl(250 50% 5% / 0.95) !important;
-    border-right: 1px solid hsl(330 80% 50% / 0.2) !important;
+  [data-theme="theme_cyberpunk_city"] [data-sidebar],
+  [data-theme="theme_cyberpunk_city"] .sidebar {
+    background: hsl(250 50% 5% / 0.92) !important;
+    backdrop-filter: blur(12px) !important;
+    border-right: 1px solid hsl(270 40% 25% / 0.3) !important;
   }
 
   [data-theme="theme_cyberpunk_city"] [data-sidebar] [data-active="true"] {
