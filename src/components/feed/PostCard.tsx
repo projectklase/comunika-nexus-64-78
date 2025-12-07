@@ -344,8 +344,8 @@ export function PostCard({
   };
   
   return <>
-      <Card className={cn(
-        "glass-card overflow-hidden transition-all duration-300 border w-full max-w-full",
+    <Card className={cn(
+      "glass-card overflow-hidden transition-all duration-300 border w-full max-w-full box-border",
         // FASE 5: Borda lateral colorida por tipo
         !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
         isNewPost && "border-l-4 border-l-primary",
@@ -372,7 +372,7 @@ export function PostCard({
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3 flex-1">
               {/* FASE 2: Menos badges em modo compacto */}
-              <div className={cn("flex items-center gap-2 max-w-full", compact ? "gap-1.5 flex-wrap" : "flex-wrap")}>
+              <div className={cn("flex items-center gap-2 max-w-full overflow-hidden", compact ? "gap-1.5 flex-wrap" : "flex-wrap")}>
                 <Badge variant="outline" className={`${getTypeColor(post.type)} ${compact ? 'text-xs px-2' : 'font-medium'}`}>
                   <span className="mr-1">{getTypeIcon(post.type)}</span>
                   {compact ? post.type.substring(0, 3) : post.type}
@@ -457,7 +457,7 @@ export function PostCard({
           )}
 
           {/* Event details */}
-          {post.type === "EVENTO" && (post.eventStartAt || post.eventLocation) && <div className="space-y-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 overflow-hidden">
+          {post.type === "EVENTO" && (post.eventStartAt || post.eventLocation) && <div className="space-y-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 w-full max-w-full overflow-hidden">
               {post.eventStartAt && <div className="flex items-start gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
                   <span className="text-purple-300 break-words">

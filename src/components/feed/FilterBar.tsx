@@ -173,7 +173,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   const advancedFiltersContent = (
     <>
       {/* Search */}
-      <div className="relative flex-1 min-w-[200px]">
+      <div className="relative flex-1 min-w-0">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por título, autor..."
@@ -293,7 +293,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* FASE 3: Quick Filters - Chips scrolláveis no mobile */}
-      <div className="glass-card p-3 sm:p-4 rounded-xl border border-border/50">
+      <div className="glass-card p-3 sm:p-4 rounded-xl border border-border/50 overflow-hidden w-full max-w-full">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <h3 className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
             <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -316,7 +316,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         {/* FASE 3: Scrollable chips em mobile, wrapped em desktop */}
         <div className={cn(
           "flex gap-2",
-          isMobile ? "overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide" : "flex-wrap"
+          isMobile ? "overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide max-w-full" : "flex-wrap"
         )} role="group" aria-label="Filtros rápidos">
           {getQuickFiltersForRole().map(({ key, label, icon: Icon }) => (
             <Button
