@@ -29,7 +29,7 @@ export interface ActivityMeta {
   bloquearAnexosAluno?: boolean;
 }
 
-export type PostStatus = 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED';
+export type PostStatus = 'PUBLISHED' | 'SCHEDULED' | 'CONCLUDED' | 'ARCHIVED';
 
 export type PostAudience = 'GLOBAL' | 'CLASS';
 

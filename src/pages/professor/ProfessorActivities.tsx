@@ -40,7 +40,8 @@ import {
   Users,
   Plus,
   FileSpreadsheet,
-  MoreVertical
+  MoreVertical,
+  CheckCircle2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -75,7 +76,7 @@ interface ClassGroup {
     aguardandoAprovacao: number;
     aprovadas: number;
     devolvidas: number;
-    atrasadas: number;
+    prazoEncerrado: number;
   };
 }
 
@@ -90,7 +91,7 @@ const statusColors = {
   aguardandoAprovacao: 'bg-primary text-primary-foreground',
   aprovadas: 'bg-success text-success-foreground',
   devolvidas: 'bg-destructive text-destructive-foreground',
-  atrasadas: 'bg-destructive/80 text-destructive-foreground'
+  prazoEncerrado: 'bg-warning text-warning-foreground'
 };
 
 export default function ProfessorActivities() {
@@ -114,7 +115,7 @@ export default function ProfessorActivities() {
   // Data hooks - always called in same order
   const { posts: allPosts } = usePosts();
   const navigate = useNavigate();
-  const { deletePost, duplicatePost, archivePost } = usePostActions();
+  const { deletePost, duplicatePost, archivePost, concludePost } = usePostActions();
   const { exportDeliveries } = useActivityExport();
 
   // Obter turmas do professor - this needs user but we handle it safely
@@ -239,7 +240,7 @@ export default function ProfessorActivities() {
               aguardandoAprovacao: 0,
               aprovadas: 0,
               devolvidas: 0,
-              atrasadas: 0
+              prazoEncerrado: 0
             }
           };
         }
@@ -252,7 +253,7 @@ export default function ProfessorActivities() {
           groups[classId].counters.aguardandoAprovacao += metrics.aguardando;
           groups[classId].counters.aprovadas += metrics.aprovadas;
           groups[classId].counters.devolvidas += metrics.devolvidas;
-          groups[classId].counters.atrasadas += metrics.atrasadas;
+          groups[classId].counters.prazoEncerrado += metrics.atrasadas;
         });
       });
     });
@@ -389,6 +390,23 @@ export default function ProfessorActivities() {
     } catch (error) {
       console.error('Erro ao arquivar atividade:', error);
       toast.error('Erro ao arquivar atividade.');
+    }
+  };
+
+  // Handler: Concluir Atividade
+  const handleConcludeActivity = async (activityId: string, activityTitle: string) => {
+    const confirmed = window.confirm(
+      `Concluir a atividade "${activityTitle}"?\n\n` +
+      `A atividade sairá do feed ativo e será arquivada automaticamente em 10 dias.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      await concludePost(activityId);
+    } catch (error) {
+      console.error('Erro ao concluir atividade:', error);
+      toast.error('Erro ao concluir atividade.');
     }
   };
 
@@ -591,10 +609,10 @@ export default function ProfessorActivities() {
                             <span className="hidden sm:inline">{group.counters.devolvidas} Devolvidas</span>
                           </Badge>
                         )}
-                        {group.counters.atrasadas > 0 && (
-                          <Badge className={cn(statusColors.atrasadas, "text-xs justify-center")}>
-                            <span className="sm:hidden">{group.counters.atrasadas} Atras.</span>
-                            <span className="hidden sm:inline">{group.counters.atrasadas} Atrasadas</span>
+                        {group.counters.prazoEncerrado > 0 && (
+                          <Badge className={cn(statusColors.prazoEncerrado, "text-xs justify-center")}>
+                            <span className="sm:hidden">{group.counters.prazoEncerrado} Enc.</span>
+                            <span className="hidden sm:inline">{group.counters.prazoEncerrado} Prazo encerrado</span>
                           </Badge>
                         )}
                       </div>
@@ -673,6 +691,12 @@ export default function ProfessorActivities() {
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
+                                      onClick={() => handleConcludeActivity(activity.id, activity.title)}
+                                      className="text-success focus:text-success"
+                                    >
+                                      <CheckCircle2 className="h-4 w-4 mr-2" /> Concluir
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
                                       onClick={() => handleDeleteActivity(activity.id, activity.title)}
                                       className="text-destructive focus:text-destructive"
                                     >
@@ -716,8 +740,17 @@ export default function ProfessorActivities() {
                                 <Button 
                                   size="sm" 
                                   variant="ghost"
+                                  onClick={() => handleConcludeActivity(activity.id, activity.title)}
+                                  title="Concluir atividade"
+                                  className="text-success hover:text-success"
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
                                   onClick={() => handleDeleteActivity(activity.id, activity.title)}
-                                  title="Excluir atividade"
+                                  title="Arquivar atividade"
                                   className="text-destructive hover:text-destructive"
                                 >
                                   <Archive className="h-4 w-4" />

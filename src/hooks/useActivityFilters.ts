@@ -5,7 +5,7 @@ import { isToday, isBefore, isAfter, startOfDay } from 'date-fns';
 interface ActivityFilters {
   type?: ActivityType;
   status?: PostStatus;
-  deadline?: 'upcoming' | 'overdue' | 'today';
+  deadline?: 'upcoming' | 'deadline_passed' | 'today';
 }
 
 export function useActivityFilters(posts: Post[]) {
@@ -41,7 +41,7 @@ export function useActivityFilters(posts: Post[]) {
           case 'upcoming':
             if (!isAfter(dueDateDay, today)) return false;
             break;
-          case 'overdue':
+          case 'deadline_passed':
             if (!isBefore(dueDateDay, today)) return false;
             break;
         }
@@ -59,7 +59,7 @@ export function useActivityFilters(posts: Post[]) {
     setFilters(prev => ({ ...prev, status }));
   };
 
-  const setDeadlineFilter = (deadline?: 'upcoming' | 'overdue' | 'today') => {
+  const setDeadlineFilter = (deadline?: 'upcoming' | 'deadline_passed' | 'today') => {
     setFilters(prev => ({ ...prev, deadline }));
   };
 
