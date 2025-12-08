@@ -254,14 +254,22 @@ export function BattleDefeatModal({
                     </Button>
                   </motion.div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onOpenChange(false)}
-                    className="w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm"
+                  {/* Fechar Button */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.8 }}
+                    className="flex justify-center pt-1"
                   >
-                    Fechar
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onOpenChange(false)}
+                      className="text-muted-foreground hover:text-foreground text-xs"
+                    >
+                      Fechar
+                    </Button>
+                  </motion.div>
                 </motion.div>
               </>
             )}
