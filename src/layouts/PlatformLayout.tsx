@@ -12,7 +12,8 @@ import {
   LogOut,
   ChevronRight,
   Menu,
-  X
+  X,
+  CalendarDays
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Escolas', href: '/platform/schools', icon: Building2 },
   { name: 'Administradores', href: '/platform/admins', icon: Users },
   { name: 'Assinaturas', href: '/platform/subscriptions', icon: CreditCard },
+  { name: 'Eventos de Cartas', href: '/platform/events', icon: CalendarDays },
   { name: 'Suporte', href: '/platform/support', icon: HeadphonesIcon },
   { name: 'Analytics', href: '/platform/analytics', icon: BarChart3 },
   { name: 'Audit Logs', href: '/platform/audit', icon: ScrollText },

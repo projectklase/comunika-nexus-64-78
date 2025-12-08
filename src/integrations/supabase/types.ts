@@ -340,6 +340,54 @@ export type Database = {
         }
         Relationships: []
       }
+      card_events: {
+        Row: {
+          banner_url: string | null
+          created_at: string | null
+          description: string | null
+          ends_at: string
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          show_in_collection: boolean | null
+          slug: string
+          starts_at: string
+          theme_color: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          ends_at: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          show_in_collection?: boolean | null
+          slug: string
+          starts_at: string
+          theme_color?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          ends_at?: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          show_in_collection?: boolean | null
+          slug?: string
+          starts_at?: string
+          theme_color?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       card_packs: {
         Row: {
           cards_received: string[]
@@ -384,6 +432,7 @@ export type Database = {
           def: number
           description: string | null
           effects: Json | null
+          event_id: string | null
           id: string
           image_prompt: string | null
           image_url: string | null
@@ -402,6 +451,7 @@ export type Database = {
           def?: number
           description?: string | null
           effects?: Json | null
+          event_id?: string | null
           id?: string
           image_prompt?: string | null
           image_url?: string | null
@@ -420,6 +470,7 @@ export type Database = {
           def?: number
           description?: string | null
           effects?: Json | null
+          event_id?: string | null
           id?: string
           image_prompt?: string | null
           image_url?: string | null
@@ -431,6 +482,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cards_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "card_events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cards_school_id_fkey"
             columns: ["school_id"]
