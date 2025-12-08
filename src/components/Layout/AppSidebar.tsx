@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CadastrosModal } from '@/components/admin/CadastrosModal';
 import { LayoutDashboard, Rss, Plus, Calendar, Users, History, BookOpen, PlusCircle, ClipboardList, LogOut, Settings, Layers, Target, FileText, UserCog, Gift, Store, ListTodo, Sparkles, Shield, BarChart3, User, Building2, Package, Sword, CreditCard, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import klaseLogo from '@/assets/klase-logo.png';
+import klaseLogoViolet from '@/assets/klase-logo-violet.png';
 const menuItems = {
   administrador: [{
     title: 'Dashboard Admin',
@@ -230,7 +230,7 @@ export function AppSidebar() {
         <div className="p-4">
           <SidebarTrigger className="mb-4" />
           {!isCollapsed && <div className="text-center mb-6">
-              <img src={klaseLogo} alt="Klase" className="h-8 w-auto mx-auto" />
+              <img src={klaseLogoViolet} alt="Klase" className="h-12 w-auto mx-auto" />
               <p className="text-xs text-muted-foreground capitalize mt-1">{user.role}</p>
             </div>}
         </div>
