@@ -344,23 +344,25 @@ export function PostCard({
   };
   
   return <>
-    <Card className={cn(
-      "w-full max-w-full overflow-hidden box-border transition-all duration-300 border",
-      // Borda lateral colorida por tipo
-      !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
-      isNewPost && "border-l-4 border-l-primary",
-      isPostToday && "border-2 border-yellow-500/50 bg-yellow-500/5 shadow-yellow-500/20 shadow-lg",
-      "border-border/50",
-      // Efeito hover apenas em desktop
-      !compact && "hover:shadow-xl",
-      isImportant && [
-        "relative overflow-hidden",
-        "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
-        "shadow-[var(--golden-silhouette)]",
-        "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
-        "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none"
-      ]
-    )}
+    <Card 
+      className={cn(
+        "group w-full max-w-full overflow-hidden box-border transition-all duration-300 border",
+        // Borda lateral colorida por tipo
+        !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
+        isNewPost && "border-l-4 border-l-primary",
+        isPostToday && "border-2 border-yellow-500/50 bg-yellow-500/5 shadow-yellow-500/20 shadow-lg",
+        "border-border/50",
+        // Efeito hover apenas em desktop
+        !compact && "hover:shadow-xl",
+        isImportant && [
+          "relative overflow-hidden",
+          "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
+          "shadow-[var(--golden-silhouette)]",
+          "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
+          "before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-[hsl(var(--golden))]/10 before:to-transparent before:pointer-events-none"
+        ]
+      )}
+      style={{ contain: 'layout' }}
       role="article" 
       aria-labelledby={`post-title-${post.id}`} 
       tabIndex={0} 
@@ -456,7 +458,13 @@ export function PostCard({
 
             {canEdit && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Opções do post">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity will-change-auto" 
+                    aria-label="Opções do post"
+                    onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' })}
+                  >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
