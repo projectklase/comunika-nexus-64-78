@@ -12,6 +12,7 @@ interface BadgeWithLabelProps {
   };
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  onClick?: () => void;
 }
 
 const RARITY_STYLES: Record<string, string> = {
@@ -28,26 +29,40 @@ const SIZE_STYLES = {
   lg: 'text-xl px-4 py-2 text-sm',
 };
 
-export function BadgeWithLabel({ unlockable, size = 'md', className }: BadgeWithLabelProps) {
+export function BadgeWithLabel({ unlockable, size = 'md', className, onClick }: BadgeWithLabelProps) {
   const emoji = unlockable.preview_data?.emoji || '🏆';
   const rarityStyle = RARITY_STYLES[unlockable.rarity] || RARITY_STYLES.COMMON;
   const sizeStyle = SIZE_STYLES[size];
+
+  const badgeContent = (
+    <div
+      className={cn(
+        'flex items-center gap-1.5 rounded-full border backdrop-blur-sm transition-all hover:scale-105',
+        rarityStyle,
+        sizeStyle,
+        onClick && 'cursor-pointer active:scale-95',
+        className
+      )}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
+    >
+      <span>{emoji}</span>
+      <span className="font-medium text-foreground whitespace-nowrap">{unlockable.name}</span>
+    </div>
+  );
+
+  // Se tem onClick, não usar Tooltip para evitar conflito
+  if (onClick) {
+    return badgeContent;
+  }
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div
-            className={cn(
-              'flex items-center gap-1.5 rounded-full border backdrop-blur-sm transition-all hover:scale-105',
-              rarityStyle,
-              sizeStyle,
-              className
-            )}
-          >
-            <span>{emoji}</span>
-            <span className="font-medium text-foreground whitespace-nowrap">{unlockable.name}</span>
-          </div>
+          {badgeContent}
         </TooltipTrigger>
         {unlockable.description && (
           <TooltipContent side="top" className="max-w-xs">
