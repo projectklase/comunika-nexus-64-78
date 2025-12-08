@@ -19,7 +19,6 @@ import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 import { passwordResetStore } from '@/stores/password-reset-store';
 import type { UserRole } from '@/types/auth';
-
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,10 +30,28 @@ const Login = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [remainingLockTime, setRemainingLockTime] = useState(0);
-  const { user, login, isLoading, createDemoUser } = useAuth();
-  const { toast } = useToast();
-  const { isLocked, getRemainingLockTime, recordFailedAttempt, resetAttempts, getAttemptsRemaining } = useLoginRateLimit();
-  const { rememberEmail: savedRememberEmail, lastEmail, setLastEmail, updateSetting } = useUserSettingsStore();
+  const {
+    user,
+    login,
+    isLoading,
+    createDemoUser
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    isLocked,
+    getRemainingLockTime,
+    recordFailedAttempt,
+    resetAttempts,
+    getAttemptsRemaining
+  } = useLoginRateLimit();
+  const {
+    rememberEmail: savedRememberEmail,
+    lastEmail,
+    setLastEmail,
+    updateSetting
+  } = useUserSettingsStore();
   const formRef = useRef<HTMLFormElement>(null);
 
   // Form validation - computed values
@@ -44,12 +61,11 @@ const Login = () => {
   // Force default theme on login screen to prevent premium theme leakage
   useEffect(() => {
     const root = document.documentElement;
-    
+
     // If premium theme is applied, remove it
     if (root.hasAttribute('data-theme')) {
       const currentTheme = root.getAttribute('data-theme');
       const isPremiumTheme = currentTheme?.startsWith('theme_');
-      
       if (isPremiumTheme) {
         console.log('[Login] Removing leaked premium theme:', currentTheme);
         root.removeAttribute('data-theme');
@@ -74,10 +90,8 @@ const Login = () => {
         setIsCapsLockOn(e.getModifierState('CapsLock'));
       }
     };
-
     document.addEventListener('keydown', detectCapsLock);
     document.addEventListener('keyup', detectCapsLock);
-
     return () => {
       document.removeEventListener('keydown', detectCapsLock);
       document.removeEventListener('keyup', detectCapsLock);
@@ -90,11 +104,11 @@ const Login = () => {
       // Only handle Enter if we're not already submitting
       if (e.key === 'Enter' && !isFormSubmitting) {
         const target = e.target as HTMLElement;
-        
+
         // Check if the Enter is within our form
         if (target && formRef.current?.contains(target)) {
           e.preventDefault();
-          
+
           // If it's an input field, submit the form
           if (target.tagName === 'INPUT') {
             const form = formRef.current;
@@ -104,7 +118,7 @@ const Login = () => {
           }
         }
       }
-      
+
       // Ctrl/Cmd+Enter anywhere on the page (if form is present)
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !isFormSubmitting) {
         e.preventDefault();
@@ -114,7 +128,6 @@ const Login = () => {
         }
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFormSubmitting]);
@@ -133,7 +146,8 @@ const Login = () => {
       case 'aluno':
         return ROUTES.ALUNO.DASHBOARD;
       default:
-        return '/dashboard'; // Safe fallback
+        return '/dashboard';
+      // Safe fallback
     }
   };
 
@@ -148,7 +162,6 @@ const Login = () => {
           setShowError(false);
         }
       };
-      
       updateCountdown();
       const interval = setInterval(updateCountdown, 1000);
       return () => clearInterval(interval);
@@ -156,26 +169,23 @@ const Login = () => {
       setRemainingLockTime(0);
     }
   }, [email, isLocked, getRemainingLockTime]);
-  
   const formatCountdown = (ms: number): string => {
     const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
+    const seconds = Math.floor(ms % 60000 / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-
   if (user) {
     const redirectPath = getRoleBasedRoute(user.role);
     return <Navigate to={redirectPath} replace />;
   }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Prevent double submission
     if (isFormSubmitting) {
       return;
     }
-    
+
     // Verificar bloqueio ANTES de tentar login
     if (email && isLocked(email)) {
       const remaining = getRemainingLockTime(email);
@@ -184,13 +194,13 @@ const Login = () => {
       setShowError(true);
       return;
     }
-    
+
     // Validação básica com feedback adequado
     if (email.trim() === '' || password.trim() === '') {
       setFormError('Por favor, preencha email e senha.');
       setShowError(true);
       setTimeout(() => setShowError(false), 5000);
-      
+
       // Focus no primeiro campo vazio
       if (email.trim() === '') {
         document.getElementById('email')?.focus();
@@ -199,18 +209,15 @@ const Login = () => {
       }
       return;
     }
-    
     setFormError('');
     setShowError(false);
     setIsSubmitting(true);
-    
     try {
       const result = await login(email.trim(), password);
-      
       if (result.success) {
         // Limpar tentativas após sucesso
         resetAttempts(email);
-        
+
         // Save email preference to user settings store
         if (rememberEmail) {
           setLastEmail(email.trim());
@@ -219,62 +226,55 @@ const Login = () => {
           setLastEmail('');
           updateSetting('rememberEmail', false);
         }
-
         setShowSuccess(true);
-        
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao Klase.",
+          description: "Bem-vindo ao Klase."
         });
       } else {
         // Registrar falha
         recordFailedAttempt(email);
-        
         const attemptsRemaining = getAttemptsRemaining(email);
-        
+
         // Verificar se atingiu limite após esta falha
         if (isLocked(email)) {
           const lockTime = getRemainingLockTime(email);
           setRemainingLockTime(lockTime);
           setFormError(`Muitas tentativas incorretas. Conta bloqueada por ${formatCountdown(lockTime)}.`);
-          
           toast({
             variant: "destructive",
             title: "Conta bloqueada",
-            description: `Muitas tentativas falhadas. Tente novamente em ${formatCountdown(lockTime)}.`,
+            description: `Muitas tentativas falhadas. Tente novamente em ${formatCountdown(lockTime)}.`
           });
         } else {
           setFormError(result.error || "Email ou senha incorretos.");
-          
+
           // Avisar se está próximo do limite
           if (attemptsRemaining <= 2) {
             toast({
               variant: "destructive",
               title: "Falha no login",
-              description: `Email ou senha incorretos. Restam ${attemptsRemaining} tentativa${attemptsRemaining > 1 ? 's' : ''} antes do bloqueio.`,
+              description: `Email ou senha incorretos. Restam ${attemptsRemaining} tentativa${attemptsRemaining > 1 ? 's' : ''} antes do bloqueio.`
             });
           } else {
             toast({
               variant: "destructive",
               title: "Falha no login",
-              description: result.error || "Email ou senha incorretos. Verifique suas credenciais.",
+              description: result.error || "Email ou senha incorretos. Verifique suas credenciais."
             });
           }
         }
-        
         setShowError(true);
-        
+
         // Focus first invalid field
         const emailInput = document.getElementById('email') as HTMLInputElement;
         const passwordInput = document.getElementById('password') as HTMLInputElement;
-        
         if (!email.includes('@')) {
           emailInput?.focus();
         } else {
           passwordInput?.focus();
           passwordInput?.select();
         }
-
         setTimeout(() => {
           setShowError(false);
         }, 5000);
@@ -284,13 +284,11 @@ const Login = () => {
       const errorMessage = "Erro interno. Tente novamente.";
       setFormError(errorMessage);
       setShowError(true);
-      
       toast({
         variant: "destructive",
         title: "Erro no sistema",
-        description: errorMessage,
+        description: errorMessage
       });
-      
       setTimeout(() => {
         setShowError(false);
       }, 5000);
@@ -298,34 +296,48 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-
   const quickLogin = async (role: string = 'secretaria') => {
     if (isFormSubmitting) return;
-    
     setFormError('');
     setIsSubmitting(true);
-    
     try {
       // ✅ Credenciais reais
       const credentials = {
-        secretaria: { email: 'secretaria@comunika.com', password: '123456', name: 'Maria Silva' },
-        professor: { email: 'julianegrini@gmail.com', password: 'Prof9105!', name: 'Juliane Grini' },
-        aluno: { email: 'alinemenezes@gmail.com', password: 'Praia-Chuva-Lua-814$', name: 'Aline Menezes' },
-        administrador: { email: 'admin.klase@comunika.com', password: 'NexusAdmin#2025!', name: 'Admin Klase' }
+        secretaria: {
+          email: 'secretaria@comunika.com',
+          password: '123456',
+          name: 'Maria Silva'
+        },
+        professor: {
+          email: 'julianegrini@gmail.com',
+          password: 'Prof9105!',
+          name: 'Juliane Grini'
+        },
+        aluno: {
+          email: 'alinemenezes@gmail.com',
+          password: 'Praia-Chuva-Lua-814$',
+          name: 'Aline Menezes'
+        },
+        administrador: {
+          email: 'admin.klase@comunika.com',
+          password: 'NexusAdmin#2025!',
+          name: 'Admin Klase'
+        }
       };
-      
-      const { email, password, name } = credentials[role as keyof typeof credentials];
+      const {
+        email,
+        password,
+        name
+      } = credentials[role as keyof typeof credentials];
       console.log(`QuickLogin attempt for ${role}: ${email}`);
-      
+
       // ✅ Tenta login direto com credenciais reais (contas já existem no banco)
       const result = await login(email, password);
-      
       console.log(`QuickLogin result for ${role}:`, result);
-      
       if (result.success) {
         toast({
           title: "Login realizado com sucesso!",
-          description: `Bem-vindo(a), ${name}!`,
+          description: `Bem-vindo(a), ${name}!`
         });
       } else {
         console.error(`Login failed for ${role}: ${result.error}`);
@@ -338,9 +350,7 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Background patterns - more subtle */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/10" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_0)] bg-[length:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
@@ -353,19 +363,19 @@ const Login = () => {
           
           {/* Hero Panel - col-span-7 on lg+ */}
           <div className="hidden lg:flex lg:col-span-7 flex-col justify-center px-6 xl:px-8 py-8">
-            <div className="w-full" style={{ maxWidth: 'clamp(560px, 48vw, 620px)' }}>
-              <h1 
-                className="font-bold tracking-tight text-foreground mb-4 leading-tight"
-                style={{ fontSize: 'clamp(28px, 3.2vw, 44px)' }}
-              >
+            <div className="w-full" style={{
+            maxWidth: 'clamp(560px, 48vw, 620px)'
+          }}>
+              <h1 className="font-bold tracking-tight text-foreground mb-4 leading-tight" style={{
+              fontSize: 'clamp(28px, 3.2vw, 44px)'
+            }}>
                 A escola que seus alunos{' '}
                 <span className="text-primary/90">querem frequentar</span>
               </h1>
               
-              <p 
-                className="text-muted-foreground mb-8 leading-relaxed max-w-[65ch]"
-                style={{ fontSize: 'clamp(16px, 1.1vw, 18px)' }}
-              >
+              <p className="text-muted-foreground mb-8 leading-relaxed max-w-[65ch]" style={{
+              fontSize: 'clamp(16px, 1.1vw, 18px)'
+            }}>
                 Gamificação, IA preditiva e engajamento real. A única plataforma que transforma gestão escolar em experiência inesquecível.
               </p>
               
@@ -415,12 +425,10 @@ const Login = () => {
           
           {/* Login Card - col-span-5 on lg+ */}
           <div className="flex items-center justify-center px-0 lg:col-span-5 lg:px-6 py-4 lg:py-8 w-full">
-            <Card 
-              className="w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg"
-            >
+            <Card className="w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg">
               <CardHeader className="text-center space-y-3 px-6 py-6">
                 <div className="flex items-center justify-center mb-1">
-                  <img src={klaseLogo} alt="Klase" className="h-16 w-auto" />
+                  <img src={klaseLogo} alt="Klase" className="h-40 w-auto border-0 object-contain rounded-none" />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground">
                   Acesse sua conta
@@ -429,41 +437,17 @@ const Login = () => {
               </CardHeader>
 
               <CardContent className="space-y-5 px-6 pb-6">
-                {formError && (
-                  <div 
-                    className={cn(
-                      "flex items-center gap-2 py-3 px-4 rounded-lg text-sm animate-in fade-in slide-in-from-top-2 duration-300",
-                      email && isLocked(email)
-                        ? "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-pulse"
-                        : "bg-destructive/15 border border-destructive/30 text-destructive"
-                    )}
-                    role="alert"
-                    aria-live="assertive"
-                    id="form-error"
-                  >
-                    {email && isLocked(email) ? (
-                      <Clock className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 shrink-0" />
-                    )}
+                {formError && <div className={cn("flex items-center gap-2 py-3 px-4 rounded-lg text-sm animate-in fade-in slide-in-from-top-2 duration-300", email && isLocked(email) ? "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-pulse" : "bg-destructive/15 border border-destructive/30 text-destructive")} role="alert" aria-live="assertive" id="form-error">
+                    {email && isLocked(email) ? <Clock className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
                     <span>{formError}</span>
-                  </div>
-                )}
+                  </div>}
                 
-                {email && !isLocked(email) && getAttemptsRemaining(email) < 5 && getAttemptsRemaining(email) > 0 && (
-                  <div 
-                    className="flex items-center gap-2 py-2 px-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-600 dark:text-amber-400"
-                    role="status"
-                    aria-live="polite"
-                  >
+                {email && !isLocked(email) && getAttemptsRemaining(email) < 5 && getAttemptsRemaining(email) > 0 && <div className="flex items-center gap-2 py-2 px-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-600 dark:text-amber-400" role="status" aria-live="polite">
                     <AlertTriangle className="h-3 w-3 shrink-0" />
                     <span>
-                      {getAttemptsRemaining(email) === 1 
-                        ? "Última tentativa antes do bloqueio temporário."
-                        : `Restam ${getAttemptsRemaining(email)} tentativas antes do bloqueio.`}
+                      {getAttemptsRemaining(email) === 1 ? "Última tentativa antes do bloqueio temporário." : `Restam ${getAttemptsRemaining(email)} tentativas antes do bloqueio.`}
                     </span>
-                  </div>
-                )}
+                  </div>}
                 
                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                   {/* Email Field */}
@@ -473,21 +457,9 @@ const Login = () => {
                     </Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value.trim());
-                        }}
-                        className="pl-10 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
-                        required
-                        autoComplete="email"
-                        disabled={isFormSubmitting || (email && isLocked(email))}
-                        aria-invalid={!!formError}
-                        aria-describedby={formError ? "form-error" : undefined}
-                      />
+                      <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={e => {
+                      setEmail(e.target.value.trim());
+                    }} className="pl-10 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 disabled:opacity-50" required autoComplete="email" disabled={isFormSubmitting || email && isLocked(email)} aria-invalid={!!formError} aria-describedby={formError ? "form-error" : undefined} />
                     </div>
                   </div>
 
@@ -498,104 +470,54 @@ const Login = () => {
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Digite sua senha"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                        }}
-                        className="pl-10 pr-11 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
-                        required
-                        autoComplete="current-password"
-                        disabled={isFormSubmitting || (email && isLocked(email))}
-                        aria-invalid={!!formError}
-                        aria-describedby={formError ? "form-error" : undefined}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 p-0 hover:bg-muted/50"
-                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                        aria-pressed={showPassword}
-                        disabled={isFormSubmitting}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
+                      <Input id="password" type={showPassword ? "text" : "password"} placeholder="Digite sua senha" value={password} onChange={e => {
+                      setPassword(e.target.value);
+                    }} className="pl-10 pr-11 h-12 text-base bg-background/50 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 disabled:opacity-50" required autoComplete="current-password" disabled={isFormSubmitting || email && isLocked(email)} aria-invalid={!!formError} aria-describedby={formError ? "form-error" : undefined} />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setShowPassword(!showPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 p-0 hover:bg-muted/50" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword} disabled={isFormSubmitting}>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
 
                     {/* Caps Lock Warning */}
-                    {isCapsLockOn && (
-                      <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-2 rounded border border-amber-500/20">
+                    {isCapsLockOn && <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-2 rounded border border-amber-500/20">
                         <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                         <span>Caps Lock ativado</span>
-                      </div>
-                    )}
+                      </div>}
                   </div>
 
                   {/* Remember Email Toggle */}
                   <div className="flex items-center space-x-2 py-1">
-                    <Checkbox
-                      id="remember-email"
-                      checked={rememberEmail}
-                      onCheckedChange={(checked) => setRememberEmail(checked === true)}
-                      disabled={isFormSubmitting}
-                    />
+                    <Checkbox id="remember-email" checked={rememberEmail} onCheckedChange={checked => setRememberEmail(checked === true)} disabled={isFormSubmitting} />
                     <Label htmlFor="remember-email" className="text-xs cursor-pointer text-muted-foreground">
                       Lembrar meu email
                     </Label>
                   </div>
 
                   {/* HoloCTA Login Button */}
-                  <HoloCTA
-                    type="submit"
-                    loading={isFormSubmitting}
-                    success={showSuccess}
-                    error={showError}
-                    disabled={isFormSubmitting || (email && isLocked(email))}
-                    ariaLabel={email && isLocked(email) ? `Bloqueado - ${formatCountdown(remainingLockTime)}` : (isFormSubmitting ? "Fazendo login..." : "Fazer login no Comunika")}
-                    className="w-full h-12"
-                  >
-                    {email && isLocked(email) ? (
-                      <>
+                  <HoloCTA type="submit" loading={isFormSubmitting} success={showSuccess} error={showError} disabled={isFormSubmitting || email && isLocked(email)} ariaLabel={email && isLocked(email) ? `Bloqueado - ${formatCountdown(remainingLockTime)}` : isFormSubmitting ? "Fazendo login..." : "Fazer login no Comunika"} className="w-full h-12">
+                    {email && isLocked(email) ? <>
                         <Clock className="mr-2 h-5 w-5" />
                         Bloqueado ({formatCountdown(remainingLockTime)})
-                      </>
-                    ) : (
-                      isFormSubmitting ? 'Entrando...' : 'Entrar'
-                    )}
+                      </> : isFormSubmitting ? 'Entrando...' : 'Entrar'}
                   </HoloCTA>
 
                   <div className="text-center pt-1">
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="text-xs text-muted-foreground hover:text-primary p-0 h-auto font-normal"
-                      disabled={isFormSubmitting}
-                      onClick={async () => {
-                        try {
-                          const request = await passwordResetStore.createRequest(email, 'unknown', 'Usuário', 'aluno', undefined);
-                          toast({
-                            title: "Solicitação enviada",
-                            description: `Solicitação de reset criada para ${email}. A secretaria foi notificada.`,
-                            duration: 5000,
-                          });
-                        } catch (error: any) {
-                          toast({
-                            title: "Erro na solicitação",
-                            description: error.message || 'Não foi possível criar a solicitação.',
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                    >
+                    <Button type="button" variant="link" className="text-xs text-muted-foreground hover:text-primary p-0 h-auto font-normal" disabled={isFormSubmitting} onClick={async () => {
+                    try {
+                      const request = await passwordResetStore.createRequest(email, 'unknown', 'Usuário', 'aluno', undefined);
+                      toast({
+                        title: "Solicitação enviada",
+                        description: `Solicitação de reset criada para ${email}. A secretaria foi notificada.`,
+                        duration: 5000
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: "Erro na solicitação",
+                        description: error.message || 'Não foi possível criar a solicitação.',
+                        variant: "destructive"
+                      });
+                    }
+                  }}>
                     Preciso redefinir minha senha
                   </Button>
                 </div>
@@ -605,13 +527,7 @@ const Login = () => {
                 <div className="text-center pt-4">
                   <p className="text-xs text-muted-foreground">
                     Não tem uma conta?{' '}
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="text-xs text-primary hover:underline p-0 h-auto font-medium"
-                      disabled={isFormSubmitting}
-                      onClick={() => window.location.href = '/register'}
-                    >
+                    <Button type="button" variant="link" className="text-xs text-primary hover:underline p-0 h-auto font-medium" disabled={isFormSubmitting} onClick={() => window.location.href = '/register'}>
                       Criar conta
                     </Button>
                   </p>
@@ -624,12 +540,7 @@ const Login = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('secretaria')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
-                    >
+                    <button type="button" onClick={() => quickLogin('secretaria')} disabled={isFormSubmitting} className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">Secretaria</div>
                         <div className="text-xs text-muted-foreground truncate">secretaria@comunika.com</div>
@@ -637,12 +548,7 @@ const Login = () => {
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
                     
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('professor')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
-                    >
+                    <button type="button" onClick={() => quickLogin('professor')} disabled={isFormSubmitting} className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">Professor</div>
                         <div className="text-xs text-muted-foreground truncate">julianegrini@gmail.com</div>
@@ -650,12 +556,7 @@ const Login = () => {
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
                     
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('aluno')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50"
-                    >
+                    <button type="button" onClick={() => quickLogin('aluno')} disabled={isFormSubmitting} className="w-full h-12 flex items-center justify-between px-3 text-left bg-muted/20 hover:bg-muted/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-transparent hover:border-border/50">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-foreground">Aluno</div>
                         <div className="text-xs text-muted-foreground truncate">alinemenezes@gmail.com</div>
@@ -663,12 +564,7 @@ const Login = () => {
                       <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 ml-2 transition-all group-hover:translate-x-0.5" />
                     </button>
                     
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('administrador')}
-                      disabled={isFormSubmitting}
-                      className="w-full h-12 flex items-center justify-between px-3 text-left bg-primary/10 hover:bg-primary/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-primary/30 hover:border-primary/50"
-                    >
+                    <button type="button" onClick={() => quickLogin('administrador')} disabled={isFormSubmitting} className="w-full h-12 flex items-center justify-between px-3 text-left bg-primary/10 hover:bg-primary/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group border border-primary/30 hover:border-primary/50">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-primary">Admin</div>
                         <div className="text-xs text-primary/70 truncate">admin.klase@comunika.com</div>
@@ -683,14 +579,10 @@ const Login = () => {
         </div>
         
         {/* Dev Tools - Password Reset Tester */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="max-w-md mx-auto mt-6 px-4">
+        {process.env.NODE_ENV === 'development' && <div className="max-w-md mx-auto mt-6 px-4">
             <PasswordResetTester />
-          </div>
-        )}
+          </div>}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
