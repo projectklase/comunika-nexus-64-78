@@ -300,6 +300,7 @@ export default function SecretariaFeed() {
         <PostList
           key={updateKey}
           posts={posts}
+          isLoading={isLoadingPosts}
           canEdit={canEdit}
           onArchive={handleArchive}
           onDuplicate={handleDuplicate}

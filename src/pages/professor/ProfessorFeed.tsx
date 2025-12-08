@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PostComposer } from '@/components/feed/PostComposer';
 import { PostList } from '@/components/feed/PostList';
 import { ProfessorFeedFilters } from '@/components/feed/ProfessorFeedFilters';
+import { FeedLoadingSkeleton } from '@/components/feed/FeedLoadingSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -450,10 +451,7 @@ export default function ProfessorFeed() {
           {/* Posts */}
           <div className={`${isMobile ? '' : 'lg:col-span-3'} space-y-4 sm:space-y-6`}>
             {isLoadingPosts ? (
-              <div className="text-center py-8 sm:py-12">
-                <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-sm sm:text-base text-muted-foreground">Carregando posts...</p>
-              </div>
+              <FeedLoadingSkeleton />
             ) : filteredPosts.length === 0 ? (
               <div className="text-center py-8 sm:py-12 bg-muted/20 rounded-lg border border-border/50">
                 <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground/50" />
