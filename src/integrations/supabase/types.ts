@@ -1465,6 +1465,48 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_announcements: {
+        Row: {
+          banner_url: string | null
+          created_at: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          sent_by: string
+          target_roles: string[] | null
+          target_schools: string[] | null
+          theme_color: string | null
+          title: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          sent_by: string
+          target_roles?: string[] | null
+          target_schools?: string[] | null
+          theme_color?: string | null
+          title: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          sent_by?: string
+          target_roles?: string[] | null
+          target_schools?: string[] | null
+          theme_color?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       platform_audit_logs: {
         Row: {
           action: string
@@ -2521,6 +2563,10 @@ export type Database = {
       }
       generate_platform_alerts: { Args: never; Returns: number }
       get_admins_overview: { Args: never; Returns: Json }
+      get_announcement_stats: {
+        Args: { p_announcement_id: string }
+        Returns: Json
+      }
       get_attendance_analytics: {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
@@ -2701,6 +2747,18 @@ export type Database = {
         Returns: undefined
       }
       resolve_platform_alert: { Args: { p_alert_id: string }; Returns: boolean }
+      send_platform_announcement: {
+        Args: {
+          p_banner_url?: string
+          p_icon_name?: string
+          p_message: string
+          p_target_roles?: string[]
+          p_target_schools?: string[]
+          p_theme_color?: string
+          p_title: string
+        }
+        Returns: Json
+      }
       update_school_admin: {
         Args: {
           p_is_active?: boolean
