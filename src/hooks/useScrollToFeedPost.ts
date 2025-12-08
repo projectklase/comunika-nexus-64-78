@@ -105,7 +105,8 @@ export function useScrollToFeedPost({
     const targetPostId = getTargetPostId();
     const focus = shouldFocus();
     
-    if (!targetPostId || !focus || hasScrolled.current || isLoading) {
+    const isMenuOpen = sessionStorage.getItem('isMenuOpen') === 'true';
+    if (!targetPostId || !focus || hasScrolled.current || isLoading || isMenuOpen) {
       return;
     }
 
