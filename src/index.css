@@ -419,8 +419,8 @@ html, body {
 /* Mobile-First Design Tokens */
 @import './styles/mobile-tokens.css';
 
-/* Previne scroll da página quando modal está aberto */
-body:has([data-state="open"]) {
+/* Previne scroll da página quando modal/dialog está aberto */
+body:has([role="dialog"][data-state="open"]) {
   overflow: hidden;
   position: fixed;
   width: 100%;
