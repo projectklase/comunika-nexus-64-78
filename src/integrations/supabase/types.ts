@@ -346,6 +346,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           ends_at: string
+          event_pack_name: string | null
           icon_name: string | null
           id: string
           is_active: boolean | null
@@ -361,6 +362,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           ends_at: string
+          event_pack_name?: string | null
           icon_name?: string | null
           id?: string
           is_active?: boolean | null
@@ -376,6 +378,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           ends_at?: string
+          event_pack_name?: string | null
           icon_name?: string | null
           id?: string
           is_active?: boolean | null

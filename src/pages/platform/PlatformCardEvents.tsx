@@ -96,6 +96,7 @@ export default function PlatformCardEvents() {
     description: '',
     theme_color: '#FF6600',
     icon_name: 'Sparkles',
+    event_pack_name: 'Pacote Especial',
     starts_at: '',
     ends_at: '',
     is_active: true,
@@ -111,6 +112,7 @@ export default function PlatformCardEvents() {
         description: event.description || '',
         theme_color: event.theme_color || '#FF6600',
         icon_name: event.icon_name || 'Sparkles',
+        event_pack_name: event.event_pack_name || 'Pacote Especial',
         starts_at: event.starts_at.slice(0, 16),
         ends_at: event.ends_at.slice(0, 16),
         is_active: event.is_active,
@@ -124,6 +126,7 @@ export default function PlatformCardEvents() {
         description: '',
         theme_color: '#FF6600',
         icon_name: 'Sparkles',
+        event_pack_name: 'Pacote Especial',
         starts_at: '',
         ends_at: '',
         is_active: true,
@@ -363,6 +366,19 @@ export default function PlatformCardEvents() {
                   placeholder="Descrição do evento..."
                   rows={3}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="event_pack_name">Nome do Pacote de Evento</Label>
+                <Input
+                  id="event_pack_name"
+                  value={formData.event_pack_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, event_pack_name: e.target.value }))}
+                  placeholder="Ex: Pacote Fantasma"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Nome exibido na loja de pacotes (8000 XP, 100% carta de evento)
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

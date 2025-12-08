@@ -10,7 +10,7 @@ export const RECYCLE_XP_VALUES: Record<CardRarity, number> = {
   EPIC: 50,       // ~17% do custo épico
   LEGENDARY: 150, // ~21% do custo lendário
   SPECIAL: 200,   // Cartas especiais valem mais
-  LIMITED_EDITION: 250, // Cartas de evento valem ainda mais
+  LIMITED_EDITION: 3500, // Cartas de evento: ~44% do custo (8000 XP)
 };
 
 /**

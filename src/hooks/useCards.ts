@@ -328,6 +328,7 @@ export const useCards = () => {
       EPIC: 1500,
       LEGENDARY: 5000,
       FREE: 0,
+      EVENT: 8000,
     };
     const userXp = (user as any)?.total_xp || 0;
     return userXp >= costs[packType];
@@ -340,6 +341,7 @@ export const useCards = () => {
       EPIC: 1500,
       LEGENDARY: 5000,
       FREE: 0,
+      EVENT: 8000,
     };
     return costs[packType];
   };
