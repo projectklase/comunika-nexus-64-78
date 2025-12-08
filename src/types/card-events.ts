@@ -8,6 +8,7 @@ export interface CardEvent {
   theme_color?: string;
   banner_url?: string;
   icon_name?: string;
+  event_pack_name?: string;
   starts_at: string;
   ends_at: string;
   is_active: boolean;
@@ -23,6 +24,7 @@ export interface CardEventFormData {
   theme_color?: string;
   banner_url?: string;
   icon_name?: string;
+  event_pack_name?: string;
   starts_at: string;
   ends_at: string;
   is_active: boolean;

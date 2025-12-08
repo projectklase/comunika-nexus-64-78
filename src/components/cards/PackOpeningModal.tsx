@@ -4,10 +4,11 @@ import { Card, PackType, PACK_COSTS, PACK_SIZES } from '@/types/cards';
 import { CardDetailModal } from './CardDetailModal';
 import { PackOpeningScene } from './PackOpeningScene';
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Gift, Info } from 'lucide-react';
+import { Sparkles, Gift, Info, Flame } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useCardEvents } from '@/hooks/useCardEvents';
 
 interface PackOpeningModalProps {
   isOpen: boolean;
@@ -21,7 +22,8 @@ interface PackOpeningModalProps {
 }
 
 // Probabilidades de raridade por tipo de pacote (devem coincidir com o backend)
-const PACK_PROBABILITIES: Record<PackType, { common: number; rare: number; epic: number; legendary: number }> = {
+// EVENT pack não usa probabilidades - é 100% garantido
+const PACK_PROBABILITIES: Record<Exclude<PackType, 'EVENT'>, { common: number; rare: number; epic: number; legendary: number }> = {
   BASIC: { common: 85, rare: 13, epic: 1.9, legendary: 0.1 },
   RARE: { common: 60, rare: 35, epic: 4.5, legendary: 0.5 },
   EPIC: { common: 40, rare: 45, epic: 14, legendary: 1 },
@@ -39,6 +41,7 @@ export const PackOpeningModal = ({
   lastOpenedCards,
   hasClaimedFreePack = true
 }: PackOpeningModalProps) => {
+  const { activeEvent } = useCardEvents();
   const [selectedPack, setSelectedPack] = useState<PackType | null>(null);
   const [revealing, setRevealing] = useState(false);
   const [showEpicScene, setShowEpicScene] = useState(false);
@@ -88,7 +91,7 @@ export const PackOpeningModal = ({
     onClose();
   };
 
-  const renderProbabilities = (packType: PackType) => {
+  const renderProbabilities = (packType: Exclude<PackType, 'EVENT'>) => {
     const probs = PACK_PROBABILITIES[packType];
     return (
       <div className="text-xs space-y-1 text-left">
@@ -195,6 +198,53 @@ export const PackOpeningModal = ({
               )}
 
               <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Pacote Especial de Evento */}
+                {activeEvent && (
+                  <div className="col-span-2">
+                    <div
+                      className={cn(
+                        "relative p-4 sm:p-6 rounded-lg border-2 transition-all",
+                        "min-h-[140px] sm:min-h-[160px]",
+                        "active:scale-[0.98]",
+                        "border-red-500 bg-gradient-to-br from-red-500/20 via-orange-500/10 to-purple-500/20",
+                        userXP >= PACK_COSTS.EVENT
+                          ? 'hover:scale-105 cursor-pointer hover:border-red-400' 
+                          : 'opacity-50 cursor-not-allowed'
+                      )}
+                      onClick={() => userXP >= PACK_COSTS.EVENT && handleOpenPack('EVENT')}
+                    >
+                      {/* Badge 100% Evento */}
+                      <div className="absolute -top-3 -right-3">
+                        <Badge className="bg-red-500 text-white border-0 px-2 sm:px-3 py-1 text-xs sm:text-sm font-bold animate-bounce">
+                          100% EVENTO
+                        </Badge>
+                      </div>
+
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center mb-3 sm:mb-4 mx-auto shadow-lg shadow-red-500/50">
+                        <Flame className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                      </div>
+                      
+                      <h3 className="text-lg sm:text-xl font-bold text-center mb-1 sm:mb-2 text-red-400">
+                        {activeEvent.event_pack_name || 'Pacote Especial'}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground text-center mb-2 sm:mb-3">
+                        1 carta de edição limitada garantida
+                      </p>
+                      
+                      <div className="flex items-center justify-center gap-1 sm:gap-2">
+                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500" />
+                        <span className="text-sm sm:text-base font-bold">{PACK_COSTS.EVENT} XP</span>
+                      </div>
+
+                      {userXP < PACK_COSTS.EVENT && (
+                        <Badge variant="destructive" className="absolute top-2 left-2 text-[10px] sm:text-xs px-1.5 sm:px-2">
+                          XP Insuficiente
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {packs.map(pack => {
                   const cost = PACK_COSTS[pack.type];
                   const size = PACK_SIZES[pack.type];
@@ -224,7 +274,7 @@ export const PackOpeningModal = ({
                             </button>
                           </TooltipTrigger>
                           <TooltipContent side="right" className="p-3">
-                            {renderProbabilities(pack.type)}
+                            {renderProbabilities(pack.type as Exclude<PackType, 'EVENT'>)}
                           </TooltipContent>
                         </Tooltip>
 
