@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trophy, Flame, Coins } from 'lucide-react';
 import { BadgeWithLabel } from './BadgeWithLabel';
+import { BadgeRequirementsModal } from './BadgeRequirementsModal';
 import { PremiumAvatar } from './PremiumAvatar';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { cn } from '@/lib/utils';
@@ -16,6 +18,7 @@ interface PublicProfileModalProps {
 export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProfileModalProps) {
   const { getKoinsEnabled } = useSchoolSettings();
   const koinsEnabled = getKoinsEnabled();
+  const [selectedBadge, setSelectedBadge] = useState<any>(null);
 
   // Fetch profile data using public RPC
   const { data: profile, isLoading } = useQuery({
@@ -123,10 +126,27 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
                   key={badge.id}
                   unlockable={badge.unlockable as any}
                   size="md"
+                  onClick={() => setSelectedBadge(badge.unlockable)}
                 />
               )
             ))}
           </div>
+        )}
+
+        {/* Badge Requirements Modal */}
+        {selectedBadge && (
+          <BadgeRequirementsModal
+            open={!!selectedBadge}
+            onOpenChange={(open) => !open && setSelectedBadge(null)}
+            unlockable={selectedBadge}
+            currentStats={{
+              xp: profile.total_xp || 0,
+              streak: profile.current_streak_days || 0,
+              challengesCompleted: 0,
+              koinsEarned: profile.koins || 0,
+            }}
+            isUnlocked={true}
+          />
         )}
 
         {/* Estatísticas */}
