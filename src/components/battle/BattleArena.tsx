@@ -29,7 +29,7 @@ import { TimeoutOverlay } from './TimeoutOverlay';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ScrollText, AlertTriangle, Flag } from 'lucide-react';
+import { ScrollText, AlertTriangle, Flag, Volume2, VolumeX } from 'lucide-react';
 
 interface AttackAnimationData {
   attackerName: string;
@@ -93,6 +93,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
   const [defeatedCard, setDefeatedCard] = useState<DefeatedCardData | null>(null);
   const [showTimeoutOverlay, setShowTimeoutOverlay] = useState(false);
   const [timeoutNextPlayerName, setTimeoutNextPlayerName] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
   const abandonTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTurnStartRef = useRef<string | null>(null);
   const lastTrapTimestampRef = useRef<string>('0');
@@ -262,13 +263,23 @@ const [player1Profile, setPlayer1Profile] = useState<{
     Object.keys(battle.game_state as object).length > 0
   );
 
+  // Toggle mute function
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      playBattleMusic();
+    } else {
+      stopBattleMusic();
+    }
+    setIsMuted(!isMuted);
+  }, [isMuted, playBattleMusic, stopBattleMusic]);
+
   // Control background music based on battle state - only depends on status changes, not game_state
   useEffect(() => {
     const isBattleActive = battle?.status === 'IN_PROGRESS' && 
       hasGameStarted &&
       battle?.player2_id;
     
-    if (isBattleActive) {
+    if (isBattleActive && !isMuted) {
       playBattleMusic();
     } else {
       stopBattleMusic();
@@ -278,7 +289,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
     return () => {
       stopBattleMusic();
     };
-  }, [battle?.status, battle?.player2_id, hasGameStarted, playBattleMusic, stopBattleMusic]);
+  }, [battle?.status, battle?.player2_id, hasGameStarted, isMuted, playBattleMusic, stopBattleMusic]);
 
   // Show setup phase announcement for 3 seconds only
   useEffect(() => {
@@ -699,6 +710,18 @@ const [player1Profile, setPlayer1Profile] = useState<{
     <div className="min-h-screen relative overflow-hidden">
       <BattleBackground />
       
+      {/* Mute Button - glassmorphic, semi-transparent */}
+      <button
+        onClick={toggleMute}
+        className="fixed top-4 left-4 z-30 p-2 rounded-full bg-background/30 backdrop-blur-sm border border-white/10 hover:bg-background/50 transition-all"
+        aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
+      >
+        {isMuted ? (
+          <VolumeX className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <Volume2 className="w-4 h-4 text-muted-foreground" />
+        )}
+      </button>
       <div className="relative z-10 container mx-auto px-4 py-8 space-y-6 max-w-7xl">
         <BattlePlayerInfo
           playerName={isLoadingProfiles ? 'Carregando...' : (isPlayer1 ? player2Profile?.name || 'Oponente' : player1Profile?.name || 'Oponente')}
