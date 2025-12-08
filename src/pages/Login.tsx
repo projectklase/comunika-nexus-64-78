@@ -420,7 +420,7 @@ const Login = () => {
             >
               <CardHeader className="text-center space-y-3 px-6 py-6">
                 <div className="flex items-center justify-center mb-1">
-                  <img src={klaseLogo} alt="Klase" className="h-10 w-auto" />
+                  <img src={klaseLogo} alt="Klase" className="h-16 w-auto" />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground">
                   Acesse sua conta
