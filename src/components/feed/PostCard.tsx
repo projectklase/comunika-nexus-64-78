@@ -461,14 +461,17 @@ export function PostCard({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity will-change-auto" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity" 
                     aria-label="Opções do post"
-                    onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' })}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="glass-card border-border/50">
+                <DropdownMenuContent 
+                  align="end" 
+                  className="glass-card border-border/50"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                >
                   <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
                 </DropdownMenuContent>
               </DropdownMenu>}
