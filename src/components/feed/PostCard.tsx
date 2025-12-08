@@ -101,7 +101,6 @@ export function PostCard({
     description: "",
     postId: ""
   });
-  
   // Memoize expensive computations
   const [delivery, setDelivery] = useState<any>(null);
   useEffect(() => {
@@ -346,7 +345,7 @@ export function PostCard({
   
   return <>
     <Card className={cn(
-      "group w-full max-w-full box-border transition-all duration-300 border",
+      "w-full max-w-full overflow-hidden box-border transition-all duration-300 border",
       // Borda lateral colorida por tipo
       !isNewPost && !isImportant && `border-l-4 ${getTypeBorderColor(post.type)}`,
       isNewPost && "border-l-4 border-l-primary",
@@ -355,7 +354,7 @@ export function PostCard({
       // Efeito hover apenas em desktop
       !compact && "hover:shadow-xl",
       isImportant && [
-        "relative",
+        "relative overflow-hidden",
         "border-[hsl(var(--golden))] bg-[hsl(var(--golden))]/5",
         "shadow-[var(--golden-silhouette)]",
         "hover:shadow-[var(--golden-glow)] hover:border-[hsl(var(--golden-light))]",
@@ -455,35 +454,16 @@ export function PostCard({
               </div>
             </div>
 
-            {canEdit && (
-              <DropdownMenu onOpenChange={(open) => {
-                  if (open) {
-                    sessionStorage.setItem('isMenuOpen', 'true');
-                  } else {
-                    sessionStorage.removeItem('isMenuOpen');
-                  }
-                }}>
+            {canEdit && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    type="button"
-                    className="h-8 w-8 p-0" 
-                    aria-label="Opções do post"
-                  >
+                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Opções do post">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end"
-                  className="glass-card border-border/50"
-                  sideOffset={4}
-                  onCloseAutoFocus={(e) => e.preventDefault()}
-                >
+                <DropdownMenuContent align="end" className="glass-card border-border/50">
                   <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
                 </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+              </DropdownMenu>}
           </div>
 
           <h3 id={`post-title-${post.id}`} className={cn(
