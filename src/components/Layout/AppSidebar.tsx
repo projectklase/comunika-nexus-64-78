@@ -94,16 +94,20 @@ const menuItems = {
     { title: 'Atividades', url: '/professor/atividades', icon: ClipboardList },
     { title: 'Calendário', url: '/professor/calendario', icon: Calendar },
   ],
-  aluno: [
+  // Itens do aluno ANTES do submenu Klase Kards
+  alunoBeforeKards: [
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     { title: 'Perfil', url: '/aluno/perfil', icon: User },
     { title: 'Feed', url: '/aluno/feed', icon: Rss },
     { title: 'Nexus', url: '/aluno/nexus', icon: Sparkles },
-    // Cartas e Arena movidos para submenu Klase Kards Arena
+  ],
+  // Itens do aluno DEPOIS do submenu Klase Kards
+  alunoAfterKards: [
     { title: 'Minhas Atividades', url: '/minhas-atividades', icon: ListTodo },
     { title: 'Calendário', url: '/aluno/calendario', icon: Calendar },
     { title: 'Loja de Recompensas', url: '/aluno/loja-recompensas', icon: Store },
   ],
+  aluno: [], // Mantido para compatibilidade
 };
 
 export function AppSidebar() {
@@ -174,66 +178,99 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavClass}>
-                      <item.icon className={`h-4 w-4 ${isActive(item.url) ? 'animate-glow-pulse' : ''}`} />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              
-              {/* Submenu Klase Kards Arena - apenas para alunos */}
-              {user.role === 'aluno' && (
-                <Collapsible open={kardsOpen} onOpenChange={setKardsOpen}>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton 
-                        className={cn(
-                          "justify-between w-full",
-                          isInKardsSection 
-                            ? 'bg-primary/20 text-primary border border-primary/30 neon-glow' 
-                            : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        <span className="flex items-center gap-2">
-                          <Sword className={cn("h-4 w-4", isInKardsSection && "animate-glow-pulse")} />
-                          {!isCollapsed && <span>Klase Kards Arena</span>}
-                        </span>
-                        {!isCollapsed && (
-                          <ChevronDown className={cn(
-                            "h-4 w-4 transition-transform duration-200",
-                            kardsOpen && "rotate-180"
-                          )} />
-                        )}
+              {/* Para alunos: renderizar em ordem específica com submenu no meio */}
+              {user.role === 'aluno' ? (
+                <>
+                  {/* Itens antes do submenu */}
+                  {menuItems.alunoBeforeKards.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <NavLink to={item.url} className={getNavClass}>
+                          <item.icon className={`h-4 w-4 ${isActive(item.url) ? 'animate-glow-pulse' : ''}`} />
+                          {!isCollapsed && <span>{item.title}</span>}
+                        </NavLink>
                       </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={isActive('/aluno/cartas')}>
-                            <NavLink to="/aluno/cartas" className={getNavClass}>
-                              <Package className="h-4 w-4" />
-                              <span>Cartas</span>
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={isActive('/aluno/batalha')}>
-                            <NavLink to="/aluno/batalha" className={getNavClass}>
-                              <Sword className="h-4 w-4" />
-                              <span>Arena</span>
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
+                    </SidebarMenuItem>
+                  ))}
+                  
+                  {/* Submenu Klase Kards Arena */}
+                  <Collapsible open={kardsOpen} onOpenChange={setKardsOpen}>
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton 
+                          className={cn(
+                            "w-full cursor-pointer",
+                            isInKardsSection 
+                              ? 'bg-primary/20 text-primary border border-primary/30 neon-glow' 
+                              : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          <Sword className={cn("h-4 w-4", isInKardsSection && "animate-glow-pulse")} />
+                          {!isCollapsed && (
+                            <>
+                              <span className="flex-1 text-left">Klase Kards Arena</span>
+                              <ChevronDown className={cn(
+                                "h-4 w-4 transition-transform duration-200",
+                                kardsOpen && "rotate-180"
+                              )} />
+                            </>
+                          )}
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={isActive('/aluno/cartas')}>
+                              <NavLink to="/aluno/cartas" className={getNavClass}>
+                                <Package className="h-4 w-4" />
+                                <span>Cartas</span>
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={isActive('/aluno/batalha')}>
+                              <NavLink to="/aluno/batalha" className={getNavClass}>
+                                <Sword className="h-4 w-4" />
+                                <span>Arena</span>
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                  
+                  {/* Itens depois do submenu */}
+                  {menuItems.alunoAfterKards
+                    .filter(item => {
+                      if (item.url.includes('loja-recompensas') && !koinsEnabled) return false;
+                      return true;
+                    })
+                    .map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <NavLink to={item.url} className={getNavClass}>
+                          <item.icon className={`h-4 w-4 ${isActive(item.url) ? 'animate-glow-pulse' : ''}`} />
+                          {!isCollapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              ) : (
+                /* Para outros roles: renderizar normalmente */
+                items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} className={getNavClass}>
+                        <item.icon className={`h-4 w-4 ${isActive(item.url) ? 'animate-glow-pulse' : ''}`} />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
-                </Collapsible>
+                ))
               )}
             </SidebarMenu>
           </SidebarGroupContent>
