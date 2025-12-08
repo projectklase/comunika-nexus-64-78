@@ -54,7 +54,7 @@ export function AttachmentPreviewModal({ attachment, isOpen, onClose }: Attachme
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden [&>button]:hidden">
         <DialogHeader className="p-6 pb-4">
           <div className="flex items-center justify-between">
             <div>

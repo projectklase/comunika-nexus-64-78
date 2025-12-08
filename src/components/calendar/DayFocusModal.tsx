@@ -194,7 +194,7 @@ export function DayFocusModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={closeModal}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0 gap-0 bg-background border border-border/30 shadow-2xl">
+      <DialogContent className="max-w-6xl h-[90vh] p-0 gap-0 bg-background border border-border/30 shadow-2xl [&>button]:hidden">
         <DialogTitle className="sr-only">Dia em Foco</DialogTitle>
         <DialogDescription className="sr-only">
           Modal para visualizar e gerenciar eventos e atividades do dia selecionado
