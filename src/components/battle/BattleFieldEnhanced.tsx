@@ -12,6 +12,8 @@ interface FieldMonster {
   image_url?: string;
   rarity?: string;
   summoned_on_turn?: number;
+  current_hp?: number;
+  max_hp?: number;
 }
 
 interface FieldTrap {
