@@ -164,7 +164,40 @@ export function useMatchmaking(): MatchmakingResult {
         setStatus('searching');
         setSearchTime(0);
 
-        // RPC já limpa entradas antigas internamente com advisory lock
+        // Verificar e limpar entradas obsoletas ANTES de chamar o RPC
+        const { data: existingQueue } = await supabase
+          .from('battle_queue')
+          .select('status, battle_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existingQueue) {
+          // Se já tem entrada MATCHED, verificar se a batalha ainda está ativa
+          if (existingQueue.status === 'MATCHED' && existingQueue.battle_id) {
+            const { data: battleData } = await supabase
+              .from('battles')
+              .select('status')
+              .eq('id', existingQueue.battle_id)
+              .single();
+
+            if (battleData?.status === 'IN_PROGRESS') {
+              // Batalha ainda ativa - redirecionar para ela
+              queryClient.invalidateQueries({ queryKey: ['battle'] });
+              setFoundBattleId(existingQueue.battle_id);
+              setStatus('found');
+              toast.success('Batalha em andamento encontrada!');
+              return;
+            }
+          }
+
+          // Entrada obsoleta - deletar antes de tentar entrar novamente
+          await supabase
+            .from('battle_queue')
+            .delete()
+            .eq('user_id', user.id);
+        }
+
+        // Agora chamar o RPC com fila limpa
         const { data, error } = await supabase.rpc('join_battle_queue', {
           p_user_id: user.id,
           p_deck_id: deckId,
@@ -176,13 +209,11 @@ export function useMatchmaking(): MatchmakingResult {
         const result = data as { status: string; battle_id?: string; queue_id?: string };
 
         if (result.status === 'MATCHED' && result.battle_id) {
-          // Immediate match found! Invalidate cache first
           queryClient.invalidateQueries({ queryKey: ['battle'] });
           setFoundBattleId(result.battle_id);
           setStatus('found');
           toast.success('Oponente encontrado!');
         } else {
-          // Added to queue, waiting for opponent
           toast.success('Procurando oponente...');
         }
       } catch (error) {
