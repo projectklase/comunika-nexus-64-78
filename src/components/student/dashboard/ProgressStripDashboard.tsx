@@ -7,7 +7,8 @@ import { Post } from '@/types/post';
 import { useAuth } from '@/contexts/AuthContext';
 import { deliveryStore } from '@/stores/delivery-store';
 import { useStudentGamification } from '@/stores/studentGamification';
-import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, format, addDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface ProgressStripDashboardProps {
   posts: Post[];
@@ -48,15 +49,6 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
           return isWithinInterval(dueDate, { start: monthStart, end: monthEnd });
         });
 
-        // Filter weekly activities
-        const weeklyActivities = posts.filter(post => {
-          if (!['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) return false;
-          if (!post.dueAt) return false;
-          
-          const dueDate = new Date(post.dueAt);
-          return isWithinInterval(dueDate, { start: oneWeekAgo, end: now });
-        });
-
         // Calculate monthly delivered count
         const deliveredMonthly = monthlyActivities.filter(post =>
           allDeliveries.some(delivery => delivery.postId === post.id)
@@ -65,12 +57,24 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
         const totalMonthly = monthlyActivities.length;
         const percentageMonthly = totalMonthly > 0 ? Math.round((deliveredMonthly / totalMonthly) * 100) : 0;
 
-        // Calculate weekly completed count
-        const completedWeekly = weeklyActivities.filter(post =>
-          allDeliveries.some(delivery => delivery.postId === post.id)
-        ).length;
+        // Weekly: count deliveries made in last 7 days
+        const completedWeekly = allDeliveries.filter(delivery => {
+          const submittedDate = new Date(delivery.submittedAt);
+          return isWithinInterval(submittedDate, { start: oneWeekAgo, end: now });
+        }).length;
 
-        const pendingWeekly = weeklyActivities.length - completedWeekly;
+        // Weekly: count pending activities (due in next 7 days, no delivery yet)
+        const oneWeekFromNow = addDays(now, 7);
+        const pendingWeekly = posts.filter(post => {
+          if (!['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) return false;
+          if (!post.dueAt) return false;
+          
+          const dueDate = new Date(post.dueAt);
+          const isFutureDue = dueDate >= now && dueDate <= oneWeekFromNow;
+          const hasDelivery = allDeliveries.some(d => d.postId === post.id);
+          
+          return isFutureDue && !hasDelivery;
+        }).length;
 
         setMonthlyProgress({
           delivered: deliveredMonthly,
@@ -113,7 +117,7 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
             Progresso do Mês
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            Acompanhe suas entregas de {format(new Date(), 'MMMM yyyy')}
+            Acompanhe suas entregas de {format(new Date(), 'MMMM yyyy', { locale: ptBR })}
           </CardDescription>
         </CardHeader>
         <CardContent className="py-4 px-4 sm:px-6">
@@ -135,7 +139,7 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
             Progresso do Mês
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            Acompanhe suas entregas de {format(new Date(), 'MMMM yyyy')}
+            Acompanhe suas entregas de {format(new Date(), 'MMMM yyyy', { locale: ptBR })}
           </CardDescription>
         </CardHeader>
         <CardContent className="py-4 px-4 sm:px-6">
@@ -156,7 +160,7 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
           Progresso do Mês
         </CardTitle>
         <CardDescription className="text-xs sm:text-sm">
-          Suas entregas de {format(new Date(), 'MMMM yyyy')}
+          Suas entregas de {format(new Date(), 'MMMM yyyy', { locale: ptBR })}
         </CardDescription>
       </CardHeader>
       
