@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AttachmentGrid } from "@/components/attachments/AttachmentGrid";
 import { PostInsights } from "./PostInsights";
-import { PostActionsMenu } from "./PostActionsMenu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Calendar, Clock, MapPin, Archive, Copy, Edit, Trash2, Paperclip, Users, Globe, CheckCircle, Upload, FileText, Bookmark, BookmarkCheck, CalendarPlus, Eye, Phone, Star, UserPlus } from "lucide-react";
+import { MoreVertical, Calendar, Clock, MapPin, Archive, Copy, Edit, Trash2, Paperclip, Users, Globe, CheckCircle, Upload, FileText, Bookmark, BookmarkCheck, CalendarPlus, Eye, Phone, Star, UserPlus } from "lucide-react";
 import { Post, PostType } from "@/types/post";
 import { useClassStore } from "@/stores/class-store";
 import { getClassDisplayInfo, resolveSubjectNames } from "@/utils/class-helpers";
@@ -23,7 +23,7 @@ import { deliveryStore } from "@/stores/delivery-store";
 import { DrawerEntrega } from "./DrawerEntrega";
 import { PostDetailDrawer } from "./PostDetailDrawer";
 import { PostActionHandler } from "./PostActionHandler";
-
+import { PostActionsUnified } from "./PostActionsUnified";
 import { PostReadInsights } from "./PostReadInsights";
 import { EventConfirmationManager } from "@/components/student/EventConfirmationManager";
 import { InviteFriendsSection } from "./InviteFriendsSection";
@@ -364,7 +364,7 @@ export function PostCard({
     )}
       role="article" 
       aria-labelledby={`post-title-${post.id}`} 
-      tabIndex={-1} 
+      tabIndex={0} 
       data-post-id={post.id} 
       id={`post-${post.id}`} 
       data-important={isImportant}
@@ -456,13 +456,27 @@ export function PostCard({
             </div>
 
             {canEdit && (
-              <PostActionsMenu
-                post={post}
-                onEdit={onEdit}
-                onDuplicate={onDuplicate}
-                onRefresh={onUpdate}
-                onConfirmAction={handleConfirmAction}
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    type="button"
+                    className="h-8 w-8 p-0" 
+                    aria-label="Opções do post"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end"
+                  className="glass-card border-border/50"
+                  sideOffset={4}
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                >
+                  <PostActionsUnified post={post} onEdit={onEdit} onDuplicate={onDuplicate} onRefresh={onUpdate} onConfirmAction={handleConfirmAction} />
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 
