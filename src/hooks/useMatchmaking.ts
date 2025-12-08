@@ -164,12 +164,7 @@ export function useMatchmaking(): MatchmakingResult {
         setStatus('searching');
         setSearchTime(0);
 
-        // Clean up old queue entries before joining
-        await supabase
-          .from('battle_queue')
-          .delete()
-          .eq('user_id', user.id);
-
+        // RPC já limpa entradas antigas internamente com advisory lock
         const { data, error } = await supabase.rpc('join_battle_queue', {
           p_user_id: user.id,
           p_deck_id: deckId,
