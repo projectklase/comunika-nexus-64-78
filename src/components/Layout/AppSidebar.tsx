@@ -271,7 +271,7 @@ export function AppSidebar() {
                             <SidebarMenuSubButton asChild isActive={isActive('/aluno/cartas')}>
                               <NavLink to="/aluno/cartas" className={getNavClass}>
                                 <Package className="h-4 w-4" />
-                                <span>Cartas</span>
+                                <span className="text-primary">Cartas</span>
                               </NavLink>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -280,7 +280,7 @@ export function AppSidebar() {
                             <SidebarMenuSubButton asChild isActive={isActive('/aluno/batalha')}>
                               <NavLink to="/aluno/batalha" className={getNavClass}>
                                 <Sword className="h-4 w-4" />
-                                <span>Arena</span>
+                                <span className="text-primary">Arena</span>
                               </NavLink>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
