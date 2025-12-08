@@ -9,7 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
 import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
-import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, AlertCircle, Clock, Gamepad2, Brain, TrendingUp, ChevronDown } from 'lucide-react';
+import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, AlertTriangle, AlertCircle, Clock, Gamepad2, Brain, TrendingUp, ChevronDown } from 'lucide-react';
+import klaseLogo from '@/assets/klase-logo.png';
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
@@ -223,7 +224,7 @@ const Login = () => {
         
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao Comunika.",
+          description: "Bem-vindo ao Klase.",
         });
       } else {
         // Registrar falha
@@ -418,11 +419,8 @@ const Login = () => {
               className="w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg"
             >
               <CardHeader className="text-center space-y-3 px-6 py-6">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <Shield className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl font-bold">Comunika</CardTitle>
+                <div className="flex items-center justify-center mb-1">
+                  <img src={klaseLogo} alt="Klase" className="h-10 w-auto" />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground">
                   Acesse sua conta

@@ -150,15 +150,15 @@ export function CalendarActionsUnified({
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Comunika//Calendar Event//PT',
+      'PRODID:-//Klase//Calendar Event//PT',
       'BEGIN:VEVENT',
-      `UID:${eventData.id}@comunika.app`,
+      `UID:${eventData.id}@klase.app`,
       `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `DTSTART:${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `DTEND:${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `SUMMARY:${eventData.title}`,
       ...(eventData.eventLocation ? [`LOCATION:${eventData.eventLocation}`] : []),
-      `DESCRIPTION:Evento do Comunika - ${eventData.title}`,
+      `DESCRIPTION:Evento do Klase - ${eventData.title}`,
       'END:VEVENT',
       'END:VCALENDAR'
     ].join('\r\n');
