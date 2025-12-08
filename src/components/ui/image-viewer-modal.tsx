@@ -127,7 +127,7 @@ export function ImageViewerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 glass-card border-border/50 overflow-hidden">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 glass-card border-border/50 overflow-hidden [&>button]:hidden">
         {/* Header */}
         <DialogHeader className="p-4 pb-2 border-b border-border/30">
           <div className="flex items-center justify-between">
