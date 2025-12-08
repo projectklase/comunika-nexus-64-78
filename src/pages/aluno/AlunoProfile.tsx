@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchool } from '@/contexts/SchoolContext';
 import { useStudentRankings } from '@/hooks/useStudentRankings';
-import { useUnlockables } from '@/hooks/useUnlockables';
+import { useUnlockables, type Unlockable } from '@/hooks/useUnlockables';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { useStudentGamification } from '@/stores/studentGamification';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { RankingList } from '@/components/gamification/RankingList';
 import { ProfileStats } from '@/components/gamification/ProfileStats';
 import { BadgeWithLabel } from '@/components/gamification/BadgeWithLabel';
 import { BadgeSelectorModal } from '@/components/gamification/BadgeSelectorModal';
+import { BadgeRequirementsModal } from '@/components/gamification/BadgeRequirementsModal';
 import { PublicProfileModal } from '@/components/gamification/PublicProfileModal';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +24,7 @@ export default function AlunoProfile() {
   const { currentSchool } = useSchool();
   const { getKoinsEnabled } = useSchoolSettings();
   const gamification = useStudentGamification();
-  const { userUnlocks, isLoading: isLoadingUnlocks, getEquippedAvatarData } = useUnlockables();
+  const { userUnlocks, unlockables, isLoading: isLoadingUnlocks, getEquippedAvatarData } = useUnlockables();
   const rankings = useStudentRankings(user?.id, 10);
   
   // Avatar gamificado equipado
@@ -31,6 +32,7 @@ export default function AlunoProfile() {
   
   const [badgeSelectorOpen, setBadgeSelectorOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<Unlockable | null>(null);
 
   const koinsEnabled = getKoinsEnabled();
 
@@ -195,15 +197,21 @@ export default function AlunoProfile() {
                   </div>
                 ) : equippedBadges.length > 0 ? (
                   <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                    {equippedBadges.map((badge) => (
-                      badge.unlockable && (
+                    {equippedBadges.map((badge) => {
+                      if (!badge.unlockable) return null;
+                      
+                      // Buscar dados completos do unlockable para obter requisitos
+                      const fullUnlockable = unlockables?.find(u => u.id === badge.unlockable_id);
+                      
+                      return (
                         <BadgeWithLabel
                           key={badge.id}
                           unlockable={badge.unlockable}
                           size="md"
+                          onClick={() => setSelectedBadge(fullUnlockable || badge.unlockable as Unlockable)}
                         />
-                      )
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
@@ -273,6 +281,21 @@ export default function AlunoProfile() {
           open={!!selectedStudentId}
           onOpenChange={(open) => !open && setSelectedStudentId(null)}
           studentId={selectedStudentId}
+        />
+      )}
+
+      {selectedBadge && (
+        <BadgeRequirementsModal
+          open={!!selectedBadge}
+          onOpenChange={(open) => !open && setSelectedBadge(null)}
+          unlockable={selectedBadge}
+          currentStats={{
+            xp: profileXP,
+            streak: gamification.streak,
+            challengesCompleted: 0, // TODO: buscar do banco se necessário
+            koinsEarned: user?.koins || 0,
+          }}
+          isUnlocked={true}
         />
       )}
     </div>
