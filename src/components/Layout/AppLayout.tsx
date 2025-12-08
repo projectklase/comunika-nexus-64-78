@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,6 +26,7 @@ import { useStudentClass } from '@/hooks/useStudentClass';
 import { usePeopleStore } from '@/stores/people-store';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
 import { useUnlockables } from '@/hooks/useUnlockables';
+import { KlaseAnnouncementModal } from '@/components/announcements/KlaseAnnouncementModal';
 
 import { useUserSettingsStore } from '@/stores/user-settings-store';
 
@@ -39,6 +42,26 @@ export function AppLayout({ children }: AppLayoutProps) {
   const studentClass = useStudentClass();
   const { getEquippedAvatarData, getEquippedItem, userUnlocks } = useUnlockables();
   const equippedAvatar = getEquippedAvatarData();
+  const [announcementDismissed, setAnnouncementDismissed] = useState(false);
+
+  // Fetch pending platform announcement
+  const { data: pendingAnnouncement } = useQuery({
+    queryKey: ['pending-platform-announcement', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user!.id)
+        .eq('type', 'PLATFORM_ANNOUNCEMENT')
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !announcementDismissed,
+  });
 
   // Ensure stores are loaded
   React.useEffect(() => {
@@ -161,6 +184,14 @@ export function AppLayout({ children }: AppLayoutProps) {
         isOpen={activityDrawerState.isOpen}
         onClose={() => closeActivityDrawer(navigate)}
       />
+      
+      {/* Platform Announcement Modal */}
+      {pendingAnnouncement && !announcementDismissed && (
+        <KlaseAnnouncementModal
+          notification={pendingAnnouncement}
+          onClose={() => setAnnouncementDismissed(true)}
+        />
+      )}
     </SidebarProvider>
   );
 }
