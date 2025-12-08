@@ -169,15 +169,16 @@ export function PlatformAnnouncementModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/50 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Megaphone className="w-5 h-5 text-primary" />
             Novo Anúncio da Plataforma
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6">
           <div className="space-y-6 py-4">
             {/* Title */}
             <div className="space-y-2">
@@ -403,10 +404,11 @@ export function PlatformAnnouncementModal({
               </div>
             )}
           </div>
+          </div>
         </ScrollArea>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border/50 shrink-0 bg-background/80 backdrop-blur-sm">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
