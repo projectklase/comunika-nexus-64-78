@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
 import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
-import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, AlertCircle, Clock, Calendar, MessageSquare, BookOpen, ChevronDown } from 'lucide-react';
+import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, Shield, ArrowRight, AlertTriangle, AlertCircle, Clock, Gamepad2, Brain, TrendingUp, ChevronDown } from 'lucide-react';
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
@@ -357,45 +357,45 @@ const Login = () => {
                 className="font-bold tracking-tight text-foreground mb-4 leading-tight"
                 style={{ fontSize: 'clamp(28px, 3.2vw, 44px)' }}
               >
-                Comunicação escolar,{' '}
-                <span className="text-primary/90">sem atrito</span>
+                A escola que seus alunos{' '}
+                <span className="text-primary/90">querem frequentar</span>
               </h1>
               
               <p 
                 className="text-muted-foreground mb-8 leading-relaxed max-w-[65ch]"
                 style={{ fontSize: 'clamp(16px, 1.1vw, 18px)' }}
               >
-                Conecte professores, alunos e secretaria em uma plataforma intuitiva e poderosa.
+                Gamificação, IA preditiva e engajamento real. A única plataforma que transforma gestão escolar em experiência inesquecível.
               </p>
               
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <Calendar className="w-4 h-4 text-primary" />
+                    <Gamepad2 className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-foreground leading-tight">Calendário inteligente</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Visualize atividades, eventos e prazos em uma única tela organizada</p>
+                    <h3 className="font-medium text-foreground leading-tight">Gamificação que vicia</h3>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Koins, cartas colecionáveis, batalhas PvP e rankings. Seus alunos vão QUERER estudar.</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-primary" />
+                    <Brain className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-foreground leading-tight">Feed unificado</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Comunicação centralizada entre toda a comunidade escolar</p>
+                    <h3 className="font-medium text-foreground leading-tight">IA Preditiva Anti-Evasão</h3>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Identificamos alunos em risco ANTES de abandonarem. Alertas automáticos para diretores.</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-primary" />
+                    <TrendingUp className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-foreground leading-tight">Gestão de atividades</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Crie, distribua e acompanhe atividades com facilidade</p>
+                    <h3 className="font-medium text-foreground leading-tight">Gestão 360° com Analytics</h3>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Dashboard em tempo real, Pulse Score, relatórios automatizados e controle total.</p>
                   </div>
                 </div>
               </div>
