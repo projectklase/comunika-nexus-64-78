@@ -710,10 +710,10 @@ const [player1Profile, setPlayer1Profile] = useState<{
     <div className="min-h-screen relative overflow-hidden">
       <BattleBackground />
       
-      {/* Mute Button - glassmorphic, semi-transparent */}
+      {/* Mute Button - glassmorphic, semi-transparent, z-60 to stay above modals */}
       <button
         onClick={toggleMute}
-        className="fixed top-4 left-4 z-30 p-2 rounded-full bg-background/30 backdrop-blur-sm border border-white/10 hover:bg-background/50 transition-all"
+        className="fixed top-4 left-4 z-[60] p-2 rounded-full bg-background/30 backdrop-blur-sm border border-white/10 hover:bg-background/50 transition-all"
         aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
       >
         {isMuted ? (
