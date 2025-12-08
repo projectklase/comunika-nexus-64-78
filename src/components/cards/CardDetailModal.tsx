@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Zap, Shield, Star, Clock, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CardDisplay } from './CardDisplay';
+import { InteractiveCard3D } from './InteractiveCard3D';
 
 interface CardDetailModalProps {
   card: Card | null;
@@ -76,13 +76,9 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
         >
           <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-6 pb-4 sm:pb-6">
             
-            {/* Coluna da Carta - CENTRALIZADA */}
+            {/* Coluna da Carta - CENTRALIZADA com giro 360° */}
             <div className="flex flex-col items-center justify-center gap-3 w-full sm:sticky sm:top-6 sm:self-start">
-              <CardDisplay 
-                card={card} 
-                size="lg"
-                showStats={true}
-              />
+              <InteractiveCard3D card={card} size="lg" />
               
               {/* Badge de quantidade */}
               {quantity !== undefined && quantity > 0 && (
