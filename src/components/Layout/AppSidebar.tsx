@@ -196,16 +196,15 @@ export function AppSidebar() {
                   {/* Submenu Klase Kards Arena */}
                   <Collapsible open={kardsOpen} onOpenChange={setKardsOpen}>
                     <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton 
-                          className={cn(
-                            "w-full cursor-pointer",
+                      <SidebarMenuButton asChild>
+                        <CollapsibleTrigger
+                          className={
                             isInKardsSection 
                               ? 'bg-primary/20 text-primary border border-primary/30 neon-glow' 
                               : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
-                          )}
+                          }
                         >
-                          <Sword className={cn("h-4 w-4", isInKardsSection && "animate-glow-pulse")} />
+                          <Sword className={`h-4 w-4 ${isInKardsSection ? 'animate-glow-pulse' : ''}`} />
                           {!isCollapsed && (
                             <>
                               <span className="flex-1 text-left">Klase Kards Arena</span>
@@ -215,8 +214,8 @@ export function AppSidebar() {
                               )} />
                             </>
                           )}
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
+                        </CollapsibleTrigger>
+                      </SidebarMenuButton>
                       
                       <CollapsibleContent>
                         <SidebarMenuSub>
