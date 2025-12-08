@@ -25,29 +25,30 @@ interface BattleSounds {
 }
 
 export const useBattleSounds = (): BattleSounds => {
-  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({
-    win: new Audio(winSound),
-    lose: new Audio(loseSound),
-    attack: new Audio(swordAttackSound),
-    defense: new Audio(shieldDefenseSound),
-    swoosh: new Audio(swooshCardSound),
-    defeated: new Audio(cardDefeatedSound),
-    battleBg: new Audio(battleBgMusic),
-    spell: new Audio(spellCardSound),
-  });
+  // Lazy initialization - only create Audio instances once
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement } | null>(null);
+
+  if (audioRefs.current === null) {
+    audioRefs.current = {
+      win: new Audio(winSound),
+      lose: new Audio(loseSound),
+      attack: new Audio(swordAttackSound),
+      defense: new Audio(shieldDefenseSound),
+      swoosh: new Audio(swooshCardSound),
+      defeated: new Audio(cardDefeatedSound),
+      battleBg: new Audio(battleBgMusic),
+      spell: new Audio(spellCardSound),
+    };
+    // Configure battle background music immediately
+    audioRefs.current.battleBg.loop = true;
+    audioRefs.current.battleBg.volume = 0.25;
+  }
 
   const volume = useRef(0.5); // Default volume 50%
   const bgMusicVolume = 0.25; // Background music at 25%
 
-  // Configure battle background music
-  useEffect(() => {
-    const bgAudio = audioRefs.current.battleBg;
-    bgAudio.loop = true;
-    bgAudio.volume = bgMusicVolume;
-  }, []);
-
   const playSound = useCallback((key: string) => {
-    const audio = audioRefs.current[key];
+    const audio = audioRefs.current?.[key];
     if (audio) {
       audio.currentTime = 0; // Reset to start
       audio.volume = volume.current;
@@ -84,36 +85,40 @@ export const useBattleSounds = (): BattleSounds => {
   }, [playSound]);
 
   const playBattleMusic = useCallback(() => {
-    const bgAudio = audioRefs.current.battleBg;
-    if (bgAudio.paused) {
+    const bgAudio = audioRefs.current?.battleBg;
+    if (bgAudio && bgAudio.paused) {
       bgAudio.volume = bgMusicVolume;
       bgAudio.play().catch(err => console.warn('Failed to play battle music:', err));
     }
   }, []);
 
   const stopBattleMusic = useCallback(() => {
-    const bgAudio = audioRefs.current.battleBg;
-    if (!bgAudio.paused) {
+    const bgAudio = audioRefs.current?.battleBg;
+    if (bgAudio && !bgAudio.paused) {
       bgAudio.pause();
       bgAudio.currentTime = 0;
     }
   }, []);
 
   const stopAllSounds = useCallback(() => {
-    Object.values(audioRefs.current).forEach(audio => {
-      audio.pause();
-      audio.currentTime = 0;
-    });
+    if (audioRefs.current) {
+      Object.values(audioRefs.current).forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
   }, []);
 
   const setVolume = useCallback((newVolume: number) => {
     volume.current = Math.max(0, Math.min(1, newVolume)); // Clamp between 0 and 1
     // Don't change background music volume - keep it fixed at 25%
-    Object.entries(audioRefs.current).forEach(([key, audio]) => {
-      if (key !== 'battleBg') {
-        audio.volume = volume.current;
-      }
-    });
+    if (audioRefs.current) {
+      Object.entries(audioRefs.current).forEach(([key, audio]) => {
+        if (key !== 'battleBg') {
+          audio.volume = volume.current;
+        }
+      });
+    }
   }, []);
 
   return {

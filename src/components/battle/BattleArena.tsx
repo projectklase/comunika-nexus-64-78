@@ -255,12 +255,18 @@ const [player1Profile, setPlayer1Profile] = useState<{
     setHasShownResultModal(false);
   }, [battleId]);
 
-  // Control background music based on battle state
+  // Derived boolean that only changes once when game starts (not on every game_state update)
+  const hasGameStarted = Boolean(
+    battle?.game_state && 
+    typeof battle.game_state === 'object' &&
+    Object.keys(battle.game_state as object).length > 0
+  );
+
+  // Control background music based on battle state - only depends on status changes, not game_state
   useEffect(() => {
     const isBattleActive = battle?.status === 'IN_PROGRESS' && 
-      battle.game_state && 
-      Object.keys(battle.game_state).length > 0 &&
-      battle.player2_id;
+      hasGameStarted &&
+      battle?.player2_id;
     
     if (isBattleActive) {
       playBattleMusic();
@@ -272,7 +278,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
     return () => {
       stopBattleMusic();
     };
-  }, [battle?.status, battle?.player2_id, battle?.game_state, playBattleMusic, stopBattleMusic]);
+  }, [battle?.status, battle?.player2_id, hasGameStarted, playBattleMusic, stopBattleMusic]);
 
   // Show setup phase announcement for 3 seconds only
   useEffect(() => {
