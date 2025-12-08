@@ -430,7 +430,7 @@ const Login = () => {
                 <div className="flex items-center justify-center">
                   <img src={klaseLogo} alt="Klase" className="h-16 w-auto" />
                 </div>
-                <CardDescription className="text-sm text-muted-foreground">
+                <CardDescription className="text-sm text-muted-foreground my-[15px]">
                   Acesse sua conta
                 </CardDescription>
                 <DynamicHeadline />
