@@ -72,6 +72,7 @@ import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
 import PlatformAdmins from "./pages/platform/PlatformAdmins";
 import PlatformSupport from "./pages/platform/PlatformSupport";
 import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
+import PlatformCardEvents from "./pages/platform/PlatformCardEvents";
 
 const queryClient = new QueryClient();
 
@@ -494,6 +495,7 @@ const App = () => (
               <Route path="schools" element={<PlatformSchools />} />
               <Route path="subscriptions" element={<PlatformSubscriptions />} />
               <Route path="admins" element={<PlatformAdmins />} />
+              <Route path="events" element={<PlatformCardEvents />} />
               <Route path="support" element={<PlatformSupport />} />
               <Route path="analytics" element={<PlatformAnalytics />} />
             </Route>
