@@ -80,7 +80,7 @@ export function BadgeSelectorModal({ open, onOpenChange, currentBadges, onSave }
               Você ainda não desbloqueou nenhum badge
             </div>
           ) : (
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 p-2">
               {equippedBadges.map((unlock) => (
                 <div
                   key={unlock.id}
@@ -94,8 +94,8 @@ export function BadgeSelectorModal({ open, onOpenChange, currentBadges, onSave }
                 >
                   <AchievementBadge unlockable={unlock.unlockable!} size="lg" />
                   {selectedBadges.includes(unlock.unlockable_id) && (
-                    <div className="absolute -top-2 -right-2 bg-primary rounded-full p-1">
-                      <Check className="h-3 w-3 text-primary-foreground" />
+                    <div className="absolute top-1 right-1 bg-primary rounded-full p-0.5">
+                      <Check className="h-2.5 w-2.5 text-primary-foreground" />
                     </div>
                   )}
                 </div>
