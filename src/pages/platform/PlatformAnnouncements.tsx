@@ -104,7 +104,12 @@ export default function PlatformAnnouncements() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Announcement[];
+      // Normalize nullable arrays to empty arrays
+      return (data || []).map(a => ({
+        ...a,
+        target_schools: a.target_schools || [],
+        target_roles: a.target_roles || [],
+      })) as Announcement[];
     },
   });
 

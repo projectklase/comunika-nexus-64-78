@@ -1474,8 +1474,8 @@ export type Database = {
           is_active: boolean | null
           message: string
           sent_by: string
-          target_roles: string[] | null
-          target_schools: string[] | null
+          target_roles: string[]
+          target_schools: string[]
           theme_color: string | null
           title: string
         }
@@ -1487,8 +1487,8 @@ export type Database = {
           is_active?: boolean | null
           message: string
           sent_by: string
-          target_roles?: string[] | null
-          target_schools?: string[] | null
+          target_roles?: string[]
+          target_schools?: string[]
           theme_color?: string | null
           title: string
         }
@@ -1500,8 +1500,8 @@ export type Database = {
           is_active?: boolean | null
           message?: string
           sent_by?: string
-          target_roles?: string[] | null
-          target_schools?: string[] | null
+          target_roles?: string[]
+          target_schools?: string[]
           theme_color?: string | null
           title?: string
         }
