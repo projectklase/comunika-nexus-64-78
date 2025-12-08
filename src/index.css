@@ -1,5 +1,125 @@
 @tailwind base;
 
+/* ========== PACK OPENING PREMIUM ANIMATIONS ========== */
+
+/* Title elegant exit - scale up, float, blur out */
+@keyframes pack-title-exit {
+  0% { 
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  40% {
+    transform: scale(1.2) translateY(-15px);
+    opacity: 0.9;
+    filter: blur(0);
+  }
+  100% { 
+    transform: scale(1.6) translateY(-40px);
+    opacity: 0;
+    filter: blur(12px);
+  }
+}
+
+/* Epic golden flash burst */
+@keyframes epic-flash {
+  0% { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  20% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% { 
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* Particle explosion from center */
+@keyframes particle-burst {
+  0% { 
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0) scale(1);
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% { 
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(var(--distance)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Delayed fade in for instruction text */
+@keyframes fade-in-delayed {
+  0% { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Title entrance with dramatic scale */
+@keyframes pack-title-enter {
+  0% { 
+    opacity: 0;
+    transform: scale(0.3) translateY(30px);
+    filter: blur(10px);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  70% {
+    transform: scale(1.1) translateY(-5px);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Shimmering glow effect */
+@keyframes shimmer-glow {
+  0%, 100% { 
+    text-shadow: 0 0 20px rgba(251, 191, 36, 0.5), 0 0 40px rgba(251, 191, 36, 0.3);
+  }
+  50% { 
+    text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.5), 0 0 80px rgba(251, 191, 36, 0.3);
+  }
+}
+
+.animate-pack-title-enter {
+  animation: pack-title-enter 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-pack-title-exit {
+  animation: pack-title-exit 0.8s ease-out forwards;
+}
+
+.animate-epic-flash {
+  animation: epic-flash 0.9s ease-out forwards;
+}
+
+.animate-particle-burst {
+  animation: particle-burst 1.2s ease-out forwards;
+}
+
+.animate-fade-in-delayed {
+  animation: fade-in-delayed 0.6s ease-out forwards;
+}
+
+.animate-shimmer-glow {
+  animation: shimmer-glow 2s ease-in-out infinite;
+}
+
+/* ========== END PACK OPENING ANIMATIONS ==========  */
+
 /* ===================================
    🔧 FIX: Cartas Cortadas no Mobile
    =================================== */
