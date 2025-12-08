@@ -1,9 +1,9 @@
+import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
 import { useUnlockables } from '@/hooks/useUnlockables';
 import { UnlockableCard } from './UnlockableCard';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -23,8 +23,14 @@ export function ThemeGalleryModal({ open, onOpenChange }: ThemeGalleryModalProps
     isEquipping,
     isLoading,
     checkAchievements,
-    isCheckingAchievements,
   } = useUnlockables();
+
+  // Verificar conquistas automaticamente ao abrir o modal
+  useEffect(() => {
+    if (open && user) {
+      checkAchievements();
+    }
+  }, [open, user, checkAchievements]);
 
   // Buscar estatísticas reais do banco de dados
   const { data: realStats, isLoading: isLoadingStats } = useQuery({
@@ -90,28 +96,12 @@ export function ThemeGalleryModal({ open, onOpenChange }: ThemeGalleryModalProps
           </DialogDescription>
         </DialogHeader>
 
-        {/* Botão Verificar Conquistas */}
-        <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50 border">
-          <div className="text-sm">
-            <p className="font-medium">Suas estatísticas</p>
-            <p className="text-xs text-muted-foreground">
-              ⚡ {currentStats.xp} XP • 🔥 {currentStats.streak} dias streak • 🎯 {currentStats.challengesCompleted} desafios
-            </p>
-          </div>
-          <Button 
-            onClick={() => checkAchievements()}
-            disabled={isCheckingAchievements}
-            size="sm"
-            variant="outline"
-            className="shrink-0"
-          >
-            {isCheckingAchievements ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Sparkles className="h-4 w-4 mr-2" />
-            )}
-            Verificar Conquistas
-          </Button>
+        {/* Estatísticas do usuário */}
+        <div className="p-3 rounded-lg bg-muted/50 border">
+          <p className="font-medium text-sm">Suas estatísticas</p>
+          <p className="text-xs text-muted-foreground">
+            ⚡ {currentStats.xp} XP • 🔥 {currentStats.streak} dias streak • 🎯 {currentStats.challengesCompleted} desafios
+          </p>
         </div>
 
         <ScrollArea className="h-[50vh] pr-4">
