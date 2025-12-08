@@ -161,6 +161,13 @@ export const useBattle = (battleId?: string) => {
       });
 
       if (error) throw error;
+      
+      // Check for internal RPC error
+      const rpcResult = result as { success?: boolean; error?: string } | null;
+      if (rpcResult && rpcResult.success === false) {
+        throw new Error(rpcResult.error || 'Erro ao jogar carta');
+      }
+      
       return result;
     },
     onSuccess: () => {
@@ -183,6 +190,13 @@ export const useBattle = (battleId?: string) => {
       });
 
       if (error) throw error;
+      
+      // Check for internal RPC error
+      const rpcResult = result as { success?: boolean; error?: string } | null;
+      if (rpcResult && rpcResult.success === false) {
+        throw new Error(rpcResult.error || 'Erro ao atacar');
+      }
+      
       return result;
     },
     onSuccess: () => {

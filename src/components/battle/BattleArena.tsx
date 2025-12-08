@@ -59,6 +59,7 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const battleResult = useBattleResult(battle, user?.id);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isAttacking, setIsAttacking] = useState(false);
   const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [showDefeatModal, setShowDefeatModal] = useState(false);
   const [showBattleLog, setShowBattleLog] = useState(false);
@@ -513,7 +514,10 @@ const [player1Profile, setPlayer1Profile] = useState<{
   };
 
   const handleAttack = async () => {
-    if (!battle || !myField?.monster) return;
+    if (!battle || !myField?.monster || isAttacking) return;
+    
+    // Block button immediately
+    setIsAttacking(true);
     
     // Get monster data for animation
     const myMonster = myField.monster;
@@ -546,25 +550,21 @@ const [player1Profile, setPlayer1Profile] = useState<{
       triggerShake();
     }, 900);
     
+    // Mark our attack timestamp to prevent double animation from log detection
+    lastAttackTimestampRef.current = (Date.now() / 1000).toString();
+    
     // Execute attack after animation starts
     setTimeout(async () => {
       try {
         await attack.mutateAsync(battle.id);
       } catch (error: any) {
         toast.error(error?.message || 'Erro ao atacar');
+      } finally {
+        // Always unblock and clear animation
+        setIsAttacking(false);
         setAttackAnimation(null);
       }
     }, 500);
-    
-    // Clear animation after it completes
-    setTimeout(() => {
-      setAttackAnimation(null);
-    }, 2000);
-    
-    // Mark our attack timestamp to prevent double animation from log detection
-    setTimeout(() => {
-      lastAttackTimestampRef.current = (Date.now() / 1000).toString();
-    }, 100);
   };
 
   const handleAbandonBattle = async () => {
@@ -747,7 +747,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
         <BattleActionButtons 
           canPlayCard={selectedCard !== null && isMyTurn() && !hasPlayedCardThisTurn} 
-          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase && !hasAttackedThisTurn && Number(myField?.monster?.summoned_on_turn) !== currentTurnNumber} 
+          canAttack={myField?.monster !== null && isMyTurn() && !isSetupPhase && !hasAttackedThisTurn && !isAttacking && Number(myField?.monster?.summoned_on_turn) !== currentTurnNumber} 
           isMyTurn={isMyTurn()} 
           onPlayCard={handlePlayCard} 
           onAttack={handleAttack} 
