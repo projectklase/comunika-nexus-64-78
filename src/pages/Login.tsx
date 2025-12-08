@@ -10,7 +10,7 @@ import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import { DynamicHeadline } from '@/components/auth/DynamicHeadline';
 import { PasswordResetTester } from '@/components/debug/PasswordResetTester';
 import { LogIn, Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, AlertTriangle, AlertCircle, Clock, Gamepad2, Brain, TrendingUp, ChevronDown } from 'lucide-react';
-import klaseLogo from '@/assets/klase-logo.png';
+import klaseLogo from '@/assets/logo-klase-no-padding.png';
 import { HoloCTA } from '@/components/ui/holo-cta';
 import { useToast } from '@/hooks/use-toast';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
@@ -426,9 +426,9 @@ const Login = () => {
           {/* Login Card - col-span-5 on lg+ */}
           <div className="flex items-center justify-center px-0 lg:col-span-5 lg:px-6 py-4 lg:py-8 w-full">
             <Card className="w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg">
-              <CardHeader className="text-center space-y-3 px-6 py-6">
-                <div className="flex items-center justify-center mb-1">
-                  <img src={klaseLogo} alt="Klase" className="h-40 w-auto border-0 object-contain rounded-none" />
+              <CardHeader className="text-center space-y-1 px-6 py-6">
+                <div className="flex items-center justify-center">
+                  <img src={klaseLogo} alt="Klase" className="h-16 w-auto" />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground">
                   Acesse sua conta
