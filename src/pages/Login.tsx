@@ -369,14 +369,14 @@ const Login = () => {
               <h1 className="font-bold tracking-tight text-foreground mb-4 leading-tight" style={{
               fontSize: 'clamp(28px, 3.2vw, 44px)'
             }}>
-                A escola que seus alunos{' '}
-                <span className="text-primary/90">querem frequentar</span>
+                Bem-vindo ao próximo nível{' '}
+                <span className="text-primary/90">da sua educação</span>
               </h1>
               
               <p className="text-muted-foreground mb-8 leading-relaxed max-w-[65ch]" style={{
               fontSize: 'clamp(16px, 1.1vw, 18px)'
             }}>
-                Gamificação, IA preditiva e engajamento real. A única plataforma que transforma gestão escolar em experiência inesquecível.
+                Um ecossistema premium onde inteligência, performance e conquistas se encontram. Uma experiência exclusiva para quem busca ir além.
               </p>
               
               <div className="space-y-4">
@@ -385,8 +385,8 @@ const Login = () => {
                     <Gamepad2 className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-foreground leading-tight">Gamificação que vicia</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Koins, cartas colecionáveis, batalhas PvP e rankings. Seus alunos vão QUERER estudar.</p>
+                    <h3 className="font-medium text-foreground leading-tight">Ecossistema de Engajamento</h3>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Mais que uma plataforma, uma cultura. Transformamos a rotina escolar em uma jornada interativa onde cada ação positiva gera valor real, mensurável e recompensador.</p>
                   </div>
                 </div>
                 
@@ -395,8 +395,8 @@ const Login = () => {
                     <Brain className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-foreground leading-tight">IA Preditiva Anti-Evasão</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Identificamos alunos em risco ANTES de abandonarem. Alertas automáticos para diretores.</p>
+                    <h3 className="font-medium text-foreground leading-tight">Inteligência de Dados</h3>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Tecnologia que antecipa necessidades. Monitoramento em tempo real que oferece clareza absoluta sobre o progresso, conectando objetivos acadêmicos a resultados práticos.</p>
                   </div>
                 </div>
                 
@@ -405,8 +405,8 @@ const Login = () => {
                     <TrendingUp className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-foreground leading-tight">Gestão 360° com Analytics</h3>
-                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Dashboard em tempo real, Pulse Score, relatórios automatizados e controle total.</p>
+                    <h3 className="font-medium text-foreground leading-tight">Incentivo à Alta Performance</h3>
+                    <p className="text-sm text-muted-foreground leading-snug max-w-[45ch]">Uma metodologia exclusiva que premia a constância e a estratégia. Gamificação aplicada com sofisticação para despertar o máximo potencial e criar hábitos de sucesso.</p>
                   </div>
                 </div>
               </div>
@@ -416,10 +416,10 @@ const Login = () => {
           {/* Hero mobile version - md only */}
           <div className="block md:block lg:hidden px-4 sm:px-6 py-6 sm:py-8 text-center">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
-              Comunicação escolar, <span className="text-primary/90">sem atrito</span>
+              Bem-vindo ao próximo nível <span className="text-primary/90">da sua educação</span>
             </h1>
             <p className="text-muted-foreground text-sm md:text-base mb-6 max-w-md mx-auto">
-              Conecte professores, alunos e secretaria em uma plataforma intuitiva.
+              Um ecossistema premium onde inteligência, performance e conquistas se encontram.
             </p>
           </div>
           
