@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Clock, FileText, Bell, BookOpen, AlertCircle } from 'lucide-react';
 import { Post } from '@/types/post';
 import { cn } from '@/lib/utils';
+import { ActivityCountdown } from '../ActivityCountdown';
 
 interface NextDaysListProps {
   posts: Post[];
@@ -183,12 +184,17 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
                     </h4>
                     
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-muted-foreground">
-                        {post.dueAt || post.eventStartAt 
-                          ? format(new Date(post.dueAt || post.eventStartAt!), 'HH:mm')
-                          : 'Horário não definido'
-                        }
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {post.dueAt || post.eventStartAt 
+                            ? format(new Date(post.dueAt || post.eventStartAt!), 'HH:mm')
+                            : 'Horário não definido'
+                          }
+                        </span>
+                        {post.dueAt && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type) && (
+                          <ActivityCountdown dueDate={post.dueAt} size="sm" />
+                        )}
+                      </div>
                       {post.classId && (
                         <span className="text-xs text-muted-foreground hidden sm:inline">
                           Turma {post.classId.slice(-4)}
