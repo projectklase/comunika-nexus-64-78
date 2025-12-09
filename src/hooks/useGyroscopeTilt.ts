@@ -16,6 +16,11 @@ export const useGyroscopeTilt = (enabled: boolean = true): GyroscopeTilt => {
 
   const handleOrientation = useCallback((e: DeviceOrientationEvent) => {
     if (e.gamma !== null && e.beta !== null) {
+      // Primeiro dado válido - confirma que giroscópio funciona
+      if (!gyroEnabled) {
+        setGyroEnabled(true);
+      }
+      
       // Efeito sutil: máximo ±12° de inclinação
       const clampedGamma = Math.max(-12, Math.min(12, e.gamma * 0.25));
       const clampedBeta = Math.max(-12, Math.min(12, (e.beta - 45) * 0.25));
@@ -23,7 +28,7 @@ export const useGyroscopeTilt = (enabled: boolean = true): GyroscopeTilt => {
       setTiltY(clampedGamma);
       setTiltX(-clampedBeta);
     }
-  }, []);
+  }, [gyroEnabled]);
 
   const requestPermission = useCallback(async () => {
     try {
@@ -46,8 +51,9 @@ export const useGyroscopeTilt = (enabled: boolean = true): GyroscopeTilt => {
         typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
       setNeedsPermission(true);
     } else if (typeof window !== 'undefined' && window.DeviceOrientationEvent) {
+      // Registra listener mas NÃO marca como enabled ainda
+      // Será marcado apenas quando receber dados reais (no handleOrientation)
       window.addEventListener('deviceorientation', handleOrientation);
-      setGyroEnabled(true);
     }
 
     return () => {
