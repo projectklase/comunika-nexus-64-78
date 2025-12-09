@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Search, Users, UserPlus, Filter } from 'lucide-react';
+import { Search, Users, UserPlus, Filter, Loader2 } from 'lucide-react';
 import { useClassStore } from '@/stores/class-store';
 import { useSchool } from '@/contexts/SchoolContext';
 import { toast } from 'sonner';
@@ -33,7 +33,14 @@ export function QuickClassLinkingSheet({
   onStudentsLinked 
 }: QuickClassLinkingSheetProps) {
   const { currentSchool } = useSchool();
-  const { classes, addStudents } = useClassStore();
+  const { classes, addStudents, loadClasses, loading: classesLoading } = useClassStore();
+
+  // Load classes when sheet opens
+  useEffect(() => {
+    if (open && currentSchool?.id) {
+      loadClasses(currentSchool.id);
+    }
+  }, [open, currentSchool?.id, loadClasses]);
   
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
@@ -144,19 +151,30 @@ export function QuickClassLinkingSheet({
                 <SelectValue placeholder="Selecione a turma..." />
               </SelectTrigger>
               <SelectContent>
-                {activeClasses.map(cls => (
-                  <SelectItem key={cls.id} value={cls.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{cls.name}</span>
-                      {cls.code && (
-                        <span className="text-muted-foreground text-xs">({cls.code})</span>
-                      )}
-                      <Badge variant="secondary" className="text-xs">
-                        {cls.students?.length || 0} alunos
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
+                {classesLoading ? (
+                  <div className="flex items-center justify-center gap-2 p-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Carregando turmas...</span>
+                  </div>
+                ) : activeClasses.length === 0 ? (
+                  <div className="p-3 text-center text-sm text-muted-foreground">
+                    Nenhuma turma ativa encontrada
+                  </div>
+                ) : (
+                  activeClasses.map(cls => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{cls.name}</span>
+                        {cls.code && (
+                          <span className="text-muted-foreground text-xs">({cls.code})</span>
+                        )}
+                        <Badge variant="secondary" className="text-xs">
+                          {cls.students?.length || 0} alunos
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
