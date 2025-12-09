@@ -160,6 +160,52 @@ export const InteractiveCard3D = ({ card, size = 'lg' }: InteractiveCard3DProps)
             <CardDisplay card={card} size={size} showStats={true} />
           </div>
 
+          {/* Bordas 3D - Espessura do papel */}
+          <div
+            className="absolute bg-gradient-to-r from-gray-900 to-gray-800 rounded-l-sm"
+            style={{
+              width: '3px',
+              height: '100%',
+              left: 0,
+              top: 0,
+              transform: 'rotateY(-90deg) translateZ(1.5px)',
+              transformOrigin: 'left center',
+            }}
+          />
+          <div
+            className="absolute bg-gradient-to-l from-gray-900 to-gray-800 rounded-r-sm"
+            style={{
+              width: '3px',
+              height: '100%',
+              right: 0,
+              top: 0,
+              transform: 'rotateY(90deg) translateZ(1.5px)',
+              transformOrigin: 'right center',
+            }}
+          />
+          <div
+            className="absolute bg-gradient-to-b from-gray-800 to-gray-900 rounded-t-sm"
+            style={{
+              height: '3px',
+              width: '100%',
+              top: 0,
+              left: 0,
+              transform: 'rotateX(90deg) translateZ(1.5px)',
+              transformOrigin: 'top center',
+            }}
+          />
+          <div
+            className="absolute bg-gradient-to-t from-gray-800 to-gray-900 rounded-b-sm"
+            style={{
+              height: '3px',
+              width: '100%',
+              bottom: 0,
+              left: 0,
+              transform: 'rotateX(-90deg) translateZ(1.5px)',
+              transformOrigin: 'bottom center',
+            }}
+          />
+
           {/* Verso da Carta */}
           <div
             className={cn(
