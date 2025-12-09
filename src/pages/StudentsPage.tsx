@@ -4,6 +4,11 @@ import { PageLayout } from '@/components/ui/page-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
@@ -565,7 +570,7 @@ export default function StudentsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-1 flex-wrap">
+                          <div className="flex gap-1 flex-wrap items-center">
                             {studentClasses.length > 0 ? (
                               <>
                                 {studentClasses.slice(0, 2).map((c: any, index: number) => (
@@ -574,9 +579,25 @@ export default function StudentsPage() {
                                   </Badge>
                                 ))}
                                 {studentClasses.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{studentClasses.length - 2}
-                                  </Badge>
+                                  <HoverCard openDelay={100} closeDelay={100}>
+                                    <HoverCardTrigger asChild>
+                                      <button className="inline-flex items-center rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors cursor-pointer">
+                                        +{studentClasses.length - 2}
+                                      </button>
+                                    </HoverCardTrigger>
+                                    <HoverCardContent className="w-auto p-3" align="start" side="top">
+                                      <div className="text-xs font-medium mb-2 text-muted-foreground">
+                                        Outras turmas:
+                                      </div>
+                                      <div className="flex flex-col gap-1.5">
+                                        {studentClasses.slice(2).map((c: any, index: number) => (
+                                          <Badge key={index} variant="secondary" className="text-xs justify-start">
+                                            {c.name}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </HoverCardContent>
+                                  </HoverCard>
                                 )}
                               </>
                             ) : (
