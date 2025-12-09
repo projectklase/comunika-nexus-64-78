@@ -3,8 +3,7 @@ import { Card } from '@/types/cards';
 import { CardDisplay } from './CardDisplay';
 import cardBackImage from '@/assets/cards/card-back.png';
 import { cn } from '@/lib/utils';
-import { RotateCcw, Smartphone } from 'lucide-react';
-import { useGyroscopeTilt } from '@/hooks/useGyroscopeTilt';
+import { RotateCcw } from 'lucide-react';
 
 interface InteractiveCard3DProps {
   card: Card;
@@ -20,9 +19,6 @@ export const InteractiveCard3D = ({ card, size = 'lg' }: InteractiveCard3DProps)
   const lastTimeRef = useRef(0);
   const animationRef = useRef<number>();
   const rotationRef = useRef(0);
-
-  // Hook do giroscópio para efeito parallax
-  const { tiltX, tiltY, gyroEnabled, needsPermission, requestPermission } = useGyroscopeTilt(!isDragging);
 
   // Sincroniza ref com state para uso em animação
   useEffect(() => {
@@ -153,7 +149,7 @@ export const InteractiveCard3D = ({ card, size = 'lg' }: InteractiveCard3DProps)
           )}
           style={{
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${rotationY + (isDragging ? 0 : tiltY)}deg) rotateX(${isDragging ? 0 : tiltX}deg)`,
+            transform: `rotateY(${rotationY}deg)`,
           }}
         >
           {/* Frente da Carta */}
@@ -236,27 +232,8 @@ export const InteractiveCard3D = ({ card, size = 'lg' }: InteractiveCard3DProps)
       {/* Controles e instrução */}
       <div className="flex items-center gap-3">
         <p className="text-xs text-gray-400 flex items-center gap-1.5">
-          {gyroEnabled ? (
-            <>
-              <span className="text-base">📱</span> Mova o celular
-            </>
-          ) : (
-            <>
-              <span className="text-base">↔️</span> Arraste para girar
-            </>
-          )}
+          <span className="text-base">↔️</span> Arraste para girar
         </p>
-        
-        {/* Botão para pedir permissão no iOS */}
-        {needsPermission && !gyroEnabled && (
-          <button
-            onClick={requestPermission}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-full transition-colors"
-          >
-            <Smartphone className="w-3 h-3" />
-            Ativar movimento
-          </button>
-        )}
         
         {/* Botão de reset se carta foi girada */}
         {Math.abs(rotationY) > 10 && (
