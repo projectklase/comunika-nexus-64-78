@@ -110,7 +110,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Function to create demo users if they don't exist
+  // SECURITY: Bloqueado em produção para prevenir criação não autorizada de contas
   const createDemoUser = async (email: string, password: string, name: string, role: string) => {
+    // Bloquear em produção
+    if (import.meta.env.PROD) {
+      console.error('[createDemoUser] Bloqueado em produção');
+      return null;
+    }
+    
     try {
       console.log(`Attempting to create demo user: ${email} with role: ${role}`);
       
