@@ -631,12 +631,16 @@ export function useStudentImport() {
     URL.revokeObjectURL(url);
   }, [generateCredentialsCSV]);
 
-  // Gerar template CSV atualizado
+  // Gerar template CSV atualizado com exemplos claros
   const downloadTemplate = useCallback(() => {
+    // Template com 3 exemplos representativos:
+    // 1. Adulto (22 anos) com dados completos - email próprio para login
+    // 2. Menor (9 anos) com responsável - email do responsável para login  
+    // 3. Adulto (18 anos) com dados mínimos - apenas obrigatórios
     const template = `nome;email;turma;data_nasc;telefone;matricula;cpf;responsavel_nome;responsavel_telefone;responsavel_email;senha
-João Silva;joao@exemplo.com;7A-2025;2006-05-15;11999999999;2025001;123.456.789-00;;;;
-Maria Santos;;8B-2025;2012-03-20;;;;;;;Maria Mãe;11988888888;mae@exemplo.com;
-Pedro Oliveira;pedro@exemplo.com;7A-2025;2005-01-10;;2025003;;;;;SenhaForte123!`;
+Pedro Oliveira;pedro@email.com;9A-2025;2002-03-15;11999887766;2025001;123.456.789-00;;;;SenhaForte123!
+Mariana Santos;;3B-2025;2015-08-22;11988776655;2025002;;Maria Santos;11977665544;maria.mae@email.com;
+Ana Costa;ana.costa@email.com;1A-2025;2007-01-10;;2025003;;;;;;`;
     
     const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
