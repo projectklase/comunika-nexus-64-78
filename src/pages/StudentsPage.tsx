@@ -31,7 +31,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { StudentFormSteps } from '@/components/students/StudentFormSteps';
 import { LinkStudentToClassModal } from '@/components/students/LinkStudentToClassModal';
 import { RemoveStudentFromClassModal } from '@/components/students/RemoveStudentFromClassModal';
-import { StudentCSVImportModal } from '@/components/students/StudentCSVImportModal';
+import { StudentImportWizard } from '@/components/students/StudentImportWizard';
 import { useStudents } from '@/hooks/useStudents';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RESPONSIVE_CLASSES } from '@/lib/responsive-utils';
@@ -679,12 +679,12 @@ export default function StudentsPage() {
           }}
         />
 
-        <StudentCSVImportModal
+        <StudentImportWizard
           open={isImportModalOpen}
           onOpenChange={(open) => {
             setIsImportModalOpen(open);
-            if (!open) fetchStudents({});
           }}
+          onComplete={() => fetchStudents({})}
         />
       </PageLayout>
     </AppLayout>
