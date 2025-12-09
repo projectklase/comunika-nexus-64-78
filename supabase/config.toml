@@ -42,8 +42,5 @@ verify_jwt = true
 [functions.generate-daily-briefing]
 verify_jwt = false
 
-[functions.create-superadmin]
-verify_jwt = false
-
 [functions.create-administrator]
 verify_jwt = true
