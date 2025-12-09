@@ -533,10 +533,11 @@ const Login = () => {
                   </p>
                 </div>
 
-                {/* Demo Accounts */}
+                {/* Demo Accounts - Apenas em desenvolvimento */}
+                {import.meta.env.DEV && (
                 <div className="border-t border-border/30 pt-4 mt-5">
                   <div className="text-center mb-3">
-                    <span className="text-xs text-muted-foreground">Contas de demonstração</span>
+                    <span className="text-xs text-muted-foreground">Contas de demonstração (DEV)</span>
                   </div>
                   
                   <div className="space-y-2">
@@ -573,6 +574,7 @@ const Login = () => {
                     </button>
                   </div>
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
