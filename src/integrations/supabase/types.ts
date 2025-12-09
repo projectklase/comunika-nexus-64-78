@@ -2571,6 +2571,14 @@ export type Database = {
         Args: { days_filter?: number; school_id_param?: string }
         Returns: Json
       }
+      get_battle_opponent_profile: {
+        Args: { opponent_id: string }
+        Returns: {
+          avatar: string
+          id: string
+          name: string
+        }[]
+      }
       get_class_performance_analytics: {
         Args: { days_filter?: number; p_class_id: string }
         Returns: Json
