@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export interface SubscriptionLimits {
   has_subscription: boolean;
@@ -20,12 +21,40 @@ export interface SubscriptionLimits {
 
 export function useSubscription() {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
+
+  // Para secretárias, buscar o admin_id da escola atual
+  const { data: schoolAdminId } = useQuery({
+    queryKey: ['school-admin', currentSchool?.id],
+    queryFn: async () => {
+      if (!currentSchool?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('school_memberships')
+        .select('user_id')
+        .eq('school_id', currentSchool.id)
+        .eq('role', 'administrador')
+        .single();
+      
+      if (error) {
+        console.error('[useSubscription] Error fetching school admin:', error);
+        return null;
+      }
+      
+      return data?.user_id || null;
+    },
+    enabled: !!currentSchool?.id && user?.role !== 'administrador',
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  });
+
+  // Determinar qual admin_id usar para verificar limites
+  const effectiveAdminId = user?.role === 'administrador' ? user?.id : schoolAdminId;
 
   // Fetch subscription limits
   const { data: limits, isLoading, refetch } = useQuery({
-    queryKey: ['subscription-limits', user?.id],
+    queryKey: ['subscription-limits', effectiveAdminId],
     queryFn: async (): Promise<SubscriptionLimits> => {
-      if (!user?.id) {
+      if (!effectiveAdminId) {
         return {
           has_subscription: false,
           current_students: 0,
@@ -36,12 +65,12 @@ export function useSubscription() {
           can_add_schools: false,
           students_remaining: 0,
           schools_remaining: 0,
-          message: 'Usuário não autenticado'
+          message: 'Administrador não encontrado'
         };
       }
 
       const { data, error } = await supabase.rpc('check_subscription_limits', {
-        p_admin_id: user.id
+        p_admin_id: effectiveAdminId
       });
 
       if (error) {
@@ -51,7 +80,7 @@ export function useSubscription() {
 
       return data as unknown as SubscriptionLimits;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveAdminId,
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 
