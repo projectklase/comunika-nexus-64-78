@@ -39,6 +39,7 @@ export function useNotificationPanel() {
       case 'secretaria': return 'SECRETARIA';
       case 'professor': return 'PROFESSOR';
       case 'aluno': return 'ALUNO';
+      case 'administrador': return 'ADMINISTRADOR';
       default: return null;
     }
   }, [user]);
