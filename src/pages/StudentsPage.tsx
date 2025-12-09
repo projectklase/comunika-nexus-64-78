@@ -31,6 +31,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { StudentFormSteps } from '@/components/students/StudentFormSteps';
 import { LinkStudentToClassModal } from '@/components/students/LinkStudentToClassModal';
 import { RemoveStudentFromClassModal } from '@/components/students/RemoveStudentFromClassModal';
+import { BulkTransferStudentsModal } from '@/components/students/BulkTransferStudentsModal';
 import { StudentImportWizard } from '@/components/students/StudentImportWizard';
 import { QuickClassLinkingSheet } from '@/components/students/QuickClassLinkingSheet';
 import { useStudents } from '@/hooks/useStudents';
@@ -42,9 +43,9 @@ import {
   Search,
   Download,
   Upload,
-  Archive,
   Link,
   Unlink,
+  ArrowRightLeft,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -81,6 +82,7 @@ export default function StudentsPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isQuickLinkingOpen, setIsQuickLinkingOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
@@ -129,17 +131,7 @@ export default function StudentsPage() {
     }
   };
 
-  const handleBulkArchive = async () => {
-    try {
-      for (const studentId of selectedStudents) {
-        console.log('Archive student:', studentId);
-      }
-      setSelectedStudents([]);
-      toast.success(`${selectedStudents.length} aluno(s) arquivado(s) com sucesso`);
-    } catch (error) {
-      toast.error('Erro ao arquivar alunos');
-    }
-  };
+  // handleBulkArchive removed - not needed for students
 
   const handleExportCSV = () => {
     const csvData = filteredStudents.map(student => {
@@ -441,15 +433,6 @@ export default function StudentsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleBulkArchive}
-                  className={cn(RESPONSIVE_CLASSES.iconButton, "gap-1")}
-                >
-                  <Archive className="h-4 w-4" />
-                  <span>Arquivar</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() => setIsLinkModalOpen(true)}
                   className={cn(RESPONSIVE_CLASSES.iconButton, "gap-1")}
                 >
@@ -459,11 +442,20 @@ export default function StudentsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setIsTransferModalOpen(true)}
+                  className={cn(RESPONSIVE_CLASSES.iconButton, "gap-1")}
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                  <span>Transferir</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsRemoveModalOpen(true)}
                   className={cn(RESPONSIVE_CLASSES.iconButton, "gap-1")}
                 >
                   <Unlink className="h-4 w-4" />
-                  <span>Remover</span>
+                  <span>Desvincular</span>
                 </Button>
               </div>
             </div>
@@ -683,6 +675,16 @@ export default function StudentsPage() {
         <RemoveStudentFromClassModal
           open={isRemoveModalOpen}
           onOpenChange={setIsRemoveModalOpen}
+          studentIds={selectedStudents}
+          onSuccess={() => {
+            setSelectedStudents([]);
+            fetchStudents({});
+          }}
+        />
+
+        <BulkTransferStudentsModal
+          open={isTransferModalOpen}
+          onOpenChange={setIsTransferModalOpen}
           studentIds={selectedStudents}
           onSuccess={() => {
             setSelectedStudents([]);
