@@ -2534,7 +2534,6 @@ export type Database = {
               p_koin_reward: number
               p_student_challenge_id: string
               p_student_id: string
-              p_xp_reward: number
             }
             Returns: undefined
           }
@@ -2544,6 +2543,7 @@ export type Database = {
               p_koin_reward: number
               p_student_challenge_id: string
               p_student_id: string
+              p_xp_reward: number
             }
             Returns: undefined
           }
@@ -2605,8 +2605,8 @@ export type Database = {
         }[]
       }
       get_queue_position:
-        | { Args: { p_school_id: string; p_user_id: string }; Returns: number }
         | { Args: { p_user_id: string }; Returns: number }
+        | { Args: { p_school_id: string; p_user_id: string }; Returns: number }
       get_school_rankings: {
         Args: {
           limit_count?: number
