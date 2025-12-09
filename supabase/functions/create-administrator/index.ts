@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     }
 
     // Verificar se é superadmin
-    const { data: isSuperAdmin } = await supabaseAdmin.rpc('is_superadmin', { user_id: callerUser.id })
+    const { data: isSuperAdmin } = await supabaseAdmin.rpc('is_superadmin', { _user_id: callerUser.id })
     
     if (!isSuperAdmin) {
       console.error('User is not superadmin:', callerUser.id)
