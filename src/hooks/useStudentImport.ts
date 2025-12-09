@@ -15,12 +15,16 @@ export interface ImportStudentRow {
   cpf?: string;
   responsavel_nome?: string;
   responsavel_telefone?: string;
+  responsavel_email?: string;
   senha?: string;
-  // Validation
+  // Calculated fields
   isValid: boolean;
   errors: string[];
   generatedPassword?: string;
   generatedEmail?: string;
+  calculatedAge?: number | null;
+  isMinor?: boolean;
+  loginEmail?: string; // Email que será usado para login (próprio ou do responsável)
 }
 
 export interface ImportResult {
@@ -30,12 +34,18 @@ export interface ImportResult {
   password: string;
   name: string;
   error?: string;
+  emailSent?: boolean;
+  emailError?: string;
+  isMinor?: boolean;
+  guardianEmail?: string;
 }
 
 export interface ImportSummary {
   total: number;
   succeeded: number;
   failed: number;
+  emailsSent: number;
+  emailsFailed: number;
   results: ImportResult[];
 }
 
@@ -44,6 +54,42 @@ interface ClassInfo {
   code: string;
   name: string;
 }
+
+// Calcular idade a partir da data de nascimento
+const calculateAge = (dob: string): number | null => {
+  if (!dob) return null;
+  
+  // Tentar diferentes formatos de data
+  let birthDate: Date;
+  
+  // Formato DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+    const [day, month, year] = dob.split('/');
+    birthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  // Formato YYYY-MM-DD
+  else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+    birthDate = new Date(dob);
+  }
+  // Formato DD-MM-YYYY
+  else if (/^\d{2}-\d{2}-\d{4}$/.test(dob)) {
+    const [day, month, year] = dob.split('-');
+    birthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  else {
+    birthDate = new Date(dob);
+  }
+  
+  if (isNaN(birthDate.getTime())) return null;
+  
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 export function useStudentImport() {
   const { currentSchool } = useSchool();
@@ -55,14 +101,15 @@ export function useStudentImport() {
   const [parsedRows, setParsedRows] = useState<ImportStudentRow[]>([]);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const [availableClasses, setAvailableClasses] = useState<ClassInfo[]>([]);
+  const [sendEmails, setSendEmails] = useState(true);
 
   // Gerar email automático baseado no nome
   const generateEmail = useCallback((name: string, schoolSlug?: string): string => {
     const cleanName = name
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-      .replace(/[^a-z\s]/g, '') // Remove caracteres especiais
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z\s]/g, '')
       .trim();
     
     const parts = cleanName.split(/\s+/);
@@ -70,7 +117,6 @@ export function useStudentImport() {
     const lastName = parts[parts.length - 1] || '';
     const slug = schoolSlug || currentSchool?.slug || 'escola';
     
-    // Adicionar número aleatório para evitar duplicatas
     const random = Math.floor(Math.random() * 1000);
     
     return `${firstName}.${lastName}${random}@${slug}.klase.com.br`;
@@ -107,7 +153,7 @@ export function useStudentImport() {
     return ',';
   }, []);
 
-  // Parsear CSV
+  // Parsear CSV com validação por idade
   const parseCSV = useCallback(async (csvContent: string): Promise<ImportStudentRow[]> => {
     await fetchClasses();
     
@@ -117,12 +163,10 @@ export function useStudentImport() {
     const delimiter = detectDelimiter(lines[0]);
     const rows: ImportStudentRow[] = [];
     
-    // Detectar se tem header
     const firstLine = lines[0].toLowerCase();
     const hasHeader = firstLine.includes('nome') || firstLine.includes('email') || firstLine.includes('name');
     const startIndex = hasHeader ? 1 : 0;
     
-    // Mapear colunas do header (se existir)
     let columnMap: Record<string, number> = {
       nome: 0,
       email: 1,
@@ -133,7 +177,8 @@ export function useStudentImport() {
       cpf: 6,
       responsavel_nome: 7,
       responsavel_telefone: 8,
-      senha: 9
+      responsavel_email: 9,
+      senha: 10
     };
     
     if (hasHeader) {
@@ -144,7 +189,9 @@ export function useStudentImport() {
           .replace(/phone|celular/g, 'telefone')
           .replace(/enrollment|matrícula/g, 'matricula')
           .replace(/document|documento/g, 'cpf')
-          .replace(/guardian|responsável/g, 'responsavel_nome')
+          .replace(/guardian_name|responsável_nome/g, 'responsavel_nome')
+          .replace(/guardian_phone|responsável_telefone/g, 'responsavel_telefone')
+          .replace(/guardian_email|responsável_email|email_responsavel/g, 'responsavel_email')
           .replace(/password|senha/g, 'senha')
           .replace(/class|turma/g, 'turma')
           .replace(/name|nome/g, 'nome')
@@ -152,15 +199,16 @@ export function useStudentImport() {
       
       columnMap = {};
       headers.forEach((h, i) => {
-        if (h.includes('nome') && !h.includes('responsavel')) columnMap.nome = i;
-        else if (h.includes('email')) columnMap.email = i;
+        if (h.includes('responsavel_nome') || h.includes('guardian_name')) columnMap.responsavel_nome = i;
+        else if (h.includes('responsavel_telefone') || h.includes('guardian_phone')) columnMap.responsavel_telefone = i;
+        else if (h.includes('responsavel_email') || h.includes('guardian_email') || h.includes('email_responsavel')) columnMap.responsavel_email = i;
+        else if (h.includes('nome') && !h.includes('responsavel')) columnMap.nome = i;
+        else if (h.includes('email') && !h.includes('responsavel')) columnMap.email = i;
         else if (h.includes('turma')) columnMap.turma = i;
         else if (h.includes('data_nasc') || h.includes('nasc')) columnMap.data_nasc = i;
         else if (h.includes('telefone') || h.includes('phone')) columnMap.telefone = i;
         else if (h.includes('matricula')) columnMap.matricula = i;
         else if (h.includes('cpf')) columnMap.cpf = i;
-        else if (h.includes('responsavel_nome')) columnMap.responsavel_nome = i;
-        else if (h.includes('responsavel_telefone')) columnMap.responsavel_telefone = i;
         else if (h.includes('senha')) columnMap.senha = i;
       });
     }
@@ -172,43 +220,83 @@ export function useStudentImport() {
       const cols = line.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
       
       const nome = cols[columnMap.nome ?? 0] || '';
-      const email = cols[columnMap.email ?? 1] || '';
-      const turma = cols[columnMap.turma ?? 2] || '';
+      const email = cols[columnMap.email ?? -1] || '';
+      const turma = cols[columnMap.turma ?? -1] || '';
       const data_nasc = cols[columnMap.data_nasc ?? -1] || '';
       const telefone = cols[columnMap.telefone ?? -1] || '';
       const matricula = cols[columnMap.matricula ?? -1] || '';
       const cpf = cols[columnMap.cpf ?? -1] || '';
       const responsavel_nome = cols[columnMap.responsavel_nome ?? -1] || '';
       const responsavel_telefone = cols[columnMap.responsavel_telefone ?? -1] || '';
+      const responsavel_email = cols[columnMap.responsavel_email ?? -1] || '';
       const senha = cols[columnMap.senha ?? -1] || '';
       
       const errors: string[] = [];
       
-      // Validações
+      // Calcular idade
+      const calculatedAge = calculateAge(data_nasc);
+      const isMinor = calculatedAge !== null && calculatedAge < 18;
+      
+      // Validações básicas
       if (!nome || nome.length < 3) {
         errors.push('Nome é obrigatório (mínimo 3 caracteres)');
       }
       
+      // Validação condicional por idade
+      if (calculatedAge !== null) {
+        if (calculatedAge >= 18) {
+          // Maior de idade: email próprio obrigatório
+          if (!email) {
+            errors.push('Email obrigatório para maiores de idade');
+          }
+        } else {
+          // Menor de idade: responsável + email do responsável obrigatórios
+          if (!responsavel_nome) {
+            errors.push('Nome do responsável obrigatório para menores');
+          }
+          if (!responsavel_email) {
+            errors.push('Email do responsável obrigatório para menores');
+          }
+        }
+      }
+      
+      // Validação de formato de email
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errors.push('Email inválido');
+        errors.push('Email do aluno inválido');
+      }
+      
+      if (responsavel_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(responsavel_email)) {
+        errors.push('Email do responsável inválido');
       }
       
       if (cpf && !/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/.test(cpf)) {
         errors.push('CPF inválido');
       }
       
-      if (data_nasc && isNaN(Date.parse(data_nasc))) {
+      if (data_nasc && calculatedAge === null) {
         errors.push('Data de nascimento inválida');
       }
       
-      // Gerar email e senha se não fornecidos
-      const generatedEmail = !email ? generateEmail(nome) : undefined;
+      // Determinar email de login
+      let loginEmail: string;
+      if (isMinor && responsavel_email) {
+        // Menor usa email do responsável
+        loginEmail = responsavel_email;
+      } else if (email) {
+        // Usa email próprio se fornecido
+        loginEmail = email;
+      } else {
+        // Gera email automático (fallback)
+        loginEmail = generateEmail(nome);
+      }
+      
+      const generatedEmail = !email && !isMinor ? generateEmail(nome) : undefined;
       const generatedPassword = !senha ? generatePassword(nome) : undefined;
       
       rows.push({
         rowNumber: i - startIndex + 1,
         nome,
-        email: email || generatedEmail || '',
+        email: loginEmail,
         turma,
         data_nasc,
         telefone,
@@ -216,11 +304,15 @@ export function useStudentImport() {
         cpf,
         responsavel_nome,
         responsavel_telefone,
+        responsavel_email,
         senha: senha || generatedPassword || '',
         isValid: errors.length === 0 && nome.length >= 3,
         errors,
-        generatedEmail,
-        generatedPassword
+        generatedEmail: generatedEmail || (isMinor ? undefined : (!email ? loginEmail : undefined)),
+        generatedPassword,
+        calculatedAge,
+        isMinor,
+        loginEmail
       });
     }
     
@@ -240,7 +332,6 @@ export function useStudentImport() {
     
     const validRows = rows.filter(r => r.isValid);
     
-    // Verificar limite de assinatura
     const validation = await validateStudentCreation(currentSchool.id);
     if (!validation.can_create) {
       const studentsRemaining = (validation.max_students || 0) - (validation.current_students || 0);
@@ -251,7 +342,6 @@ export function useStudentImport() {
       };
     }
     
-    // Verificar se quantidade a importar excede limite restante
     const studentsRemaining = (validation.max_students || 0) - (validation.current_students || 0);
     if (validRows.length > studentsRemaining && studentsRemaining >= 0) {
       return {
@@ -261,7 +351,6 @@ export function useStudentImport() {
       };
     }
     
-    // Buscar dados existentes para detectar duplicatas
     const { data: existingProfiles } = await supabase
       .from('profiles')
       .select('email, enrollment_number, student_notes')
@@ -309,8 +398,45 @@ export function useStudentImport() {
     };
   }, [currentSchool?.id, validateStudentCreation]);
 
+  // Enviar email de credenciais
+  const sendCredentialsEmail = useCallback(async (
+    to: string,
+    studentName: string,
+    email: string,
+    password: string,
+    isGuardian: boolean = false,
+    guardianName?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(
+        'https://yanspolqarficibgovia.supabase.co/functions/v1/send-credentials-email',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhbnNwb2xxYXJmaWNpYmdvdmlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTczMjUsImV4cCI6MjA3NDQzMzMyNX0.QMU9Bxjl9NzyrSgUKeHE0HgcSsBUeFQefjQIoEczRYM'
+          },
+          body: JSON.stringify({
+            to,
+            studentName,
+            email,
+            password,
+            schoolName: currentSchool?.name || 'Klase',
+            isGuardian,
+            guardianName
+          })
+        }
+      );
+      
+      const data = await response.json();
+      return { success: data.success, error: data.error };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Erro ao enviar email' };
+    }
+  }, [currentSchool?.name]);
+
   // Processar importação
-  const processImport = useCallback(async (rows: ImportStudentRow[]): Promise<ImportSummary> => {
+  const processImport = useCallback(async (rows: ImportStudentRow[], shouldSendEmails: boolean = true): Promise<ImportSummary> => {
     if (!currentSchool) {
       throw new Error('Escola não selecionada');
     }
@@ -321,6 +447,8 @@ export function useStudentImport() {
     
     const validRows = rows.filter(r => r.isValid);
     const results: ImportResult[] = [];
+    let emailsSent = 0;
+    let emailsFailed = 0;
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -332,11 +460,9 @@ export function useStudentImport() {
         setProgress(Math.round(((i + 1) / validRows.length) * 100));
         
         try {
-          // Preparar student_notes
           const studentNotes: any = {};
           if (row.cpf) studentNotes.document = row.cpf.replace(/\D/g, '');
           
-          // Chamar Edge Function
           const response = await fetch(
             'https://yanspolqarficibgovia.supabase.co/functions/v1/create-demo-user',
             {
@@ -368,14 +494,16 @@ export function useStudentImport() {
               email: row.email,
               password: row.senha,
               name: row.nome,
-              error: responseData.error || 'Erro desconhecido'
+              error: responseData.error || 'Erro desconhecido',
+              isMinor: row.isMinor,
+              guardianEmail: row.responsavel_email
             });
             continue;
           }
           
           const studentId = responseData.user?.id;
           
-          // Vincular à turma se especificada
+          // Vincular à turma
           if (row.turma && studentId) {
             const classMatch = availableClasses.find(c => 
               c.code?.toLowerCase() === row.turma?.toLowerCase() ||
@@ -392,7 +520,7 @@ export function useStudentImport() {
             }
           }
           
-          // Criar responsável se fornecido
+          // Criar responsável
           if (row.responsavel_nome && studentId) {
             await supabase
               .from('guardians')
@@ -400,9 +528,37 @@ export function useStudentImport() {
                 student_id: studentId,
                 name: row.responsavel_nome,
                 phone: row.responsavel_telefone || null,
+                email: row.responsavel_email || null,
                 relation: 'Responsável',
                 is_primary: true
               });
+          }
+          
+          // Enviar email de credenciais
+          let emailSent = false;
+          let emailError: string | undefined;
+          
+          if (shouldSendEmails) {
+            const emailTo = row.isMinor ? row.responsavel_email : row.email;
+            if (emailTo) {
+              const emailResult = await sendCredentialsEmail(
+                emailTo,
+                row.nome,
+                row.email,
+                row.senha,
+                row.isMinor || false,
+                row.responsavel_nome
+              );
+              
+              emailSent = emailResult.success;
+              emailError = emailResult.error;
+              
+              if (emailSent) {
+                emailsSent++;
+              } else {
+                emailsFailed++;
+              }
+            }
           }
           
           results.push({
@@ -410,7 +566,11 @@ export function useStudentImport() {
             studentId,
             email: row.email,
             password: row.senha,
-            name: row.nome
+            name: row.nome,
+            emailSent,
+            emailError,
+            isMinor: row.isMinor,
+            guardianEmail: row.responsavel_email
           });
           
         } catch (err) {
@@ -419,7 +579,9 @@ export function useStudentImport() {
             email: row.email,
             password: row.senha,
             name: row.nome,
-            error: err instanceof Error ? err.message : 'Erro desconhecido'
+            error: err instanceof Error ? err.message : 'Erro desconhecido',
+            isMinor: row.isMinor,
+            guardianEmail: row.responsavel_email
           });
         }
       }
@@ -428,6 +590,8 @@ export function useStudentImport() {
         total: validRows.length,
         succeeded: results.filter(r => r.success).length,
         failed: results.filter(r => !r.success).length,
+        emailsSent,
+        emailsFailed,
         results
       };
       
@@ -437,15 +601,17 @@ export function useStudentImport() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentSchool?.id, availableClasses]);
+  }, [currentSchool?.id, availableClasses, sendCredentialsEmail]);
 
   // Gerar CSV de credenciais
   const generateCredentialsCSV = useCallback((results: ImportResult[]): string => {
     const successResults = results.filter(r => r.success);
-    const lines = ['Nome;Email;Senha'];
+    const lines = ['Nome;Email de Login;Senha;Tipo;Email Responsável'];
     
     successResults.forEach(r => {
-      lines.push(`${r.name};${r.email};${r.password}`);
+      const tipo = r.isMinor ? 'Menor' : 'Maior';
+      const guardianEmail = r.guardianEmail || '';
+      lines.push(`${r.name};${r.email};${r.password};${tipo};${guardianEmail}`);
     });
     
     return lines.join('\n');
@@ -465,12 +631,12 @@ export function useStudentImport() {
     URL.revokeObjectURL(url);
   }, [generateCredentialsCSV]);
 
-  // Gerar template CSV
+  // Gerar template CSV atualizado
   const downloadTemplate = useCallback(() => {
-    const template = `nome;email;turma;data_nasc;telefone;matricula;cpf;responsavel_nome;responsavel_telefone;senha
-João Silva;joao@exemplo.com;7A-2025;2010-05-15;11999999999;2025001;123.456.789-00;Maria Silva;11988888888;
-Maria Santos;;8B-2025;2009-03-20;;;;;;;
-Pedro Oliveira;pedro@exemplo.com;7A-2025;;;2025003;;;;SenhaForte123!`;
+    const template = `nome;email;turma;data_nasc;telefone;matricula;cpf;responsavel_nome;responsavel_telefone;responsavel_email;senha
+João Silva;joao@exemplo.com;7A-2025;2006-05-15;11999999999;2025001;123.456.789-00;;;;
+Maria Santos;;8B-2025;2012-03-20;;;;;;;Maria Mãe;11988888888;mae@exemplo.com;
+Pedro Oliveira;pedro@exemplo.com;7A-2025;2005-01-10;;2025003;;;;;SenhaForte123!`;
     
     const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -500,7 +666,8 @@ Pedro Oliveira;pedro@exemplo.com;7A-2025;;;2025003;;;;SenhaForte123!`;
     parsedRows,
     importSummary,
     availableClasses,
-    
+    sendEmails,
+    setSendEmails,
     // Actions
     parseCSV,
     validateImport,

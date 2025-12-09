@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useStudentImport, ImportStudentRow, ImportResult } from '@/hooks/useStudentImport';
 import { toast } from 'sonner';
 import { 
@@ -25,7 +26,10 @@ import {
   ChevronLeft,
   Loader2,
   FileText,
-  Users
+  Users,
+  Mail,
+  Baby,
+  UserCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +48,7 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
   const [importMode, setImportMode] = useState<'file' | 'text'>('file');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [duplicateWarnings, setDuplicateWarnings] = useState<{ email: string[]; cpf: string[]; matricula: string[] }>({ email: [], cpf: [], matricula: [] });
+  const [sendEmailsEnabled, setSendEmailsEnabled] = useState(true);
   
   const {
     isLoading,
@@ -86,7 +91,6 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
         return;
       }
       
-      // Validar limites e duplicatas
       const validation = await validateImport(rows);
       
       if (validation.limitError) {
@@ -110,11 +114,15 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
     }
     
     try {
-      const summary = await processImport(parsedRows);
+      const summary = await processImport(parsedRows, sendEmailsEnabled);
       setStep('result');
       
       if (summary.succeeded > 0) {
         toast.success(`${summary.succeeded} aluno(s) importado(s) com sucesso!`);
+      }
+      
+      if (summary.emailsSent > 0) {
+        toast.success(`${summary.emailsSent} email(s) de credenciais enviado(s)`);
       }
       
       if (summary.failed > 0) {
@@ -142,6 +150,8 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
 
   const validRows = parsedRows.filter(r => r.isValid);
   const invalidRows = parsedRows.filter(r => !r.isValid);
+  const minorRows = parsedRows.filter(r => r.isMinor);
+  const adultRows = parsedRows.filter(r => !r.isMinor && r.calculatedAge !== null);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -204,7 +214,7 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                 <div className="p-3 bg-muted/50 rounded-md text-sm">
                   <div className="grid grid-cols-2 gap-2">
                     <div><Badge variant="destructive" className="mr-2">*</Badge> nome</div>
-                    <div><Badge variant="secondary" className="mr-2">?</Badge> email (gera automático)</div>
+                    <div><Badge variant="secondary" className="mr-2">?</Badge> email (maior de idade)</div>
                     <div><Badge variant="secondary" className="mr-2">?</Badge> turma (código)</div>
                     <div><Badge variant="secondary" className="mr-2">?</Badge> data_nasc</div>
                     <div><Badge variant="secondary" className="mr-2">?</Badge> telefone</div>
@@ -212,11 +222,19 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                     <div><Badge variant="secondary" className="mr-2">?</Badge> cpf</div>
                     <div><Badge variant="secondary" className="mr-2">?</Badge> responsavel_nome</div>
                     <div><Badge variant="secondary" className="mr-2">?</Badge> responsavel_telefone</div>
-                    <div><Badge variant="secondary" className="mr-2">?</Badge> senha (gera automático)</div>
+                    <div><Badge variant="secondary" className="mr-2">?</Badge> responsavel_email (menor)</div>
+                    <div><Badge variant="secondary" className="mr-2">?</Badge> senha</div>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    * Obrigatório | ? Opcional (campos vazios são gerados automaticamente)
-                  </p>
+                  <div className="mt-3 p-2 bg-primary/10 rounded border border-primary/20">
+                    <p className="text-xs text-primary font-medium flex items-center gap-1">
+                      <Baby className="h-3 w-3" />
+                      Para menores de idade: email do responsável será usado para login
+                    </p>
+                    <p className="text-xs text-primary flex items-center gap-1 mt-1">
+                      <UserCheck className="h-3 w-3" />
+                      Para maiores de idade: email próprio obrigatório
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -276,7 +294,6 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                 )}
               </div>
 
-              {/* Preview */}
               {csvText && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Prévia (primeiras 3 linhas)</Label>
@@ -294,19 +311,44 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
           {step === 'preview' && (
             <div className="space-y-6">
               {/* Summary */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg border border-border/50 bg-muted/30 text-center">
-                  <p className="text-2xl font-bold">{parsedRows.length}</p>
-                  <p className="text-sm text-muted-foreground">Total de linhas</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-lg border border-border/50 bg-muted/30 text-center">
+                  <p className="text-xl font-bold">{parsedRows.length}</p>
+                  <p className="text-xs text-muted-foreground">Total</p>
                 </div>
-                <div className="p-4 rounded-lg border border-green-500/30 bg-green-500/10 text-center">
-                  <p className="text-2xl font-bold text-green-600">{validRows.length}</p>
-                  <p className="text-sm text-muted-foreground">Válidas</p>
+                <div className="p-3 rounded-lg border border-green-500/30 bg-green-500/10 text-center">
+                  <p className="text-xl font-bold text-green-600">{validRows.length}</p>
+                  <p className="text-xs text-muted-foreground">Válidas</p>
                 </div>
-                <div className="p-4 rounded-lg border border-red-500/30 bg-red-500/10 text-center">
-                  <p className="text-2xl font-bold text-red-600">{invalidRows.length}</p>
-                  <p className="text-sm text-muted-foreground">Com erros</p>
+                <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/10 text-center">
+                  <p className="text-xl font-bold text-blue-600">{minorRows.length}</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <Baby className="h-3 w-3" /> Menores
+                  </p>
                 </div>
+                <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/10 text-center">
+                  <p className="text-xl font-bold text-purple-600">{adultRows.length}</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <UserCheck className="h-3 w-3" /> Maiores
+                  </p>
+                </div>
+              </div>
+
+              {/* Email sending toggle */}
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Enviar credenciais por email</p>
+                    <p className="text-sm text-muted-foreground">
+                      Emails serão enviados automaticamente para alunos/responsáveis
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={sendEmailsEnabled}
+                  onCheckedChange={setSendEmailsEnabled}
+                />
               </div>
 
               {/* Validation Error */}
@@ -316,6 +358,19 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                   <div>
                     <p className="font-medium text-red-600">Limite de alunos atingido</p>
                     <p className="text-sm text-red-500">{validationError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Invalid rows */}
+              {invalidRows.length > 0 && (
+                <div className="p-4 rounded-lg border border-red-500/50 bg-red-500/10 flex items-start gap-3">
+                  <XCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-red-600">{invalidRows.length} linha(s) com erro</p>
+                    <p className="text-sm text-red-500">
+                      Essas linhas serão ignoradas na importação
+                    </p>
                   </div>
                 </div>
               )}
@@ -348,11 +403,11 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                     <table className="w-full text-sm">
                       <thead className="bg-muted/50 sticky top-0">
                         <tr>
-                          <th className="px-3 py-2 text-left">#</th>
-                          <th className="px-3 py-2 text-left">Nome</th>
-                          <th className="px-3 py-2 text-left">Email</th>
-                          <th className="px-3 py-2 text-left">Turma</th>
-                          <th className="px-3 py-2 text-left">Status</th>
+                          <th className="px-2 py-2 text-left">#</th>
+                          <th className="px-2 py-2 text-left">Nome</th>
+                          <th className="px-2 py-2 text-left">Idade</th>
+                          <th className="px-2 py-2 text-left">Email Login</th>
+                          <th className="px-2 py-2 text-left">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -361,22 +416,45 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                             "hover:bg-muted/30",
                             !row.isValid && "bg-red-500/5"
                           )}>
-                            <td className="px-3 py-2 text-muted-foreground">{row.rowNumber}</td>
-                            <td className="px-3 py-2 font-medium">{row.nome}</td>
-                            <td className="px-3 py-2">
-                              {row.email}
-                              {row.generatedEmail && (
-                                <Badge variant="outline" className="ml-2 text-xs">gerado</Badge>
+                            <td className="px-2 py-2 text-muted-foreground">{row.rowNumber}</td>
+                            <td className="px-2 py-2 font-medium">{row.nome}</td>
+                            <td className="px-2 py-2">
+                              {row.calculatedAge !== null ? (
+                                <Badge variant={row.isMinor ? "secondary" : "outline"} className="text-xs">
+                                  {row.isMinor ? (
+                                    <span className="flex items-center gap-1">
+                                      <Baby className="h-3 w-3" />
+                                      {row.calculatedAge}
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1">
+                                      <UserCheck className="h-3 w-3" />
+                                      {row.calculatedAge}
+                                    </span>
+                                  )}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
                               )}
                             </td>
-                            <td className="px-3 py-2">{row.turma || '-'}</td>
-                            <td className="px-3 py-2">
+                            <td className="px-2 py-2 text-xs">
+                              <div className="flex flex-col">
+                                <span className="truncate max-w-[140px]">{row.loginEmail || row.email}</span>
+                                {row.generatedEmail && (
+                                  <Badge variant="outline" className="text-[10px] mt-0.5 w-fit">gerado</Badge>
+                                )}
+                                {row.isMinor && row.responsavel_email && (
+                                  <Badge variant="secondary" className="text-[10px] mt-0.5 w-fit">responsável</Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-2 py-2">
                               {row.isValid ? (
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                               ) : (
                                 <div className="flex items-center gap-1">
                                   <XCircle className="h-4 w-4 text-red-500" />
-                                  <span className="text-xs text-red-500">{row.errors[0]}</span>
+                                  <span className="text-xs text-red-500 truncate max-w-[100px]">{row.errors[0]}</span>
                                 </div>
                               )}
                             </td>
@@ -412,18 +490,24 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
               ) : importSummary ? (
                 <>
                   {/* Summary Cards */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 rounded-lg border border-border/50 bg-muted/30 text-center">
-                      <p className="text-2xl font-bold">{importSummary.total}</p>
-                      <p className="text-sm text-muted-foreground">Processados</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-lg border border-border/50 bg-muted/30 text-center">
+                      <p className="text-xl font-bold">{importSummary.total}</p>
+                      <p className="text-xs text-muted-foreground">Processados</p>
                     </div>
-                    <div className="p-4 rounded-lg border border-green-500/30 bg-green-500/10 text-center">
-                      <p className="text-2xl font-bold text-green-600">{importSummary.succeeded}</p>
-                      <p className="text-sm text-muted-foreground">Sucesso</p>
+                    <div className="p-3 rounded-lg border border-green-500/30 bg-green-500/10 text-center">
+                      <p className="text-xl font-bold text-green-600">{importSummary.succeeded}</p>
+                      <p className="text-xs text-muted-foreground">Sucesso</p>
                     </div>
-                    <div className="p-4 rounded-lg border border-red-500/30 bg-red-500/10 text-center">
-                      <p className="text-2xl font-bold text-red-600">{importSummary.failed}</p>
-                      <p className="text-sm text-muted-foreground">Falhas</p>
+                    <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/10 text-center">
+                      <p className="text-xl font-bold text-blue-600">{importSummary.emailsSent}</p>
+                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <Mail className="h-3 w-3" /> Emails
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-center">
+                      <p className="text-xl font-bold text-red-600">{importSummary.failed}</p>
+                      <p className="text-xs text-muted-foreground">Falhas</p>
                     </div>
                   </div>
 
@@ -435,7 +519,7 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                         <div>
                           <p className="font-medium text-green-700">Credenciais Geradas</p>
                           <p className="text-sm text-green-600">
-                            Baixe o arquivo com emails e senhas para entregar à escola
+                            Baixe o arquivo com emails e senhas como backup
                           </p>
                         </div>
                       </div>
@@ -444,8 +528,25 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                         className="gap-2 bg-green-600 hover:bg-green-700"
                       >
                         <Download className="h-4 w-4" />
-                        Baixar Credenciais
+                        Baixar CSV
                       </Button>
+                    </div>
+                  )}
+
+                  {/* Email summary */}
+                  {sendEmailsEnabled && importSummary.emailsSent > 0 && (
+                    <div className="flex items-center gap-3 p-4 rounded-lg border border-blue-500/30 bg-blue-500/10">
+                      <Mail className="h-6 w-6 text-blue-500" />
+                      <div>
+                        <p className="font-medium text-blue-700">
+                          {importSummary.emailsSent} email(s) enviado(s) com sucesso
+                        </p>
+                        {importSummary.emailsFailed > 0 && (
+                          <p className="text-sm text-blue-600">
+                            {importSummary.emailsFailed} email(s) falharam - credenciais disponíveis no CSV
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -457,10 +558,11 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                         <table className="w-full text-sm">
                           <thead className="bg-muted/50 sticky top-0">
                             <tr>
-                              <th className="px-3 py-2 text-left">Nome</th>
-                              <th className="px-3 py-2 text-left">Email</th>
-                              <th className="px-3 py-2 text-left">Senha</th>
-                              <th className="px-3 py-2 text-left">Status</th>
+                              <th className="px-2 py-2 text-left">Nome</th>
+                              <th className="px-2 py-2 text-left">Email</th>
+                              <th className="px-2 py-2 text-left">Tipo</th>
+                              <th className="px-2 py-2 text-left">Email</th>
+                              <th className="px-2 py-2 text-left">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/50">
@@ -469,14 +571,25 @@ export function StudentImportWizard({ open, onOpenChange, onComplete }: StudentI
                                 "hover:bg-muted/30",
                                 !result.success && "bg-red-500/5"
                               )}>
-                                <td className="px-3 py-2 font-medium">{result.name}</td>
-                                <td className="px-3 py-2">{result.email}</td>
-                                <td className="px-3 py-2 font-mono text-xs">{result.password}</td>
-                                <td className="px-3 py-2">
+                                <td className="px-2 py-2 font-medium">{result.name}</td>
+                                <td className="px-2 py-2 text-xs truncate max-w-[120px]">{result.email}</td>
+                                <td className="px-2 py-2">
+                                  <Badge variant={result.isMinor ? "secondary" : "outline"} className="text-[10px]">
+                                    {result.isMinor ? <Baby className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
+                                  </Badge>
+                                </td>
+                                <td className="px-2 py-2">
+                                  {result.emailSent ? (
+                                    <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                                  ) : result.success ? (
+                                    <span className="text-xs text-muted-foreground">-</span>
+                                  ) : null}
+                                </td>
+                                <td className="px-2 py-2">
                                   {result.success ? (
-                                    <Badge className="bg-green-500">Sucesso</Badge>
+                                    <Badge className="bg-green-500 text-[10px]">OK</Badge>
                                   ) : (
-                                    <Badge variant="destructive">{result.error}</Badge>
+                                    <Badge variant="destructive" className="text-[10px]">{result.error}</Badge>
                                   )}
                                 </td>
                               </tr>
