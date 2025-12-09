@@ -32,6 +32,7 @@ import { StudentFormSteps } from '@/components/students/StudentFormSteps';
 import { LinkStudentToClassModal } from '@/components/students/LinkStudentToClassModal';
 import { RemoveStudentFromClassModal } from '@/components/students/RemoveStudentFromClassModal';
 import { StudentImportWizard } from '@/components/students/StudentImportWizard';
+import { QuickClassLinkingSheet } from '@/components/students/QuickClassLinkingSheet';
 import { useStudents } from '@/hooks/useStudents';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RESPONSIVE_CLASSES } from '@/lib/responsive-utils';
@@ -80,6 +81,7 @@ export default function StudentsPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
+  const [isQuickLinkingOpen, setIsQuickLinkingOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   const isMobile = useIsMobile();
@@ -173,6 +175,15 @@ export default function StudentsPage() {
   // Header Actions Component
   const HeaderActions = () => (
     <>
+      <Button 
+        variant="outline" 
+        size={isMobile ? "sm" : "default"}
+        onClick={() => setIsQuickLinkingOpen(true)}
+        className={RESPONSIVE_CLASSES.iconButton}
+      >
+        <Link className="h-4 w-4" />
+        <span className="ml-2">Vincular Turmas</span>
+      </Button>
       <Button 
         variant="outline" 
         size={isMobile ? "sm" : "default"}
@@ -685,6 +696,19 @@ export default function StudentsPage() {
             setIsImportModalOpen(open);
           }}
           onComplete={() => fetchStudents({})}
+        />
+
+        <QuickClassLinkingSheet
+          open={isQuickLinkingOpen}
+          onOpenChange={setIsQuickLinkingOpen}
+          students={students.map(s => ({
+            id: s.id,
+            name: s.name,
+            email: s.email,
+            enrollmentNumber: (s as any).enrollment_number,
+            classes: s.classes
+          }))}
+          onStudentsLinked={() => fetchStudents({})}
         />
       </PageLayout>
     </AppLayout>
