@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   CalendarDays,
-  Megaphone
+  Megaphone,
+  Key
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SuperAdminPasswordChangeModal } from '@/components/platform/SuperAdminPasswordChangeModal';
 
 const navigation = [
   { name: 'Overview', href: '/platform', icon: LayoutDashboard },
@@ -46,6 +48,7 @@ export function PlatformLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -194,6 +197,11 @@ export function PlatformLayout() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setPasswordModalOpen(true)}>
+                <Key className="w-4 h-4 mr-2" />
+                Alterar Senha
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair
@@ -207,6 +215,12 @@ export function PlatformLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Password Change Modal */}
+      <SuperAdminPasswordChangeModal
+        open={passwordModalOpen}
+        onOpenChange={setPasswordModalOpen}
+      />
     </div>
   );
 }
