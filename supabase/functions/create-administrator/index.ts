@@ -102,7 +102,18 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verificar se email já existe
+    // Verificar se email já existe em auth.users
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const existingAuthUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === data.email.toLowerCase())
+    
+    if (existingAuthUser) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Este email já está cadastrado no sistema' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
+      )
+    }
+
+    // Verificar se email já existe em profiles
     const { data: existingProfiles } = await supabaseAdmin
       .from('profiles')
       .select('id')
