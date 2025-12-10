@@ -1753,6 +1753,7 @@ export type Database = {
           student_notes: string | null
           total_xp: number | null
           updated_at: string | null
+          weekly_checkins: Json | null
         }
         Insert: {
           avatar?: string | null
@@ -1777,6 +1778,7 @@ export type Database = {
           student_notes?: string | null
           total_xp?: number | null
           updated_at?: string | null
+          weekly_checkins?: Json | null
         }
         Update: {
           avatar?: string | null
@@ -1801,6 +1803,7 @@ export type Database = {
           student_notes?: string | null
           total_xp?: number | null
           updated_at?: string | null
+          weekly_checkins?: Json | null
         }
         Relationships: [
           {
@@ -2527,6 +2530,7 @@ export type Database = {
           student_notes: string | null
           total_xp: number | null
           updated_at: string | null
+          weekly_checkins: Json | null
         }[]
         SetofOptions: {
           from: "*"
