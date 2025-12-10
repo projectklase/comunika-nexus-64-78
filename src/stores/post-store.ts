@@ -255,13 +255,20 @@ class PostStore {
         console.error("[PostStore] ❌ ERRO ao chamar generatePostNotifications:", error);
       });
 
-    // Log audit event
+    // Log audit event - buscar email real do autor
     try {
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', authorId)
+        .single();
+
       logAudit({
         action: "CREATE",
         entity: "POST",
         entity_id: post.id,
         entity_label: post.title,
+        school_id: profile.current_school_id,
         scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
         class_name:
           post.audience === "CLASS" && post.classIds?.length
@@ -281,8 +288,8 @@ class PostStore {
         },
         actor_id: authorId,
         actor_name: authorName,
-        actor_email: "user@escola.com",
-        actor_role: "SECRETARIA",
+        actor_email: authorProfile?.email || '',
+        actor_role: authorRole.toUpperCase(),
       });
     } catch (error) {
       console.error("Erro ao registrar evento de auditoria:", error);
@@ -357,16 +364,23 @@ class PostStore {
       });
     }
 
-    // Log audit event
+    // Log audit event - buscar email real do autor
     try {
       const changedFields = Object.keys(patch);
       const diff = generateDiff(currentPost, afterPost);
+
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', afterPost.authorId)
+        .single();
 
       logAudit({
         action: "UPDATE",
         entity: "POST",
         entity_id: id,
         entity_label: afterPost.title,
+        school_id: currentData.school_id,
         scope:
           afterPost.audience === "CLASS" && afterPost.classIds?.length ? `CLASS:${afterPost.classIds[0]}` : "GLOBAL",
         class_name:
@@ -381,10 +395,10 @@ class PostStore {
           status_after: afterPost.status,
         },
         diff_json: diff,
-        actor_id: afterPost.authorId || "user-secretaria",
+        actor_id: afterPost.authorId || "unknown",
         actor_name: afterPost.authorName,
-        actor_email: "user@escola.com",
-        actor_role: "SECRETARIA",
+        actor_email: authorProfile?.email || '',
+        actor_role: (afterPost.authorRole || 'secretaria').toUpperCase(),
       });
     } catch (error) {
       console.error("Erro ao registrar evento de auditoria:", error);
@@ -414,13 +428,20 @@ class PostStore {
     this.notifySubscribers();
     console.log("[DEBUG-MANUS] ✅ Subscribers notificados");
 
-    // Log audit event
+    // Log audit event - buscar email real do autor
     try {
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', post.authorId)
+        .single();
+
       logAudit({
         action: "ARCHIVE",
         entity: "POST",
         entity_id: id,
         entity_label: post.title,
+        school_id: postData.school_id,
         scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
         class_name:
           post.audience === "CLASS" && post.classIds?.length
@@ -436,10 +457,10 @@ class PostStore {
         diff_json: {
           status: { before: beforeStatus, after: "ARCHIVED" },
         },
-        actor_id: post.authorId || "user-secretaria",
+        actor_id: post.authorId || "unknown",
         actor_name: post.authorName,
-        actor_email: "user@escola.com",
-        actor_role: "SECRETARIA",
+        actor_email: authorProfile?.email || '',
+        actor_role: (post.authorRole || 'secretaria').toUpperCase(),
       });
     } catch (error) {
       console.error("Erro ao registrar evento de auditoria:", error);
@@ -481,13 +502,20 @@ class PostStore {
 
     this.notifySubscribers();
 
-    // Log audit event
+    // Log audit event - buscar email real do autor
     try {
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', post.authorId)
+        .single();
+
       logAudit({
         action: "CONCLUDE",
         entity: "POST",
         entity_id: id,
         entity_label: post.title,
+        school_id: postData.school_id,
         scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
         class_name:
           post.audience === "CLASS" && post.classIds?.length
@@ -504,10 +532,10 @@ class PostStore {
         diff_json: {
           status: { before: beforeStatus, after: "CONCLUDED" },
         },
-        actor_id: post.authorId || "user-professor",
+        actor_id: post.authorId || "unknown",
         actor_name: post.authorName,
-        actor_email: "user@escola.com",
-        actor_role: "PROFESSOR",
+        actor_email: authorProfile?.email || '',
+        actor_role: (post.authorRole || 'professor').toUpperCase(),
       });
     } catch (error) {
       console.error("Erro ao registrar evento de auditoria:", error);
@@ -627,13 +655,20 @@ class PostStore {
     this.notifySubscribers();
     console.log("[DEBUG-MANUS] ✅ Subscribers notificados");
 
-    // Log audit event
+    // Log audit event - buscar email real do autor
     try {
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', post.authorId)
+        .single();
+
       logAudit({
         action: "DELETE",
         entity: "POST",
         entity_id: id,
         entity_label: post.title,
+        school_id: postData.school_id,
         scope: post.audience === "CLASS" && post.classIds?.length ? `CLASS:${post.classIds[0]}` : "GLOBAL",
         class_name:
           post.audience === "CLASS" && post.classIds?.length
@@ -648,10 +683,10 @@ class PostStore {
         diff_json: {
           deleted: { before: false, after: true },
         },
-        actor_id: post.authorId || "user-secretaria",
+        actor_id: post.authorId || "unknown",
         actor_name: post.authorName,
-        actor_email: "user@escola.com",
-        actor_role: "SECRETARIA",
+        actor_email: authorProfile?.email || '',
+        actor_role: (post.authorRole || 'secretaria').toUpperCase(),
       });
     } catch (error) {
       console.error("Erro ao registrar evento de auditoria:", error);
