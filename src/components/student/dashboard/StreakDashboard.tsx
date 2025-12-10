@@ -20,15 +20,19 @@ export function StreakDashboard() {
   } = useStudentGamification();
   const { toast } = useToast();
 
-  // Buscar streak e XP do banco de dados (fonte de verdade)
-  const { data: profileStats } = useQuery({
+  // Buscar streak, XP e weekly_checkins do banco de dados (fonte de verdade)
+  const { data: profileStats, refetch: refetchStats } = useQuery({
     queryKey: ['student-streak-stats', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       
+      // Verificar se ainda está autenticado antes da query
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('total_xp, current_streak_days')
+        .select('total_xp, current_streak_days, weekly_checkins')
         .eq('id', user.id)
         .single();
       
@@ -43,6 +47,10 @@ export function StreakDashboard() {
   // Valores do banco de dados
   const streak = profileStats?.current_streak_days || 0;
   const xp = profileStats?.total_xp || 0;
+  
+  // CORREÇÃO: Usar weekly_checkins do banco se disponível
+  const weekFromDb = (profileStats?.weekly_checkins as Record<string, boolean>) || {};
+  const weekToUse = Object.keys(weekFromDb).length > 0 ? weekFromDb : week;
 
   // Reset data if needed on component mount
   useEffect(() => {
@@ -53,10 +61,11 @@ export function StreakDashboard() {
     const result = checkIn();
     
     if (result.success) {
-      // Sync to database
-      const user = (await supabase.auth.getUser()).data.user;
-      if (user) {
-        await syncToDatabase(user.id);
+      // CORREÇÃO: Passar o updatedWeek diretamente para evitar race condition
+      const authUser = (await supabase.auth.getUser()).data.user;
+      if (authUser) {
+        await syncToDatabase(authUser.id, result.updatedWeek);
+        await refetchStats();
       }
 
       if (result.xpGained > 0) {
@@ -111,9 +120,9 @@ export function StreakDashboard() {
   };
 
   const weekDates = getWeekDates();
-  const weekProgress = weekDates.filter(date => week[date]).length;
+  const weekProgress = weekDates.filter(date => weekToUse[date]).length;
   const today = new Date().toISOString().split('T')[0];
-  const hasCheckedInToday = week[today];
+  const hasCheckedInToday = weekToUse[today];
 
   const streakBadge = getStreakBadge(streak);
 
@@ -193,7 +202,7 @@ export function StreakDashboard() {
             {weekDates.map((date, index) => {
               const dayLabels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
               const dayOfWeek = new Date(date).getDay();
-              const isComplete = week[date];
+              const isComplete = weekToUse[date];
               
               return (
                 <div

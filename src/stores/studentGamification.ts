@@ -16,12 +16,12 @@ interface GamificationData {
 }
 
 interface GamificationStore extends GamificationData {
-  checkIn: () => { success: boolean; xpGained: number; streakCount: number };
+  checkIn: () => { success: boolean; xpGained: number; streakCount: number; updatedWeek: Record<string, boolean> };
   useForgiveness: () => boolean;
   addActivityXP: (activityId: string) => number;
   addFocusXP: (type: 'start' | 'complete') => number;
   resetIfNeeded: () => void;
-  syncToDatabase: (userId: string) => Promise<void>;
+  syncToDatabase: (userId: string, overrideWeek?: Record<string, boolean>) => Promise<void>;
   loadFromDatabase: (userId: string) => Promise<void>;
   // Integration with Koins system
   syncWithKoins: (studentId: string) => void;
@@ -101,7 +101,7 @@ export const useStudentGamification = create<GamificationStore>()(
         const gap = state.lastCheckIn ? diffDays(today, state.lastCheckIn) : 999;
 
         if (gap === 0) {
-          return { success: false, xpGained: 0, streakCount: state.streak };
+          return { success: false, xpGained: 0, streakCount: state.streak, updatedWeek: state.week };
         }
 
         let newStreak = state.streak;
@@ -118,23 +118,28 @@ export const useStudentGamification = create<GamificationStore>()(
           newStreak = 1;
         }
 
+        // CORREÇÃO: Criar o week atualizado ANTES do set
+        const updatedWeek = { ...state.week, [today]: true };
+
         set(state => ({
           lastCheckIn: today,
           streak: newStreak,
           xp: state.xp + xpGained,
-          week: {
-            ...state.week,
-            [today]: true
-          }
+          week: updatedWeek
         }));
 
-        return { success: true, xpGained, streakCount: newStreak };
+        // Retornar o week atualizado para sincronização imediata
+        return { success: true, xpGained, streakCount: newStreak, updatedWeek };
       },
 
-      syncToDatabase: async (userId: string) => {
+      syncToDatabase: async (userId: string, overrideWeek?: Record<string, boolean>) => {
         const state = get();
+        // CORREÇÃO: Usar overrideWeek se fornecido para evitar race condition
+        const weekToSync = overrideWeek || state.week;
         
         try {
+          console.log('[syncToDatabase] Sincronizando week:', JSON.stringify(weekToSync));
+          
           const { error } = await supabase
             .from('profiles')
             .update({
@@ -142,14 +147,14 @@ export const useStudentGamification = create<GamificationStore>()(
               current_streak_days: state.streak,
               best_streak_days: Math.max(state.streak, 0),
               last_activity_date: getToday(),
-              weekly_checkins: state.week // Persistir progresso semanal
+              weekly_checkins: weekToSync // Usar week atualizado
             })
             .eq('id', userId);
 
           if (error) {
             console.error('[syncToDatabase] Error syncing to database:', error);
           } else {
-            console.log('[syncToDatabase] ✅ Dados sincronizados com banco');
+            console.log('[syncToDatabase] ✅ Dados sincronizados com banco, week:', Object.keys(weekToSync).length, 'dias');
           }
         } catch (err) {
           console.error('[syncToDatabase] Exception syncing to database:', err);

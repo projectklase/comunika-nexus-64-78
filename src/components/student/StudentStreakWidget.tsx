@@ -45,7 +45,7 @@ export function StudentStreakWidget() {
     syncToDatabase
   } = useStudentGamification();
 
-  // CORREÇÃO: Buscar XP e streak do BANCO DE DADOS, não do localStorage
+  // CORREÇÃO: Buscar XP, streak e weekly_checkins do BANCO DE DADOS
   const { data: profileStats, refetch: refetchStats } = useQuery({
     queryKey: ['student-streak-stats', user?.id],
     queryFn: async () => {
@@ -55,7 +55,7 @@ export function StudentStreakWidget() {
       
       const { data } = await supabase
         .from('profiles')
-        .select('total_xp, current_streak_days')
+        .select('total_xp, current_streak_days, weekly_checkins')
         .eq('id', user!.id)
         .single();
       return data;
@@ -63,6 +63,10 @@ export function StudentStreakWidget() {
     enabled: !!user?.id && user?.role === 'aluno',
     staleTime: 30000 // 30 seconds
   });
+
+  // CORREÇÃO: Usar weekly_checkins do banco se disponível, senão fallback para Zustand
+  const weekFromDb = (profileStats?.weekly_checkins as Record<string, boolean>) || {};
+  const weekToUse = Object.keys(weekFromDb).length > 0 ? weekFromDb : week;
 
   // Usar valores do banco de dados
   const streak = profileStats?.current_streak_days || 0;
@@ -93,9 +97,9 @@ export function StudentStreakWidget() {
     const result = checkIn();
     
     if (result.success) {
-      // Sync to database
+      // CORREÇÃO: Passar o updatedWeek diretamente para evitar race condition
       if (user?.id) {
-        await syncToDatabase(user.id);
+        await syncToDatabase(user.id, result.updatedWeek);
         // Refetch stats to update UI with fresh database values
         await refetchStats();
       }
@@ -197,14 +201,14 @@ export function StudentStreakWidget() {
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">Esta semana</span>
             <span className="text-xs text-muted-foreground">
-              {weekDates.filter(date => week[date]).length}/7
+              {weekDates.filter(date => weekToUse[date]).length}/7
             </span>
           </div>
           
           <div className="flex justify-between gap-1">
             {weekDates.map((date, index) => {
               const isToday = date === today;
-              const isChecked = week[date];
+              const isChecked = weekToUse[date];
               
               return (
                 <div

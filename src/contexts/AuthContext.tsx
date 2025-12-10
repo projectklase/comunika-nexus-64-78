@@ -350,6 +350,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('aluno_feed_preferences');
       localStorage.removeItem('aluno_feed_filters');
       
+      // CORREÇÃO: Limpar stores adicionais identificados na auditoria
+      localStorage.removeItem('password_reset_requests');
+      localStorage.removeItem('school_settings');
+      localStorage.removeItem('comunika_subjects');
+      
       // Limpar drafts de posts
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('draft:post:') || 
