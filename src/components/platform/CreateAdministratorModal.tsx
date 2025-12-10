@@ -269,7 +269,7 @@ export function CreateAdministratorModal({
       // Generate onboarding PDF
       let onboardingPdfUrl: string | undefined;
       try {
-        const pdfBlob = generateAdminOnboardingPDF({
+        const pdfBlob = await generateAdminOnboardingPDF({
           adminName: formData.name,
           schoolName: formData.school_name,
           planName: selectedPlan?.name || 'Plano',
