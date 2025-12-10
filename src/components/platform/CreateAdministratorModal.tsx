@@ -144,6 +144,7 @@ export function CreateAdministratorModal({
   const [autoPassword, setAutoPassword] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [sendWelcomeEmail, setSendWelcomeEmail] = useState(true);
   
   const [formData, setFormData] = useState<FormData>({
     plan_id: '',
@@ -263,7 +264,29 @@ export function CreateAdministratorModal({
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
-      toast.success(`Administrador ${formData.name} criado com sucesso!`);
+      // Send welcome email if checked
+      if (sendWelcomeEmail) {
+        try {
+          await supabase.functions.invoke('send-admin-welcome-email', {
+            body: {
+              adminName: formData.name,
+              adminEmail: formData.email.toLowerCase(),
+              password: formData.password,
+              schoolName: formData.school_name,
+              planName: selectedPlan?.name,
+              maxStudents: selectedPlan?.max_students,
+              isPasswordReset: false,
+            }
+          });
+          toast.success(`Administrador ${formData.name} criado e email enviado!`);
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          toast.success(`Administrador ${formData.name} criado com sucesso!`);
+          toast.warning('Falha ao enviar email de boas-vindas');
+        }
+      } else {
+        toast.success(`Administrador ${formData.name} criado com sucesso!`);
+      }
       
       // Reset form
       setFormData({
@@ -282,6 +305,7 @@ export function CreateAdministratorModal({
         school_slug: '',
       });
       setCurrentStep(1);
+      setSendWelcomeEmail(true);
       
       onSuccess();
     } catch (error: any) {
@@ -821,6 +845,27 @@ export function CreateAdministratorModal({
           <div className="text-muted-foreground">URL:</div>
           <div className="text-primary">/{formData.school_slug}</div>
         </div>
+      </div>
+
+      {/* Email de Boas-Vindas */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Mail className="w-4 h-4 text-primary" />
+          Notificação
+        </div>
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="sendWelcomeEmail"
+            checked={sendWelcomeEmail}
+            onCheckedChange={(checked) => setSendWelcomeEmail(checked as boolean)}
+          />
+          <Label htmlFor="sendWelcomeEmail" className="text-sm cursor-pointer">
+            Enviar email de boas-vindas com credenciais
+          </Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          O administrador receberá um email profissional com login, senha e informações do plano.
+        </p>
       </div>
 
       {/* Aviso */}
