@@ -72,9 +72,9 @@ interface FormData {
 }
 
 const STEPS = [
-  { id: 1, label: 'Plano', icon: CreditCard },
+  { id: 1, label: 'Admin', icon: User },
   { id: 2, label: 'Empresa', icon: Building },
-  { id: 3, label: 'Admin', icon: User },
+  { id: 3, label: 'Plano', icon: CreditCard },
   { id: 4, label: 'Revisão', icon: CheckCircle },
 ];
 
@@ -202,12 +202,12 @@ export function CreateAdministratorModal({
 
   const validateStep = (step: number): boolean => {
     switch (step) {
-      case 1: return !!formData.plan_id;
-      case 2: return true; // Empresa é opcional
-      case 3: {
+      case 1: {
         const nameError = validateName(formData.name);
         return !!(formData.name && !nameError && formData.email && formData.password && formData.school_name && formData.school_slug);
       }
+      case 2: return true; // Empresa é opcional
+      case 3: return !!formData.plan_id;
       case 4: return true;
       default: return false;
     }
@@ -226,7 +226,7 @@ export function CreateAdministratorModal({
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(3)) {
+    if (!validateStep(1) || !validateStep(3)) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -339,198 +339,8 @@ export function CreateAdministratorModal({
     </div>
   );
 
-  // Etapa 1: Plano
+  // Etapa 1: Admin + Escola
   const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          Escolha o Plano
-        </h3>
-        <p className="text-sm text-muted-foreground">Selecione o plano ideal para o cliente</p>
-      </div>
-
-      {/* Cards de planos */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {loadingPlans ? (
-          <div className="col-span-3 flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          subscriptionPlans?.map((plan) => {
-            const isSelected = formData.plan_id === plan.id;
-            return (
-              <button
-                key={plan.id}
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, plan_id: plan.id }))}
-                className={cn(
-                  "relative p-4 rounded-lg border-2 transition-all text-left",
-                  isSelected 
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
-                    : "border-white/10 bg-white/5 hover:border-white/20"
-                )}
-              >
-                {isSelected && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                    <Check className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-                <div className="font-bold text-base mb-1">{plan.name}</div>
-                <div className="text-xl font-bold text-primary">
-                  {formatCurrency(plan.price_cents)}
-                  <span className="text-xs font-normal text-muted-foreground">/mês</span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-2 space-y-0.5">
-                  <div>• {plan.max_students} alunos</div>
-                  <div>• {plan.included_schools} escola incluída</div>
-                </div>
-              </button>
-            );
-          })
-        )}
-      </div>
-
-      {/* Escolas adicionais */}
-      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-sm">Escolas Adicionais</div>
-            <div className="text-xs text-muted-foreground">+R$497,00/mês cada</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 bg-white/5 border-white/10"
-              onClick={() => setFormData(prev => ({ ...prev, addon_schools_count: Math.max(0, prev.addon_schools_count - 1) }))}
-              disabled={formData.addon_schools_count === 0}
-            >
-              <Minus className="w-4 h-4" />
-            </Button>
-            <span className="w-8 text-center font-bold">{formData.addon_schools_count}</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 bg-white/5 border-white/10"
-              onClick={() => setFormData(prev => ({ ...prev, addon_schools_count: prev.addon_schools_count + 1 }))}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Total */}
-      <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-        <div className="flex items-center justify-between">
-          <span className="font-medium">Total Mensal</span>
-          <span className="text-2xl font-bold text-primary">{formatCurrency(calculateTotal())}</span>
-        </div>
-        {formData.addon_schools_count > 0 && selectedPlan && (
-          <div className="text-xs text-muted-foreground mt-1">
-            {formatCurrency(selectedPlan.price_cents)} (plano) + {formatCurrency(formData.addon_schools_count * 49700)} ({formData.addon_schools_count} escola{formData.addon_schools_count > 1 ? 's' : ''} extra)
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Etapa 2: Empresa (opcional)
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
-          <Building className="w-5 h-5 text-primary" />
-          Dados da Empresa
-        </h3>
-        <p className="text-sm text-muted-foreground">Informações opcionais para faturamento</p>
-      </div>
-
-      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-200">
-        💡 Estes dados são opcionais e facilitam a emissão de notas fiscais e contratos.
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="company_name">Razão Social</Label>
-          <div className="relative">
-            <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              id="company_name"
-              value={formData.company_name}
-              onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
-              placeholder="Nome da empresa"
-              className="bg-white/5 border-white/10 pl-9"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="company_cnpj">CNPJ</Label>
-          <div className="relative">
-            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              id="company_cnpj"
-              value={formData.company_cnpj}
-              onChange={(e) => setFormData(prev => ({ ...prev, company_cnpj: formatCNPJ(e.target.value) }))}
-              placeholder="00.000.000/0000-00"
-              className="bg-white/5 border-white/10 pl-9"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="company_address">Endereço</Label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              id="company_address"
-              value={formData.company_address}
-              onChange={(e) => setFormData(prev => ({ ...prev, company_address: e.target.value }))}
-              placeholder="Rua, número, complemento"
-              className="bg-white/5 border-white/10 pl-9"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="company_city">Cidade</Label>
-            <Input
-              id="company_city"
-              value={formData.company_city}
-              onChange={(e) => setFormData(prev => ({ ...prev, company_city: e.target.value }))}
-              placeholder="Cidade"
-              className="bg-white/5 border-white/10"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company_state">Estado</Label>
-            <Select
-              value={formData.company_state}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, company_state: value }))}
-            >
-              <SelectTrigger className="bg-white/5 border-white/10">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-white/10 z-50">
-                {BRAZILIAN_STATES.map(state => (
-                  <SelectItem key={state} value={state}>{state}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Etapa 3: Admin + Escola
-  const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center mb-4">
         <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
@@ -553,10 +363,8 @@ export function CreateAdministratorModal({
             id="name"
             value={formData.name}
             onChange={(e) => {
-              // Filtrar números do nome
               const sanitized = e.target.value.replace(/[0-9]/g, '');
               setFormData(prev => ({ ...prev, name: sanitized }));
-              // Limpar erro ao digitar
               if (fieldErrors.name) {
                 setFieldErrors(prev => ({ ...prev, name: '' }));
               }
@@ -717,6 +525,196 @@ export function CreateAdministratorModal({
             URL: <span className="text-primary">/{formData.school_slug || 'slug'}</span>
           </p>
         </div>
+      </div>
+    </div>
+  );
+
+  // Etapa 2: Empresa (opcional)
+  const renderStep2 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          <Building className="w-5 h-5 text-primary" />
+          Dados da Empresa
+        </h3>
+        <p className="text-sm text-muted-foreground">Informações opcionais para faturamento</p>
+      </div>
+
+      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-200">
+        💡 Estes dados são opcionais e facilitam a emissão de notas fiscais e contratos.
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="company_name">Razão Social</Label>
+          <div className="relative">
+            <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="company_name"
+              value={formData.company_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+              placeholder="Nome da empresa"
+              className="bg-white/5 border-white/10 pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="company_cnpj">CNPJ</Label>
+          <div className="relative">
+            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="company_cnpj"
+              value={formData.company_cnpj}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_cnpj: formatCNPJ(e.target.value) }))}
+              placeholder="00.000.000/0000-00"
+              className="bg-white/5 border-white/10 pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="company_address">Endereço</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="company_address"
+              value={formData.company_address}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_address: e.target.value }))}
+              placeholder="Rua, número, complemento"
+              className="bg-white/5 border-white/10 pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="company_city">Cidade</Label>
+            <Input
+              id="company_city"
+              value={formData.company_city}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_city: e.target.value }))}
+              placeholder="Cidade"
+              className="bg-white/5 border-white/10"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company_state">Estado</Label>
+            <Select
+              value={formData.company_state}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, company_state: value }))}
+            >
+              <SelectTrigger className="bg-white/5 border-white/10">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-white/10 z-50">
+                {BRAZILIAN_STATES.map(state => (
+                  <SelectItem key={state} value={state}>{state}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Etapa 3: Plano
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          <Sparkles className="w-5 h-5 text-primary" />
+          Escolha o Plano
+        </h3>
+        <p className="text-sm text-muted-foreground">Selecione o plano ideal para o cliente</p>
+      </div>
+
+      {/* Cards de planos */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {loadingPlans ? (
+          <div className="col-span-3 flex justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          subscriptionPlans?.map((plan) => {
+            const isSelected = formData.plan_id === plan.id;
+            return (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, plan_id: plan.id }))}
+                className={cn(
+                  "relative p-4 rounded-lg border-2 transition-all text-left",
+                  isSelected 
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
+                    : "border-white/10 bg-white/5 hover:border-white/20"
+                )}
+              >
+                {isSelected && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                    <Check className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                )}
+                <div className="font-bold text-base mb-1">{plan.name}</div>
+                <div className="text-xl font-bold text-primary">
+                  {formatCurrency(plan.price_cents)}
+                  <span className="text-xs font-normal text-muted-foreground">/mês</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-2 space-y-0.5">
+                  <div>• {plan.max_students} alunos</div>
+                  <div>• {plan.included_schools} escola incluída</div>
+                </div>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Escolas adicionais */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-sm">Escolas Adicionais</div>
+            <div className="text-xs text-muted-foreground">+R$497,00/mês cada</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-white/5 border-white/10"
+              onClick={() => setFormData(prev => ({ ...prev, addon_schools_count: Math.max(0, prev.addon_schools_count - 1) }))}
+              disabled={formData.addon_schools_count === 0}
+            >
+              <Minus className="w-4 h-4" />
+            </Button>
+            <span className="w-8 text-center font-bold">{formData.addon_schools_count}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-white/5 border-white/10"
+              onClick={() => setFormData(prev => ({ ...prev, addon_schools_count: prev.addon_schools_count + 1 }))}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Total */}
+      <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Total Mensal</span>
+          <span className="text-2xl font-bold text-primary">{formatCurrency(calculateTotal())}</span>
+        </div>
+        {formData.addon_schools_count > 0 && selectedPlan && (
+          <div className="text-xs text-muted-foreground mt-1">
+            {formatCurrency(selectedPlan.price_cents)} (plano) + {formatCurrency(formData.addon_schools_count * 49700)} ({formData.addon_schools_count} escola{formData.addon_schools_count > 1 ? 's' : ''} extra)
+          </div>
+        )}
       </div>
     </div>
   );
