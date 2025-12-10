@@ -7,6 +7,7 @@ import { deliveryService } from '@/services/delivery-service';
 import { useClassStore } from '@/stores/class-store';
 import { supabase } from '@/integrations/supabase/client';
 import { DeliveryTable } from '@/components/activities/DeliveryTable';
+import { PendingStudentsTable } from '@/components/activities/PendingStudentsTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +25,8 @@ import {
   Eye,
   MessageSquare,
   Download,
-  BarChart3
+  BarChart3,
+  UserX
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -47,11 +49,13 @@ export default function ActivityDetail() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [deliveryStatusFilter, setDeliveryStatusFilter] = useState<string | null>(null);
   
   // All data hooks MUST come before any conditional returns
   const { posts } = usePosts();
   const { classes } = useClassStore();
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [classStudentsInfo, setClassStudentsInfo] = useState<{ id: string; name: string }[]>([]);
   const [metrics, setMetrics] = useState<any>({
     naoEntregue: 0,
     aguardando: 0,
@@ -89,11 +93,11 @@ export default function ActivityDetail() {
     loadDeliveries();
   }, [postId, refreshTrigger]);
   
-  // Effect to load metrics
+  // Effect to load metrics and student info
   useEffect(() => {
     if (!postId || !classId) return;
     
-    const loadMetrics = async () => {
+    const loadMetricsAndStudents = async () => {
       try {
         // Find the class to get student count
         const targetClass = classes.find(c => c.id === classId);
@@ -101,12 +105,24 @@ export default function ActivityDetail() {
         
         const result = await deliveryService.getActivityMetrics(postId, targetClass.students.length || 0);
         setMetrics(result);
+
+        // Fetch student names from profiles
+        if (targetClass.students.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', targetClass.students);
+          
+          if (profiles) {
+            setClassStudentsInfo(profiles.map(p => ({ id: p.id, name: p.name })));
+          }
+        }
       } catch (error) {
         console.error('Error loading metrics:', error);
       }
     };
     
-    loadMetrics();
+    loadMetricsAndStudents();
   }, [postId, classId, classes, refreshTrigger]);
 
   // Now safe to do conditional returns - all hooks are called
@@ -342,33 +358,48 @@ export default function ActivityDetail() {
         )}
       </div>
 
-      {/* KPIs */}
+      {/* KPIs - Clickable */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer transition-all hover:bg-muted/50 hover:border-muted-foreground/30"
+          onClick={() => { setActiveTab('pending'); setDeliveryStatusFilter(null); }}
+        >
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-muted-foreground">{metrics.naoEntregue}</div>
             <div className="text-sm text-muted-foreground">Não entregue</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer transition-all hover:bg-primary/10 hover:border-primary/30"
+          onClick={() => { setActiveTab('deliveries'); setDeliveryStatusFilter('AGUARDANDO'); }}
+        >
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-primary">{metrics.aguardando}</div>
             <div className="text-sm text-muted-foreground">Aguardando</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer transition-all hover:bg-success/10 hover:border-success/30"
+          onClick={() => { setActiveTab('deliveries'); setDeliveryStatusFilter('APROVADA'); }}
+        >
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-success">{metrics.aprovadas}</div>
             <div className="text-sm text-muted-foreground">Aprovadas</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer transition-all hover:bg-destructive/10 hover:border-destructive/30"
+          onClick={() => { setActiveTab('deliveries'); setDeliveryStatusFilter('DEVOLVIDA'); }}
+        >
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-destructive">{metrics.devolvidas}</div>
             <div className="text-sm text-muted-foreground">Devolvidas</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer transition-all hover:bg-destructive/10 hover:border-destructive/30"
+          onClick={() => { setActiveTab('deliveries'); setDeliveryStatusFilter('late'); }}
+        >
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-destructive/80">{metrics.atrasadas}</div>
             <div className="text-sm text-muted-foreground">Atrasadas</div>
@@ -377,9 +408,13 @@ export default function ActivityDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); if (val !== 'deliveries') setDeliveryStatusFilter(null); }} className="space-y-6">
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="pending" className="gap-1.5">
+            <UserX className="h-4 w-4" />
+            Pendentes ({metrics.naoEntregue})
+          </TabsTrigger>
           <TabsTrigger value="deliveries">
             Entregas ({deliveries.length})
           </TabsTrigger>
@@ -513,6 +548,26 @@ export default function ActivityDetail() {
           </div>
         </TabsContent>
 
+        <TabsContent value="pending">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserX className="h-5 w-5" />
+                Alunos Pendentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PendingStudentsTable
+                classStudents={classStudentsInfo}
+                deliveries={deliveries}
+                dueAt={activity.dueAt}
+                onMarkAsReceived={handleMarkAsReceived}
+                isLoading={isLoading}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="deliveries">
           <Card>
             <CardHeader>
@@ -525,6 +580,7 @@ export default function ActivityDetail() {
                 onReview={handleReview}
                 onMarkAsReceived={handleMarkAsReceived}
                 isLoading={isLoading}
+                initialStatusFilter={deliveryStatusFilter}
               />
             </CardContent>
           </Card>
