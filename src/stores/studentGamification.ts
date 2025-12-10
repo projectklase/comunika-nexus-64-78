@@ -18,7 +18,7 @@ interface GamificationData {
 interface GamificationStore extends GamificationData {
   checkIn: () => { success: boolean; xpGained: number; streakCount: number; updatedWeek: Record<string, boolean> };
   useForgiveness: () => boolean;
-  addActivityXP: (activityId: string) => number;
+  addActivityXP: (activityId: string, customXP?: number) => number;
   addFocusXP: (type: 'start' | 'complete') => number;
   resetIfNeeded: () => void;
   syncToDatabase: (userId: string, overrideWeek?: Record<string, boolean>) => Promise<void>;
@@ -222,11 +222,11 @@ export const useStudentGamification = create<GamificationStore>()(
         return true;
       },
 
-      addActivityXP: (activityId: string) => {
+      addActivityXP: (activityId: string, customXP?: number) => {
         const state = get();
         if (state.activityXP[activityId]) return 0;
 
-        const xpGained = 10;
+        const xpGained = customXP || 10; // Use custom XP or fallback to 10
         set(state => ({
           xp: state.xp + xpGained,
           activityXP: {

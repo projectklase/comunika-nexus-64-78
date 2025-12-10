@@ -20,7 +20,9 @@ import {
   Edit,
   Eye,
   Plus,
-  PartyPopper
+  PartyPopper,
+  Coins,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -391,6 +393,22 @@ export function DayFocusModal() {
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px]">⚖️</span>
                             <span>Peso: {event.meta.weight}</span>
+                          </div>
+                        )}
+
+                        {/* Koin Reward */}
+                        {event.meta.activityMeta?.koinReward && event.meta.activityMeta.koinReward > 0 && (
+                          <div className="flex items-center gap-1.5 text-amber-400">
+                            <Coins className="h-3 w-3" />
+                            <span>+{event.meta.activityMeta.koinReward} Koins</span>
+                          </div>
+                        )}
+
+                        {/* XP Reward */}
+                        {event.meta.activityMeta?.xpReward && event.meta.activityMeta.xpReward > 0 && (
+                          <div className="flex items-center gap-1.5 text-purple-400">
+                            <Sparkles className="h-3 w-3" />
+                            <span>+{event.meta.activityMeta.xpReward} XP</span>
                           </div>
                         )}
 

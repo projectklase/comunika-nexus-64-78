@@ -8,7 +8,7 @@ import { AttachmentGrid } from "@/components/attachments/AttachmentGrid";
 import { PostInsights } from "./PostInsights";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MoreVertical, Calendar, Clock, MapPin, Archive, Copy, Edit, Trash2, Paperclip, Users, Globe, CheckCircle, Upload, FileText, Bookmark, BookmarkCheck, CalendarPlus, Eye, Phone, Star, UserPlus, Coins } from "lucide-react";
+import { MoreVertical, Calendar, Clock, MapPin, Archive, Copy, Edit, Trash2, Paperclip, Users, Globe, CheckCircle, Upload, FileText, Bookmark, BookmarkCheck, CalendarPlus, Eye, Phone, Star, UserPlus, Coins, Sparkles } from "lucide-react";
 import { Post, PostType } from "@/types/post";
 import { useClassStore } from "@/stores/class-store";
 import { getClassDisplayInfo, resolveSubjectNames } from "@/utils/class-helpers";
@@ -400,6 +400,12 @@ export function PostCard({
                   <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px] sm:text-xs px-1.5 py-0.5 animate-pulse">
                     <Coins className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
                     +{post.activityMeta.koinReward}
+                  </Badge>
+                )}
+                {isActivity && post.activityMeta?.xpReward && post.activityMeta.xpReward > 0 && (
+                  <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/40 text-[10px] sm:text-xs px-1.5 py-0.5">
+                    <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
+                    +{post.activityMeta.xpReward} XP
                   </Badge>
                 )}
                 {/* Desktop only badges */}
