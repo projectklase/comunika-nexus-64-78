@@ -44,6 +44,7 @@ interface DeliveryTableProps {
   onReview: (deliveryIds: string[], reviewStatus: ReviewStatus, reviewNote?: string) => void;
   onMarkAsReceived: (studentId: string, studentName: string) => void;
   isLoading?: boolean;
+  initialStatusFilter?: string | null;
 }
 
 // Default filter tokens to avoid empty string values
@@ -58,12 +59,17 @@ export function DeliveryTable({
   activityTitle, 
   onReview, 
   onMarkAsReceived,
-  isLoading = false 
+  isLoading = false,
+  initialStatusFilter = null
 }: DeliveryTableProps) {
   const [selectedDeliveries, setSelectedDeliveries] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>(DEFAULT_FILTER_TOKENS.ALL_STATUS);
-  const [lateFilter, setLateFilter] = useState<string>(DEFAULT_FILTER_TOKENS.ALL_DEADLINES);
+  const [statusFilter, setStatusFilter] = useState<string>(
+    initialStatusFilter === 'late' ? DEFAULT_FILTER_TOKENS.ALL_STATUS : (initialStatusFilter || DEFAULT_FILTER_TOKENS.ALL_STATUS)
+  );
+  const [lateFilter, setLateFilter] = useState<string>(
+    initialStatusFilter === 'late' ? 'late' : DEFAULT_FILTER_TOKENS.ALL_DEADLINES
+  );
   const [attachmentFilter, setAttachmentFilter] = useState<string>(DEFAULT_FILTER_TOKENS.ALL_ATTACHMENTS);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [reviewingDelivery, setReviewingDelivery] = useState<Delivery | null>(null);
@@ -187,8 +193,88 @@ export function DeliveryTable({
   const allSelected = filteredDeliveries.length > 0 && selectedDeliveries.length === filteredDeliveries.length;
   const someSelected = selectedDeliveries.length > 0;
 
+  // Summary counts
+  const statusCounts = useMemo(() => {
+    return {
+      aguardando: deliveries.filter(d => d.reviewStatus === 'AGUARDANDO').length,
+      aprovadas: deliveries.filter(d => d.reviewStatus === 'APROVADA').length,
+      devolvidas: deliveries.filter(d => d.reviewStatus === 'DEVOLVIDA').length,
+      atrasadas: deliveries.filter(d => d.isLate).length
+    };
+  }, [deliveries]);
+
   return (
     <div className="space-y-4">
+      {/* Summary Pills */}
+      <div className="flex flex-wrap gap-2 pb-2 border-b border-border/50">
+        <button
+          onClick={() => { setStatusFilter(DEFAULT_FILTER_TOKENS.ALL_STATUS); setLateFilter(DEFAULT_FILTER_TOKENS.ALL_DEADLINES); }}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+            "bg-muted/50 backdrop-blur-sm border",
+            statusFilter === DEFAULT_FILTER_TOKENS.ALL_STATUS && lateFilter === DEFAULT_FILTER_TOKENS.ALL_DEADLINES
+              ? "border-primary/50 bg-primary/10 text-primary" 
+              : "border-border/50 hover:border-border text-muted-foreground"
+          )}
+        >
+          Todas ({deliveries.length})
+        </button>
+        
+        <button
+          onClick={() => { setStatusFilter('AGUARDANDO'); setLateFilter(DEFAULT_FILTER_TOKENS.ALL_DEADLINES); }}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+            "backdrop-blur-sm border",
+            statusFilter === 'AGUARDANDO'
+              ? "border-primary/50 bg-primary/20 text-primary" 
+              : "border-primary/30 bg-primary/10 text-primary/70 hover:text-primary"
+          )}
+        >
+          ⏳ Aguardando ({statusCounts.aguardando})
+        </button>
+        
+        <button
+          onClick={() => { setStatusFilter('APROVADA'); setLateFilter(DEFAULT_FILTER_TOKENS.ALL_DEADLINES); }}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+            "backdrop-blur-sm border",
+            statusFilter === 'APROVADA'
+              ? "border-success/50 bg-success/20 text-success" 
+              : "border-success/30 bg-success/10 text-success/70 hover:text-success"
+          )}
+        >
+          ✓ Aprovadas ({statusCounts.aprovadas})
+        </button>
+        
+        <button
+          onClick={() => { setStatusFilter('DEVOLVIDA'); setLateFilter(DEFAULT_FILTER_TOKENS.ALL_DEADLINES); }}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+            "backdrop-blur-sm border",
+            statusFilter === 'DEVOLVIDA'
+              ? "border-destructive/50 bg-destructive/20 text-destructive" 
+              : "border-destructive/30 bg-destructive/10 text-destructive/70 hover:text-destructive"
+          )}
+        >
+          ↩ Devolvidas ({statusCounts.devolvidas})
+        </button>
+        
+        {statusCounts.atrasadas > 0 && (
+          <button
+            onClick={() => { setStatusFilter(DEFAULT_FILTER_TOKENS.ALL_STATUS); setLateFilter('late'); }}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+              "backdrop-blur-sm border",
+              lateFilter === 'late'
+                ? "border-destructive/50 bg-destructive/20 text-destructive" 
+                : "border-destructive/30 bg-destructive/10 text-destructive/70 hover:text-destructive"
+            )}
+          >
+            ⚠ Atrasadas ({statusCounts.atrasadas})
+          </button>
+        )}
+      </div>
+
       {/* Filtros */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
         <div className="relative flex-1 max-w-sm">
