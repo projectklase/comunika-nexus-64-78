@@ -16,7 +16,8 @@ import {
   Image as ImageIcon,
   FileIcon,
   Calendar as CalendarPlus,
-  Users
+  Users,
+  Coins
 } from 'lucide-react';
 import { Post, PostType } from '@/types/post';
 import { useAuth } from '@/contexts/AuthContext';
@@ -312,6 +313,12 @@ export function ImmersivePostCard({
                 {isActivity && !delivery && isOverdue && (
                   <Badge variant="destructive" className="text-xs animate-pulse">
                     ⚠️ Atrasada
+                  </Badge>
+                )}
+                {isActivity && post.activityMeta?.koinReward && post.activityMeta.koinReward > 0 && (
+                  <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-xs animate-pulse">
+                    <Coins className="h-3 w-3 mr-0.5" />
+                    +{post.activityMeta.koinReward}
                   </Badge>
                 )}
                 {user && <PostReadInsights post={post} currentUser={user} />}
