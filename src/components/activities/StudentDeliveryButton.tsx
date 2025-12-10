@@ -93,20 +93,28 @@ export function StudentDeliveryButton({ activity, classId, delivery, onUpdate }:
         description: delivery ? 'Atividade reenviada com sucesso!' : 'Atividade marcada como concluída!'
       });
 
-      // Award Koins for first-time completion (not for resubmissions)
-      if (!delivery && activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0) {
+      // Award Koins/XP for first-time completion (not for resubmissions)
+      const hasKoins = activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0;
+      const hasXP = activity.activityMeta?.xpReward && activity.activityMeta.xpReward > 0;
+      
+      if (!delivery && (hasKoins || hasXP)) {
         setShowKoinToast(true);
         
-        // Evento 1: Aluno ganha Koins por entregar tarefa
+        // Montar mensagem dinâmica com Koins e/ou XP
+        const rewardParts: string[] = [];
+        if (hasKoins) rewardParts.push(`${activity.activityMeta!.koinReward} Koins`);
+        if (hasXP) rewardParts.push(`${activity.activityMeta!.xpReward} XP`);
+        
         notificationStore.add({
           type: 'KOINS_EARNED',
-          title: 'Koins ganhos!',
-          message: `Parabéns! Você ganhou ${activity.activityMeta.koinReward} Koins por completar a tarefa '${activity.title}'.`,
+          title: 'Recompensas ganhas!',
+          message: `Parabéns! Você ganhou ${rewardParts.join(' e ')} por completar a tarefa '${activity.title}'.`,
           roleTarget: 'ALUNO',
           userId: user.id,
           link: generateRewardsHistoryLink(),
           meta: {
-            koinAmount: activity.activityMeta.koinReward,
+            koinAmount: activity.activityMeta?.koinReward || 0,
+            xpAmount: activity.activityMeta?.xpReward || 0,
             activityId: activity.id,
             activityTitle: activity.title,
             studentId: user.id
