@@ -157,7 +157,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Klase <onboarding@resend.dev>",
+        from: "Klase <noreply@klasetech.com>",
         to: [to],
         subject: isGuardian 
           ? `Credenciais de acesso de ${studentName} - Klase`
