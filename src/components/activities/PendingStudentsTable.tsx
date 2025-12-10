@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,12 +15,10 @@ import {
   CheckCircle, 
   Clock, 
   AlertTriangle,
-  Bell,
   UserX
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Delivery } from '@/types/delivery';
-import { toast } from '@/hooks/use-toast';
 
 interface StudentInfo {
   id: string;
@@ -34,9 +31,6 @@ interface PendingStudentsTableProps {
   dueAt?: string;
   onMarkAsReceived: (studentId: string, studentName: string) => void;
   isLoading?: boolean;
-  activityId: string;
-  activityTitle: string;
-  teacherName: string;
 }
 
 export function PendingStudentsTable({ 
@@ -44,12 +38,8 @@ export function PendingStudentsTable({
   deliveries, 
   dueAt,
   onMarkAsReceived,
-  isLoading = false,
-  activityId,
-  activityTitle,
-  teacherName
+  isLoading = false
 }: PendingStudentsTableProps) {
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'late' | 'pending'>('all');
 
@@ -91,69 +81,6 @@ export function PendingStudentsTable({
     });
   }, [pendingStudents, searchQuery, filterStatus]);
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedStudents(filteredStudents.map(s => s.id));
-    } else {
-      setSelectedStudents([]);
-    }
-  };
-
-  const handleSelectStudent = (studentId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStudents(prev => [...prev, studentId]);
-    } else {
-      setSelectedStudents(prev => prev.filter(id => id !== studentId));
-    }
-  };
-
-  const handleSendReminder = async () => {
-    if (selectedStudents.length === 0) return;
-    
-    try {
-      const { notificationStore } = await import('@/stores/notification-store');
-      
-      const selectedStudentData = filteredStudents.filter(s => 
-        selectedStudents.includes(s.id)
-      );
-      
-      // Create notification for each selected student
-      const promises = selectedStudentData.map(student => 
-        notificationStore.add({
-          type: 'ACTIVITY_REMINDER',
-          title: '⏰ Lembrete de Entrega',
-          message: `${teacherName} enviou um lembrete: "${activityTitle}" aguarda sua entrega.`,
-          roleTarget: 'ALUNO',
-          userId: student.id,
-          link: '/aluno/atividades',
-          meta: {
-            activityId,
-            activityTitle,
-            teacherName,
-            sentAt: new Date().toISOString()
-          }
-        })
-      );
-      
-      await Promise.all(promises);
-      
-      toast({
-        title: '✅ Lembretes enviados',
-        description: `${selectedStudents.length} aluno(s) notificado(s).`
-      });
-      setSelectedStudents([]);
-    } catch (error) {
-      console.error('Erro ao enviar lembretes:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível enviar os lembretes.',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const allSelected = filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length;
-  const someSelected = selectedStudents.length > 0;
   const lateCount = pendingStudents.filter(s => s.isLate).length;
   const pendingCount = pendingStudents.filter(s => !s.isLate).length;
 
@@ -220,28 +147,15 @@ export function PendingStudentsTable({
         )}
       </div>
 
-      {/* Search and Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por aluno..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {someSelected && (
-          <Button 
-            size="sm"
-            onClick={handleSendReminder}
-            className="bg-primary/20 backdrop-blur-sm border border-primary/40 text-primary hover:bg-primary/30"
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            Enviar Lembrete ({selectedStudents.length})
-          </Button>
-        )}
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por aluno..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {/* Table */}
@@ -249,12 +163,6 @@ export function PendingStudentsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={handleSelectAll}
-                />
-              </TableHead>
               <TableHead>Aluno</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-32 text-right">Ações</TableHead>
@@ -263,19 +171,13 @@ export function PendingStudentsTable({
           <TableBody>
             {filteredStudents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                   Nenhum aluno encontrado com os filtros aplicados
                 </TableCell>
               </TableRow>
             ) : (
               filteredStudents.map((student) => (
                 <TableRow key={student.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedStudents.includes(student.id)}
-                      onCheckedChange={(checked) => handleSelectStudent(student.id, !!checked)}
-                    />
-                  </TableCell>
                   <TableCell>
                     <div className="font-medium">{student.name}</div>
                   </TableCell>
