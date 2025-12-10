@@ -609,7 +609,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   });
   
   y += 15;
-  drawCard(doc, 15, y, 180, 35);
+  drawCard(doc, 15, y, 180, 28);
   doc.setFillColor(...COLORS.warning);
   doc.circle(25, y + 17, 5, 'F');
   doc.setTextColor(...COLORS.text);
@@ -721,7 +721,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   });
   
   y += 10;
-  drawCard(doc, 15, y, 180, 40);
+  drawCard(doc, 15, y, 180, 32);
   drawBrainIcon(doc, 18, y + 8, 18, COLORS.accent);
   doc.setTextColor(...COLORS.accent);
   doc.setFontSize(11);
@@ -767,7 +767,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   y += 10;
   y = drawSectionTitle(doc, y, 'Loja de Recompensas', drawShopIcon);
   
-  drawCard(doc, 15, y, 180, 45);
+  drawCard(doc, 15, y, 180, 30);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(10);
   const storeText = 'Configure itens na loja para que alunos troquem seus Koins: materiais escolares, brindes, privilégios especiais, etc. Você define os preços e estoque.';
