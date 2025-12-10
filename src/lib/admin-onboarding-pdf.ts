@@ -604,12 +604,6 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setTextColor(...COLORS.primary);
   doc.setFont('helvetica', 'bold');
   doc.text(data.password, 40, y + 50);
-  // Indicação visual de copiar ao lado da senha
-  doc.setTextColor(...COLORS.textMuted);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  const passwordWidth = doc.getTextWidth(data.password);
-  doc.text('[selecionar e copiar]', 42 + passwordWidth, y + 50);
   
   y += 75;
   doc.setFontSize(10);
