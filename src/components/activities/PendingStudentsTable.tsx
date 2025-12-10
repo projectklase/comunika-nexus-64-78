@@ -34,6 +34,9 @@ interface PendingStudentsTableProps {
   dueAt?: string;
   onMarkAsReceived: (studentId: string, studentName: string) => void;
   isLoading?: boolean;
+  activityId: string;
+  activityTitle: string;
+  teacherName: string;
 }
 
 export function PendingStudentsTable({ 
@@ -41,7 +44,10 @@ export function PendingStudentsTable({
   deliveries, 
   dueAt,
   onMarkAsReceived,
-  isLoading = false 
+  isLoading = false,
+  activityId,
+  activityTitle,
+  teacherName
 }: PendingStudentsTableProps) {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,15 +107,49 @@ export function PendingStudentsTable({
     }
   };
 
-  const handleSendReminder = () => {
+  const handleSendReminder = async () => {
     if (selectedStudents.length === 0) return;
     
-    // TODO: Integrate with notification system
-    toast({
-      title: 'Lembretes enviados',
-      description: `${selectedStudents.length} aluno(s) notificado(s) sobre a entrega pendente.`
-    });
-    setSelectedStudents([]);
+    try {
+      const { notificationStore } = await import('@/stores/notification-store');
+      
+      const selectedStudentData = filteredStudents.filter(s => 
+        selectedStudents.includes(s.id)
+      );
+      
+      // Create notification for each selected student
+      const promises = selectedStudentData.map(student => 
+        notificationStore.add({
+          type: 'ACTIVITY_REMINDER',
+          title: '⏰ Lembrete de Entrega',
+          message: `${teacherName} enviou um lembrete: "${activityTitle}" aguarda sua entrega.`,
+          roleTarget: 'ALUNO',
+          userId: student.id,
+          link: '/aluno/atividades',
+          meta: {
+            activityId,
+            activityTitle,
+            teacherName,
+            sentAt: new Date().toISOString()
+          }
+        })
+      );
+      
+      await Promise.all(promises);
+      
+      toast({
+        title: '✅ Lembretes enviados',
+        description: `${selectedStudents.length} aluno(s) notificado(s).`
+      });
+      setSelectedStudents([]);
+    } catch (error) {
+      console.error('Erro ao enviar lembretes:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível enviar os lembretes.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const allSelected = filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length;

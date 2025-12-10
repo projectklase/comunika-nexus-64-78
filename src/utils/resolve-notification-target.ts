@@ -23,6 +23,14 @@ export function resolveNotificationTarget(
     };
   }
 
+  // Activity reminders - go to student activities page
+  if (notification.type === 'ACTIVITY_REMINDER') {
+    return {
+      destination: 'feed',
+      url: '/aluno/atividades'
+    };
+  }
+
   // Holiday notifications always go to calendar
   if (notification.type === 'HOLIDAY' && notification.meta?.holidayDate) {
     return {
