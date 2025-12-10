@@ -7,6 +7,7 @@ interface AdminOnboardingPDFData {
   planName: string;
   maxStudents: number;
   email: string;
+  password: string;
 }
 
 // Cache for logo base64
@@ -574,20 +575,25 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   
   y = drawSectionTitle(doc, 20, 'Primeiro Acesso', drawKeyIcon);
   
-  drawCard(doc, 15, y, 180, 45);
+  drawCard(doc, 15, y, 180, 65);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(11);
   doc.text('Acesse a plataforma em:', 20, y + 12);
   doc.setTextColor(...COLORS.primary);
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text('https://klase.app', 20, y + 25);
+  doc.text('https://app.klasetech.com/', 20, y + 25);
   doc.setTextColor(...COLORS.textMuted);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Use o email: ${data.email}`, 20, y + 36);
+  doc.text(`Email: ${data.email}`, 20, y + 38);
+  doc.setTextColor(...COLORS.text);
+  doc.text('Senha:', 20, y + 50);
+  doc.setTextColor(...COLORS.primary);
+  doc.setFont('helvetica', 'bold');
+  doc.text(data.password, 40, y + 50);
   
-  y += 60;
+  y += 80;
   y = drawSectionTitle(doc, y, 'Navegacao Basica', drawCompassIcon);
   
   const navItems = [
@@ -761,12 +767,12 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   y += 5;
   y = drawSectionTitle(doc, y, 'Loja de Recompensas', drawShopIcon);
   
-  drawCard(doc, 15, y, 180, 35);
+  drawCard(doc, 15, y, 180, 45);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(10);
   const storeText = 'Configure itens na loja para que alunos troquem seus Koins: materiais escolares, brindes, privilegios especiais, etc. Voce define os precos e estoque.';
   const storeLines = doc.splitTextToSize(storeText, 165);
-  doc.text(storeLines, 20, y + 15);
+  doc.text(storeLines, 20, y + 18);
   
   drawFooter(doc, 6, totalPages);
   
@@ -828,22 +834,16 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(...COLORS.textMuted);
-  doc.text('Email: suporte@klasetech.com', 20, y + 30);
-  doc.text('WhatsApp: (11) 99999-9999', 20, y + 42);
-  doc.text('Horario: Seg-Sex, 8h as 18h', 20, y + 54);
+  doc.text('Email: lucas@klasetech.com', 20, y + 30);
+  doc.text('Horario: Seg-Sex, 8h as 18h', 20, y + 42);
   
-  y += 75;
+  y += 60;
   y = drawSectionTitle(doc, y, 'Links Uteis', drawLinkIcon);
   
-  const links = [
-    'Central de Ajuda: help.klase.app',
-    'Documentacao: docs.klase.app',
-    'Status do Sistema: status.klase.app',
-  ];
-  
-  links.forEach((link, i) => {
-    drawBulletPoint(doc, 20, y + (i * 14), link);
-  });
+  drawCard(doc, 15, y, 180, 30);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.setFontSize(10);
+  doc.text('Em breve - Documentacao e Central de Ajuda', 20, y + 18);
   
   y += 55;
   drawCard(doc, 15, y, 180, 55);

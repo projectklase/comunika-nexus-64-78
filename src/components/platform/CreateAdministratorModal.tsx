@@ -212,7 +212,8 @@ export function CreateAdministratorModal({
         schoolName: formData.school_name || 'Escola',
         planName: selectedPlan?.name || 'Plano',
         maxStudents: selectedPlan?.max_students || 0,
-        email: formData.email || 'email@exemplo.com'
+        email: formData.email || 'email@exemplo.com',
+        password: formData.password || '********'
       };
       
       const blob = await generateAdminOnboardingPDF(pdfData);
@@ -305,6 +306,7 @@ export function CreateAdministratorModal({
           planName: selectedPlan?.name || 'Plano',
           maxStudents: selectedPlan?.max_students || 0,
           email: formData.email.toLowerCase(),
+          password: formData.password,
         });
         
         // Upload PDF to Supabase Storage
