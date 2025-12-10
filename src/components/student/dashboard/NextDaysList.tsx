@@ -3,10 +3,11 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isTomorrow 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, FileText, Bell, BookOpen, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, FileText, Bell, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import { Post } from '@/types/post';
 import { cn } from '@/lib/utils';
 import { ActivityCountdown } from '../ActivityCountdown';
+import { useStudentDeliveries } from '@/hooks/useStudentDeliveries';
 
 interface NextDaysListProps {
   posts: Post[];
@@ -22,6 +23,26 @@ interface DayGroup {
 }
 
 export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysListProps) {
+  // Buscar status de entregas do aluno
+  const activities = useMemo(
+    () => posts.filter(p => ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type)),
+    [posts]
+  );
+  const { activitiesWithDelivery } = useStudentDeliveries(activities);
+  
+  // Criar mapa rápido de entregas por postId
+  const deliveryMap = useMemo(() => {
+    const map = new Map<string, { delivered: boolean; status: string }>();
+    activitiesWithDelivery.forEach(a => {
+      const isDelivered = a.delivery !== null;
+      map.set(a.post.id, { 
+        delivered: isDelivered, 
+        status: a.deliveryStatus 
+      });
+    });
+    return map;
+  }, [activitiesWithDelivery]);
+
   const weekDays = useMemo(() => {
     const now = new Date();
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
@@ -35,7 +56,21 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
         if (!dateToCheck) return false;
         
         const postDate = new Date(dateToCheck);
-        return postDate.toDateString() === day.toDateString();
+        const isCorrectDay = postDate.toDateString() === day.toDateString();
+        if (!isCorrectDay) return false;
+        
+        // Se é atividade, verificar status de entrega
+        if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) {
+          const deliveryInfo = deliveryMap.get(post.id);
+          const isOverdue = post.dueAt && new Date(post.dueAt) < now;
+          
+          // ✅ OCULTAR: Se já entregou E passou do prazo
+          if (deliveryInfo?.delivered && isOverdue) {
+            return false;
+          }
+        }
+        
+        return true;
       });
       
       let label = format(day, 'dd/MM');
@@ -61,7 +96,7 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
     });
     
     return dayGroups.filter(group => group.posts.length > 0);
-  }, [posts]);
+  }, [posts, deliveryMap]);
 
   const getPostIcon = (type: string) => {
     switch (type) {
@@ -192,7 +227,14 @@ export function NextDaysList({ posts, onOpenPost, onGoToCalendar }: NextDaysList
                           }
                         </span>
                         {post.dueAt && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type) && (
-                          <ActivityCountdown dueDate={post.dueAt} size="sm" />
+                          deliveryMap.get(post.id)?.delivered ? (
+                            <span className="flex items-center gap-1 text-emerald-500 text-[10px] font-medium">
+                              <CheckCircle className="h-2.5 w-2.5" />
+                              Entregue
+                            </span>
+                          ) : (
+                            <ActivityCountdown dueDate={post.dueAt} size="sm" />
+                          )
                         )}
                       </div>
                       {post.classId && (
