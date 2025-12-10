@@ -157,6 +157,23 @@ export const useUnlockables = () => {
     mutationFn: async ({ unlockId, type }: { unlockId: string; type: 'THEME' | 'AVATAR' }) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
+      // Verificar se o item está desbloqueado (exceto para admins que têm acesso total)
+      if (user.role !== 'administrador') {
+        const unlockable = unlockables.find(u => u.id === unlockId);
+        const alreadyUnlocked = userUnlocks?.some(u => u.unlockable_id === unlockId);
+        
+        // COMMON items sem requisitos são sempre desbloqueados
+        const isCommonWithoutReqs = unlockable && 
+          unlockable.rarity === 'COMMON' && 
+          !unlockable.required_xp && 
+          !unlockable.required_streak_days && 
+          !unlockable.required_challenges_completed;
+        
+        if (!alreadyUnlocked && !isCommonWithoutReqs) {
+          throw new Error('Item não está desbloqueado');
+        }
+      }
+
       // Desequipar todos os itens do mesmo tipo primeiro
       await supabase
         .from('user_unlocks')

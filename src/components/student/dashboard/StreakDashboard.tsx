@@ -1,23 +1,48 @@
 import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Flame, Calendar, Gift, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useStudentGamification } from '@/stores/studentGamification';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 export function StreakDashboard() {
+  const { user } = useAuth();
   const { 
-    streak, 
-    xp, 
     checkIn, 
     resetIfNeeded,
     week,
     syncToDatabase
   } = useStudentGamification();
   const { toast } = useToast();
+
+  // Buscar streak e XP do banco de dados (fonte de verdade)
+  const { data: profileStats } = useQuery({
+    queryKey: ['student-streak-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('total_xp, current_streak_days')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 0,
+    refetchOnWindowFocus: true
+  });
+
+  // Valores do banco de dados
+  const streak = profileStats?.current_streak_days || 0;
+  const xp = profileStats?.total_xp || 0;
 
   // Reset data if needed on component mount
   useEffect(() => {
