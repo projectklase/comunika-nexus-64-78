@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import klaseLogoPng from '@/assets/Logo_Klase_Chromado.png';
 
 interface AdminOnboardingPDFData {
   adminName: string;
@@ -6,6 +7,33 @@ interface AdminOnboardingPDFData {
   planName: string;
   maxStudents: number;
   email: string;
+}
+
+// Cache for logo base64
+let logoBase64Cache: string | null = null;
+
+async function loadLogoAsBase64(): Promise<string> {
+  if (logoBase64Cache) return logoBase64Cache;
+  
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        logoBase64Cache = canvas.toDataURL('image/png');
+        resolve(logoBase64Cache);
+      } else {
+        reject(new Error('Failed to get canvas context'));
+      }
+    };
+    img.onerror = () => reject(new Error('Failed to load logo'));
+    img.src = klaseLogoPng;
+  });
 }
 
 // Klase brand colors
@@ -421,46 +449,32 @@ function drawFooter(doc: jsPDF, pageNum: number, totalPages: number) {
   doc.text(`Pagina ${pageNum} de ${totalPages}`, 180, 290);
 }
 
-function drawProfessionalLogo(doc: jsPDF, cx: number, cy: number) {
-  // Outer glow ring
-  doc.setFillColor(139, 92, 246);
-  doc.circle(cx, cy, 28, 'F');
+function addLogoImage(doc: jsPDF, logoBase64: string, cx: number, cy: number) {
+  // Logo size - ideal for PDF cover (40mm width, maintaining aspect ratio ~1:1.2)
+  const logoWidth = 45;
+  const logoHeight = 55;
   
-  // White border
-  doc.setFillColor(255, 255, 255);
-  doc.circle(cx, cy, 25, 'F');
+  // Center the logo
+  const x = cx - logoWidth / 2;
+  const y = cy - logoHeight / 2;
   
-  // Inner gradient circle
-  doc.setFillColor(109, 40, 217);
-  doc.circle(cx, cy, 22, 'F');
-  
-  // Highlight arc (simulated shine)
-  doc.setFillColor(139, 92, 246);
-  doc.circle(cx - 5, cy - 8, 8, 'F');
-  
-  // "K" letter - professional styling
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(28);
-  doc.setFont('helvetica', 'bold');
-  const kWidth = doc.getTextWidth('K');
-  doc.text('K', cx - kWidth / 2, cy + 10);
-  
-  // Small decorative elements
-  doc.setFillColor(255, 215, 0);
-  doc.circle(cx + 18, cy - 15, 3, 'F');
-  doc.circle(cx - 20, cy + 12, 2, 'F');
+  // Add the premium chrome logo
+  doc.addImage(logoBase64, 'PNG', x, y, logoWidth, logoHeight);
 }
 
-export function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): Blob {
+export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): Promise<Blob> {
   const doc = new jsPDF('p', 'mm', 'a4');
   const totalPages = 8;
+  
+  // Load the premium logo
+  const logoBase64 = await loadLogoAsBase64();
   
   // ========== PÁGINA 1 - CAPA ==========
   drawPageBackground(doc);
   drawGradientHeader(doc, 0, 120);
   
-  // Logo profissional
-  drawProfessionalLogo(doc, 105, 50);
+  // Logo premium cromada
+  addLogoImage(doc, logoBase64, 105, 55);
   
   // Título principal
   doc.setTextColor(...COLORS.text);
@@ -848,8 +862,8 @@ export function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): Blob {
   return doc.output('blob');
 }
 
-export function downloadAdminOnboardingPDF(data: AdminOnboardingPDFData): void {
-  const blob = generateAdminOnboardingPDF(data);
+export async function downloadAdminOnboardingPDF(data: AdminOnboardingPDFData): Promise<void> {
+  const blob = await generateAdminOnboardingPDF(data);
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
