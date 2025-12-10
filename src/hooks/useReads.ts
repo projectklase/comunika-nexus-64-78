@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { readStore } from '@/stores/read-store';
 import { usePostReads } from '@/stores/post-reads.store';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostRead } from '@/hooks/usePostRead';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // ✅ SEGURANÇA ANTI-EXPLOIT: Rate limiting no frontend
@@ -94,6 +95,32 @@ export function useReads() {
   const { recordPostRead } = usePostReads();
   const { recordRead } = usePostRead();
   const { user } = useAuth();
+  const hasLoadedFromDb = useRef(false);
+
+  // CORREÇÃO 2: Carregar leituras do banco de dados quando usuário faz login
+  useEffect(() => {
+    if (user?.id && !hasLoadedFromDb.current) {
+      hasLoadedFromDb.current = true;
+      
+      supabase
+        .from('post_reads')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .then(({ data, error }) => {
+          if (!error && data) {
+            data.forEach(read => {
+              readStore.markAsRead(read.post_id);
+            });
+            forceUpdate({});
+          }
+        });
+    }
+    
+    // Reset flag when user changes (logout/login)
+    if (!user?.id) {
+      hasLoadedFromDb.current = false;
+    }
+  }, [user?.id]);
 
   const markAsRead = (postId: string) => {
     // Check if already read FIRST (before rate limiting)
