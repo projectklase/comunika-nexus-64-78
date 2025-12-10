@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,10 @@ interface ProgressStripDashboardProps {
 
 export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
   const { user } = useAuth();
+  
+  // Refs para controle de loading e estabilização
+  const isInitialLoad = useRef(true);
+  const previousPostsHashRef = useRef<string>('');
   
   // CORREÇÃO: Buscar XP e streak do BANCO DE DADOS, não do Zustand/localStorage
   const { data: profileStats } = useQuery({
@@ -46,8 +50,20 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
       return;
     }
 
+    // Criar hash dos posts para comparação (evita re-render se posts não mudaram)
+    const postsHash = posts.map(p => p.id).sort().join(',');
+    
+    // Pular se posts não mudaram e já carregou uma vez
+    if (!isInitialLoad.current && postsHash === previousPostsHashRef.current) {
+      return;
+    }
+    previousPostsHashRef.current = postsHash;
+
     const fetchProgress = async () => {
-      setIsLoading(true);
+      // Só mostrar loading no carregamento INICIAL
+      if (isInitialLoad.current) {
+        setIsLoading(true);
+      }
       
       try {
         // Fetch all student deliveries once (efficient)
@@ -108,6 +124,7 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
         console.error('Error fetching progress:', error);
       } finally {
         setIsLoading(false);
+        isInitialLoad.current = false;
       }
     };
 
