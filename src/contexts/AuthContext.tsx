@@ -320,9 +320,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       });
       
-      // Invalidate React Query cache to prevent re-applying cached theme
-      queryClient.removeQueries({ queryKey: ['user-unlocks'] });
-      queryClient.removeQueries({ queryKey: ['unlockables'] });
+      // CRÍTICO: Limpar stores de posts para evitar vazamento de leitura/salvos/visualizações
+      localStorage.removeItem('comunika_reads');
+      localStorage.removeItem('comunika_saved');
+      localStorage.removeItem('comunika:postReads:v1');
+      localStorage.removeItem('comunika:postViews:v1');
+      localStorage.removeItem('comunika_last_seen');
+      
+      // Resetar stores Zustand de posts para estado vazio
+      import('@/stores/read-store').then(({ readStore }) => {
+        readStore.clear();
+      });
+      import('@/stores/saved-store').then(({ savedStore }) => {
+        savedStore.clear();
+      });
+      import('@/stores/post-reads.store').then(({ usePostReads }) => {
+        usePostReads.setState({ reads: [] });
+      });
+      import('@/stores/post-views.store').then(({ usePostViews }) => {
+        usePostViews.setState({ views: [] });
+      });
+      
+      // Limpar dados do widget 3-2-1 do usuário atual
+      if (user?.id) {
+        const today = new Date().toISOString().split('T')[0];
+        const prefixes = ['mood', 'intent', 'completed'];
+        prefixes.forEach(prefix => {
+          localStorage.removeItem(`communika.${prefix}.${user.id}.${today}`);
+        });
+        localStorage.removeItem(`communika.microSessions.${user.id}`);
+      }
+      
+      // Limpar TODO o cache do React Query para evitar vazamento de dados
+      queryClient.clear();
       
       await supabase.auth.signOut();
       setUser(null);
