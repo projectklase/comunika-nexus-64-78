@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,7 +30,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useNotificationContext } from '@/contexts/NotificationContext';
+import { NotificationContext } from '@/contexts/NotificationContext';
 import { parseNotificationLink, navigateWithScroll, generateCalendarLink } from '@/utils/deep-links';
 import { Notification } from '@/stores/notification-store';
 import { NotificationTab } from '@/hooks/useNotificationPanel';
@@ -43,6 +43,18 @@ export function NotificationPanel() {
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = useState(false);
   
+  // Acessar contexto diretamente (não lança erro se não existir)
+  const notificationContext = useContext(NotificationContext);
+  
+  // Se contexto ainda não está disponível, renderizar placeholder
+  if (!notificationContext) {
+    return (
+      <Button variant="ghost" size="icon" disabled className="relative">
+        <Bell className="h-5 w-5 text-muted-foreground" />
+      </Button>
+    );
+  }
+  
   const {
     isOpen,
     open,
@@ -51,7 +63,7 @@ export function NotificationPanel() {
     panelData,
     focusRef,
     returnFocusRef
-  } = useNotificationContext();
+  } = notificationContext;
   
   const { recordPostView } = usePostViews();
   
