@@ -56,6 +56,7 @@ import {
   Trash2,
   Loader2,
   Filter,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -90,6 +91,8 @@ export default function StudentsPage() {
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isQuickLinkingOpen, setIsQuickLinkingOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const isMobile = useIsMobile();
   
@@ -167,6 +170,38 @@ export default function StudentsPage() {
     } catch (error) {
       // Error handling is done in the hook
     }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const studentId of selectedStudents) {
+      try {
+        await deleteStudent(studentId);
+        successCount++;
+      } catch (error) {
+        failCount++;
+      }
+    }
+    
+    if (failCount === 0) {
+      toast.success(`${successCount} aluno(s) excluído(s) com sucesso`);
+    } else {
+      toast.warning(`${successCount} excluído(s), ${failCount} falha(s)`);
+    }
+    
+    setSelectedStudents([]);
+    setIsBulkDeleteDialogOpen(false);
+    setIsBulkDeleting(false);
+    fetchStudents();
+  };
+
+  const getSelectedStudentNames = () => {
+    return selectedStudents
+      .map(id => students.find(s => s.id === id)?.name || 'Aluno')
+      .slice(0, 5);
   };
 
   // Header Actions Component
@@ -462,6 +497,15 @@ export default function StudentsPage() {
                   <Unlink className="h-4 w-4" />
                   <span>Desvincular</span>
                 </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsBulkDeleteDialogOpen(true)}
+                  className={cn(RESPONSIVE_CLASSES.iconButton, "gap-1")}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Excluir</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -733,6 +777,65 @@ export default function StudentsPage() {
           }))}
           onStudentsLinked={() => fetchStudents({})}
         />
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Excluir {selectedStudents.length} Aluno(s)
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p className="font-semibold text-destructive">
+                    ⚠️ ATENÇÃO: Esta ação é permanente e irreversível!
+                  </p>
+                  <p>
+                    Você está prestes a excluir <strong>{selectedStudents.length} aluno(s)</strong> do sistema. Isso removerá:
+                  </p>
+                  <ul className="list-disc pl-4 text-sm space-y-1">
+                    <li>Conta de acesso do aluno</li>
+                    <li>Todos os dados do perfil</li>
+                    <li>Vínculos com turmas</li>
+                    <li>Histórico de entregas e atividades</li>
+                  </ul>
+                  <div className="bg-muted/50 p-3 rounded-lg text-sm max-h-24 overflow-y-auto border">
+                    <p className="font-medium mb-1">Alunos selecionados:</p>
+                    {getSelectedStudentNames().map((name, i) => (
+                      <span key={i} className="block text-muted-foreground">• {name}</span>
+                    ))}
+                    {selectedStudents.length > 5 && (
+                      <span className="block text-muted-foreground italic">
+                        ...e mais {selectedStudents.length - 5} aluno(s)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isBulkDeleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleBulkDelete();
+                }}
+                disabled={isBulkDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isBulkDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  'Excluir Permanentemente'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </PageLayout>
     </AppLayout>
   );
