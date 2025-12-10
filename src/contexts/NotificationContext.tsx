@@ -19,7 +19,7 @@ interface NotificationContextType {
   returnFocusRef: React.RefObject<HTMLElement | null>;
 }
 
-const NotificationContext = createContext<NotificationContextType | null>(null);
+export const NotificationContext = createContext<NotificationContextType | null>(null);
 
 interface NotificationProviderProps {
   children: React.ReactNode;
