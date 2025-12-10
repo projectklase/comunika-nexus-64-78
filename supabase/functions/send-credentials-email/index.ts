@@ -120,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
               <table role="presentation" style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td align="center">
-                    <a href="https://klase.app/login" 
+                    <a href="https://app.klasetech.com" 
                        style="display: inline-block; background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; padding: 14px 32px; border-radius: 8px;">
                       Acessar Klase
                     </a>
@@ -157,7 +157,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Klase <noreply@klasetech.com>",
+        from: "Klase <noreply@sistema.klasetech.com>",
         to: [to],
         subject: isGuardian 
           ? `Credenciais de acesso de ${studentName} - Klase`
