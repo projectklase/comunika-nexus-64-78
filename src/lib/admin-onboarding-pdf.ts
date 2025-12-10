@@ -522,13 +522,31 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   
   let y = drawSectionTitle(doc, 20, 'Bem-vindo ao Klase', drawStarIcon);
   
-  drawCard(doc, 15, y, 180, 60);
+  drawCard(doc, 15, y, 180, 70);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(11);
+  
+  // Primeira linha: "O Klase é uma plataforma de inteligência educacional desenhada para"
   doc.setFont('helvetica', 'normal');
-  const introText = `O Klase é uma plataforma educacional completa que transforma a gestão escolar através da gamificação. Nosso objetivo é aumentar o engajamento dos alunos, simplificar a administração e fornecer insights valiosos para decisões pedagógicas.`;
-  const introLines = doc.splitTextToSize(introText, 170);
-  doc.text(introLines, 20, y + 15);
+  doc.text('O Klase é uma plataforma de inteligencia educacional desenhada para', 20, y + 12);
+  
+  // Segunda linha com NEGRITO: "blindar a receita e atrair novas matriculas"
+  doc.setFont('helvetica', 'bold');
+  doc.text('blindar a receita e atrair novas matriculas', 20, y + 18);
+  
+  // Continuação normal: "através da gamificação estratégica..."
+  doc.setFont('helvetica', 'normal');
+  const introLine3 = 'atraves da gamificacao estrategica. Mais do que engajamento, nosso ecossistema';
+  doc.text(introLine3, 20, y + 24);
+  
+  const introLine4 = "atua na retencao ativa da base enquanto o 'fator comunidade' desperta o desejo";
+  doc.text(introLine4, 20, y + 30);
+  
+  const introLine5 = 'de novos alunos organicamente. Transformamos dados em previsibilidade';
+  doc.text(introLine5, 20, y + 36);
+  
+  const introLine6 = 'financeira e sua escola em uma referencia de inovacao.';
+  doc.text(introLine6, 20, y + 42);
   
   y += 75;
   y = drawSectionTitle(doc, y, 'Principais Benefícios', drawDiamondIcon);
