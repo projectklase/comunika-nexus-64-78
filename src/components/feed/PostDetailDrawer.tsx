@@ -22,7 +22,8 @@ import {
   Globe,
   FileText,
   Weight,
-  Phone
+  Phone,
+  Coins
 } from 'lucide-react';
 import { useWeightsEnabled } from '@/hooks/useWeightsEnabled';
 import { Post, PostType } from '@/types/post';
@@ -322,6 +323,16 @@ export function PostDetailDrawer({ isOpen, onClose, post, onInviteFriend }: Post
           {meta.bloquearAnexosAluno && (
             <div className="text-orange-400 text-xs">
               ⚠️ Anexos de alunos não permitidos durante a prova
+            </div>
+          )}
+
+          {/* Koin Reward */}
+          {meta.koinReward && meta.koinReward > 0 && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <Coins className="h-5 w-5 text-amber-400" />
+              <span className="text-amber-300 font-medium">
+                Recompensa: +{meta.koinReward} Koins ao completar!
+              </span>
             </div>
           )}
         </div>
