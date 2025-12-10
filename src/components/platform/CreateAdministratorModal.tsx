@@ -921,7 +921,7 @@ export function CreateAdministratorModal({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <ScrollArea className="flex-1 min-h-0 px-6">
           <div className="py-4">
             {renderStepper()}
             
