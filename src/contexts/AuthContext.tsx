@@ -161,6 +161,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper to load gamification data for students
+  const loadGamificationData = async (userId: string, role: string) => {
+    if (role === 'aluno') {
+      try {
+        const { useStudentGamification } = await import('@/stores/studentGamification');
+        await useStudentGamification.getState().loadFromDatabase(userId);
+        console.log('[AuthContext] ✅ Gamification data loaded for student');
+      } catch (err) {
+        console.warn('[AuthContext] Failed to load gamification data:', err);
+      }
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -174,6 +187,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const profile = await getUserProfile(session.user.id);
             if (profile) {
               setUser(profile);
+              // Load gamification data for students
+              await loadGamificationData(session.user.id, profile.role);
             } else {
               console.error('No profile found for user:', session.user.id);
               // Try once more after additional delay
@@ -181,6 +196,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const retryProfile = await getUserProfile(session.user.id);
                 if (retryProfile) {
                   setUser(retryProfile);
+                  // Load gamification data for students
+                  await loadGamificationData(session.user.id, retryProfile.role);
                 } else {
                   console.error('Profile still not found after retry');
                   setUser(null);
@@ -199,15 +216,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        getUserProfile(session.user.id).then(profile => {
-          if (profile) {
-            setUser(profile);
-            setSession(session);
-          }
-          setIsLoading(false);
-        });
+        const profile = await getUserProfile(session.user.id);
+        if (profile) {
+          setUser(profile);
+          setSession(session);
+          // Load gamification data for students
+          await loadGamificationData(session.user.id, profile.role);
+        }
+        setIsLoading(false);
       } else {
         setIsLoading(false);
       }

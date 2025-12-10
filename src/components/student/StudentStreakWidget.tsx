@@ -46,9 +46,13 @@ export function StudentStreakWidget() {
   } = useStudentGamification();
 
   // CORREÇÃO: Buscar XP e streak do BANCO DE DADOS, não do localStorage
-  const { data: profileStats } = useQuery({
+  const { data: profileStats, refetch: refetchStats } = useQuery({
     queryKey: ['student-streak-stats', user?.id],
     queryFn: async () => {
+      // Verificar se ainda está autenticado antes da query
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      
       const { data } = await supabase
         .from('profiles')
         .select('total_xp, current_streak_days')
@@ -92,6 +96,8 @@ export function StudentStreakWidget() {
       // Sync to database
       if (user?.id) {
         await syncToDatabase(user.id);
+        // Refetch stats to update UI with fresh database values
+        await refetchStats();
       }
 
       toast({

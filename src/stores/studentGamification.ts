@@ -22,6 +22,7 @@ interface GamificationStore extends GamificationData {
   addFocusXP: (type: 'start' | 'complete') => number;
   resetIfNeeded: () => void;
   syncToDatabase: (userId: string) => Promise<void>;
+  loadFromDatabase: (userId: string) => Promise<void>;
   // Integration with Koins system
   syncWithKoins: (studentId: string) => void;
 }
@@ -139,16 +140,59 @@ export const useStudentGamification = create<GamificationStore>()(
             .update({
               total_xp: state.xp,
               current_streak_days: state.streak,
-              best_streak_days: Math.max(state.streak, 0), // Will be compared with DB value
-              last_activity_date: getToday()
+              best_streak_days: Math.max(state.streak, 0),
+              last_activity_date: getToday(),
+              weekly_checkins: state.week // Persistir progresso semanal
             })
             .eq('id', userId);
 
           if (error) {
             console.error('[syncToDatabase] Error syncing to database:', error);
+          } else {
+            console.log('[syncToDatabase] ✅ Dados sincronizados com banco');
           }
         } catch (err) {
           console.error('[syncToDatabase] Exception syncing to database:', err);
+        }
+      },
+
+      loadFromDatabase: async (userId: string) => {
+        try {
+          console.log('[loadFromDatabase] Carregando dados de gamificação do banco...');
+          
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('total_xp, current_streak_days, weekly_checkins, last_activity_date')
+            .eq('id', userId)
+            .single();
+
+          if (error) {
+            console.error('[loadFromDatabase] Erro ao carregar:', error);
+            return;
+          }
+
+          if (data) {
+            // Parse weekly_checkins safely
+            let weekData: Record<string, boolean> = {};
+            if (data.weekly_checkins && typeof data.weekly_checkins === 'object') {
+              weekData = data.weekly_checkins as Record<string, boolean>;
+            }
+
+            set({
+              xp: data.total_xp || 0,
+              streak: data.current_streak_days || 0,
+              lastCheckIn: data.last_activity_date || '',
+              week: weekData
+            });
+
+            console.log('[loadFromDatabase] ✅ Dados carregados:', {
+              xp: data.total_xp,
+              streak: data.current_streak_days,
+              weekDays: Object.keys(weekData).length
+            });
+          }
+        } catch (err) {
+          console.error('[loadFromDatabase] Exception:', err);
         }
       },
 
