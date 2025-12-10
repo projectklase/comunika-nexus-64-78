@@ -164,7 +164,7 @@ export default function AlunoProfile() {
                 
                 <div className="flex items-center gap-2 bg-background/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-border/50">
                   <Flame className="h-5 w-5 text-orange-500" />
-                  <span className="font-bold">{gamification.streak} dias</span>
+                  <span className="font-bold">{profileStats?.current_streak_days || 0} dias</span>
                 </div>
 
                 {koinsEnabled && (
@@ -291,8 +291,8 @@ export default function AlunoProfile() {
           unlockable={selectedBadge}
           currentStats={{
             xp: profileXP,
-            streak: gamification.streak,
-            challengesCompleted: 0, // TODO: buscar do banco se necessário
+            streak: profileStats?.current_streak_days || 0,
+            challengesCompleted: 0,
             koinsEarned: user?.koins || 0,
           }}
           isUnlocked={true}

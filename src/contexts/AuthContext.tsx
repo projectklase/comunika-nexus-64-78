@@ -305,6 +305,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         useUserSettingsStore.getState().updateSetting('currentTheme', 'dark-neon');
       });
       
+      // CRÍTICO: Limpar dados de gamificação do localStorage para evitar vazamento entre usuários
+      localStorage.removeItem('student-gamification');
+      
+      // Resetar Zustand store de gamificação para valores iniciais
+      import('@/stores/studentGamification').then(({ useStudentGamification }) => {
+        useStudentGamification.setState({
+          lastCheckIn: '',
+          streak: 0,
+          xp: 0,
+          forgiveness: { available: true, lastReset: '' },
+          week: {},
+          activityXP: {}
+        });
+      });
+      
       // Invalidate React Query cache to prevent re-applying cached theme
       queryClient.removeQueries({ queryKey: ['user-unlocks'] });
       queryClient.removeQueries({ queryKey: ['unlockables'] });
