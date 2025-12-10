@@ -1,28 +1,19 @@
-import { ActivityType, ActivityMeta, DeliveryFormat, ProofType } from '@/types/post';
+import { ActivityType, ActivityMeta, ProofType } from '@/types/post';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WeightToggleField } from '@/components/activities/WeightToggleField';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
-import { X, Coins, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { Coins, Sparkles } from 'lucide-react';
 
 interface ActivityFieldsProps {
   type: ActivityType;
   meta: ActivityMeta & { usePeso?: boolean; allow_attachments?: boolean };
   onChange: (meta: ActivityMeta & { usePeso?: boolean; allow_attachments?: boolean }) => void;
 }
-
-const deliveryFormatOptions = [
-  { value: 'PDF', label: 'PDF' },
-  { value: 'LINK', label: 'Link' },
-  { value: 'APRESENTACAO', label: 'Apresentação' },
-  { value: 'IMPRESSO', label: 'Impresso' }
-];
 
 const proofTypeOptions = [
   { value: 'OBJETIVA', label: 'Objetiva' },
@@ -33,9 +24,9 @@ const proofTypeOptions = [
 const durationPresets = [30, 50, 60, 90];
 
 export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
-  const [customFormat, setCustomFormat] = useState('');
   const { getKoinsEnabled } = useSchoolSettings();
   const koinsEnabled = getKoinsEnabled();
+  const requiresDelivery = meta.requiresDelivery !== false;
 
   const updateMeta = (updates: Partial<ActivityMeta & { usePeso?: boolean }>) => {
     onChange({ ...meta, ...updates });
@@ -45,34 +36,16 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
     updateMeta({ peso, usePeso });
   };
 
-  const addCustomFormat = () => {
-    if (customFormat.trim()) {
-      const currentFormats = meta.formatosEntrega || [];
-      const newFormats = [...currentFormats, 'OUTRO' as DeliveryFormat];
+  const handleRequiresDeliveryChange = (checked: boolean) => {
+    if (!checked) {
+      // Limpar recompensas quando não requer entrega
       updateMeta({ 
-        formatosEntrega: newFormats,
-        formatoCustom: customFormat.trim()
+        requiresDelivery: checked,
+        koinReward: undefined,
+        xpReward: undefined
       });
-      setCustomFormat('');
-    }
-  };
-
-  const removeFormat = (format: DeliveryFormat) => {
-    const currentFormats = meta.formatosEntrega || [];
-    updateMeta({ 
-      formatosEntrega: currentFormats.filter(f => f !== format),
-      ...(format === 'OUTRO' ? { formatoCustom: undefined } : {})
-    });
-  };
-
-  const toggleFormat = (format: DeliveryFormat) => {
-    const currentFormats = meta.formatosEntrega || [];
-    const hasFormat = currentFormats.includes(format);
-    
-    if (hasFormat) {
-      removeFormat(format);
     } else {
-      updateMeta({ formatosEntrega: [...currentFormats, format] });
+      updateMeta({ requiresDelivery: checked });
     }
   };
 
@@ -105,8 +78,8 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
           <Switch
             id="requires-delivery"
-            checked={meta.requiresDelivery !== false}
-            onCheckedChange={(checked) => updateMeta({ requiresDelivery: checked })}
+            checked={requiresDelivery}
+            onCheckedChange={handleRequiresDeliveryChange}
           />
           <Label htmlFor="requires-delivery" className="cursor-pointer">
             Esta atividade requer entrega pelo aluno
@@ -120,7 +93,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           onChange={handleWeightChange}
         />
 
-        {koinsEnabled && (
+        {requiresDelivery && koinsEnabled && (
           <div className="space-y-2">
             <Label htmlFor="koin-reward">Recompensa em Koins</Label>
             <div className="relative">
@@ -142,7 +115,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           </div>
         )}
 
-        <XpRewardField />
+        {requiresDelivery && <XpRewardField />}
         
         <div className="space-y-2">
           <Label htmlFor="rubrica">Rubrica de Avaliação</Label>
@@ -164,8 +137,8 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
           <Switch
             id="requires-delivery"
-            checked={meta.requiresDelivery !== false}
-            onCheckedChange={(checked) => updateMeta({ requiresDelivery: checked })}
+            checked={requiresDelivery}
+            onCheckedChange={handleRequiresDeliveryChange}
           />
           <Label htmlFor="requires-delivery" className="cursor-pointer">
             Este trabalho requer entrega pelo aluno
@@ -179,7 +152,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           onChange={handleWeightChange}
         />
 
-        {koinsEnabled && (
+        {requiresDelivery && koinsEnabled && (
           <div className="space-y-2">
             <Label htmlFor="koin-reward">Recompensa em Koins</Label>
             <div className="relative">
@@ -201,63 +174,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           </div>
         )}
 
-        <XpRewardField />
-
-        <div className="space-y-3">
-          <Label>Formatos de Entrega</Label>
-          <div className="flex flex-wrap gap-2">
-            {deliveryFormatOptions.map(({ value, label }) => {
-              const isSelected = meta.formatosEntrega?.includes(value as DeliveryFormat);
-              return (
-                <Badge
-                  key={value}
-                  variant={isSelected ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-primary/10"
-                  onClick={() => toggleFormat(value as DeliveryFormat)}
-                >
-                  {label}
-                  {isSelected && <X className="ml-1 h-3 w-3" />}
-                </Badge>
-              );
-            })}
-            
-            {meta.formatosEntrega?.includes('OUTRO') && (
-              <Badge variant="default" className="cursor-pointer">
-                {meta.formatoCustom}
-                <X 
-                  className="ml-1 h-3 w-3" 
-                  onClick={() => removeFormat('OUTRO')}
-                />
-              </Badge>
-            )}
-          </div>
-          
-          <div className="flex gap-2">
-            <Input
-              value={customFormat}
-              onChange={(e) => setCustomFormat(e.target.value)}
-              placeholder="Formato personalizado..."
-              className="flex-1"
-            />
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={addCustomFormat}
-              disabled={!customFormat.trim()}
-            >
-              Adicionar
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="permitir-grupo"
-            checked={meta.permitirGrupo || false}
-            onCheckedChange={(checked) => updateMeta({ permitirGrupo: checked })}
-          />
-          <Label htmlFor="permitir-grupo">Permitir entrega em grupo</Label>
-        </div>
+        {requiresDelivery && <XpRewardField />}
       </div>
     );
   }
@@ -268,8 +185,8 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
           <Switch
             id="requires-delivery"
-            checked={meta.requiresDelivery !== false}
-            onCheckedChange={(checked) => updateMeta({ requiresDelivery: checked })}
+            checked={requiresDelivery}
+            onCheckedChange={handleRequiresDeliveryChange}
           />
           <Label htmlFor="requires-delivery" className="cursor-pointer">
             Esta prova requer entrega pelo aluno
@@ -283,7 +200,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           onChange={handleWeightChange}
         />
 
-        {koinsEnabled && (
+        {requiresDelivery && koinsEnabled && (
           <div className="space-y-2">
             <Label htmlFor="koin-reward">Recompensa em Koins</Label>
             <div className="relative">
@@ -305,7 +222,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           </div>
         )}
 
-        <XpRewardField />
+        {requiresDelivery && <XpRewardField />}
 
         <div className="space-y-2">
           <Label>Duração (minutos)</Label>
@@ -359,15 +276,6 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="bloquear-anexos"
-            checked={meta.bloquearAnexosAluno || false}
-            onCheckedChange={(checked) => updateMeta({ bloquearAnexosAluno: checked })}
-          />
-          <Label htmlFor="bloquear-anexos">Bloquear anexos do aluno</Label>
         </div>
       </div>
     );
