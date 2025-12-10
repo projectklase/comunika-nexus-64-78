@@ -10,8 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { InputPhone } from '@/components/ui/input-phone';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { supabase } from '@/integrations/supabase/client';
+import { validateName, normalizeSpaces } from '@/lib/validation';
 import { 
   Loader2, 
   UserPlus, 
@@ -139,6 +142,7 @@ export function CreateAdministratorModal({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [autoPassword, setAutoPassword] = useState(true);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -200,7 +204,10 @@ export function CreateAdministratorModal({
     switch (step) {
       case 1: return !!formData.plan_id;
       case 2: return true; // Empresa é opcional
-      case 3: return !!(formData.name && formData.email && formData.password && formData.school_name && formData.school_slug);
+      case 3: {
+        const nameError = validateName(formData.name);
+        return !!(formData.name && !nameError && formData.email && formData.password && formData.school_name && formData.school_slug);
+      }
       case 4: return true;
       default: return false;
     }
@@ -503,17 +510,19 @@ export function CreateAdministratorModal({
 
           <div className="space-y-2">
             <Label htmlFor="company_state">Estado</Label>
-            <select
-              id="company_state"
+            <Select
               value={formData.company_state}
-              onChange={(e) => setFormData(prev => ({ ...prev, company_state: e.target.value }))}
-              className="w-full h-10 px-3 rounded-md bg-white/5 border border-white/10 text-sm"
+              onValueChange={(value) => setFormData(prev => ({ ...prev, company_state: value }))}
             >
-              <option value="">Selecione</option>
-              {BRAZILIAN_STATES.map(state => (
-                <option key={state} value={state}>{state}</option>
-              ))}
-            </select>
+              <SelectTrigger className="bg-white/5 border-white/10">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-white/10 z-50">
+                {BRAZILIAN_STATES.map(state => (
+                  <SelectItem key={state} value={state}>{state}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -543,10 +552,32 @@ export function CreateAdministratorModal({
           <Input
             id="name"
             value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => {
+              // Filtrar números do nome
+              const sanitized = e.target.value.replace(/[0-9]/g, '');
+              setFormData(prev => ({ ...prev, name: sanitized }));
+              // Limpar erro ao digitar
+              if (fieldErrors.name) {
+                setFieldErrors(prev => ({ ...prev, name: '' }));
+              }
+            }}
+            onBlur={() => {
+              const normalized = normalizeSpaces(formData.name);
+              setFormData(prev => ({ ...prev, name: normalized }));
+              const error = validateName(normalized);
+              if (error) {
+                setFieldErrors(prev => ({ ...prev, name: error }));
+              }
+            }}
             placeholder="Nome do administrador"
-            className="bg-white/5 border-white/10"
+            className={cn(
+              "bg-white/5 border-white/10",
+              fieldErrors.name && "border-destructive"
+            )}
           />
+          {fieldErrors.name && (
+            <p className="text-sm text-destructive">{fieldErrors.name}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -568,12 +599,11 @@ export function CreateAdministratorModal({
           <div className="space-y-2">
             <Label htmlFor="phone">Telefone</Label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+              <InputPhone
                 id="phone"
                 value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="(00) 00000-0000"
+                onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
                 className="bg-white/5 border-white/10 pl-9"
               />
             </div>
