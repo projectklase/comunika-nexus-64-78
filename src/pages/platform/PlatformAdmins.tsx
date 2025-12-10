@@ -16,7 +16,6 @@ import {
   Eye,
   MoreVertical,
   UserPlus,
-  FileText
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +45,6 @@ import { toast } from 'sonner';
 import { SubscriptionManagementModal } from '@/components/platform/SubscriptionManagementModal';
 import { AdminPasswordResetModal } from '@/components/platform/AdminPasswordResetModal';
 import { CreateAdministratorModal } from '@/components/platform/CreateAdministratorModal';
-import { generateAdminOnboardingPDF } from '@/lib/admin-onboarding-pdf';
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -145,31 +143,6 @@ export default function PlatformAdmins() {
     }
   };
 
-  const handlePreviewPDF = async () => {
-    try {
-      toast.loading('Gerando modelo do PDF...');
-      
-      const previewData = {
-        adminName: 'Nome do Administrador',
-        schoolName: 'Nome da Escola Exemplo',
-        planName: 'Challenger',
-        maxStudents: 300,
-        email: 'admin@escola.com.br'
-      };
-      
-      const blob = await generateAdminOnboardingPDF(previewData);
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      
-      toast.dismiss();
-      toast.success('PDF aberto em nova aba');
-    } catch (error) {
-      console.error('Preview PDF error:', error);
-      toast.dismiss();
-      toast.error('Erro ao gerar preview do PDF');
-    }
-  };
-
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
@@ -184,15 +157,6 @@ export default function PlatformAdmins() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            onClick={handlePreviewPDF} 
-            variant="outline" 
-            size="sm"
-            className="bg-white/5 border-white/10 hover:bg-white/10"
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Ver Modelo PDF
-          </Button>
           <Button onClick={() => refetchAdminsOverview()} variant="outline" size="sm">
             Atualizar
           </Button>

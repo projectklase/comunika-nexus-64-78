@@ -203,6 +203,36 @@ export function CreateAdministratorModal({
     return selectedPlan.price_cents + addonCost;
   };
 
+  const handlePreviewPDF = async () => {
+    try {
+      toast.loading('Gerando pré-visualização...');
+      
+      const pdfData = {
+        adminName: formData.name || 'Administrador',
+        schoolName: formData.school_name || 'Escola',
+        planName: selectedPlan?.name || 'Plano',
+        maxStudents: selectedPlan?.max_students || 0,
+        email: formData.email || 'email@exemplo.com'
+      };
+      
+      const blob = await generateAdminOnboardingPDF(pdfData);
+      
+      // Download direto - funciona em todos os navegadores
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `preview-onboarding-${formData.school_slug || 'escola'}.pdf`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      
+      toast.dismiss();
+      toast.success('PDF baixado com sucesso!');
+    } catch (error) {
+      console.error('Preview PDF error:', error);
+      toast.dismiss();
+      toast.error('Erro ao gerar preview');
+    }
+  };
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1: {
@@ -902,9 +932,30 @@ export function CreateAdministratorModal({
         </p>
       </div>
 
+      {/* Pré-visualizar PDF */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <FileText className="w-4 h-4 text-primary" />
+          Kit de Implantação
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Visualize como ficará o PDF de onboarding que será enviado ao administrador.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handlePreviewPDF}
+          className="w-full bg-white/5 border-white/10 hover:bg-white/10 gap-2"
+        >
+          <Download className="w-4 h-4" />
+          Baixar Pré-visualização do PDF
+        </Button>
+      </div>
+
       {/* Aviso */}
       <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 text-sm">
-        ⚠️ Após criar, você poderá baixar o <strong>Kit de Implantação</strong> em PDF ou copiar as credenciais.
+        ⚠️ Após criar, o Kit de Implantação será gerado automaticamente.
         <br />
         <span className="text-muted-foreground">Suporte: lucas@klasetech.com</span>
       </div>
