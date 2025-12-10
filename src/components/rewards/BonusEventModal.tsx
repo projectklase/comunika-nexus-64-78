@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Coins, Users, Gift, Filter } from "lucide-react";
+import { Coins, Users, Gift, Filter, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { notificationStore } from "@/stores/notification-store";
 import { generateRewardsHistoryLink } from "@/utils/deep-links";
@@ -25,6 +25,7 @@ interface FormData {
   name: string;
   description: string;
   koinAmount: number;
+  xpAmount: number;
   studentIds: string[];
 }
 
@@ -95,6 +96,19 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
       return;
     }
 
+    // Validar que pelo menos Koins ou XP foi informado
+    const hasKoins = data.koinAmount && data.koinAmount > 0;
+    const hasXP = data.xpAmount && data.xpAmount > 0;
+    
+    if (!hasKoins && !hasXP) {
+      toast({
+        title: "Erro de Validação",
+        description: "Informe pelo menos Koins ou XP para a bonificação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Obter o ID do usuário atual (secretaria)
@@ -108,7 +122,8 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
         body: {
           eventName: data.name,
           eventDescription: data.description || "",
-          koinAmount: Number(data.koinAmount),
+          koinAmount: Number(data.koinAmount) || 0,
+          xpAmount: Number(data.xpAmount) || 0,
           studentIds: selectedStudents,
           grantedBy: currentUser.id,
         },
@@ -118,10 +133,14 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
         throw new Error(bonusError.message || "Erro ao conceder bonificação");
       }
 
-      // Notificações são criadas pela edge function
+      // Montar mensagem de sucesso dinâmica
+      const rewardParts: string[] = [];
+      if (hasKoins) rewardParts.push(`${data.koinAmount} Koins`);
+      if (hasXP) rewardParts.push(`${data.xpAmount} XP`);
+
       toast({
         title: "Bonificação criada com sucesso!",
-        description: `${selectedStudents.length} aluno(s) receberam ${data.koinAmount} Koins.`,
+        description: `${selectedStudents.length} aluno(s) receberam ${rewardParts.join(' e ')}.`,
       });
 
       handleClose();
@@ -178,25 +197,47 @@ export function BonusEventModal({ isOpen, onClose }: BonusEventModalProps) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="koinAmount">Koins por Aluno *</Label>
-              <div className="relative">
-                <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-yellow-500" />
-                <Input
-                  id="koinAmount"
-                  type="number"
-                  min="1"
-                  {...register("koinAmount", {
-                    required: "Quantidade de Koins é obrigatória",
-                    min: { value: 1, message: "Deve ser pelo menos 1 Koin" },
-                    valueAsNumber: true,
-                  })}
-                  className="pl-10"
-                  placeholder="0"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="koinAmount">Koins por Aluno</Label>
+                <div className="relative">
+                  <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-yellow-500" />
+                  <Input
+                    id="koinAmount"
+                    type="number"
+                    min="0"
+                    {...register("koinAmount", {
+                      min: { value: 0, message: "Não pode ser negativo" },
+                      valueAsNumber: true,
+                    })}
+                    className="pl-10"
+                    placeholder="0"
+                  />
+                </div>
+                {errors.koinAmount && <p className="text-sm text-destructive">{errors.koinAmount.message}</p>}
               </div>
-              {errors.koinAmount && <p className="text-sm text-destructive">{errors.koinAmount.message}</p>}
+
+              <div className="space-y-2">
+                <Label htmlFor="xpAmount">XP por Aluno</Label>
+                <div className="relative">
+                  <Trophy className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-500" />
+                  <Input
+                    id="xpAmount"
+                    type="number"
+                    min="0"
+                    {...register("xpAmount", {
+                      min: { value: 0, message: "Não pode ser negativo" },
+                      valueAsNumber: true,
+                    })}
+                    className="pl-10"
+                    placeholder="0"
+                  />
+                </div>
+                {errors.xpAmount && <p className="text-sm text-destructive">{errors.xpAmount.message}</p>}
+              </div>
             </div>
+
+            <p className="text-xs text-muted-foreground">* Informe pelo menos Koins ou XP</p>
           </div>
 
           {/* Student Selection */}

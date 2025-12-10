@@ -26,9 +26,9 @@ serve(async (req) => {
     );
 
     // Extrair dados do body da requisição
-    const { eventName, eventDescription, koinAmount, studentIds, grantedBy } = await req.json();
+    const { eventName, eventDescription, koinAmount, xpAmount, studentIds, grantedBy } = await req.json();
 
-    console.log(`[grant-koin-bonus] Iniciando bonificação: ${eventName} - ${koinAmount} Koins para ${studentIds.length} alunos`);
+    console.log(`[grant-koin-bonus] Iniciando bonificação: ${eventName} - ${koinAmount} Koins, ${xpAmount || 0} XP para ${studentIds.length} alunos`);
 
     // Validações básicas
     if (!eventName || typeof eventName !== 'string' || eventName.trim() === '') {
@@ -39,10 +39,14 @@ serve(async (req) => {
       );
     }
 
-    if (!koinAmount || typeof koinAmount !== 'number' || koinAmount <= 0) {
-      console.error('[grant-koin-bonus] Valor de Koins inválido:', koinAmount);
+    // Validar que pelo menos Koins ou XP foi informado
+    const hasKoins = koinAmount && typeof koinAmount === 'number' && koinAmount > 0;
+    const hasXP = xpAmount && typeof xpAmount === 'number' && xpAmount > 0;
+    
+    if (!hasKoins && !hasXP) {
+      console.error('[grant-koin-bonus] Nenhuma recompensa informada');
       return new Response(
-        JSON.stringify({ error: 'Valor de Koins deve ser maior que zero' }),
+        JSON.stringify({ error: 'Informe pelo menos Koins ou XP para a bonificação' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -63,21 +67,54 @@ serve(async (req) => {
       );
     }
 
-    // Chamar RPC function que executa a operação com privilégios elevados
-    const { error: rpcError } = await supabaseAdmin.rpc('grant_koin_bonus', {
-      p_event_name: eventName,
-      p_event_description: eventDescription || '',
-      p_koin_amount: koinAmount,
-      p_student_ids: studentIds,
-      p_granted_by: grantedBy,
-    });
+    // Chamar RPC function que executa a operação com privilégios elevados (apenas para Koins)
+    if (hasKoins) {
+      const { error: rpcError } = await supabaseAdmin.rpc('grant_koin_bonus', {
+        p_event_name: eventName,
+        p_event_description: eventDescription || '',
+        p_koin_amount: koinAmount,
+        p_student_ids: studentIds,
+        p_granted_by: grantedBy,
+      });
 
-    if (rpcError) {
-      console.error('[grant-koin-bonus] Erro ao executar RPC:', rpcError);
-      throw rpcError;
+      if (rpcError) {
+        console.error('[grant-koin-bonus] Erro ao executar RPC:', rpcError);
+        throw rpcError;
+      }
+    }
+
+    // Conceder XP diretamente na tabela profiles se informado
+    if (hasXP) {
+      for (const studentId of studentIds) {
+        const { error: xpError } = await supabaseAdmin
+          .from('profiles')
+          .update({ total_xp: supabaseAdmin.rpc('add_xp_to_user', { user_id_in: studentId, amount_in: xpAmount }) })
+          .eq('id', studentId);
+        
+        // Fallback: incrementar XP manualmente se RPC não existir
+        if (xpError) {
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('total_xp')
+            .eq('id', studentId)
+            .single();
+          
+          await supabaseAdmin
+            .from('profiles')
+            .update({ total_xp: (profile?.total_xp || 0) + xpAmount })
+            .eq('id', studentId);
+        }
+      }
+      console.log(`[grant-koin-bonus] ${xpAmount} XP concedido para ${studentIds.length} alunos`);
     }
 
     console.log(`[grant-koin-bonus] Bonificação concedida com sucesso para ${studentIds.length} alunos`);
+
+    // Montar mensagem dinâmica para notificação
+    const rewardParts: string[] = [];
+    if (hasKoins) rewardParts.push(`${koinAmount} Koins`);
+    if (hasXP) rewardParts.push(`${xpAmount} XP`);
+    const rewardMessage = rewardParts.join(' e ');
 
     // Criar notificações para cada aluno usando service_role (sem RLS)
     const notificationPromises = studentIds.map(studentId => 
@@ -85,12 +122,13 @@ serve(async (req) => {
         user_id: studentId,
         type: 'KOIN_BONUS',
         title: 'Bonificação Recebida!',
-        message: `Você recebeu ${koinAmount} Koins pelo evento '${eventName}'!`,
+        message: `Você recebeu ${rewardMessage} pelo evento '${eventName}'!`,
         role_target: 'ALUNO',
         link: '/aluno/loja-recompensas?tab=history',
         is_read: false,
         meta: { 
-          koinAmount: koinAmount, 
+          koinAmount: koinAmount || 0,
+          xpAmount: xpAmount || 0,
           eventName: eventName,
           grantedBy: grantedBy
         }
