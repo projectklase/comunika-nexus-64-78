@@ -15,6 +15,7 @@ import { InputPhone } from '@/components/ui/input-phone';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { validateName, normalizeSpaces } from '@/lib/validation';
+import { generateAdminOnboardingPDF } from '@/lib/admin-onboarding-pdf';
 import { 
   Loader2, 
   UserPlus, 
@@ -39,6 +40,7 @@ import {
   FileText,
   MapPin,
   Building,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -264,6 +266,37 @@ export function CreateAdministratorModal({
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
+      // Generate onboarding PDF
+      let onboardingPdfUrl: string | undefined;
+      try {
+        const pdfBlob = generateAdminOnboardingPDF({
+          adminName: formData.name,
+          schoolName: formData.school_name,
+          planName: selectedPlan?.name || 'Plano',
+          maxStudents: selectedPlan?.max_students || 0,
+          email: formData.email.toLowerCase(),
+        });
+        
+        // Upload PDF to Supabase Storage
+        const fileName = `onboarding_${formData.school_slug}_${Date.now()}.pdf`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('onboarding-pdfs')
+          .upload(fileName, pdfBlob, {
+            contentType: 'application/pdf',
+            upsert: false,
+          });
+        
+        if (!uploadError && uploadData) {
+          const { data: urlData } = supabase.storage
+            .from('onboarding-pdfs')
+            .getPublicUrl(uploadData.path);
+          onboardingPdfUrl = urlData?.publicUrl;
+        }
+      } catch (pdfError) {
+        console.error('Failed to generate/upload PDF:', pdfError);
+        // Continue without PDF
+      }
+
       // Send welcome email if checked
       if (sendWelcomeEmail) {
         try {
@@ -276,6 +309,7 @@ export function CreateAdministratorModal({
               planName: selectedPlan?.name,
               maxStudents: selectedPlan?.max_students,
               isPasswordReset: false,
+              onboardingPdfUrl,
             }
           });
           toast.success(`Administrador ${formData.name} criado e email enviado!`);
