@@ -231,7 +231,7 @@ export default function ProfessorDashboard() {
                       </p>
                     </div>
                     <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/professor/atividade/${activity.id}`}>
+                      <Link to={`/professor/turma/${activity.classIds?.[0] || activity.classId}/atividade/${activity.id}`}>
                         Ver
                       </Link>
                     </Button>
