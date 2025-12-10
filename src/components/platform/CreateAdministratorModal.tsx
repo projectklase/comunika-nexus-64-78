@@ -27,7 +27,6 @@ import {
   Phone,
   Key,
   Link,
-  Calendar,
   ChevronRight,
   ChevronLeft,
   CheckCircle,
@@ -51,8 +50,6 @@ interface CreateAdministratorModalProps {
 interface FormData {
   // Etapa 1 - Plano
   plan_id: string;
-  isTrial: boolean;
-  trial_days: number;
   addon_schools_count: number;
   
   // Etapa 2 - Empresa (opcional)
@@ -146,8 +143,6 @@ export function CreateAdministratorModal({
   
   const [formData, setFormData] = useState<FormData>({
     plan_id: '',
-    isTrial: false,
-    trial_days: 14,
     addon_schools_count: 0,
     company_name: '',
     company_cnpj: '',
@@ -247,8 +242,7 @@ export function CreateAdministratorModal({
           school_name: formData.school_name,
           school_slug: formData.school_slug,
           plan_id: formData.plan_id,
-          status: formData.isTrial ? 'trial' : 'active',
-          trial_days: formData.isTrial ? formData.trial_days : undefined,
+          status: 'active',
           addon_schools_count: formData.addon_schools_count,
           // Dados da empresa (opcionais)
           company_name: formData.company_name || undefined,
@@ -267,8 +261,6 @@ export function CreateAdministratorModal({
       // Reset form
       setFormData({
         plan_id: subscriptionPlans?.[0]?.id || '',
-        isTrial: false,
-        trial_days: 14,
         addon_schools_count: 0,
         company_name: '',
         company_cnpj: '',
@@ -390,30 +382,6 @@ export function CreateAdministratorModal({
             );
           })
         )}
-      </div>
-
-      {/* Trial */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-        <Checkbox 
-          id="is-trial" 
-          checked={formData.isTrial}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isTrial: !!checked }))}
-        />
-        <Label htmlFor="is-trial" className="text-sm cursor-pointer flex items-center gap-2 flex-1">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          Iniciar em período Trial
-        </Label>
-        {formData.isTrial && (
-          <Input
-            type="number"
-            min="1"
-            max="90"
-            value={formData.trial_days}
-            onChange={(e) => setFormData(prev => ({ ...prev, trial_days: parseInt(e.target.value) || 14 }))}
-            className="w-20 h-8 bg-white/5 border-white/10 text-center"
-          />
-        )}
-        {formData.isTrial && <span className="text-xs text-muted-foreground">dias</span>}
       </div>
 
       {/* Escolas adicionais */}
@@ -748,7 +716,7 @@ export function CreateAdministratorModal({
           <div className="text-muted-foreground">Escolas:</div>
           <div>{(selectedPlan?.included_schools || 1) + formData.addon_schools_count} ({selectedPlan?.included_schools} + {formData.addon_schools_count} extra)</div>
           <div className="text-muted-foreground">Status:</div>
-          <div>{formData.isTrial ? `Trial ${formData.trial_days} dias` : 'Ativo'}</div>
+          <div>Ativo</div>
           <div className="text-muted-foreground">Total Mensal:</div>
           <div className="font-bold text-primary">{formatCurrency(calculateTotal())}</div>
         </div>
