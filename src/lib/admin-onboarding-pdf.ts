@@ -605,7 +605,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   
   navItems.forEach((item, i) => {
     y = drawNumberedStep(doc, 15, y, i + 1, item.title, item.desc);
-    y += 8;
+    y += 5;
   });
   
   y += 15;
@@ -750,29 +750,29 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   ];
   
   gamification.forEach((item, i) => {
-    drawCard(doc, 15, y, 180, 38);
-    item.icon(doc, 18, y + 8, 20, COLORS.gold);
+    drawCard(doc, 15, y, 180, 32);
+    item.icon(doc, 18, y + 6, 18, COLORS.gold);
     doc.setTextColor(...COLORS.text);
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(item.title, 42, y + 12);
+    doc.text(item.title, 42, y + 10);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...COLORS.textMuted);
     const descLines = doc.splitTextToSize(item.desc, 145);
-    doc.text(descLines, 42, y + 22);
-    y += 44;
+    doc.text(descLines, 42, y + 18);
+    y += 38;
   });
   
-  y += 5;
+  y += 10;
   y = drawSectionTitle(doc, y, 'Loja de Recompensas', drawShopIcon);
   
-  drawCard(doc, 15, y, 180, 55);
+  drawCard(doc, 15, y, 180, 45);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(10);
   const storeText = 'Configure itens na loja para que alunos troquem seus Koins: materiais escolares, brindes, privilégios especiais, etc. Você define os preços e estoque.';
   const storeLines = doc.splitTextToSize(storeText, 165);
-  doc.text(storeLines, 20, y + 20);
+  doc.text(storeLines, 20, y + 16);
   
   drawFooter(doc, 6, totalPages);
   
