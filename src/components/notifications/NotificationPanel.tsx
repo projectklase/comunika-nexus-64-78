@@ -165,6 +165,10 @@ export function NotificationPanel() {
       return <Bell className="w-4 h-4 text-red-500" />;
     }
     
+    if (notification.type === 'ACTIVITY_REMINDER') {
+      return <Bell className="w-4 h-4 text-amber-400" />;
+    }
+    
     if (notification.type === 'HOLIDAY') {
       return <Calendar className="w-4 h-4 text-amber-500" />;
     }

@@ -563,6 +563,9 @@ export default function ActivityDetail() {
                 dueAt={activity.dueAt}
                 onMarkAsReceived={handleMarkAsReceived}
                 isLoading={isLoading}
+                activityId={postId!}
+                activityTitle={activity?.title || 'Atividade'}
+                teacherName={user?.name || 'Professor'}
               />
             </CardContent>
           </Card>
