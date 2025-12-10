@@ -47,7 +47,7 @@ export default function NovaAtividade() {
   const [activityType, setActivityType] = useState<ActivityType>(prefs.defaultType);
   const [allowPastDeadline, setAllowPastDeadline] = useState(false);
   const [activityMeta, setActivityMeta] = useState<ActivityMeta & { usePeso?: boolean }>(() => 
-    user ? TeacherPrefsService.getMetaDefaults(prefs.defaultType, prefs) : { peso: 1, usePeso: true }
+    user ? TeacherPrefsService.getMetaDefaults(prefs.defaultType, prefs) : { peso: 1, usePeso: false }
   );
   
   const [formData, setFormData] = useState({
@@ -385,9 +385,9 @@ export default function NovaAtividade() {
                         variant="outline"
                         className="w-full justify-start text-left font-normal"
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                         {formData.dueDate ? (
-                          format(formData.dueDate, "PPP", { locale: ptBR })
+                          format(formData.dueDate, "dd/MM/yyyy")
                         ) : (
                           <span>Selecionar data</span>
                         )}

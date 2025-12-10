@@ -11,6 +11,7 @@ export interface ActivityMeta {
   peso?: number;
   usePeso?: boolean;  // Flag para controlar se deve usar peso nesta atividade
   koinReward?: number; // Koins que o aluno receberá ao concluir esta atividade
+  xpReward?: number; // XP que o aluno receberá ao concluir esta atividade (máx. 10)
   requiresDelivery?: boolean; // Se a atividade requer entrega pelo aluno (padrão: true)
   allow_attachments?: boolean; // Controla se alunos podem enviar anexos
   

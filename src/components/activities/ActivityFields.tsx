@@ -8,9 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WeightToggleField } from '@/components/activities/WeightToggleField';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
-import { X } from 'lucide-react';
+import { X, Coins, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { Coins } from 'lucide-react';
 
 interface ActivityFieldsProps {
   type: ActivityType;
@@ -77,6 +76,29 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
     }
   };
 
+  // Componente reutilizável para campo de XP
+  const XpRewardField = () => (
+    <div className="space-y-2">
+      <Label htmlFor="xp-reward">Recompensa em XP</Label>
+      <div className="relative">
+        <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          id="xp-reward"
+          type="number"
+          min="0"
+          max="10"
+          value={meta.xpReward || ''}
+          onChange={(e) => updateMeta({ xpReward: Math.min(10, parseInt(e.target.value) || 0) || undefined })}
+          placeholder="0"
+          className="pl-10"
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        XP que o aluno receberá ao concluir (máx. 10)
+      </p>
+    </div>
+  );
+
   if (type === 'ATIVIDADE') {
     return (
       <div className="space-y-4">
@@ -120,16 +142,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           </div>
         )}
 
-        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
-          <Switch
-            id="allow-attachments"
-            checked={meta.allow_attachments ?? false}
-            onCheckedChange={(checked) => updateMeta({ allow_attachments: checked })}
-          />
-          <Label htmlFor="allow-attachments" className="cursor-pointer">
-            Permitir que alunos enviem arquivos anexos
-          </Label>
-        </div>
+        <XpRewardField />
         
         <div className="space-y-2">
           <Label htmlFor="rubrica">Rubrica de Avaliação</Label>
@@ -188,16 +201,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           </div>
         )}
 
-        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
-          <Switch
-            id="allow-attachments-trabalho"
-            checked={meta.allow_attachments ?? false}
-            onCheckedChange={(checked) => updateMeta({ allow_attachments: checked })}
-          />
-          <Label htmlFor="allow-attachments-trabalho" className="cursor-pointer">
-            Permitir que alunos enviem arquivos anexos
-          </Label>
-        </div>
+        <XpRewardField />
 
         <div className="space-y-3">
           <Label>Formatos de Entrega</Label>
@@ -301,16 +305,7 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
           </div>
         )}
 
-        <div className="flex items-center space-x-2 p-3 rounded-lg bg-accent/10 border border-accent/30">
-          <Switch
-            id="allow-attachments-prova"
-            checked={meta.allow_attachments ?? false}
-            onCheckedChange={(checked) => updateMeta({ allow_attachments: checked })}
-          />
-          <Label htmlFor="allow-attachments-prova" className="cursor-pointer">
-            Permitir que alunos enviem arquivos anexos
-          </Label>
-        </div>
+        <XpRewardField />
 
         <div className="space-y-2">
           <Label>Duração (minutos)</Label>

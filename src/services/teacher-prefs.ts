@@ -50,7 +50,7 @@ export class TeacherPrefsService {
       defaultDuration: 50,
       defaultProofType: 'DISCURSIVA',
       defaultLocation: '',
-      defaultUsePeso: weightsEnabledForSchool  // Usar peso por padrão se habilitado na escola
+      defaultUsePeso: false  // Peso desativado por padrão
     };
   }
 
@@ -67,7 +67,7 @@ export class TeacherPrefsService {
     const schoolWeightsEnabled = useSchoolSettingsStore.getState().getCurrentSchoolSettings()?.weightsEnabled ?? true;
     const useWeight = schoolWeightsEnabled && prefs.defaultUsePeso && prefs.defaultWeights[type] !== null;
     const weight = useWeight ? prefs.defaultWeights[type] : null;
-    const base = weight !== null ? { peso: weight, usePeso: schoolWeightsEnabled } : { usePeso: schoolWeightsEnabled };
+    const base = weight !== null ? { peso: weight, usePeso: prefs.defaultUsePeso } : { usePeso: false };
 
     switch (type) {
       case 'ATIVIDADE':

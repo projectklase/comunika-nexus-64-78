@@ -22,7 +22,7 @@ const DEFAULT_WEIGHTS = {
 
 export function WeightToggleField({ 
   value, 
-  usePeso = true, 
+  usePeso = false, 
   activityType,
   onChange, 
   error, 
