@@ -12,7 +12,7 @@ export function SimplifiedNexusPanel() {
   const { getKoinsEnabled } = useSchoolSettings();
   const koinsEnabled = getKoinsEnabled();
 
-  // QOL 1: Contador de Koins pendentes
+  // QOL 1: Contador de Koins pendentes baseado no koinReward real de cada atividade
   const { data: pendingKoins } = useQuery({
     queryKey: ['pending_koins', user?.id],
     queryFn: async () => {
@@ -21,31 +21,40 @@ export function SimplifiedNexusPanel() {
       // Buscar entregas AGUARDANDO do aluno
       const { data: deliveries, error: deliveriesError } = await supabase
         .from('deliveries')
-        .select('id')
+        .select('id, post_id')
         .eq('student_id', user.id)
         .eq('review_status', 'AGUARDANDO');
       
       if (deliveriesError) throw deliveriesError;
-      
-      // Buscar desafio de entrega ativo
-      const { data: challengeData, error: challengeError } = await supabase
-        .from('student_challenges')
-        .select(`
-          challenge_id,
-          challenges(koin_reward)
-        `)
-        .eq('student_id', user.id)
-        .eq('status', 'IN_PROGRESS')
-        .eq('challenges.action_target', 'SUBMIT_ACTIVITY')
-        .maybeSingle();
-      
-      if (challengeError) throw challengeError;
-      
-      const koinPerActivity = challengeData?.challenges?.koin_reward || 50;
-      
+      if (!deliveries || deliveries.length === 0) {
+        return { count: 0, potentialKoins: 0 };
+      }
+
+      // Buscar os dados das atividades (posts) para obter koinReward real
+      const postIds = [...new Set(deliveries.map(d => d.post_id))];
+      const { data: posts, error: postsError } = await supabase
+        .from('posts')
+        .select('id, activity_meta')
+        .in('id', postIds);
+
+      if (postsError) throw postsError;
+
+      // Criar mapa de koinReward por post_id
+      const koinRewardMap = new Map<string, number>();
+      posts?.forEach(post => {
+        const reward = (post.activity_meta as any)?.koinReward || 0;
+        koinRewardMap.set(post.id, reward);
+      });
+
+      // Calcular total de Koins potenciais com base no reward real de cada atividade
+      const totalPotentialKoins = deliveries.reduce((sum, delivery) => {
+        const reward = koinRewardMap.get(delivery.post_id) || 0;
+        return sum + reward;
+      }, 0);
+
       return {
-        count: deliveries?.length || 0,
-        potentialKoins: (deliveries?.length || 0) * koinPerActivity
+        count: deliveries.length,
+        potentialKoins: totalPotentialKoins
       };
     },
     enabled: !!user,
