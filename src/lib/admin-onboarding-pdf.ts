@@ -604,6 +604,12 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setTextColor(...COLORS.primary);
   doc.setFont('helvetica', 'bold');
   doc.text(data.password, 40, y + 50);
+  // Indicação visual de copiar ao lado da senha
+  doc.setTextColor(...COLORS.textMuted);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  const passwordWidth = doc.getTextWidth(data.password);
+  doc.text('[selecionar e copiar]', 42 + passwordWidth, y + 50);
   
   y += 75;
   doc.setFontSize(10);
@@ -613,6 +619,26 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLORS.textMuted);
   doc.text('Recomendamos alterar sua senha no primeiro acesso.', 58, y);
+  
+  // Botão de Acesso Rápido
+  y += 18;
+  const buttonWidth = 90;
+  const buttonHeight = 12;
+  const buttonX = (210 - buttonWidth) / 2;
+  
+  doc.setFillColor(...COLORS.primary);
+  doc.roundedRect(buttonX, y, buttonWidth, buttonHeight, 3, 3, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  const buttonText = 'Acessar Plataforma';
+  const textWidth = doc.getTextWidth(buttonText);
+  doc.text(buttonText, buttonX + (buttonWidth - textWidth) / 2, y + 8);
+  
+  // Link clicável com email pré-preenchido
+  const loginUrl = `https://app.klasetech.com/login?email=${encodeURIComponent(data.email)}`;
+  doc.link(buttonX, y, buttonWidth, buttonHeight, { url: loginUrl });
   
   drawFooter(doc, 3, totalPages);
   
