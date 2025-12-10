@@ -74,9 +74,19 @@ const Login = () => {
     }
   }, []); // Run only once on mount
 
+  // Load email from URL params (for onboarding PDF links)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const prefilledEmail = searchParams.get('email');
+    if (prefilledEmail) {
+      setEmail(prefilledEmail);
+      return; // URL param takes priority
+    }
+  }, []);
+
   // Load saved email from user settings store
   useEffect(() => {
-    if (savedRememberEmail && lastEmail) {
+    if (savedRememberEmail && lastEmail && !email) {
       setEmail(lastEmail);
       setRememberEmail(true);
     }
