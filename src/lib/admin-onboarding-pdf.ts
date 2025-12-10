@@ -465,7 +465,7 @@ function addLogoImage(doc: jsPDF, logoBase64: string, cx: number, cy: number) {
 
 export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): Promise<Blob> {
   const doc = new jsPDF('p', 'mm', 'a4');
-  const totalPages = 8;
+  const totalPages = 9;
   
   // Load the premium logo
   const logoBase64 = await loadLogoAsBase64();
@@ -605,22 +605,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFont('helvetica', 'bold');
   doc.text(data.password, 40, y + 50);
   
-  y += 80;
-  y = drawSectionTitle(doc, y, 'Navegação Básica', drawCompassIcon);
-  
-  const navItems = [
-    { title: 'Menu Lateral', desc: 'Acesso rápido a todas as funcionalidades principais' },
-    { title: 'Dashboard', desc: 'Visão geral com métricas e insights da escola' },
-    { title: 'Notificações', desc: 'Acompanhe entregas, eventos e alertas importantes' },
-    { title: 'Configurações', desc: 'Personalize sua escola e preferências' },
-  ];
-  
-  navItems.forEach((item, i) => {
-    y = drawNumberedStep(doc, 15, y, i + 1, item.title, item.desc);
-    y += 5;
-  });
-  
-  y += 10;
+  y += 75;
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.warning);
   doc.setFont('helvetica', 'bold');
@@ -631,7 +616,57 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   
   drawFooter(doc, 3, totalPages);
   
-  // ========== PÁGINA 4 - CONFIGURAÇÃO INICIAL ==========
+  // ========== PÁGINA 4 - NAVEGAÇÃO BÁSICA ==========
+  doc.addPage();
+  drawPageBackground(doc);
+  
+  y = drawSectionTitle(doc, 20, 'Navegação Básica', drawCompassIcon);
+  
+  const navSteps = [
+    { title: 'Menu Lateral', desc: 'Acesso rápido a todas as funcionalidades principais da plataforma. Navegue entre Dashboard, Cadastros e Configurações.' },
+    { title: 'Dashboard', desc: 'Visão geral com métricas e insights da escola. Acompanhe alunos ativos, entregas pendentes e desempenho geral.' },
+    { title: 'Notificações', desc: 'Acompanhe entregas de atividades, eventos importantes e alertas do sistema em tempo real.' },
+    { title: 'Configurações', desc: 'Personalize sua escola, gerencie funcionalidades e ajuste preferências de acordo com suas necessidades.' },
+  ];
+  
+  navSteps.forEach((step, i) => {
+    drawCard(doc, 15, y, 180, 35);
+    doc.setFillColor(...COLORS.primary);
+    doc.circle(27, y + 17, 10, 'F');
+    doc.setTextColor(...COLORS.text);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    const stepNum = (i + 1).toString();
+    const stepNumWidth = doc.getTextWidth(stepNum);
+    doc.text(stepNum, 27 - stepNumWidth / 2, y + 21);
+    
+    doc.setFontSize(12);
+    doc.text(step.title, 42, y + 12);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.textMuted);
+    const descLines = doc.splitTextToSize(step.desc, 140);
+    doc.text(descLines, 42, y + 20);
+    
+    y += 42;
+  });
+  
+  y += 5;
+  drawCard(doc, 15, y, 180, 30);
+  drawLightbulbIcon(doc, 18, y + 5, 18, COLORS.accent);
+  doc.setTextColor(...COLORS.accent);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Dica de Navegação', 40, y + 12);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Clique no logo Klase para retornar ao Dashboard a qualquer momento.', 40, y + 22);
+  
+  drawFooter(doc, 4, totalPages);
+  
+  // ========== PÁGINA 5 - CONFIGURAÇÃO INICIAL ==========
   doc.addPage();
   drawPageBackground(doc);
   
@@ -680,9 +715,9 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFontSize(10);
   doc.text('Use o menu "Cadastros" para acessar todas as opções rapidamente.', 40, y + 22);
   
-  drawFooter(doc, 4, totalPages);
+  drawFooter(doc, 5, totalPages);
   
-  // ========== PÁGINA 5 - IMPORTAÇÃO DE ALUNOS ==========
+  // ========== PÁGINA 6 - IMPORTAÇÃO DE ALUNOS ==========
   doc.addPage();
   drawPageBackground(doc);
   
@@ -742,9 +777,9 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   const ageLines = doc.splitTextToSize(ageText, 150);
   doc.text(ageLines, 40, y + 22);
   
-  drawFooter(doc, 5, totalPages);
+  drawFooter(doc, 6, totalPages);
   
-  // ========== PÁGINA 6 - GAMIFICAÇÃO ==========
+  // ========== PÁGINA 7 - GAMIFICAÇÃO ==========
   doc.addPage();
   drawPageBackground(doc);
   
@@ -782,9 +817,9 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   const storeLines = doc.splitTextToSize(storeText, 165);
   doc.text(storeLines, 20, y + 16);
   
-  drawFooter(doc, 6, totalPages);
+  drawFooter(doc, 7, totalPages);
   
-  // ========== PÁGINA 7 - INTELIGÊNCIA ==========
+  // ========== PÁGINA 8 - INTELIGÊNCIA ==========
   doc.addPage();
   drawPageBackground(doc);
   
@@ -826,9 +861,9 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   const histLines = doc.splitTextToSize(histText, 165);
   doc.text(histLines, 20, y + 15);
   
-  drawFooter(doc, 7, totalPages);
+  drawFooter(doc, 8, totalPages);
   
-  // ========== PÁGINA 8 - SUPORTE ==========
+  // ========== PÁGINA 9 - SUPORTE ==========
   doc.addPage();
   drawPageBackground(doc);
   
@@ -865,7 +900,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.text('Estamos aqui para transformar a educação', 105, y + 32, { align: 'center' });
   doc.text('junto com você.', 105, y + 42, { align: 'center' });
   
-  drawFooter(doc, 8, totalPages);
+  drawFooter(doc, 9, totalPages);
   
   return doc.output('blob');
 }
