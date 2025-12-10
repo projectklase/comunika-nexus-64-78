@@ -327,6 +327,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('comunika:postViews:v1');
       localStorage.removeItem('comunika_last_seen');
       
+      // FASE 6: Limpar localStorage adicional para evitar vazamento
+      localStorage.removeItem('comunika_read_rate_limit');
+      localStorage.removeItem('aluno_feed_preferences');
+      localStorage.removeItem('aluno_feed_filters');
+      
+      // Limpar drafts de posts
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('draft:post:') || 
+            key.startsWith('cal:professor:') || 
+            key.startsWith('cal:secretaria:')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       // Resetar stores Zustand de posts para estado vazio
       import('@/stores/read-store').then(({ readStore }) => {
         readStore.clear();

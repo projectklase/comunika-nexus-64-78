@@ -1585,6 +1585,42 @@ export type Database = {
           },
         ]
       }
+      post_saves: {
+        Row: {
+          id: string
+          post_id: string
+          saved_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          saved_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          saved_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_saves_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_saves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           activity_meta: Json | null
