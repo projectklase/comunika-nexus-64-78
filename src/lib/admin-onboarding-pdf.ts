@@ -564,12 +564,18 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
     y += 30;
   });
   
-  y += 10;
-  y = drawSectionTitle(doc, y, 'Estrutura de Usuários', drawPeopleIcon);
+  drawFooter(doc, 2, totalPages);
+  
+  // ========== PÁGINA 3 - ESTRUTURA E PRIMEIRO ACESSO ==========
+  doc.addPage();
+  drawPageBackground(doc);
+  
+  // Estrutura de Usuários (movido da página 2)
+  y = drawSectionTitle(doc, 20, 'Estrutura de Usuários', drawPeopleIcon);
   
   const roles = [
-    'Administrador - Gestão completa da escola',
-    'Secretária - Cadastros e gestão diária',
+    'Administrador - Gestao completa da escola',
+    'Secretaria - Cadastros e gestao diaria',
     'Professor - Turmas, atividades e notas',
     'Aluno - Aprendizado gamificado'
   ];
@@ -578,13 +584,8 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
     drawBulletPoint(doc, 20, y + (i * 12), role);
   });
   
-  drawFooter(doc, 2, totalPages);
-  
-  // ========== PÁGINA 3 - PRIMEIRO ACESSO ==========
-  doc.addPage();
-  drawPageBackground(doc);
-  
-  y = drawSectionTitle(doc, 20, 'Primeiro Acesso', drawKeyIcon);
+  y += 55;
+  y = drawSectionTitle(doc, y, 'Primeiro Acesso', drawKeyIcon);
   
   drawCard(doc, 15, y, 180, 65);
   doc.setTextColor(...COLORS.text);
