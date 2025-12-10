@@ -447,7 +447,7 @@ function drawFooter(doc: jsPDF, pageNum: number, totalPages: number) {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.text('Klase - Plataforma Educacional Gamificada', 15, 290);
-  doc.text(`Pagina ${pageNum} de ${totalPages}`, 180, 290);
+  doc.text(`Página ${pageNum} de ${totalPages}`, 180, 290);
 }
 
 function addLogoImage(doc: jsPDF, logoBase64: string, cx: number, cy: number) {
@@ -502,7 +502,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFontSize(11);
   doc.setTextColor(...COLORS.textMuted);
   doc.text(`Escola: ${data.schoolName}`, 35, 188);
-  doc.text(`Plano: ${data.planName} (ate ${data.maxStudents} alunos)`, 35, 198);
+  doc.text(`Plano: ${data.planName} (até ${data.maxStudents} alunos)`, 35, 198);
   
   // Data de geração
   doc.setTextColor(...COLORS.textMuted);
@@ -526,18 +526,18 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  const introText = `O Klase e uma plataforma educacional completa que transforma a gestao escolar atraves da gamificacao. Nosso objetivo e aumentar o engajamento dos alunos, simplificar a administracao e fornecer insights valiosos para decisoes pedagogicas.`;
+  const introText = `O Klase é uma plataforma educacional completa que transforma a gestão escolar através da gamificação. Nosso objetivo é aumentar o engajamento dos alunos, simplificar a administração e fornecer insights valiosos para decisões pedagógicas.`;
   const introLines = doc.splitTextToSize(introText, 170);
   doc.text(introLines, 20, y + 15);
   
   y += 75;
-  y = drawSectionTitle(doc, y, 'Principais Beneficios', drawDiamondIcon);
+  y = drawSectionTitle(doc, y, 'Principais Benefícios', drawDiamondIcon);
   
   const benefits = [
-    { title: 'Gamificacao Completa', desc: 'Sistema de Koins, desafios, conquistas e jogo de cartas colecioaveis' },
-    { title: 'IA Preditiva', desc: 'Insights inteligentes sobre evasao, engajamento e performance' },
-    { title: 'Multi-Escola', desc: 'Gerencie multiplas escolas em uma unica conta' },
-    { title: 'Comunicacao Integrada', desc: 'Posts, avisos, eventos e atividades em um so lugar' },
+    { title: 'Gamificação Completa', desc: 'Sistema de Koins, desafios, conquistas e jogo de cartas colecionáveis' },
+    { title: 'IA Preditiva', desc: 'Insights inteligentes sobre evasão, engajamento e performance' },
+    { title: 'Multi-Escola', desc: 'Gerencie múltiplas escolas em uma única conta' },
+    { title: 'Comunicação Integrada', desc: 'Posts, avisos, eventos e atividades em um só lugar' },
   ];
   
   benefits.forEach((b, i) => {
@@ -554,11 +554,11 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   });
   
   y += 10;
-  y = drawSectionTitle(doc, y, 'Estrutura de Usuarios', drawPeopleIcon);
+  y = drawSectionTitle(doc, y, 'Estrutura de Usuários', drawPeopleIcon);
   
   const roles = [
-    'Administrador - Gestao completa da escola',
-    'Secretaria - Cadastros e gestao diaria',
+    'Administrador - Gestão completa da escola',
+    'Secretária - Cadastros e gestão diária',
     'Professor - Turmas, atividades e notas',
     'Aluno - Aprendizado gamificado'
   ];
@@ -594,13 +594,13 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.text(data.password, 40, y + 50);
   
   y += 80;
-  y = drawSectionTitle(doc, y, 'Navegacao Basica', drawCompassIcon);
+  y = drawSectionTitle(doc, y, 'Navegação Básica', drawCompassIcon);
   
   const navItems = [
-    { title: 'Menu Lateral', desc: 'Acesso rapido a todas as funcionalidades principais' },
-    { title: 'Dashboard', desc: 'Visao geral com metricas e insights da escola' },
-    { title: 'Notificacoes', desc: 'Acompanhe entregas, eventos e alertas importantes' },
-    { title: 'Configuracoes', desc: 'Personalize sua escola e preferencias' },
+    { title: 'Menu Lateral', desc: 'Acesso rápido a todas as funcionalidades principais' },
+    { title: 'Dashboard', desc: 'Visão geral com métricas e insights da escola' },
+    { title: 'Notificações', desc: 'Acompanhe entregas, eventos e alertas importantes' },
+    { title: 'Configurações', desc: 'Personalize sua escola e preferências' },
   ];
   
   navItems.forEach((item, i) => {
@@ -616,7 +616,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('!', 23.5, y + 20);
-  doc.text('Dica de Seguranca', 35, y + 14);
+  doc.text('Dica de Segurança', 35, y + 14);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLORS.textMuted);
   doc.text('Recomendamos alterar sua senha no primeiro acesso.', 35, y + 24);
@@ -627,13 +627,13 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.addPage();
   drawPageBackground(doc);
   
-  y = drawSectionTitle(doc, 20, 'Configuracao Inicial', drawGearIcon);
+  y = drawSectionTitle(doc, 20, 'Configuração Inicial', drawGearIcon);
   
   const setupSteps = [
-    { title: 'Cadastrar Secretarias', desc: 'Delegue a gestao diaria para sua equipe administrativa. Secretarias podem cadastrar professores, alunos e gerenciar turmas.' },
-    { title: 'Cadastrar Professores', desc: 'Adicione os professores da escola. Eles terao acesso as turmas atribuidas para criar atividades e registrar notas.' },
-    { title: 'Criar Niveis e Modalidades', desc: 'Configure a estrutura curricular: Ensino Fundamental, Medio, EJA, etc. Esta estrutura organiza suas turmas.' },
-    { title: 'Criar Turmas', desc: 'Crie as turmas vinculando um professor principal, nivel e modalidade. As turmas sao o centro da organizacao escolar.' },
+    { title: 'Cadastrar Secretárias', desc: 'Delegue a gestão diária para sua equipe administrativa. Secretárias podem cadastrar professores, alunos e gerenciar turmas.' },
+    { title: 'Cadastrar Professores', desc: 'Adicione os professores da escola. Eles terão acesso às turmas atribuídas para criar atividades e registrar notas.' },
+    { title: 'Criar Níveis e Modalidades', desc: 'Configure a estrutura curricular: Ensino Fundamental, Médio, EJA, etc. Esta estrutura organiza suas turmas.' },
+    { title: 'Criar Turmas', desc: 'Crie as turmas vinculando um professor principal, nível e modalidade. As turmas são o centro da organização escolar.' },
   ];
   
   setupSteps.forEach((step, i) => {
@@ -666,11 +666,11 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setTextColor(...COLORS.accent);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Atalho Rapido', 40, y + 12);
+  doc.text('Atalho Rápido', 40, y + 12);
   doc.setTextColor(...COLORS.textMuted);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text('Use o menu "Cadastros" para acessar todas as opcoes rapidamente.', 40, y + 22);
+  doc.text('Use o menu "Cadastros" para acessar todas as opções rapidamente.', 40, y + 22);
   
   drawFooter(doc, 4, totalPages);
   
@@ -678,12 +678,12 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.addPage();
   drawPageBackground(doc);
   
-  y = drawSectionTitle(doc, 20, 'Importacao de Alunos', drawDownloadIcon);
+  y = drawSectionTitle(doc, 20, 'Importação de Alunos', drawDownloadIcon);
   
   drawCard(doc, 15, y, 180, 35);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(11);
-  const importIntro = 'O Klase oferece importacao em massa via CSV, permitindo cadastrar centenas de alunos em minutos. O sistema e inteligente e adapta os campos automaticamente.';
+  const importIntro = 'O Klase oferece importação em massa via CSV, permitindo cadastrar centenas de alunos em minutos. O sistema é inteligente e adapta os campos automaticamente.';
   const importLines = doc.splitTextToSize(importIntro, 170);
   doc.text(importLines, 20, y + 15);
   
@@ -691,16 +691,16 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   y = drawSectionTitle(doc, y, 'Campos do CSV', drawDocIcon);
   
   const fields = [
-    { name: 'nome', req: 'Obrigatorio', desc: 'Nome completo do aluno' },
-    { name: 'data_nasc', req: 'Obrigatorio', desc: 'Data de nascimento (DD/MM/AAAA)' },
+    { name: 'nome', req: 'Obrigatório', desc: 'Nome completo do aluno' },
+    { name: 'data_nasc', req: 'Obrigatório', desc: 'Data de nascimento (DD/MM/AAAA)' },
     { name: 'email', req: 'Adultos 18+', desc: 'Email do aluno (login)' },
-    { name: 'responsavel_email', req: 'Menores', desc: 'Email do responsavel (login)' },
+    { name: 'responsavel_email', req: 'Menores', desc: 'Email do responsável (login)' },
     { name: 'telefone', req: 'Opcional', desc: 'Telefone de contato' },
-    { name: 'matricula', req: 'Opcional', desc: 'Numero de matricula' },
+    { name: 'matricula', req: 'Opcional', desc: 'Número de matrícula' },
   ];
   
   fields.forEach((field, i) => {
-    const isRequired = field.req.includes('Obrigatorio') || field.req.includes('18+') || field.req.includes('Menores');
+    const isRequired = field.req.includes('Obrigatório') || field.req.includes('18+') || field.req.includes('Menores');
     doc.setFillColor(isRequired ? 139 : 75, isRequired ? 92 : 85, isRequired ? 246 : 99);
     doc.roundedRect(15, y, 45, 14, 2, 2, 'F');
     doc.setTextColor(...COLORS.text);
@@ -730,7 +730,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setTextColor(...COLORS.textMuted);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  const ageText = 'O sistema calcula automaticamente a idade do aluno. Adultos (18+ anos) usam seu proprio email para login. Menores usam o email do responsavel.';
+  const ageText = 'O sistema calcula automaticamente a idade do aluno. Adultos (18+ anos) usam seu próprio email para login. Menores usam o email do responsável.';
   const ageLines = doc.splitTextToSize(ageText, 150);
   doc.text(ageLines, 40, y + 22);
   
@@ -740,13 +740,13 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.addPage();
   drawPageBackground(doc);
   
-  y = drawSectionTitle(doc, 20, 'Gamificacao', drawGamepadIcon);
+  y = drawSectionTitle(doc, 20, 'Gamificação', drawGamepadIcon);
   
   const gamification = [
     { icon: drawCoinIcon, title: 'Sistema de Koins', desc: 'Moeda virtual que alunos ganham ao completar atividades, desafios e manter streak de check-ins. Podem trocar por recompensas na loja.' },
-    { icon: drawTrophyIcon, title: 'Desafios', desc: 'Missoes diarias e semanais que incentivam engajamento. "Leia 3 avisos", "Complete o perfil", etc.' },
-    { icon: drawFireIcon, title: 'Streak de Check-ins', desc: 'Alunos ganham XP e Koins ao fazer check-in diario. Streaks consecutivos multiplicam recompensas.' },
-    { icon: drawCardsIcon, title: 'Klase Kards Arena', desc: 'Jogo de cartas colecionaveis onde alunos usam XP para abrir pacotes e batalham entre si.' },
+    { icon: drawTrophyIcon, title: 'Desafios', desc: 'Missões diárias e semanais que incentivam engajamento. "Leia 3 avisos", "Complete o perfil", etc.' },
+    { icon: drawFireIcon, title: 'Streak de Check-ins', desc: 'Alunos ganham XP e Koins ao fazer check-in diário. Streaks consecutivos multiplicam recompensas.' },
+    { icon: drawCardsIcon, title: 'Klase Kards Arena', desc: 'Jogo de cartas colecionáveis onde alunos usam XP para abrir pacotes e batalham entre si.' },
   ];
   
   gamification.forEach((item, i) => {
@@ -767,12 +767,12 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   y += 5;
   y = drawSectionTitle(doc, y, 'Loja de Recompensas', drawShopIcon);
   
-  drawCard(doc, 15, y, 180, 45);
+  drawCard(doc, 15, y, 180, 55);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(10);
-  const storeText = 'Configure itens na loja para que alunos troquem seus Koins: materiais escolares, brindes, privilegios especiais, etc. Voce define os precos e estoque.';
+  const storeText = 'Configure itens na loja para que alunos troquem seus Koins: materiais escolares, brindes, privilégios especiais, etc. Você define os preços e estoque.';
   const storeLines = doc.splitTextToSize(storeText, 165);
-  doc.text(storeLines, 20, y + 18);
+  doc.text(storeLines, 20, y + 20);
   
   drawFooter(doc, 6, totalPages);
   
@@ -780,7 +780,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.addPage();
   drawPageBackground(doc);
   
-  y = drawSectionTitle(doc, 20, 'Inteligencia & Relatorios', drawBrainIcon);
+  y = drawSectionTitle(doc, 20, 'Inteligência & Relatórios', drawBrainIcon);
   
   drawCard(doc, 15, y, 180, 45);
   doc.setTextColor(...COLORS.text);
@@ -790,7 +790,7 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.textMuted);
-  const dashText = 'Seu dashboard mostra metricas em tempo real: total de alunos, professores, turmas, posts publicados, entregas pendentes e muito mais.';
+  const dashText = 'Seu dashboard mostra métricas em tempo real: total de alunos, professores, turmas, posts publicados, entregas pendentes e muito mais.';
   const dashLines = doc.splitTextToSize(dashText, 165);
   doc.text(dashLines, 20, y + 22);
   
@@ -798,10 +798,10 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   y = drawSectionTitle(doc, y, 'IA Preditiva', drawRobotIcon);
   
   const aiFeatures = [
-    'Identificacao de alunos em risco de evasao',
-    'Analise de padroes de engajamento',
-    'Recomendacoes personalizadas de acao',
-    'Alertas automaticos para a gestao',
+    'Identificação de alunos em risco de evasão',
+    'Análise de padrões de engajamento',
+    'Recomendações personalizadas de ação',
+    'Alertas automáticos para a gestão',
   ];
   
   aiFeatures.forEach((feature, i) => {
@@ -809,12 +809,12 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   });
   
   y += 70;
-  y = drawSectionTitle(doc, y, 'Historico & Auditoria', drawChartIcon);
+  y = drawSectionTitle(doc, y, 'Histórico & Auditoria', drawChartIcon);
   
   drawCard(doc, 15, y, 180, 40);
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(10);
-  const histText = 'Todas as acoes sao registradas no historico. Voce pode filtrar por periodo, usuario, tipo de acao e exportar relatorios em Excel ou PDF.';
+  const histText = 'Todas as ações são registradas no histórico. Você pode filtrar por período, usuário, tipo de ação e exportar relatórios em Excel ou PDF.';
   const histLines = doc.splitTextToSize(histText, 165);
   doc.text(histLines, 20, y + 15);
   
@@ -835,15 +835,15 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFontSize(11);
   doc.setTextColor(...COLORS.textMuted);
   doc.text('Email: lucas@klasetech.com', 20, y + 30);
-  doc.text('Horario: Seg-Sex, 8h as 18h', 20, y + 42);
+  doc.text('Horário: Seg-Sex, 8h às 18h', 20, y + 42);
   
   y += 60;
-  y = drawSectionTitle(doc, y, 'Links Uteis', drawLinkIcon);
+  y = drawSectionTitle(doc, y, 'Links Úteis', drawLinkIcon);
   
   drawCard(doc, 15, y, 180, 30);
   doc.setTextColor(...COLORS.textMuted);
   doc.setFontSize(10);
-  doc.text('Em breve - Documentacao e Central de Ajuda', 20, y + 18);
+  doc.text('Em breve - Documentação e Central de Ajuda', 20, y + 18);
   
   y += 55;
   drawCard(doc, 15, y, 180, 55);
@@ -854,8 +854,8 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(...COLORS.textMuted);
-  doc.text('Estamos aqui para transformar a educacao', 105, y + 32, { align: 'center' });
-  doc.text('junto com voce.', 105, y + 42, { align: 'center' });
+  doc.text('Estamos aqui para transformar a educação', 105, y + 32, { align: 'center' });
+  doc.text('junto com você.', 105, y + 42, { align: 'center' });
   
   drawFooter(doc, 8, totalPages);
   
