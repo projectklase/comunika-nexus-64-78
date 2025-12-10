@@ -72,6 +72,8 @@ import {
   Weight,
   MapPin,
   Users,
+  Coins,
+  Sparkles,
   Maximize2,
   Minimize2,
   X,
@@ -575,6 +577,28 @@ export function ActivityDrawer({ postId, classId, isOpen, onClose }: ActivityDra
               <div className={cn("text-sm font-medium flex items-center gap-2", isTablet && "text-base")}>
                 <Weight className="h-4 w-4 text-muted-foreground" />
                 {post.activityMeta.peso}
+              </div>
+            </div>
+          )}
+
+          {/* Koin Reward */}
+          {post.activityMeta?.koinReward && post.activityMeta.koinReward > 0 && (
+            <div className="space-y-1">
+              <div className={cn("text-xs text-muted-foreground uppercase tracking-wide", isTablet && "text-sm")}>Koins</div>
+              <div className={cn("text-sm font-medium flex items-center gap-2", isTablet && "text-base")}>
+                <Coins className="h-4 w-4 text-amber-400" />
+                <span className="text-amber-400">+{post.activityMeta.koinReward} Koins</span>
+              </div>
+            </div>
+          )}
+
+          {/* XP Reward */}
+          {post.activityMeta?.xpReward && post.activityMeta.xpReward > 0 && (
+            <div className="space-y-1">
+              <div className={cn("text-xs text-muted-foreground uppercase tracking-wide", isTablet && "text-sm")}>XP</div>
+              <div className={cn("text-sm font-medium flex items-center gap-2", isTablet && "text-base")}>
+                <Sparkles className="h-4 w-4 text-purple-400" />
+                <span className="text-purple-400">+{post.activityMeta.xpReward} XP</span>
               </div>
             </div>
           )}

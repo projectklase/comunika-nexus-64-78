@@ -235,13 +235,14 @@ export function StudentDeliveryButton({ activity, classId, delivery, onUpdate }:
           )}
         </div>
 
-        {/* Koin toast for resubmissions if applicable */}
-        {showKoinToast && activity.activityMeta?.koinReward && (
+        {/* Koin and XP toast for resubmissions if applicable */}
+        {showKoinToast && (activity.activityMeta?.koinReward || activity.activityMeta?.xpReward) && (
           <KoinEarnedToast
             studentId={user.id}
             activityId={activity.id}
             activityTitle={activity.title}
-            koinAmount={activity.activityMeta.koinReward}
+            koinAmount={activity.activityMeta?.koinReward || 0}
+            xpAmount={activity.activityMeta?.xpReward}
             onComplete={() => setShowKoinToast(false)}
           />
         )}
@@ -330,13 +331,14 @@ export function StudentDeliveryButton({ activity, classId, delivery, onUpdate }:
         </DialogContent>
       </Dialog>
 
-      {/* Koin reward toast for new submissions */}
-      {showKoinToast && activity.activityMeta?.koinReward && (
+      {/* Koin and XP reward toast for new submissions */}
+      {showKoinToast && (activity.activityMeta?.koinReward || activity.activityMeta?.xpReward) && (
         <KoinEarnedToast
           studentId={user.id}
           activityId={activity.id}
           activityTitle={activity.title}
-          koinAmount={activity.activityMeta.koinReward}
+          koinAmount={activity.activityMeta?.koinReward || 0}
+          xpAmount={activity.activityMeta?.xpReward}
           onComplete={() => setShowKoinToast(false)}
         />
       )}

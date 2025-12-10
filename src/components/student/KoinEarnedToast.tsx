@@ -12,6 +12,7 @@ interface KoinEarnedToastProps {
   activityId: string;
   activityTitle: string;
   koinAmount: number;
+  xpAmount?: number; // XP configurado pelo professor
   onComplete?: () => void;
 }
 
@@ -19,7 +20,8 @@ export function KoinEarnedToast({
   studentId, 
   activityId, 
   activityTitle, 
-  koinAmount, 
+  koinAmount,
+  xpAmount,
   onComplete 
 }: KoinEarnedToastProps) {
   const { toast } = useToast();
@@ -72,13 +74,15 @@ export function KoinEarnedToast({
         description: `Atividade concluída: ${activityTitle}`
       });
 
-      // Add XP for activity completion (only if there are active challenges)
+      // Add XP for activity completion
+      // Use professor-configured XP if available, otherwise use default (only if challenges exist)
       const hasSubmitActivityChallenges = activeChallenges.length > 0;
-      const xpGained = hasSubmitActivityChallenges ? addActivityXP(activityId) : 0;
+      const xpGained = xpAmount && xpAmount > 0 
+        ? addActivityXP(activityId, xpAmount) 
+        : (hasSubmitActivityChallenges ? addActivityXP(activityId) : 0);
 
-      // Show celebration toast only if there are active challenges or Koins were earned
-      // Always show if Koins > 0, but only show XP if challenges exist
-      if (koinAmount > 0 || (hasSubmitActivityChallenges && xpGained > 0)) {
+      // Show celebration toast if Koins > 0 or XP was gained
+      if (koinAmount > 0 || xpGained > 0) {
         toast({
           title: "🎉 Parabéns!",
           description: (
@@ -89,7 +93,7 @@ export function KoinEarnedToast({
                   <span className="font-medium">+{koinAmount} Koins</span>
                 </div>
               )}
-              {hasSubmitActivityChallenges && xpGained > 0 && (
+              {xpGained > 0 && (
                 <div className="flex items-center gap-1">
                   <Trophy className="h-4 w-4 text-purple-500" />
                   <span className="font-medium">+{xpGained} XP</span>
