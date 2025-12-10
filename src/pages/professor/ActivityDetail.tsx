@@ -179,7 +179,10 @@ export default function ActivityDetail() {
       }
 
       // Handle rewards for approved deliveries
-      if (reviewStatus === 'APROVADA' && activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0) {
+      const hasKoins = activity.activityMeta?.koinReward && activity.activityMeta.koinReward > 0;
+      const hasXP = activity.activityMeta?.xpReward && activity.activityMeta.xpReward > 0;
+      
+      if (reviewStatus === 'APROVADA' && (hasKoins || hasXP)) {
         try {
           // Get student IDs from approved deliveries
           const approvedDeliveries = deliveries.filter(d => deliveryIds.includes(d.id));
@@ -199,7 +202,8 @@ export default function ActivityDetail() {
                 body: JSON.stringify({
                   eventName: `Atividade: ${activity.title}`,
                   eventDescription: `Entrega aprovada`,
-                  koinAmount: activity.activityMeta.koinReward,
+                  koinAmount: activity.activityMeta?.koinReward || 0,
+                  xpAmount: activity.activityMeta?.xpReward || 0,
                   studentIds: studentIds,
                   grantedBy: user.id
                 })
@@ -208,22 +212,28 @@ export default function ActivityDetail() {
             
             if (!response.ok) {
               const errorData = await response.json();
-              console.error('[ActivityDetail] Erro ao conceder Koins:', errorData);
+              console.error('[ActivityDetail] Erro ao conceder recompensas:', errorData);
             } else {
               const result = await response.json();
-              console.log('[ActivityDetail] Koins concedidos:', result);
+              console.log('[ActivityDetail] Recompensas concedidas:', result);
             }
           }
-        } catch (koinError) {
-          console.error('[ActivityDetail] Erro ao conceder Koins:', koinError);
-          // Não bloquear a aprovação se os Koins falharem
+        } catch (rewardError) {
+          console.error('[ActivityDetail] Erro ao conceder recompensas:', rewardError);
+          // Não bloquear a aprovação se as recompensas falharem
         }
       }
+
+      // Montar texto de recompensas dinamicamente
+      let rewardParts: string[] = [];
+      if (activity.activityMeta?.koinReward) rewardParts.push(`+${activity.activityMeta.koinReward} Koins`);
+      if (activity.activityMeta?.xpReward) rewardParts.push(`+${activity.activityMeta.xpReward} XP`);
+      const rewardText = rewardParts.length > 0 ? ` (${rewardParts.join(' e ')})` : '';
 
       toast({
         title: 'Revisão concluída',
         description: reviewStatus === 'APROVADA' 
-          ? `${deliveryIds.length} entrega(s) aprovada(s)${activity.activityMeta?.koinReward ? ` (+${activity.activityMeta.koinReward} Koins)` : ''}`
+          ? `${deliveryIds.length} entrega(s) aprovada(s)${rewardText}`
           : `${deliveryIds.length} entrega(s) devolvida(s)`
       });
       
