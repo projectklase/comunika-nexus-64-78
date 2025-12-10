@@ -298,7 +298,8 @@ export async function markDelivered(post: Post | NormalizedCalendarEvent, userId
 // Teacher Actions
 export function openDeliveries(post: Post | NormalizedCalendarEvent, navigate: Function): void {
   const postData = extractPost(post);
-  navigate(`/professor/atividade/${postData.id}?tab=entregas`);
+  const classId = postData.classIds?.[0] || postData.classId;
+  navigate(`/professor/turma/${classId}/atividade/${postData.id}?tab=entregas`);
 }
 
 // Attachment Actions

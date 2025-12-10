@@ -161,7 +161,7 @@ export function ActivityTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link to={`/professor/atividade/${activity.id}`}>
+                            <Link to={`/professor/turma/${activity.classIds?.[0] || activity.classId}/atividade/${activity.id}`}>
                               <Eye className="h-4 w-4 mr-2" />
                               Visualizar
                             </Link>
