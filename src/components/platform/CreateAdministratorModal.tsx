@@ -913,7 +913,7 @@ export function CreateAdministratorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl glass-card border-white/10 max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="sm:max-w-xl glass-card border-white/10 max-h-[90vh] flex flex-col overflow-hidden p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <UserPlus className="w-5 h-5 text-primary" />
@@ -921,7 +921,7 @@ export function CreateAdministratorModal({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6">
           <div className="py-4">
             {renderStepper()}
             
@@ -930,7 +930,7 @@ export function CreateAdministratorModal({
             {currentStep === 3 && renderStep3()}
             {currentStep === 4 && renderStep4()}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="p-6 pt-4 border-t border-white/10 gap-2 flex-col sm:flex-row">
           {currentStep > 1 && (
