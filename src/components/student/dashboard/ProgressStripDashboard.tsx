@@ -6,9 +6,10 @@ import { TrendingUp, CheckCircle2, Clock, Target, Zap, Flame } from 'lucide-reac
 import { Post } from '@/types/post';
 import { useAuth } from '@/contexts/AuthContext';
 import { deliveryStore } from '@/stores/delivery-store';
-import { useStudentGamification } from '@/stores/studentGamification';
 import { startOfMonth, endOfMonth, isWithinInterval, format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProgressStripDashboardProps {
   posts: Post[];
@@ -16,7 +17,24 @@ interface ProgressStripDashboardProps {
 
 export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
   const { user } = useAuth();
-  const { xp, streak } = useStudentGamification();
+  
+  // CORREÇÃO: Buscar XP e streak do BANCO DE DADOS, não do Zustand/localStorage
+  const { data: profileStats } = useQuery({
+    queryKey: ['student-progress-stats', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('total_xp, current_streak_days')
+        .eq('id', user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 30000
+  });
+  
+  const xp = profileStats?.total_xp || 0;
+  const streak = profileStats?.current_streak_days || 0;
   
   const [monthlyProgress, setMonthlyProgress] = useState({ delivered: 0, total: 0, percentage: 0 });
   const [weeklyProgress, setWeeklyProgress] = useState({ completed: 0, pending: 0 });

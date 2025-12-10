@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Flame, Gift, CheckCircle2, Calendar } from 'lucide-react';
+import { Flame, Gift, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { useStudentGamification } from '@/stores/studentGamification';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -34,8 +36,6 @@ const getWeekDates = () => {
 export function StudentStreakWidget() {
   const { user } = useAuth();
   const {
-    streak,
-    xp,
     lastCheckIn,
     forgiveness,
     week,
@@ -44,6 +44,25 @@ export function StudentStreakWidget() {
     resetIfNeeded,
     syncToDatabase
   } = useStudentGamification();
+
+  // CORREÇÃO: Buscar XP e streak do BANCO DE DADOS, não do localStorage
+  const { data: profileStats } = useQuery({
+    queryKey: ['student-streak-stats', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('total_xp, current_streak_days')
+        .eq('id', user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id && user?.role === 'aluno',
+    staleTime: 30000 // 30 seconds
+  });
+
+  // Usar valores do banco de dados
+  const streak = profileStats?.current_streak_days || 0;
+  const xp = profileStats?.total_xp || 0;
 
   const [showConfetti, setShowConfetti] = useState(false);
 
