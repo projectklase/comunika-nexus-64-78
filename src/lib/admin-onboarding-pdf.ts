@@ -522,33 +522,26 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
   
   let y = drawSectionTitle(doc, 20, 'Bem-vindo ao Klase', drawStarIcon);
   
-  drawCard(doc, 15, y, 180, 70);
+  drawCard(doc, 15, y, 180, 50);
   doc.setTextColor(...COLORS.text);
-  doc.setFontSize(11);
+  doc.setFontSize(12);
   
   // Primeira linha: "O Klase é uma plataforma de inteligência educacional desenhada para"
   doc.setFont('helvetica', 'normal');
-  doc.text('O Klase é uma plataforma de inteligencia educacional desenhada para', 20, y + 12);
+  doc.text('O Klase e uma plataforma de inteligencia educacional desenhada para', 20, y + 10);
   
   // Segunda linha com NEGRITO: "blindar a receita e atrair novas matriculas"
   doc.setFont('helvetica', 'bold');
-  doc.text('blindar a receita e atrair novas matriculas', 20, y + 18);
+  doc.text('blindar a receita e atrair novas matriculas', 20, y + 15);
   
-  // Continuação normal: "através da gamificação estratégica..."
+  // Continuação normal
   doc.setFont('helvetica', 'normal');
-  const introLine3 = 'atraves da gamificacao estrategica. Mais do que engajamento, nosso ecossistema';
-  doc.text(introLine3, 20, y + 24);
+  doc.text('atraves da gamificacao estrategica. Mais do que engajamento, nosso', 20, y + 20);
+  doc.text("ecossistema atua na retencao ativa da base enquanto o 'fator comunidade'", 20, y + 25);
+  doc.text('desperta o desejo de novos alunos organicamente. Transformamos dados em', 20, y + 30);
+  doc.text('previsibilidade financeira e sua escola em uma referencia de inovacao.', 20, y + 35);
   
-  const introLine4 = "atua na retencao ativa da base enquanto o 'fator comunidade' desperta o desejo";
-  doc.text(introLine4, 20, y + 30);
-  
-  const introLine5 = 'de novos alunos organicamente. Transformamos dados em previsibilidade';
-  doc.text(introLine5, 20, y + 36);
-  
-  const introLine6 = 'financeira e sua escola em uma referencia de inovacao.';
-  doc.text(introLine6, 20, y + 42);
-  
-  y += 75;
+  y += 55;
   y = drawSectionTitle(doc, y, 'Principais Benefícios', drawDiamondIcon);
   
   const benefits = [
@@ -626,18 +619,14 @@ export async function generateAdminOnboardingPDF(data: AdminOnboardingPDFData): 
     y += 5;
   });
   
-  y += 15;
-  drawCard(doc, 15, y, 180, 28);
-  doc.setFillColor(...COLORS.warning);
-  doc.circle(25, y + 17, 5, 'F');
-  doc.setTextColor(...COLORS.text);
+  y += 10;
   doc.setFontSize(10);
+  doc.setTextColor(...COLORS.warning);
   doc.setFont('helvetica', 'bold');
-  doc.text('!', 23.5, y + 20);
-  doc.text('Dica de Segurança', 35, y + 14);
+  doc.text('! Dica de Seguranca:', 20, y);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLORS.textMuted);
-  doc.text('Recomendamos alterar sua senha no primeiro acesso.', 35, y + 24);
+  doc.text('Recomendamos alterar sua senha no primeiro acesso.', 58, y);
   
   drawFooter(doc, 3, totalPages);
   
