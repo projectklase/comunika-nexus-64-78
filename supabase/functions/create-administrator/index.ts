@@ -20,6 +20,14 @@ interface CreateAdminRequest {
   plan_id: string
   status: 'active' | 'trial'
   trial_days?: number
+  addon_schools_count?: number
+  
+  // Dados da Empresa (opcionais)
+  company_name?: string
+  company_cnpj?: string
+  company_address?: string
+  company_city?: string
+  company_state?: string
 }
 
 Deno.serve(async (req) => {
@@ -163,6 +171,12 @@ Deno.serve(async (req) => {
       user_metadata: {
         name: data.name,
         role: 'administrador',
+        // Dados da empresa (opcionais)
+        company_name: data.company_name || null,
+        company_cnpj: data.company_cnpj || null,
+        company_address: data.company_address || null,
+        company_city: data.company_city || null,
+        company_state: data.company_state || null,
       }
     })
 
@@ -264,7 +278,7 @@ Deno.serve(async (req) => {
       trialEndsAt = trialEnd.toISOString()
     }
 
-    // 8. Criar assinatura
+    // 8. Criar assinatura com addon_schools_count
     const { data: subscription, error: subscriptionError } = await supabaseAdmin
       .from('admin_subscriptions')
       .insert({
@@ -273,7 +287,7 @@ Deno.serve(async (req) => {
         status: data.status,
         trial_ends_at: trialEndsAt,
         expires_at: expiresAt,
-        addon_schools_count: 0,
+        addon_schools_count: data.addon_schools_count || 0,
       })
       .select()
       .single()
@@ -283,7 +297,11 @@ Deno.serve(async (req) => {
       // Continue anyway - subscription can be added later
     }
 
-    // 9. Registrar no audit log
+    // 9. Calcular valor total para audit log
+    const addonCost = (data.addon_schools_count || 0) * 49700; // R$497 em centavos
+    const totalMonthlyCents = plan.price_cents + addonCost;
+
+    // 10. Registrar no audit log com dados completos
     await supabaseAdmin
       .from('platform_audit_logs')
       .insert({
@@ -294,11 +312,22 @@ Deno.serve(async (req) => {
         entity_label: data.name,
         details: {
           email: data.email,
+          phone: data.phone || null,
           school_name: data.school_name,
           school_slug: data.school_slug,
           plan_name: plan.name,
+          plan_price_cents: plan.price_cents,
+          addon_schools_count: data.addon_schools_count || 0,
+          addon_cost_cents: addonCost,
+          total_monthly_cents: totalMonthlyCents,
           status: data.status,
           trial_days: data.trial_days || null,
+          // Dados da empresa
+          company_name: data.company_name || null,
+          company_cnpj: data.company_cnpj || null,
+          company_address: data.company_address || null,
+          company_city: data.company_city || null,
+          company_state: data.company_state || null,
         }
       })
 
@@ -311,6 +340,7 @@ Deno.serve(async (req) => {
           id: userId,
           name: data.name,
           email: data.email,
+          phone: data.phone || null,
         },
         school: {
           id: school.id,
@@ -318,6 +348,25 @@ Deno.serve(async (req) => {
           slug: school.slug,
         },
         subscription: subscription || null,
+        plan: {
+          id: plan.id,
+          name: plan.name,
+          price_cents: plan.price_cents,
+          max_students: plan.max_students,
+          included_schools: plan.included_schools,
+        },
+        billing: {
+          addon_schools_count: data.addon_schools_count || 0,
+          addon_cost_cents: addonCost,
+          total_monthly_cents: totalMonthlyCents,
+        },
+        company: data.company_name ? {
+          name: data.company_name,
+          cnpj: data.company_cnpj || null,
+          address: data.company_address || null,
+          city: data.company_city || null,
+          state: data.company_state || null,
+        } : null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )

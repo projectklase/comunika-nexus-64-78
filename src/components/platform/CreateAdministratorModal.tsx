@@ -10,13 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -35,16 +28,61 @@ import {
   Key,
   Link,
   Calendar,
-  AlertTriangle
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle,
+  Sparkles,
+  Plus,
+  Minus,
+  FileText,
+  MapPin,
+  Building,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface CreateAdministratorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
+
+interface FormData {
+  // Etapa 1 - Plano
+  plan_id: string;
+  isTrial: boolean;
+  trial_days: number;
+  addon_schools_count: number;
+  
+  // Etapa 2 - Empresa (opcional)
+  company_name: string;
+  company_cnpj: string;
+  company_address: string;
+  company_city: string;
+  company_state: string;
+  
+  // Etapa 3 - Admin + Escola
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  school_name: string;
+  school_slug: string;
+}
+
+const STEPS = [
+  { id: 1, label: 'Plano', icon: CreditCard },
+  { id: 2, label: 'Empresa', icon: Building },
+  { id: 3, label: 'Admin', icon: User },
+  { id: 4, label: 'Revisão', icon: CheckCircle },
+];
+
+const BRAZILIAN_STATES = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 
+  'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 
+  'SP', 'SE', 'TO'
+];
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -61,18 +99,15 @@ function generatePassword(length: number = 12): string {
   const all = lowercase + uppercase + numbers + special;
   
   let password = '';
-  // Garantir pelo menos um de cada tipo
   password += lowercase[Math.floor(Math.random() * lowercase.length)];
   password += uppercase[Math.floor(Math.random() * uppercase.length)];
   password += numbers[Math.floor(Math.random() * numbers.length)];
   password += special[Math.floor(Math.random() * special.length)];
   
-  // Completar com caracteres aleatórios
   for (let i = password.length; i < length; i++) {
     password += all[Math.floor(Math.random() * all.length)];
   }
   
-  // Embaralhar
   return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
@@ -88,42 +123,56 @@ function generateSlug(name: string): string {
     .substring(0, 50);
 }
 
+function formatCNPJ(value: string): string {
+  const numbers = value.replace(/\D/g, '').slice(0, 14);
+  return numbers
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
+}
+
 export function CreateAdministratorModal({ 
   open, 
   onOpenChange, 
   onSuccess 
 }: CreateAdministratorModalProps) {
   const { subscriptionPlans, loadingPlans } = useSuperAdmin();
+  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [autoPassword, setAutoPassword] = useState(true);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isTrial, setIsTrial] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
+    plan_id: '',
+    isTrial: false,
+    trial_days: 14,
+    addon_schools_count: 0,
+    company_name: '',
+    company_cnpj: '',
+    company_address: '',
+    company_city: '',
+    company_state: '',
     name: '',
     email: '',
     phone: '',
     password: '',
     school_name: '',
     school_slug: '',
-    plan_id: '',
-    trial_days: 14,
   });
 
-  // Gerar senha automaticamente ao abrir
+  // Reset ao abrir/fechar
   useEffect(() => {
-    if (open && autoPassword) {
-      setFormData(prev => ({ ...prev, password: generatePassword() }));
+    if (open) {
+      setCurrentStep(1);
+      setFormData(prev => ({
+        ...prev,
+        password: generatePassword(),
+        plan_id: subscriptionPlans?.[0]?.id || '',
+      }));
     }
-  }, [open, autoPassword]);
-
-  // Definir plano padrão quando carregar
-  useEffect(() => {
-    if (subscriptionPlans?.length && !formData.plan_id) {
-      setFormData(prev => ({ ...prev, plan_id: subscriptionPlans[0].id }));
-    }
-  }, [subscriptionPlans, formData.plan_id]);
+  }, [open, subscriptionPlans]);
 
   // Auto-gerar slug da escola
   const handleSchoolNameChange = (name: string) => {
@@ -140,28 +189,46 @@ export function CreateAdministratorModal({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleCopyCredentials = async () => {
-    const text = `Email: ${formData.email}\nSenha: ${formData.password}`;
-    await navigator.clipboard.writeText(text);
-    toast.success('Credenciais copiadas!');
-  };
-
   const regeneratePassword = () => {
     setFormData(prev => ({ ...prev, password: generatePassword() }));
   };
 
   const selectedPlan = subscriptionPlans?.find(p => p.id === formData.plan_id);
+  
+  const calculateTotal = () => {
+    if (!selectedPlan) return 0;
+    const addonCost = formData.addon_schools_count * 49700; // R$497 em centavos
+    return selectedPlan.price_cents + addonCost;
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.password || 
-        !formData.school_name || !formData.school_slug || !formData.plan_id) {
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1: return !!formData.plan_id;
+      case 2: return true; // Empresa é opcional
+      case 3: return !!(formData.name && formData.email && formData.password && formData.school_name && formData.school_slug);
+      case 4: return true;
+      default: return false;
+    }
+  };
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, 4));
+    } else {
+      toast.error('Preencha os campos obrigatórios');
+    }
+  };
+
+  const prevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleSubmit = async () => {
+    if (!validateStep(3)) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    // Validar slug
     const slugRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
     if (!slugRegex.test(formData.school_slug)) {
       toast.error('Slug inválido. Use apenas letras minúsculas, números e hífens.');
@@ -180,8 +247,15 @@ export function CreateAdministratorModal({
           school_name: formData.school_name,
           school_slug: formData.school_slug,
           plan_id: formData.plan_id,
-          status: isTrial ? 'trial' : 'active',
-          trial_days: isTrial ? formData.trial_days : undefined,
+          status: formData.isTrial ? 'trial' : 'active',
+          trial_days: formData.isTrial ? formData.trial_days : undefined,
+          addon_schools_count: formData.addon_schools_count,
+          // Dados da empresa (opcionais)
+          company_name: formData.company_name || undefined,
+          company_cnpj: formData.company_cnpj.replace(/\D/g, '') || undefined,
+          company_address: formData.company_address || undefined,
+          company_city: formData.company_city || undefined,
+          company_state: formData.company_state || undefined,
         }
       });
 
@@ -190,18 +264,25 @@ export function CreateAdministratorModal({
 
       toast.success(`Administrador ${formData.name} criado com sucesso!`);
       
-      // Resetar form
+      // Reset form
       setFormData({
+        plan_id: subscriptionPlans?.[0]?.id || '',
+        isTrial: false,
+        trial_days: 14,
+        addon_schools_count: 0,
+        company_name: '',
+        company_cnpj: '',
+        company_address: '',
+        company_city: '',
+        company_state: '',
         name: '',
         email: '',
         phone: '',
         password: generatePassword(),
         school_name: '',
         school_slug: '',
-        plan_id: subscriptionPlans?.[0]?.id || '',
-        trial_days: 14,
       });
-      setIsTrial(false);
+      setCurrentStep(1);
       
       onSuccess();
     } catch (error: any) {
@@ -212,10 +293,553 @@ export function CreateAdministratorModal({
     }
   };
 
+  // Stepper visual
+  const renderStepper = () => (
+    <div className="flex items-center justify-between mb-6 px-2">
+      {STEPS.map((step, index) => {
+        const Icon = step.icon;
+        const isActive = currentStep === step.id;
+        const isCompleted = currentStep > step.id;
+        
+        return (
+          <div key={step.id} className="flex items-center flex-1">
+            <button
+              type="button"
+              onClick={() => isCompleted && setCurrentStep(step.id)}
+              className={cn(
+                "flex flex-col items-center gap-1 transition-all",
+                isCompleted && "cursor-pointer"
+              )}
+            >
+              <div className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                isActive && "bg-primary text-primary-foreground ring-4 ring-primary/20",
+                isCompleted && "bg-green-500/20 text-green-500",
+                !isActive && !isCompleted && "bg-muted text-muted-foreground"
+              )}>
+                {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+              </div>
+              <span className={cn(
+                "text-xs font-medium hidden sm:block",
+                isActive && "text-primary",
+                isCompleted && "text-green-500",
+                !isActive && !isCompleted && "text-muted-foreground"
+              )}>
+                {step.label}
+              </span>
+            </button>
+            {index < STEPS.length - 1 && (
+              <div className={cn(
+                "flex-1 h-0.5 mx-2",
+                isCompleted ? "bg-green-500" : "bg-muted"
+              )} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // Etapa 1: Plano
+  const renderStep1 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          <Sparkles className="w-5 h-5 text-primary" />
+          Escolha o Plano
+        </h3>
+        <p className="text-sm text-muted-foreground">Selecione o plano ideal para o cliente</p>
+      </div>
+
+      {/* Cards de planos */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {loadingPlans ? (
+          <div className="col-span-3 flex justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          subscriptionPlans?.map((plan) => {
+            const isSelected = formData.plan_id === plan.id;
+            return (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, plan_id: plan.id }))}
+                className={cn(
+                  "relative p-4 rounded-lg border-2 transition-all text-left",
+                  isSelected 
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
+                    : "border-white/10 bg-white/5 hover:border-white/20"
+                )}
+              >
+                {isSelected && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                    <Check className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                )}
+                <div className="font-bold text-base mb-1">{plan.name}</div>
+                <div className="text-xl font-bold text-primary">
+                  {formatCurrency(plan.price_cents)}
+                  <span className="text-xs font-normal text-muted-foreground">/mês</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-2 space-y-0.5">
+                  <div>• {plan.max_students} alunos</div>
+                  <div>• {plan.included_schools} escola incluída</div>
+                </div>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Trial */}
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+        <Checkbox 
+          id="is-trial" 
+          checked={formData.isTrial}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isTrial: !!checked }))}
+        />
+        <Label htmlFor="is-trial" className="text-sm cursor-pointer flex items-center gap-2 flex-1">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          Iniciar em período Trial
+        </Label>
+        {formData.isTrial && (
+          <Input
+            type="number"
+            min="1"
+            max="90"
+            value={formData.trial_days}
+            onChange={(e) => setFormData(prev => ({ ...prev, trial_days: parseInt(e.target.value) || 14 }))}
+            className="w-20 h-8 bg-white/5 border-white/10 text-center"
+          />
+        )}
+        {formData.isTrial && <span className="text-xs text-muted-foreground">dias</span>}
+      </div>
+
+      {/* Escolas adicionais */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-sm">Escolas Adicionais</div>
+            <div className="text-xs text-muted-foreground">+R$497,00/mês cada</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-white/5 border-white/10"
+              onClick={() => setFormData(prev => ({ ...prev, addon_schools_count: Math.max(0, prev.addon_schools_count - 1) }))}
+              disabled={formData.addon_schools_count === 0}
+            >
+              <Minus className="w-4 h-4" />
+            </Button>
+            <span className="w-8 text-center font-bold">{formData.addon_schools_count}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-white/5 border-white/10"
+              onClick={() => setFormData(prev => ({ ...prev, addon_schools_count: prev.addon_schools_count + 1 }))}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Total */}
+      <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Total Mensal</span>
+          <span className="text-2xl font-bold text-primary">{formatCurrency(calculateTotal())}</span>
+        </div>
+        {formData.addon_schools_count > 0 && selectedPlan && (
+          <div className="text-xs text-muted-foreground mt-1">
+            {formatCurrency(selectedPlan.price_cents)} (plano) + {formatCurrency(formData.addon_schools_count * 49700)} ({formData.addon_schools_count} escola{formData.addon_schools_count > 1 ? 's' : ''} extra)
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Etapa 2: Empresa (opcional)
+  const renderStep2 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          <Building className="w-5 h-5 text-primary" />
+          Dados da Empresa
+        </h3>
+        <p className="text-sm text-muted-foreground">Informações opcionais para faturamento</p>
+      </div>
+
+      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-200">
+        💡 Estes dados são opcionais e facilitam a emissão de notas fiscais e contratos.
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="company_name">Razão Social</Label>
+          <div className="relative">
+            <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="company_name"
+              value={formData.company_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+              placeholder="Nome da empresa"
+              className="bg-white/5 border-white/10 pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="company_cnpj">CNPJ</Label>
+          <div className="relative">
+            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="company_cnpj"
+              value={formData.company_cnpj}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_cnpj: formatCNPJ(e.target.value) }))}
+              placeholder="00.000.000/0000-00"
+              className="bg-white/5 border-white/10 pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="company_address">Endereço</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="company_address"
+              value={formData.company_address}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_address: e.target.value }))}
+              placeholder="Rua, número, complemento"
+              className="bg-white/5 border-white/10 pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="company_city">Cidade</Label>
+            <Input
+              id="company_city"
+              value={formData.company_city}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_city: e.target.value }))}
+              placeholder="Cidade"
+              className="bg-white/5 border-white/10"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company_state">Estado</Label>
+            <select
+              id="company_state"
+              value={formData.company_state}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_state: e.target.value }))}
+              className="w-full h-10 px-3 rounded-md bg-white/5 border border-white/10 text-sm"
+            >
+              <option value="">Selecione</option>
+              {BRAZILIAN_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Etapa 3: Admin + Escola
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          <User className="w-5 h-5 text-primary" />
+          Administrador & Escola
+        </h3>
+        <p className="text-sm text-muted-foreground">Dados de acesso e escola inicial</p>
+      </div>
+
+      {/* Dados do Admin */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <User className="w-4 h-4 text-primary" />
+          Administrador
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="name">Nome Completo *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="Nome do administrador"
+            className="bg-white/5 border-white/10"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email *</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@exemplo.com"
+                className="bg-white/5 border-white/10 pl-9"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone</Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="(00) 00000-0000"
+                className="bg-white/5 border-white/10 pl-9"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Credenciais */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Key className="w-4 h-4 text-primary" />
+          Credenciais de Acesso
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Checkbox 
+            id="auto-password" 
+            checked={autoPassword}
+            onCheckedChange={(checked) => {
+              setAutoPassword(!!checked);
+              if (checked) {
+                setFormData(prev => ({ ...prev, password: generatePassword() }));
+              }
+            }}
+          />
+          <Label htmlFor="auto-password" className="text-sm cursor-pointer">
+            Gerar senha automática (recomendado)
+          </Label>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Senha *</Label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Mínimo 8 caracteres"
+                className="bg-white/5 border-white/10 pr-20"
+                readOnly={autoPassword}
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7"
+                  onClick={() => handleCopy(formData.password, 'password')}
+                >
+                  {copiedField === 'password' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            {autoPassword && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon"
+                onClick={regeneratePassword}
+                className="bg-white/5 border-white/10 shrink-0"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Escola */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Building2 className="w-4 h-4 text-primary" />
+          Escola Principal
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="school_name">Nome da Escola *</Label>
+          <Input
+            id="school_name"
+            value={formData.school_name}
+            onChange={(e) => handleSchoolNameChange(e.target.value)}
+            placeholder="Ex: Colégio Exemplo"
+            className="bg-white/5 border-white/10"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="school_slug">Slug (URL) *</Label>
+          <div className="relative">
+            <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="school_slug"
+              value={formData.school_slug}
+              onChange={(e) => setFormData(prev => ({ ...prev, school_slug: e.target.value.toLowerCase() }))}
+              placeholder="colegio-exemplo"
+              className="bg-white/5 border-white/10 pl-9"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            URL: <span className="text-primary">/{formData.school_slug || 'slug'}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Etapa 4: Revisão
+  const renderStep4 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          <CheckCircle className="w-5 h-5 text-primary" />
+          Revisão Final
+        </h3>
+        <p className="text-sm text-muted-foreground">Confirme os dados antes de criar</p>
+      </div>
+
+      {/* Plano */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <CreditCard className="w-4 h-4 text-primary" />
+          Plano
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="text-muted-foreground">Plano:</div>
+          <div className="font-medium">{selectedPlan?.name}</div>
+          <div className="text-muted-foreground">Capacidade:</div>
+          <div>{selectedPlan?.max_students} alunos</div>
+          <div className="text-muted-foreground">Escolas:</div>
+          <div>{(selectedPlan?.included_schools || 1) + formData.addon_schools_count} ({selectedPlan?.included_schools} + {formData.addon_schools_count} extra)</div>
+          <div className="text-muted-foreground">Status:</div>
+          <div>{formData.isTrial ? `Trial ${formData.trial_days} dias` : 'Ativo'}</div>
+          <div className="text-muted-foreground">Total Mensal:</div>
+          <div className="font-bold text-primary">{formatCurrency(calculateTotal())}</div>
+        </div>
+      </div>
+
+      {/* Empresa */}
+      {formData.company_name && (
+        <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Building className="w-4 h-4 text-primary" />
+            Empresa
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="text-muted-foreground">Razão Social:</div>
+            <div>{formData.company_name}</div>
+            {formData.company_cnpj && (
+              <>
+                <div className="text-muted-foreground">CNPJ:</div>
+                <div>{formData.company_cnpj}</div>
+              </>
+            )}
+            {formData.company_city && (
+              <>
+                <div className="text-muted-foreground">Cidade:</div>
+                <div>{formData.company_city}/{formData.company_state}</div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Admin */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <User className="w-4 h-4 text-primary" />
+          Administrador
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="text-muted-foreground">Nome:</div>
+          <div>{formData.name}</div>
+          <div className="text-muted-foreground">Email:</div>
+          <div>{formData.email}</div>
+          {formData.phone && (
+            <>
+              <div className="text-muted-foreground">Telefone:</div>
+              <div>{formData.phone}</div>
+            </>
+          )}
+          <div className="text-muted-foreground">Senha:</div>
+          <div className="flex items-center gap-2">
+            <span>{showPassword ? formData.password : '••••••••••••'}</span>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={() => handleCopy(formData.password, 'review-password')}
+            >
+              {copiedField === 'review-password' ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Escola */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Building2 className="w-4 h-4 text-primary" />
+          Escola
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="text-muted-foreground">Nome:</div>
+          <div>{formData.school_name}</div>
+          <div className="text-muted-foreground">URL:</div>
+          <div className="text-primary">/{formData.school_slug}</div>
+        </div>
+      </div>
+
+      {/* Aviso */}
+      <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 text-sm">
+        ⚠️ Após criar, você poderá baixar o <strong>Kit de Implantação</strong> em PDF ou copiar as credenciais.
+        <br />
+        <span className="text-muted-foreground">Suporte: lucas@klasetech.com</span>
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl glass-card border-white/10 max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <UserPlus className="w-5 h-5 text-primary" />
             Novo Administrador
@@ -223,261 +847,42 @@ export function CreateAdministratorModal({
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-6">
-          <form onSubmit={handleSubmit} className="space-y-6 py-4">
-            {/* Dados do Administrador */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <User className="w-4 h-4 text-primary" />
-                Dados do Administrador
-              </div>
-              
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Nome do administrador"
-                    className="bg-white/5 border-white/10"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="email@exemplo.com"
-                      className="bg-white/5 border-white/10 pl-9"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="(00) 00000-0000"
-                      className="bg-white/5 border-white/10 pl-9"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Credenciais */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Key className="w-4 h-4 text-primary" />
-                Credenciais de Acesso
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="auto-password" 
-                  checked={autoPassword}
-                  onCheckedChange={(checked) => {
-                    setAutoPassword(!!checked);
-                    if (checked) {
-                      setFormData(prev => ({ ...prev, password: generatePassword() }));
-                    }
-                  }}
-                />
-                <Label htmlFor="auto-password" className="text-sm cursor-pointer">
-                  Gerar senha automática (recomendado)
-                </Label>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha *</Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="Mínimo 8 caracteres"
-                      className="bg-white/5 border-white/10 pr-20"
-                      readOnly={autoPassword}
-                    />
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7"
-                        onClick={() => handleCopy(formData.password, 'password')}
-                      >
-                        {copiedField === 'password' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  {autoPassword && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="icon"
-                      onClick={regeneratePassword}
-                      className="bg-white/5 border-white/10 shrink-0"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Escola */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Building2 className="w-4 h-4 text-primary" />
-                Escola Inicial
-              </div>
-
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="school_name">Nome da Escola *</Label>
-                  <Input
-                    id="school_name"
-                    value={formData.school_name}
-                    onChange={(e) => handleSchoolNameChange(e.target.value)}
-                    placeholder="Ex: Colégio Exemplo"
-                    className="bg-white/5 border-white/10"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="school_slug">Slug (URL) *</Label>
-                  <div className="relative">
-                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="school_slug"
-                      value={formData.school_slug}
-                      onChange={(e) => setFormData(prev => ({ ...prev, school_slug: e.target.value.toLowerCase() }))}
-                      placeholder="colegio-exemplo"
-                      className="bg-white/5 border-white/10 pl-9"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    URL: <span className="text-primary">/{formData.school_slug || 'slug'}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Plano */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <CreditCard className="w-4 h-4 text-primary" />
-                Plano de Assinatura
-              </div>
-
-              <div className="space-y-2">
-                <Label>Plano *</Label>
-                <Select 
-                  value={formData.plan_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, plan_id: value }))}
-                >
-                  <SelectTrigger className="bg-white/5 border-white/10">
-                    <SelectValue placeholder="Selecione um plano" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingPlans ? (
-                      <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                    ) : (
-                      subscriptionPlans?.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} - {formatCurrency(plan.price_cents)}/mês
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {selectedPlan && (
-                  <p className="text-xs text-muted-foreground">
-                    {selectedPlan.max_students} alunos • {selectedPlan.included_schools} escola incluída
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="is-trial" 
-                  checked={isTrial}
-                  onCheckedChange={(checked) => setIsTrial(!!checked)}
-                />
-                <Label htmlFor="is-trial" className="text-sm cursor-pointer flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Iniciar em período Trial
-                </Label>
-              </div>
-
-              {isTrial && (
-                <div className="space-y-2 ml-6">
-                  <Label htmlFor="trial_days">Dias de Trial</Label>
-                  <Input
-                    id="trial_days"
-                    type="number"
-                    min="1"
-                    max="90"
-                    value={formData.trial_days}
-                    onChange={(e) => setFormData(prev => ({ ...prev, trial_days: parseInt(e.target.value) || 14 }))}
-                    className="bg-white/5 border-white/10 w-32"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Resumo */}
-            {formData.name && formData.email && formData.school_name && selectedPlan && (
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                  <AlertTriangle className="w-4 h-4" />
-                  Resumo
-                </div>
-                <div className="text-sm space-y-1 text-muted-foreground">
-                  <p><strong>Admin:</strong> {formData.name} ({formData.email})</p>
-                  <p><strong>Escola:</strong> {formData.school_name} (/{formData.school_slug})</p>
-                  <p>
-                    <strong>Plano:</strong> {selectedPlan.name} - {formatCurrency(selectedPlan.price_cents)}/mês
-                    {isTrial && ` (Trial ${formData.trial_days} dias)`}
-                  </p>
-                </div>
-              </div>
-            )}
-          </form>
+          <div className="py-4">
+            {renderStepper()}
+            
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+            {currentStep === 3 && renderStep3()}
+            {currentStep === 4 && renderStep4()}
+          </div>
         </ScrollArea>
 
-        <DialogFooter className="p-6 pt-4 border-t border-white/10 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => formData.email && formData.password && handleCopyCredentials()}
-            disabled={!formData.email || !formData.password}
-            className="bg-white/5 border-white/10 mr-auto"
-          >
-            <Copy className="w-4 h-4 mr-2" />
-            Copiar Credenciais
-          </Button>
+        <DialogFooter className="p-6 pt-4 border-t border-white/10 gap-2 flex-col sm:flex-row">
+          {currentStep > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              className="bg-white/5 border-white/10"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Voltar
+            </Button>
+          )}
+          
+          {currentStep === 2 && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={nextStep}
+              className="text-muted-foreground"
+            >
+              Pular
+            </Button>
+          )}
+
+          <div className="flex-1" />
+
           <Button
             type="button"
             variant="outline"
@@ -486,10 +891,37 @@ export function CreateAdministratorModal({
           >
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Criar Administrador
-          </Button>
+
+          {currentStep < 4 ? (
+            <Button
+              type="button"
+              onClick={nextStep}
+              disabled={!validateStep(currentStep)}
+              className="gap-1"
+            >
+              Próximo
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  Criar Administrador
+                </>
+              )}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
