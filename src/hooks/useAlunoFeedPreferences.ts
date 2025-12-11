@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { PostFilter, PostType } from '@/types/post';
 import { DEFAULT_SELECT_TOKENS, safeRestoreSelectValue } from './useSelectState';
 
-export type QuickFilter = 'all' | 'secretaria' | 'professor' | 'pending' | 'saved';
+export type QuickFilter = 'all' | 'secretaria' | 'professor' | 'pending' | 'saved' | 'important';
 
 export interface AlunoFeedPreferences {
   hideRead: boolean;
@@ -14,6 +14,7 @@ export interface AlunoFeedPreferences {
 export interface AlunoFeedFilters extends PostFilter {
   classId?: string;
   saved?: boolean;
+  important?: boolean;
   quickFilter?: QuickFilter;
   authorRole?: 'secretaria' | 'professor' | 'aluno';
 }
@@ -127,8 +128,19 @@ export function useAlunoFeedPreferences() {
         filterUpdate = {
           ...filterUpdate,
           saved: true,
+          important: undefined,
           type: undefined,
           status: undefined,
+          authorRole: undefined
+        };
+        break;
+      case 'important':
+        filterUpdate = {
+          ...filterUpdate,
+          important: true,
+          saved: undefined,
+          type: undefined,
+          status: 'PUBLISHED',
           authorRole: undefined
         };
         break;

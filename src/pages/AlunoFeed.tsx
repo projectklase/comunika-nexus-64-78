@@ -17,7 +17,7 @@ export default function AlunoFeed() {
   const { user } = useAuth();
   const { preferences, updatePreferences } = useAlunoFeedPreferences();
   const { savedIds } = useSaved();
-  const [filter, setFilter] = useState<PostFilter & { saved?: boolean; authorRole?: 'secretaria' | 'professor' | 'aluno' }>({});
+  const [filter, setFilter] = useState<PostFilter & { saved?: boolean; important?: boolean; authorRole?: 'secretaria' | 'professor' | 'aluno' }>({});
   const [updateKey, setUpdateKey] = useState(0);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedEventForInvite, setSelectedEventForInvite] = useState<Post | null>(null);
@@ -82,6 +82,11 @@ export default function AlunoFeed() {
     // Apply saved filter if needed
     if (filter.saved) {
       posts = posts.filter(post => savedIds.includes(post.id));
+    }
+    
+    // Apply important filter if needed
+    if (filter.important) {
+      posts = posts.filter(post => post.meta?.important === true);
     }
     
     // Apply preferences

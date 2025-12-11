@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, X, Bookmark, Users, GraduationCap, Building2, Clock, Eye, EyeOff, Settings } from 'lucide-react';
+import { Search, Filter, X, Bookmark, Users, GraduationCap, Building2, Clock, Eye, EyeOff, Settings, Star } from 'lucide-react';
 import { PostType, PostStatus } from '@/types/post';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClassStore } from '@/stores/class-store';
@@ -130,6 +130,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
       ...baseFilters,
       { key: 'secretaria' as QuickFilter, label: 'Secretaria', icon: Building2 },
       { key: 'professor' as QuickFilter, label: 'Professor', icon: GraduationCap },
+      { key: 'important' as QuickFilter, label: 'Importantes', icon: Star },
       { key: 'pending' as QuickFilter, label: 'Pendentes', icon: Clock },
       { key: 'saved' as QuickFilter, label: 'Salvos', icon: Bookmark }
     ];
@@ -142,7 +143,8 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
       professor: user?.role === 'professor' ? 'Minhas Atividades' : 'Professor',
       pending: 'Pendentes',
       saved: 'Salvos',
-      scheduled: 'Agendados'
+      scheduled: 'Agendados',
+      important: 'Importantes'
     };
     return filterMap[filters.quickFilter || 'all'];
   };

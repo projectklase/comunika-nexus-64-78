@@ -3,11 +3,12 @@ import { PostFilter, PostType } from '@/types/post';
 import { DEFAULT_SELECT_TOKENS, safeRestoreSelectValue } from './useSelectState';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type QuickFilter = 'all' | 'secretaria' | 'professor' | 'pending' | 'saved' | 'scheduled';
+export type QuickFilter = 'all' | 'secretaria' | 'professor' | 'pending' | 'saved' | 'scheduled' | 'important';
 
 export interface FeedFilters extends PostFilter {
   classId?: string;
   saved?: boolean;
+  important?: boolean;
   quickFilter?: QuickFilter;
   authorRole?: 'secretaria' | 'professor' | 'aluno';
 }
@@ -135,8 +136,19 @@ export function useFeedFilters() {
         filterUpdate = {
           ...filterUpdate,
           saved: true,
+          important: undefined,
           type: undefined,
           status: undefined,
+          authorRole: undefined
+        };
+        break;
+      case 'important':
+        filterUpdate = {
+          ...filterUpdate,
+          important: true,
+          saved: undefined,
+          type: undefined,
+          status: 'PUBLISHED',
           authorRole: undefined
         };
         break;
