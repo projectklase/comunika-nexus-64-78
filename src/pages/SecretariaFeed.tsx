@@ -55,13 +55,13 @@ export default function SecretariaFeed() {
   const posts = useMemo(() => {
     let filteredPosts = [...allPosts];
     
-    // Apply specific logic for secretaria quick filter
+    // Apply quick filter logic
     if (filters.quickFilter === 'secretaria') {
-      filteredPosts = filteredPosts.filter(post => {
-        const isSecretariaAuthor = !post.authorName.toLowerCase().includes('prof.');
-        const isSecretariaType = ['AVISO', 'COMUNICADO', 'EVENTO'].includes(post.type);
-        return isSecretariaAuthor && isSecretariaType;
-      });
+      filteredPosts = filteredPosts.filter(post => post.authorRole === 'secretaria');
+    } else if (filters.quickFilter === 'professor') {
+      filteredPosts = filteredPosts.filter(post => post.authorRole === 'professor');
+    } else if (filters.quickFilter === 'important') {
+      filteredPosts = filteredPosts.filter(post => post.meta?.important === true);
     }
     
     // Apply saved filter if needed

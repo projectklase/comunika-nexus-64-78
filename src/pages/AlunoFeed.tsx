@@ -79,6 +79,11 @@ export default function AlunoFeed() {
       });
     }
     
+    // Apply authorRole filter if needed (client-side filtering)
+    if (filter.authorRole) {
+      posts = posts.filter(post => post.authorRole === filter.authorRole);
+    }
+    
     // Apply saved filter if needed
     if (filter.saved) {
       posts = posts.filter(post => savedIds.includes(post.id));

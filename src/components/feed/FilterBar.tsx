@@ -110,6 +110,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         ...baseFilters,
         { key: 'secretaria' as QuickFilter, label: 'Secretaria', icon: Building2 },
         { key: 'professor' as QuickFilter, label: 'Professor', icon: GraduationCap },
+        { key: 'important' as QuickFilter, label: 'Importantes', icon: Star },
         { key: 'scheduled' as QuickFilter, label: 'Agendados', icon: Clock },
         { key: 'saved' as QuickFilter, label: 'Salvos', icon: Bookmark }
       ];
@@ -120,6 +121,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         ...baseFilters,
         { key: 'secretaria' as QuickFilter, label: 'Secretaria', icon: Building2 },
         { key: 'professor' as QuickFilter, label: 'Minhas Atividades', icon: GraduationCap },
+        { key: 'important' as QuickFilter, label: 'Importantes', icon: Star },
         { key: 'scheduled' as QuickFilter, label: 'Agendados', icon: Clock },
         { key: 'saved' as QuickFilter, label: 'Salvos', icon: Bookmark }
       ];

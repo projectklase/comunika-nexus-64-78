@@ -14,7 +14,8 @@ import {
   Clock,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Star
 } from 'lucide-react';
 import { 
   ProfessorQuickFilter, 
@@ -35,6 +36,7 @@ const TYPE_FILTERS = [
   { key: 'trabalho' as ProfessorQuickFilter, label: 'Trabalhos', icon: FolderOpen },
   { key: 'prova' as ProfessorQuickFilter, label: 'Provas', icon: ClipboardCheck },
   { key: 'eventos' as ProfessorQuickFilter, label: 'Eventos', icon: CalendarIcon },
+  { key: 'importantes' as ProfessorQuickFilter, label: 'Importantes', icon: Star },
   { key: 'agendados' as ProfessorQuickFilter, label: 'Agendados', icon: Clock }
 ];
 

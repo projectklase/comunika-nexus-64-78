@@ -7,7 +7,7 @@ import { usePosts } from "@/hooks/usePosts";
 import { format, isToday, isThisWeek, isWithinInterval, subDays } from "date-fns";
 import { SmartPostFilters } from "@/utils/post-filters";
 
-export type ProfessorQuickFilter = "all" | "atividade" | "trabalho" | "prova" | "eventos" | "agendados";
+export type ProfessorQuickFilter = "all" | "atividade" | "trabalho" | "prova" | "eventos" | "agendados" | "importantes";
 export type ProfessorPeriodFilter = "hoje" | "semana" | "mes" | "custom";
 
 export interface ProfessorFeedFilters {
@@ -27,6 +27,7 @@ export interface ProfessorFeedMetrics {
   prova: number;
   eventos: number;
   agendados: number;
+  importantes: number;
 }
 
 const DEFAULT_FILTERS: ProfessorFeedFilters = {
@@ -107,6 +108,11 @@ export function useProfessorFeedFilters() {
           post.status === "PUBLISHED" &&
           (post.audience === "GLOBAL" ||
             (post.audience === "CLASS" && post.classIds?.some((id) => professorClassIds.includes(id)))),
+      );
+    } else if (filters.type === "importantes") {
+      // Show important posts
+      filteredResults = filteredResults.filter(
+        (post) => post.meta?.important === true && post.status === "PUBLISHED"
       );
     } else if (filters.type !== "all") {
       // Show specific activity type from this professor
@@ -219,6 +225,7 @@ export function useProfessorFeedFilters() {
         prova: 0,
         eventos: 0,
         agendados: 0,
+        importantes: 0,
       };
 
     const professorClassIds = metrics.professorClasses?.map((c) => c.id) || [];
@@ -291,6 +298,7 @@ export function useProfessorFeedFilters() {
       agendados: posts.filter(
         (p) => p.status === "SCHEDULED" && p.authorId === user.id && p.publishAt && new Date(p.publishAt) >= new Date(),
       ).length,
+      importantes: periodFilteredPosts.filter((p) => p.meta?.important === true).length,
     };
   }, [user, metrics, posts, filters, isLoadingPosts]);
 
