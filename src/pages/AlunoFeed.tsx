@@ -113,7 +113,7 @@ export default function AlunoFeed() {
     }
     
     return posts;
-  }, [allPosts, filter.saved, savedIds, preferences.hideRead, preferences.hideExpired, preferences.sortBy]);
+  }, [allPosts, filter.saved, filter.authorRole, filter.important, savedIds, preferences.hideRead, preferences.hideExpired, preferences.sortBy]);
 
   const handleUpdate = () => {
     setUpdateKey(prev => prev + 1);
