@@ -52,8 +52,8 @@ export default function ActivityDetail() {
   const [deliveryStatusFilter, setDeliveryStatusFilter] = useState<string | null>(null);
   
   // All data hooks MUST come before any conditional returns
-  const { posts } = usePosts();
-  const { classes } = useClassStore();
+  const { posts, isLoading: postsLoading } = usePosts();
+  const { classes, loading: classesLoading } = useClassStore();
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [classStudentsInfo, setClassStudentsInfo] = useState<{ id: string; name: string }[]>([]);
   const [metrics, setMetrics] = useState<any>({
@@ -130,10 +130,24 @@ export default function ActivityDetail() {
     return <div>Parâmetros inválidos</div>;
   }
 
+  // Calcular estado combinado de loading
+  const isDataLoading = postsLoading || classesLoading;
+
   // Buscar dados derivados
   const activity = posts.find(p => p.id === postId);
   const schoolClass = classes.find(c => c.id === classId);
 
+  // Mostrar loading ANTES de verificar "não encontrado"
+  if (isDataLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]" role="status" aria-live="polite">
+        <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-2 border-primary/30 border-t-primary mb-4"></div>
+        <p className="text-muted-foreground">Carregando atividade...</p>
+      </div>
+    );
+  }
+
+  // Só mostrar "não encontrado" depois que loading terminar
   if (!activity || !schoolClass) {
     return (
       <div className="text-center py-12">
