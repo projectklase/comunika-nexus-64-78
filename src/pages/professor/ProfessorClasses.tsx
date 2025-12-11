@@ -13,12 +13,13 @@ import { Link } from 'react-router-dom';
 import { SchoolClass } from '@/types/class';
 import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
+import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 
 export default function ProfessorClasses() {
   const { user } = useAuth();
   const { currentSchool } = useSchool();
   useStoreInitialization();
-  const { classes } = useClassStore();
+  const { classes, loading: classesLoading } = useClassStore();
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,6 +42,11 @@ export default function ProfessorClasses() {
   );
   
   if (!user) return null;
+  
+  // Mostrar loading ANTES de verificar dados vazios
+  if (classesLoading) {
+    return <PageLoadingSkeleton message="Carregando turmas..." />;
+  }
   
   // Filtros
   const filteredClasses = orderedClasses.filter(schoolClass => {

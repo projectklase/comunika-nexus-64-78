@@ -13,13 +13,14 @@ import { useModalities } from '@/hooks/useModalities';
 import { usePosts } from '@/hooks/usePosts';
 import { useState, useEffect, useMemo } from 'react';
 import { deliveryStore } from '@/stores/delivery-store';
+import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 
 export default function ProfessorDashboard() {
   const { user, isLoading } = useAuth();
   const { currentSchool } = useSchool();
   const navigate = useNavigate();
   useStoreInitialization();
-  const { classes } = useClassStore();
+  const { classes, loading: classesLoading } = useClassStore();
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const { posts, isLoading: postsLoading } = usePosts({
@@ -87,16 +88,12 @@ export default function ProfessorDashboard() {
     fetchDeliveryMetrics();
   }, [classIdsString, currentSchool?.id]);
   
+  // Estado combinado de loading
+  const isDataLoading = isLoading || classesLoading;
+  
   // ✅ Retornos condicionais DEPOIS de todos os hooks
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="glass-card p-8 rounded-xl">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-4">Carregando...</p>
-        </div>
-      </div>
-    );
+  if (isDataLoading) {
+    return <PageLoadingSkeleton message="Carregando dashboard..." />;
   }
   
   if (!user) {

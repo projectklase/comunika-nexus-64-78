@@ -15,6 +15,7 @@ import { TransferStudentsDialog } from '@/components/classes/TransferStudentsDia
 import { ConfirmDialog } from '@/components/classes/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
 import { canAccessManagement } from '@/utils/auth-helpers';
+import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +27,8 @@ export default function ClassDetailPage() {
     loadClasses, 
     deleteClass, 
     archiveClass, 
-    unarchiveClass 
+    unarchiveClass,
+    loading: classesLoading
   } = useClassStore();
   const { loadPeople } = usePeopleStore();
 
@@ -49,6 +51,15 @@ export default function ClassDetailPage() {
   // RBAC: Only management roles can access
   if (!canAccessManagement(user?.role)) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  // Mostrar loading ANTES de verificar "não encontrado"
+  if (classesLoading) {
+    return (
+      <AppLayout>
+        <PageLoadingSkeleton message="Carregando turma..." />
+      </AppLayout>
+    );
   }
 
   if (!schoolClass) {

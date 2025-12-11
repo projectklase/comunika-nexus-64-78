@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 import { 
   Search, 
   ChevronDown, 
@@ -101,7 +102,7 @@ export default function ProfessorActivities() {
   const { user } = useAuth();
   const { currentSchool } = useSchool();
   const { exportActivities } = useActivityExport();
-  const { classes, loadClasses } = useClassStore();
+  const { classes, loadClasses, loading: classesLoading } = useClassStore();
   const { loadPeople } = usePeopleStore();
   const isMobile = useIsMobile();
   
@@ -134,7 +135,7 @@ export default function ProfessorActivities() {
   });
 
   // Data hooks - always called in same order
-  const { posts: allPosts } = usePosts();
+  const { posts: allPosts, isLoading: postsLoading } = usePosts();
   const navigate = useNavigate();
   const { deletePost, duplicatePost, archivePost, concludePost } = usePostActions();
   const { exportDeliveries } = useActivityExport();
@@ -326,6 +327,14 @@ export default function ProfessorActivities() {
     ].filter(Boolean).length;
   }, [filters.type, filters.status, filters.deadline, searchQuery, selectedClass]);
 
+  // Estado combinado de loading
+  const isDataLoading = postsLoading || classesLoading;
+  
+  // Mostrar loading ANTES de verificar dados vazios
+  if (isDataLoading) {
+    return <PageLoadingSkeleton message="Carregando atividades..." />;
+  }
+  
   // Early return AFTER all hooks
   if (!user || !isInitialized) {
     return null;

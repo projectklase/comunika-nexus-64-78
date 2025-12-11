@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 import { 
   ArrowLeft, 
   CheckCircle, 
@@ -45,7 +46,7 @@ export default function AlunoActivityResult() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { posts } = usePosts();
+  const { posts, isLoading: postsLoading } = usePosts();
   const activity = posts.find(p => p.id === activityId);
 
   useEffect(() => {
@@ -73,12 +74,13 @@ export default function AlunoActivityResult() {
     return <div>Parâmetros inválidos</div>;
   }
 
-  if (isLoading) {
+  // Estado combinado de loading
+  const isDataLoading = isLoading || postsLoading;
+
+  if (isDataLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoadingSkeleton message="Carregando resultado..." />
       </div>
     );
   }
