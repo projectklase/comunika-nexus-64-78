@@ -27,6 +27,7 @@ import { MonsterAttackAnimation } from './MonsterAttackAnimation';
 import { DefeatedCardEffect } from './DefeatedCardEffect';
 import { TimeoutOverlay } from './TimeoutOverlay';
 import { TurnIndicatorBadge } from './TurnIndicatorBadge';
+import { BattleContextMenu } from './BattleContextMenu';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -850,31 +851,18 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
         {/* Turn indicator badge provides discreet turn status - removed big overlay */}
 
-        {/* Battle Log Toggle Button + Forfeit */}
-        <div className="fixed bottom-4 right-4 z-20 flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleForfeit}
-            className="gap-2 bg-background/80 backdrop-blur-sm text-destructive hover:bg-destructive/10"
-          >
-            <Flag className="w-4 h-4" />
-            Desistir
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowBattleLog(!showBattleLog)}
-            className="gap-2 bg-background/80 backdrop-blur-sm"
-          >
-            <ScrollText className="w-4 h-4" />
-            {showBattleLog ? 'Ocultar Log' : 'Ver Histórico'}
-          </Button>
+        {/* Battle Context Menu - Top Right */}
+        <div className="fixed top-4 right-4 z-[60]">
+          <BattleContextMenu
+            onViewHistory={() => setShowBattleLog(!showBattleLog)}
+            onForfeit={handleForfeit}
+            showingLog={showBattleLog}
+          />
         </div>
 
         {/* Battle Log Panel */}
         {showBattleLog && (
-          <div className="fixed right-4 bottom-16 z-20 w-64 max-h-[250px]">
+          <div className="fixed right-4 top-14 z-[55] w-64 max-h-[300px]">
             <BattleLog 
               logs={battleLog} 
               player1Name={player1Profile?.name || 'Jogador 1'}
