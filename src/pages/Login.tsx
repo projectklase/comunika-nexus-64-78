@@ -442,7 +442,7 @@ const Login = () => {
             <Card className="w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg">
               <CardHeader className="text-center space-y-1 px-6 py-6">
                 <div className="flex items-center justify-center">
-                  <img src={klaseLogo} alt="Klase" className="h-16 w-auto" />
+                  <img src={klaseLogo} alt="Klase" width={262} height={64} className="h-16 w-auto" />
                 </div>
                 <CardDescription className="text-sm text-muted-foreground my-[15px]">
                   Acesse sua conta
