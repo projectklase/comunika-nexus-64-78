@@ -18,6 +18,7 @@ import { useUserSettingsStore } from '@/stores/user-settings-store';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 import { passwordResetStore } from '@/stores/password-reset-store';
+import { useFeatureFlag } from '@/hooks/usePlatformFeatureFlags';
 import type { UserRole } from '@/types/auth';
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -53,6 +54,9 @@ const Login = () => {
     updateSetting
   } = useUserSettingsStore();
   const formRef = useRef<HTMLFormElement>(null);
+  
+  // Feature flag controlado pelo super admin
+  const { enabled: showQuickLogins } = useFeatureFlag('quick_logins_visible');
 
   // Form validation - computed values
   const isFormValid = email.includes('@') && password.length > 0;
@@ -543,11 +547,11 @@ const Login = () => {
                   </p>
                 </div>
 
-                {/* Demo Accounts - Apenas em desenvolvimento */}
-                {import.meta.env.DEV && (
+                {/* Demo Accounts - Controlado por feature flag do super admin */}
+                {showQuickLogins && (
                 <div className="border-t border-border/30 pt-4 mt-5">
                   <div className="text-center mb-3">
-                    <span className="text-xs text-muted-foreground">Contas de demonstração (DEV)</span>
+                    <span className="text-xs text-muted-foreground">Contas de demonstração</span>
                   </div>
                   
                   <div className="space-y-2">

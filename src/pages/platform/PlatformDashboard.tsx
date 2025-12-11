@@ -9,15 +9,20 @@ import {
   RefreshCw,
   Shield,
   ChevronRight,
-  DollarSign
+  DollarSign,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { usePlatformFeatureFlags } from '@/hooks/usePlatformFeatureFlags';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 import { 
   LineChart, 
   Line, 
@@ -119,6 +124,27 @@ export default function PlatformDashboard() {
     dailyLogins,
     loadingDailyLogins
   } = useSuperAdmin();
+  
+  const { flags, isLoading: loadingFlags, updateFlag, getFlag } = usePlatformFeatureFlags();
+  const { toast } = useToast();
+  
+  const handleToggleQuickLogins = async (enabled: boolean) => {
+    const success = await updateFlag('quick_logins_visible', enabled);
+    if (success) {
+      toast({
+        title: enabled ? 'Quick Logins ativados' : 'Quick Logins desativados',
+        description: enabled 
+          ? 'Os botões de demonstração agora estão visíveis na página de login.'
+          : 'Os botões de demonstração foram ocultados da página de login.',
+      });
+    } else {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível alterar a configuração.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div className="p-8 space-y-8">
@@ -416,6 +442,30 @@ export default function PlatformDashboard() {
                 <ChevronRight className="w-4 h-4 ml-auto" />
               </Button>
             </Link>
+            
+            {/* Quick Logins Toggle */}
+            <div className="pt-3 border-t border-white/10">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="flex items-center gap-3">
+                  {getFlag('quick_logins_visible') ? (
+                    <Eye className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">Quick Logins Demo</p>
+                    <p className="text-xs text-muted-foreground">
+                      {getFlag('quick_logins_visible') ? 'Visível na página de login' : 'Oculto da página de login'}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={getFlag('quick_logins_visible')}
+                  onCheckedChange={handleToggleQuickLogins}
+                  disabled={loadingFlags}
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
