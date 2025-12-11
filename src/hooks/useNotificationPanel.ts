@@ -68,12 +68,17 @@ export function useNotificationPanel() {
     // FASE 3: Buscar notificações do usuário (independente de role_target)
     // Isso inclui notificações gerais (role_target null) e específicas do role
     try {
+      console.log('[useNotificationPanel] Carregando notificações para user_id:', user.id);
+      
       const allNotifications = await notificationStore.listAsync({
         userId: user.id,
         limit: 100
       });
       
       console.log('[useNotificationPanel] Notificações carregadas:', allNotifications.length);
+      console.log('[useNotificationPanel] Tipos:', allNotifications.map(n => n.type));
+      console.log('[useNotificationPanel] POST_IMPORTANT count:', allNotifications.filter(n => n.type === 'POST_IMPORTANT').length);
+      
       setNotifications(allNotifications);
     } catch (error) {
       console.error('[useNotificationPanel] ❌ ERRO FATAL ao carregar notificações:', error);
