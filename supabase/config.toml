@@ -19,10 +19,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.create-notification]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-post-notifications]
-verify_jwt = false
+verify_jwt = true
 
 [functions.grant-koin-bonus]
 verify_jwt = true
@@ -46,7 +46,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.send-credentials-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-password-reset]
 verify_jwt = true

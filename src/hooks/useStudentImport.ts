@@ -398,7 +398,7 @@ export function useStudentImport() {
     };
   }, [currentSchool?.id, validateStudentCreation]);
 
-  // Enviar email de credenciais
+  // Enviar email de credenciais (usando supabase.functions.invoke para segurança JWT)
   const sendCredentialsEmail = useCallback(async (
     to: string,
     studentName: string,
@@ -408,28 +408,23 @@ export function useStudentImport() {
     guardianName?: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(
-        'https://yanspolqarficibgovia.supabase.co/functions/v1/send-credentials-email',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhbnNwb2xxYXJmaWNpYmdvdmlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTczMjUsImV4cCI6MjA3NDQzMzMyNX0.QMU9Bxjl9NzyrSgUKeHE0HgcSsBUeFQefjQIoEczRYM'
-          },
-          body: JSON.stringify({
-            to,
-            studentName,
-            email,
-            password,
-            schoolName: currentSchool?.name || 'Klase',
-            isGuardian,
-            guardianName
-          })
+      const { data, error } = await supabase.functions.invoke('send-credentials-email', {
+        body: {
+          to,
+          studentName,
+          email,
+          password,
+          schoolName: currentSchool?.name || 'Klase',
+          isGuardian,
+          guardianName
         }
-      );
+      });
       
-      const data = await response.json();
-      return { success: data.success, error: data.error };
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      
+      return { success: data?.success ?? false, error: data?.error };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Erro ao enviar email' };
     }

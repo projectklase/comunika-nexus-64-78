@@ -5,6 +5,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Função para validar CRON_SECRET
+function validateCronSecret(req: Request): boolean {
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  if (!cronSecret) {
+    console.error('CRON_SECRET não configurado');
+    return false;
+  }
+  
+  const authHeader = req.headers.get('Authorization');
+  return authHeader === `Bearer ${cronSecret}`;
+}
+
 // Prompts temáticos por categoria (estilo Crowno Monsters)
 const CATEGORY_PROMPTS = {
   MATEMATICA: `cute fantasy creature made of mathematical symbols and geometric shapes, 
@@ -49,6 +61,15 @@ const RARITY_MODIFIERS = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar CRON_SECRET para jobs agendados
+  if (!validateCronSecret(req)) {
+    console.error('❌ Unauthorized: CRON_SECRET inválido');
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
