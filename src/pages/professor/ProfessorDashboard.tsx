@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchool } from '@/contexts/SchoolContext';
 import { useStoreInitialization } from '@/hooks/useStoreInitialization';
-import { getProfessorClasses } from '@/utils/professor-helpers';
+import { useClassStore } from '@/stores/class-store';
 import { DashboardCard } from '@/components/Dashboard/DashboardCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ export default function ProfessorDashboard() {
   const { currentSchool } = useSchool();
   const navigate = useNavigate();
   useStoreInitialization();
+  const { classes } = useClassStore();
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const { posts, isLoading: postsLoading } = usePosts({
@@ -30,11 +31,15 @@ export default function ProfessorDashboard() {
     weeklyDeadlines: 0
   });
 
-  // ✅ Memoizar professorClasses para evitar loop infinito
+  // ✅ Filtrar turmas do professor com reatividade correta (classes como dependência)
   const professorClasses = useMemo(() => {
     if (!user?.id || !currentSchool?.id) return [];
-    return getProfessorClasses(user.id, currentSchool.id);
-  }, [user?.id, currentSchool?.id]);
+    return classes.filter(c => 
+      c.teachers?.includes(user.id) && 
+      c.schoolId === currentSchool.id &&
+      c.status === 'ATIVA'
+    );
+  }, [user?.id, currentSchool?.id, classes]);
 
   // ✅ Criar string de IDs para dependência primitiva (evita re-renders)
   const classIdsString = useMemo(() => 

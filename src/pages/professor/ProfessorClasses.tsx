@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { useStoreInitialization } from '@/hooks/useStoreInitialization';
-import { getProfessorClasses } from '@/utils/professor-helpers';
+import { useClassStore } from '@/stores/class-store';
 import { orderClassesBySchedule, getClassDisplayInfo } from '@/utils/class-helpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,17 +16,31 @@ import { useModalities } from '@/hooks/useModalities';
 
 export default function ProfessorClasses() {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   useStoreInitialization();
+  const { classes } = useClassStore();
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   
-  if (!user) return null;
+  // ✅ Filtrar turmas do professor com reatividade correta
+  const allClasses = useMemo(() => {
+    if (!user?.id || !currentSchool?.id) return [];
+    return classes.filter(c => 
+      c.teachers?.includes(user.id) && 
+      c.schoolId === currentSchool.id &&
+      c.status === 'ATIVA'
+    );
+  }, [user?.id, currentSchool?.id, classes]);
   
-  const allClasses = getProfessorClasses(user.id);
-  const orderedClasses = orderClassesBySchedule(allClasses);
+  const orderedClasses = useMemo(() => 
+    orderClassesBySchedule(allClasses), 
+    [allClasses]
+  );
+  
+  if (!user) return null;
   
   // Filtros
   const filteredClasses = orderedClasses.filter(schoolClass => {

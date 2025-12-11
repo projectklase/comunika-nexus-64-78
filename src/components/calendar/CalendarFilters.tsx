@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { getProfessorClasses } from '@/utils/professor-helpers';
 import { useStudentClasses } from '@/hooks/useStudentClasses';
 import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
@@ -46,8 +46,9 @@ export function CalendarFilters({
   compact = false
 }: CalendarFiltersProps) {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const isMobile = useIsMobile();
-  const { loadClasses } = useClassStore();
+  const { classes, loadClasses } = useClassStore();
   const { loadPeople } = usePeopleStore();
   const { classes: studentClasses } = useStudentClasses();
   
@@ -57,15 +58,20 @@ export function CalendarFilters({
     loadPeople();
   }, [loadClasses, loadPeople]);
   
-  // Get classes based on user role
+  // ✅ Get classes based on user role with proper reactivity
   const userClasses = useMemo(() => {
     if (user?.role === 'professor') {
-      return getProfessorClasses(user.id);
+      if (!user.id || !currentSchool?.id) return [];
+      return classes.filter(c => 
+        c.teachers?.includes(user.id) && 
+        c.schoolId === currentSchool.id &&
+        c.status === 'ATIVA'
+      );
     } else if (user?.role === 'aluno') {
       return studentClasses;
     }
     return [];
-  }, [user, studentClasses]);
+  }, [user, currentSchool?.id, classes, studentClasses]);
   
   const hasClasses = userClasses.length > 0;
   
