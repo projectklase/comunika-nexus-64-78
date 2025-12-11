@@ -26,6 +26,7 @@ import { TrapActivationOverlay } from './TrapActivationOverlay';
 import { MonsterAttackAnimation } from './MonsterAttackAnimation';
 import { DefeatedCardEffect } from './DefeatedCardEffect';
 import { TimeoutOverlay } from './TimeoutOverlay';
+import { TurnIndicatorBadge } from './TurnIndicatorBadge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -304,16 +305,21 @@ const [player1Profile, setPlayer1Profile] = useState<{
     }
   }, [duelStartComplete, isSetupPhase]);
 
-  // Sync timer start when overlays end - use backend timestamp for sync
+  // Track if this is the first turn (animations just completed)
+  const isFirstTurnAfterAnimations = useRef(true);
+
+  // Sync timer start when overlays end - for first turn, use NOW to give full time after animations
   useEffect(() => {
     const overlaysActive = showDuelStart || showSetupAnnouncement;
     
     if (!overlaysActive && battle?.status === 'IN_PROGRESS') {
-      // Use backend turn_started_at for synchronization, fallback to now if not available
-      if (battle.turn_started_at) {
-        setActualTimerStart(battle.turn_started_at);
-      } else {
+      if (isFirstTurnAfterAnimations.current) {
+        // First turn: use NOW so player gets full 30 seconds after animations complete
         setActualTimerStart(new Date().toISOString());
+        isFirstTurnAfterAnimations.current = false;
+      } else if (battle.turn_started_at) {
+        // Subsequent turns: use backend timestamp for synchronization
+        setActualTimerStart(battle.turn_started_at);
       }
     }
   }, [showDuelStart, showSetupAnnouncement, battle?.status, battle?.turn_started_at]);
@@ -634,6 +640,40 @@ const [player1Profile, setPlayer1Profile] = useState<{
     endTurn?.(battle.id);
   }, [battle?.id, isMyTurn, endTurn]);
 
+  // Auto-end turn when all actions completed
+  const autoEndTurnRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    // Clear any pending auto-end
+    if (autoEndTurnRef.current) {
+      clearTimeout(autoEndTurnRef.current);
+      autoEndTurnRef.current = null;
+    }
+    
+    if (!isMyTurn() || !battle || isSetupPhase) return;
+    
+    // Check if player has completed all possible actions
+    const hasMonster = myField?.monster !== null;
+    const hasSummoningSickness = hasMonster && Number(myField?.monster?.summoned_on_turn) === currentTurnNumber;
+    const canStillAttack = hasMonster && !hasAttackedThisTurn && !hasSummoningSickness;
+    
+    // Auto-end if: played card AND (attacked OR can't attack)
+    const shouldAutoEnd = hasPlayedCardThisTurn && !canStillAttack;
+    
+    if (shouldAutoEnd) {
+      // Delay to let player see the result of their action
+      autoEndTurnRef.current = setTimeout(() => {
+        handleEndTurn();
+      }, 1500);
+    }
+    
+    return () => {
+      if (autoEndTurnRef.current) {
+        clearTimeout(autoEndTurnRef.current);
+      }
+    };
+  }, [isMyTurn, battle, isSetupPhase, hasPlayedCardThisTurn, hasAttackedThisTurn, myField?.monster, currentTurnNumber, handleEndTurn]);
+
   const handleForfeit = useCallback(() => {
     setShowForfeitDialog(true);
   }, []);
@@ -722,6 +762,12 @@ const [player1Profile, setPlayer1Profile] = useState<{
           <Volume2 className="w-4 h-4 text-muted-foreground" />
         )}
       </button>
+
+      {/* Turn Indicator Badge - always visible, discreet */}
+      {battle.status === 'IN_PROGRESS' && !showDuelStart && !showSetupAnnouncement && (
+        <TurnIndicatorBadge isMyTurn={isMyTurn()} />
+      )}
+
       <div className="relative z-10 container mx-auto px-4 py-8 space-y-6 max-w-7xl">
         <BattlePlayerInfo
           playerName={isLoadingProfiles ? 'Carregando...' : (isPlayer1 ? player2Profile?.name || 'Oponente' : player1Profile?.name || 'Oponente')}
@@ -802,29 +848,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
           phase="SETUP" 
         />
 
-        {/* Opponent Turn Overlay */}
-        <AnimatePresence>
-          {!isMyTurn() && battle.status === 'IN_PROGRESS' && !isSetupPhase && (
-            <motion.div
-              className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className="bg-background/90 backdrop-blur-sm px-8 py-6 rounded-2xl border-2 border-primary/50 shadow-2xl"
-                animate={{ 
-                  scale: [1, 1.05, 1],
-                  opacity: [0.9, 1, 0.9],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <p className="text-2xl font-bold text-center text-primary">⏳ Turno do Oponente</p>
-                <p className="text-sm text-muted-foreground text-center mt-2">Aguardando jogada...</p>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Turn indicator badge provides discreet turn status - removed big overlay */}
 
         {/* Battle Log Toggle Button + Forfeit */}
         <div className="fixed bottom-4 right-4 z-20 flex gap-2">
