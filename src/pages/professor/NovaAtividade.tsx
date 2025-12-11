@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate, useBeforeUnload } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProfessorClasses } from '@/utils/professor-helpers';
+import { useSchool } from '@/contexts/SchoolContext';
 import { postStore } from '@/stores/post-store';
 import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
@@ -30,10 +30,11 @@ import { Link } from 'react-router-dom';
 
 export default function NovaAtividade() {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { loadClasses } = useClassStore();
+  const { classes, loadClasses } = useClassStore();
   const { loadPeople } = usePeopleStore();
   
   // Check if we're in edit mode
@@ -109,9 +110,17 @@ export default function NovaAtividade() {
     }
   }, [isEditMode, editId, searchParams, setSearchParams, navigate, toast]);
 
-  if (!user) return null;
+  // ✅ Filtrar turmas do professor com reatividade correta
+  const professorClasses = useMemo(() => {
+    if (!user?.id || !currentSchool?.id) return [];
+    return classes.filter(c => 
+      c.teachers?.includes(user.id) && 
+      c.schoolId === currentSchool.id &&
+      c.status === 'ATIVA'
+    );
+  }, [user?.id, currentSchool?.id, classes]);
   
-  const professorClasses = getProfessorClasses(user.id);
+  if (!user) return null;
 
   // Track form changes for draft saving
   useEffect(() => {

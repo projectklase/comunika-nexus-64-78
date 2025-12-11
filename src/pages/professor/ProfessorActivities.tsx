@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { usePosts } from '@/hooks/usePosts';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
 import { useActivityExport } from '@/hooks/useActivityExport';
-import { getProfessorClasses } from '@/utils/professor-helpers';
 import { deliveryStore } from '@/stores/delivery-store';
 import { useClassStore } from '@/stores/class-store';
 import { usePeopleStore } from '@/stores/people-store';
@@ -99,8 +99,9 @@ const statusColors = {
 export default function ProfessorActivities() {
   // ALL HOOKS MUST BE CALLED IN THE SAME ORDER EVERY TIME
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const { exportActivities } = useActivityExport();
-  const { loadClasses } = useClassStore();
+  const { classes, loadClasses } = useClassStore();
   const { loadPeople } = usePeopleStore();
   const isMobile = useIsMobile();
   
@@ -138,11 +139,15 @@ export default function ProfessorActivities() {
   const { deletePost, duplicatePost, archivePost, concludePost } = usePostActions();
   const { exportDeliveries } = useActivityExport();
 
-  // Obter turmas do professor - this needs user but we handle it safely
+  // ✅ Filtrar turmas do professor com reatividade correta
   const professorClasses = useMemo(() => {
-    if (!user) return [];
-    return getProfessorClasses(user.id);
-  }, [user]);
+    if (!user?.id || !currentSchool?.id) return [];
+    return classes.filter(c => 
+      c.teachers?.includes(user.id) && 
+      c.schoolId === currentSchool.id &&
+      c.status === 'ATIVA'
+    );
+  }, [user?.id, currentSchool?.id, classes]);
   
   const classIds = useMemo(() => professorClasses.map(c => c.id), [professorClasses]);
   const hasClasses = professorClasses.length > 0;
