@@ -15,10 +15,51 @@ interface AnalyticsContext {
   attendanceAnalytics?: any;
 }
 
+// Função para validar CRON_SECRET ou JWT
+async function validateRequest(req: Request): Promise<{ valid: boolean; reason?: string }> {
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  const authHeader = req.headers.get('Authorization');
+  
+  // 1. Verificar se é uma chamada CRON com CRON_SECRET
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    console.log('[Auth] ✅ Validado via CRON_SECRET');
+    return { valid: true };
+  }
+  
+  // 2. Verificar se é um usuário autenticado com JWT
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (supabaseUrl && supabaseServiceKey) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      
+      if (!error && user) {
+        console.log(`[Auth] ✅ Validado via JWT para usuário: ${user.email}`);
+        return { valid: true };
+      }
+    }
+  }
+  
+  return { valid: false, reason: 'Unauthorized: CRON_SECRET ou JWT válido requerido' };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar autenticação (CRON_SECRET ou JWT)
+  const authResult = await validateRequest(req);
+  if (!authResult.valid) {
+    console.error(`[Auth] ❌ ${authResult.reason}`);
+    return new Response(
+      JSON.stringify({ error: authResult.reason }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
