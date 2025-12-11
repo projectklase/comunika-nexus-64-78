@@ -33,6 +33,7 @@ interface FilterBarProps {
     status?: PostStatus;
     classId?: string;
     saved?: boolean;
+    important?: boolean;
     authorRole?: 'secretaria' | 'professor' | 'aluno';
   }) => void;
 }
@@ -86,6 +87,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
       status: filters.status,
       classId: filters.classId === DEFAULT_SELECT_TOKENS.ALL_CLASSES ? undefined : filters.classId,
       saved: filters.saved,
+      important: filters.important,
       authorRole: filters.authorRole
     });
   }, [filters, onFilterChange]);
