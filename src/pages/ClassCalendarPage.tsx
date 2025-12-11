@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClassCalendarGrid } from '@/components/calendar/ClassCalendarGrid';
 import { ClassCalendarFilters } from '@/components/calendar/ClassCalendarFilters';
 import { useClassCalendarData } from '@/hooks/useClassCalendarData';
+import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -35,7 +36,7 @@ import { useModalities } from '@/hooks/useModalities';
 export function ClassCalendarPage() {
   const { classId } = useParams<{ classId: string }>();
   const { user } = useAuth();
-  const { getClass } = useClassStore();
+  const { getClass, loading: classesLoading } = useClassStore();
   const { levels } = useLevels();
   const { modalities } = useModalities();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -94,6 +95,11 @@ export function ClassCalendarPage() {
       window.location.href = `${basePath}/turmas`;
     }
   };
+
+  // Mostrar loading ANTES de verificar "não encontrado"
+  if (classesLoading) {
+    return <PageLoadingSkeleton message="Carregando calendário..." />;
+  }
 
   if (!classData) {
     return (
