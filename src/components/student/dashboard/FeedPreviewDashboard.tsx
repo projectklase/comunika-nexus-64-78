@@ -144,7 +144,7 @@ export function FeedPreviewDashboard({ posts, onOpenPost }: FeedPreviewDashboard
                   >
                     {post.type}
                   </Badge>
-                  {post.meta?.importante && (
+                  {post.meta?.important && (
                     <Badge 
                       className="text-xs bg-[hsl(var(--golden))]/20 text-[hsl(var(--golden))] border-[hsl(var(--golden))]/30 hidden sm:flex"
                     >
