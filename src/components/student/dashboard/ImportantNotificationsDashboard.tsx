@@ -160,19 +160,6 @@ export function ImportantNotificationsDashboard({ posts }: ImportantNotification
             </div>
           </div>
         ))}
-        
-        {/* View All Button */}
-        <div className="pt-2 border-t border-border/50">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-center text-xs text-muted-foreground hover:text-foreground min-h-11"
-            onClick={() => navigate('/notifications')}
-          >
-            Ver todas as notificações
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
