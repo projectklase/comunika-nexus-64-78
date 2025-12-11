@@ -41,9 +41,9 @@ export class SmartPostFilters {
         
       case 'AVISO':
       case 'COMUNICADO':
-        // Announcements expire after 30 days to keep feed clean
+        // Announcements expire after 20 days to keep feed clean
         const createdDate = new Date(post.createdAt);
-        const expiryDate = addDays(createdDate, 30);
+        const expiryDate = addDays(createdDate, 20);
         return isBefore(expiryDate, now);
     }
     
