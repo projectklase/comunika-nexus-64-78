@@ -5,9 +5,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Validar CRON_SECRET para jobs agendados
+function validateCronSecret(req: Request): boolean {
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  if (!cronSecret) {
+    console.error('❌ CRON_SECRET não configurado');
+    return false;
+  }
+  
+  const authHeader = req.headers.get('Authorization');
+  return authHeader === `Bearer ${cronSecret}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar CRON_SECRET
+  if (!validateCronSecret(req)) {
+    console.error('❌ Unauthorized: CRON_SECRET inválido ou ausente');
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
