@@ -11,7 +11,7 @@ import { orderClassesBySchedule, getClassDisplayInfo } from '@/utils/class-helpe
 import { useLevels } from '@/hooks/useLevels';
 import { useModalities } from '@/hooks/useModalities';
 import { usePosts } from '@/hooks/usePosts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { deliveryStore } from '@/stores/delivery-store';
 
 export default function ProfessorDashboard() {
@@ -29,7 +29,60 @@ export default function ProfessorDashboard() {
     pendingDeliveries: 0,
     weeklyDeadlines: 0
   });
+
+  // ✅ Memoizar professorClasses para evitar loop infinito
+  const professorClasses = useMemo(() => {
+    if (!user?.id || !currentSchool?.id) return [];
+    return getProfessorClasses(user.id, currentSchool.id);
+  }, [user?.id, currentSchool?.id]);
+
+  // ✅ Criar string de IDs para dependência primitiva (evita re-renders)
+  const classIdsString = useMemo(() => 
+    professorClasses.map(c => c.id).join(','),
+    [professorClasses]
+  );
+
+  const orderedClasses = useMemo(() => 
+    orderClassesBySchedule(professorClasses),
+    [professorClasses]
+  );
   
+  const recentActivities = useMemo(() => {
+    if (!user?.id) return [];
+    return posts
+      .filter(p => p.authorId === user.id && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  }, [posts, user?.id]);
+  
+  const totalStudents = useMemo(() => 
+    professorClasses.reduce((sum, c) => sum + (c.students?.length || 0), 0),
+    [professorClasses]
+  );
+
+  // ✅ useEffect ANTES dos retornos condicionais, com dependências primitivas
+  useEffect(() => {
+    async function fetchDeliveryMetrics() {
+      if (!currentSchool?.id || !classIdsString) {
+        setDeliveryMetrics({ pendingDeliveries: 0, weeklyDeadlines: 0 });
+        return;
+      }
+
+      const classIds = classIdsString.split(',').filter(Boolean);
+      if (classIds.length === 0) {
+        setDeliveryMetrics({ pendingDeliveries: 0, weeklyDeadlines: 0 });
+        return;
+      }
+      
+      console.log('🔵 [ProfessorDashboard] Buscando métricas para school_id:', currentSchool.id);
+      const metrics = await deliveryStore.getProfessorMetrics(classIds, currentSchool.id);
+      setDeliveryMetrics(metrics);
+    }
+    
+    fetchDeliveryMetrics();
+  }, [classIdsString, currentSchool?.id]);
+  
+  // ✅ Retornos condicionais DEPOIS de todos os hooks
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -50,40 +103,6 @@ export default function ProfessorDashboard() {
     navigate('/dashboard');
     return null;
   }
-  
-  // ✅ Passar school_id para getProfessorClasses
-  const professorClasses = getProfessorClasses(user.id, currentSchool?.id);
-  const orderedClasses = orderClassesBySchedule(professorClasses);
-  
-  const recentActivities = posts
-    .filter(p => p.authorId === user.id && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(p.type))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
-  
-  const totalStudents = professorClasses.reduce((sum, c) => sum + (c.students?.length || 0), 0);
-  
-  useEffect(() => {
-    async function fetchDeliveryMetrics() {
-      // ✅ GUARD: Não buscar sem escola
-      if (!currentSchool?.id) {
-        console.warn('⚠️ [ProfessorDashboard] currentSchool não definido - não buscando métricas');
-        setDeliveryMetrics({ pendingDeliveries: 0, weeklyDeadlines: 0 });
-        return;
-      }
-
-      if (professorClasses.length === 0) {
-        setDeliveryMetrics({ pendingDeliveries: 0, weeklyDeadlines: 0 });
-        return;
-      }
-      
-      const classIds = professorClasses.map(c => c.id);
-      console.log('🔵 [ProfessorDashboard] Buscando métricas para school_id:', currentSchool.id);
-      const metrics = await deliveryStore.getProfessorMetrics(classIds, currentSchool.id);
-      setDeliveryMetrics(metrics);
-    }
-    
-    fetchDeliveryMetrics();
-  }, [professorClasses, currentSchool]);
   
   return (
     <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-0">
