@@ -460,14 +460,14 @@ export function NotificationPanel() {
   const panelContent = (
     <div
       ref={focusRef as React.RefObject<HTMLDivElement>}
-      className="w-full h-full flex flex-col"
+      className="w-full h-full flex flex-col min-h-0"
       id="notifications-popover"
       role="dialog"
       aria-labelledby="notifications-title"
       aria-describedby="notifications-description"
     >
       {/* Header */}
-      <div className="p-6 border-b border-border/20 bg-gradient-glass backdrop-blur-md">
+      <div className="p-6 border-b border-border/20 bg-gradient-glass backdrop-blur-md flex-shrink-0">
         <div className="flex items-center gap-3 mb-4">
           <div className="relative">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-neon">
@@ -493,9 +493,9 @@ export function NotificationPanel() {
       <Tabs 
         value={activeTab} 
         onValueChange={(value) => setActiveTab(value as NotificationTab)}
-        className="w-full flex-1 flex flex-col min-h-0"
+        className="w-full flex-1 flex flex-col min-h-0 overflow-hidden"
       >
-        <div className="px-6 pt-4">
+        <div className="px-6 pt-4 flex-shrink-0">
           <TabsList className="grid w-full grid-cols-2 h-12 bg-glass/50 backdrop-blur-sm border border-border/20 p-1">
             <TabsTrigger 
               value="novidades" 
@@ -530,15 +530,19 @@ export function NotificationPanel() {
           </TabsList>
         </div>
         
-        <TabsContent value="novidades" className="mt-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full px-4">
-            {renderTabContent('novidades')}
+        <TabsContent value="novidades" className="mt-0 flex-1 min-h-0 overflow-hidden data-[state=inactive]:hidden">
+          <ScrollArea className="h-full">
+            <div className="px-4">
+              {renderTabContent('novidades')}
+            </div>
           </ScrollArea>
         </TabsContent>
         
-        <TabsContent value="importantes" className="mt-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full px-4">
-            {renderTabContent('importantes')}
+        <TabsContent value="importantes" className="mt-0 flex-1 min-h-0 overflow-hidden data-[state=inactive]:hidden">
+          <ScrollArea className="h-full">
+            <div className="px-4">
+              {renderTabContent('importantes')}
+            </div>
           </ScrollArea>
         </TabsContent>
       </Tabs>
@@ -592,8 +596,10 @@ export function NotificationPanel() {
           <DrawerTrigger asChild>
             {bellTrigger}
           </DrawerTrigger>
-          <DrawerContent className="max-h-[80vh] overflow-hidden z-[100]">
-            {panelContent}
+          <DrawerContent className="h-[80vh] max-h-[80vh] flex flex-col z-[100]">
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {panelContent}
+            </div>
           </DrawerContent>
         </Drawer>
       </>
