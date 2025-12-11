@@ -107,7 +107,9 @@ export function useProfessorFeedFilters() {
           ["EVENTO", "COMUNICADO", "AVISO"].includes(post.type) &&
           post.status === "PUBLISHED" &&
           (post.audience === "GLOBAL" ||
-            (post.audience === "CLASS" && post.classIds?.some((id) => professorClassIds.includes(id)))),
+            (post.audience === "CLASS" && 
+             professorClassIds.length > 0 && 
+             post.classIds?.some((id) => professorClassIds.includes(id)))),
       );
     } else if (filters.type === "importantes") {
       // Show important posts
@@ -138,12 +140,13 @@ export function useProfessorFeedFilters() {
           return true;
         }
 
-        // Secretaria posts (GLOBAL or targeted to professor's classes)
+        // Secretaria posts (GLOBAL sempre visível, CLASS apenas se professor tem turmas)
         if (["EVENTO", "COMUNICADO", "AVISO"].includes(post.type)) {
-          return (
-            post.audience === "GLOBAL" ||
-            (post.audience === "CLASS" && post.classIds?.some((id) => professorClassIds.includes(id)))
-          );
+          if (post.audience === "GLOBAL") return true;
+          if (post.audience === "CLASS" && professorClassIds.length > 0) {
+            return post.classIds?.some((id) => professorClassIds.includes(id));
+          }
+          return false;
         }
 
         return false;
@@ -239,12 +242,13 @@ export function useProfessorFeedFilters() {
         return true;
       }
 
-      // Secretaria posts (GLOBAL + CLASS posts for professor's classes)
+      // Secretaria posts (GLOBAL sempre visível, CLASS apenas se professor tem turmas)
       if (["EVENTO", "COMUNICADO", "AVISO"].includes(post.type)) {
-        return (
-          post.audience === "GLOBAL" ||
-          (post.audience === "CLASS" && post.classIds?.some((id) => professorClassIds.includes(id)))
-        );
+        if (post.audience === "GLOBAL") return true;
+        if (post.audience === "CLASS" && professorClassIds.length > 0) {
+          return post.classIds?.some((id) => professorClassIds.includes(id));
+        }
+        return false;
       }
 
       return false;

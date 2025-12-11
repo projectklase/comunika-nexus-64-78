@@ -3,10 +3,12 @@ import { deliveryStore } from '@/stores/delivery-store';
 import { postStore } from '@/stores/post-store';
 import { useClassStore } from '@/stores/class-store';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Post } from '@/types/post';
 
 export function useProfessorMetrics() {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const { classes } = useClassStore();
   
   // All hooks at the top level
@@ -27,11 +29,14 @@ export function useProfessorMetrics() {
     loadPosts();
   }, []);
 
-  // Memoize professor's classes to avoid recalculation
+  // ✅ Memoize professor's classes - filtrar por escola E por professor
   const professorClasses = useMemo(() => {
-    if (!user) return [];
-    return classes.filter(c => c.teachers?.includes(user.id));
-  }, [user, classes]);
+    if (!user || !currentSchool?.id) return [];
+    return classes.filter(c => 
+      c.teachers?.includes(user.id) && 
+      c.schoolId === currentSchool.id
+    );
+  }, [user, classes, currentSchool?.id]);
 
   // Memoize class IDs
   const classIds = useMemo(() => {
