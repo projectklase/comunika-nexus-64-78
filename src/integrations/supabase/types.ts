@@ -2596,10 +2596,16 @@ export type Database = {
         Args: { p_challenge_id: string }
         Returns: number
       }
-      attack: {
-        Args: { p_battle_id: string; p_player_id: string }
-        Returns: Json
-      }
+      attack:
+        | { Args: { p_battle_id: string; p_player_id: string }; Returns: Json }
+        | {
+            Args: {
+              p_battle_id: string
+              p_player_id: string
+              p_target_type?: string
+            }
+            Returns: Json
+          }
       auto_archive_expired_posts: {
         Args: { p_school_id?: string }
         Returns: number
