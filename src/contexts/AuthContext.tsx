@@ -320,8 +320,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       root.classList.add('dark'); // Default theme is dark-neon
       
       // Reset theme in zustand store to default so next login doesn't see stale premium theme identifier
+      // Also clear lastEmail/rememberEmail to prevent email leakage between users
       import('@/stores/user-settings-store').then(({ useUserSettingsStore }) => {
-        useUserSettingsStore.getState().updateSetting('currentTheme', 'dark-neon');
+        const store = useUserSettingsStore.getState();
+        store.updateSetting('currentTheme', 'dark-neon');
+        store.updateSetting('lastEmail', '');
+        store.updateSetting('rememberEmail', false);
       });
       
       // CRÍTICO: Limpar dados de gamificação do localStorage para evitar vazamento entre usuários
@@ -355,6 +359,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('password_reset_requests');
       localStorage.removeItem('school_settings');
       localStorage.removeItem('comunika_subjects');
+      
+      // Limpar caches de dados que são recarregados do banco no próximo login
+      localStorage.removeItem('comunika_people_v2');
+      localStorage.removeItem('comunika_posts');
+      localStorage.removeItem('comunika_classes');
+      localStorage.removeItem('comunika_class_subjects');
+      localStorage.removeItem('hygiene_report');
       
       // Limpar drafts de posts
       Object.keys(localStorage).forEach(key => {
