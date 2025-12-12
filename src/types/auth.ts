@@ -30,7 +30,8 @@ export interface User {
   mustChangePassword?: boolean;
   passwordHash?: string;
   koins?: number;
-  total_xp?: number;
+  total_xp?: number;        // XP gastável (diminui ao comprar pacotes)
+  level_xp?: number;        // XP permanente para cálculo de nível (só aumenta)
 }
 
 export interface AuthContextType {

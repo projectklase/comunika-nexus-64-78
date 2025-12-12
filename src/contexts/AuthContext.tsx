@@ -102,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         mustChangePassword: profile.must_change_password,
         koins: profile.koins || 0,
         total_xp: profile.total_xp || 0,
+        level_xp: (profile as any).level_xp || 0,
       };
     } catch (error) {
       console.error('[getUserProfile] Erro crítico:', error);

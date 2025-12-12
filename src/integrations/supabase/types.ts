@@ -1746,6 +1746,7 @@ export type Database = {
           is_active: boolean | null
           koins: number
           last_activity_date: string | null
+          level_xp: number | null
           must_change_password: boolean | null
           name: string
           phone: string | null
@@ -1771,6 +1772,7 @@ export type Database = {
           is_active?: boolean | null
           koins?: number
           last_activity_date?: string | null
+          level_xp?: number | null
           must_change_password?: boolean | null
           name: string
           phone?: string | null
@@ -1796,6 +1798,7 @@ export type Database = {
           is_active?: boolean | null
           koins?: number
           last_activity_date?: string | null
+          level_xp?: number | null
           must_change_password?: boolean | null
           name?: string
           phone?: string | null
@@ -2523,6 +2526,7 @@ export type Database = {
           is_active: boolean | null
           koins: number
           last_activity_date: string | null
+          level_xp: number | null
           must_change_password: boolean | null
           name: string
           phone: string | null
@@ -2570,6 +2574,15 @@ export type Database = {
       complete_challenge_and_reward:
         | {
             Args: {
+              p_challenge_id: string
+              p_koin_reward: number
+              p_student_id: string
+              p_xp_reward?: number
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
               p_challenge_title: string
               p_koin_reward: number
               p_student_challenge_id: string
@@ -2599,6 +2612,15 @@ export type Database = {
       }
       end_turn: {
         Args: { p_battle_id: string; p_player_id: string }
+        Returns: Json
+      }
+      execute_battle_turn: {
+        Args: {
+          p_action: string
+          p_battle_id: string
+          p_card_id?: string
+          p_player_id: string
+        }
         Returns: Json
       }
       generate_platform_alerts: { Args: never; Returns: number }
