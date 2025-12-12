@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   Building2, 
   Users, 
@@ -11,7 +12,8 @@ import {
   ChevronRight,
   DollarSign,
   Eye,
-  EyeOff
+  EyeOff,
+  Trophy
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +36,8 @@ import {
   AreaChart,
   Area
 } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { WeeklyPrizeCelebrationModal } from '@/components/gamification/WeeklyPrizeCelebrationModal';
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -112,6 +116,16 @@ function MetricCard({
   return content;
 }
 
+interface Winner {
+  user_id: string;
+  name: string;
+  avatar: string | null;
+  equipped_avatar: { emoji?: string; imageUrl?: string } | null;
+  total_xp: number;
+  position: number;
+  prize_xp: number;
+}
+
 export default function PlatformDashboard() {
   const { 
     metrics, 
@@ -127,6 +141,54 @@ export default function PlatformDashboard() {
   
   const { flags, isLoading: loadingFlags, updateFlag, getFlag } = usePlatformFeatureFlags();
   const { toast } = useToast();
+  
+  // 🧪 TESTE: Estado para modal de premiação semanal
+  const [showWeeklyPrizeTest, setShowWeeklyPrizeTest] = useState(false);
+  const [weeklyWinners, setWeeklyWinners] = useState<Winner[]>([]);
+  const [loadingWinners, setLoadingWinners] = useState(false);
+  
+  const handleTestWeeklyPrize = async () => {
+    setLoadingWinners(true);
+    try {
+      // Buscar primeira escola ativa
+      const { data: school } = await supabase
+        .from('schools')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+      
+      if (school) {
+        const { data } = await supabase.rpc('get_weekly_xp_rankings', {
+          p_school_id: school.id,
+          p_limit: 10
+        });
+        
+        const PRIZES = [800, 500, 350, 100, 50, 25, 25, 25, 25, 25];
+        const winners: Winner[] = ((data as any[]) || []).map((s, idx) => ({
+          user_id: s.student_id,
+          name: s.student_name,
+          avatar: s.avatar,
+          equipped_avatar: {
+            emoji: s.equipped_avatar_emoji || undefined,
+            imageUrl: s.equipped_avatar_image_url || undefined
+          },
+          total_xp: s.weekly_xp,
+          position: s.rank_position,
+          prize_xp: PRIZES[idx] || 25
+        }));
+        
+        setWeeklyWinners(winners);
+        setShowWeeklyPrizeTest(true);
+      } else {
+        toast({ title: 'Nenhuma escola ativa encontrada', variant: 'destructive' });
+      }
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Erro ao buscar rankings', variant: 'destructive' });
+    }
+    setLoadingWinners(false);
+  };
   
   const handleToggleQuickLogins = async (enabled: boolean) => {
     const success = await updateFlag('quick_logins_visible', enabled);
@@ -466,7 +528,33 @@ export default function PlatformDashboard() {
                 />
               </div>
             </div>
+            
+            {/* 🧪 TESTE: Botão para testar modal de premiação */}
+            <div className="pt-3 border-t border-white/10">
+              <Button 
+                variant="outline" 
+                onClick={handleTestWeeklyPrize}
+                disabled={loadingWinners}
+                className="w-full justify-start gap-3 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20 text-amber-500"
+              >
+                <Trophy className="w-4 h-4" />
+                🧪 Testar Modal Premiação Semanal
+                <ChevronRight className="w-4 h-4 ml-auto" />
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1 text-center">
+                Temporário - remover após testes
+              </p>
+            </div>
           </CardContent>
+          
+          {/* Modal de teste */}
+          <WeeklyPrizeCelebrationModal
+            open={showWeeklyPrizeTest}
+            winners={weeklyWinners}
+            myPosition={0}
+            myPrize={0}
+            onClose={() => setShowWeeklyPrizeTest(false)}
+          />
         </Card>
 
         {/* Recent Platform Activity */}
