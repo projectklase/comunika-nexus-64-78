@@ -177,7 +177,7 @@ export const EFFECT_MECHANICS: Record<CardEffectType, EffectMechanics> = {
   DOUBLE: {
     activation: 'Passivo em combate',
     duration: 'Permanente',
-    consumption: 'Multiplica outros efeitos',
+    consumption: 'Aplica BOOST duas vezes',
   },
   REFLECT: {
     activation: 'Quando você é atacado',
