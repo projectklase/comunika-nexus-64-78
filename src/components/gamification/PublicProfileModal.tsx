@@ -6,6 +6,7 @@ import { Loader2, Trophy, Flame, Coins } from 'lucide-react';
 import { BadgeWithLabel } from './BadgeWithLabel';
 import { BadgeRequirementsModal } from './BadgeRequirementsModal';
 import { PremiumAvatar } from './PremiumAvatar';
+import { LevelBadge } from './LevelBadge';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { cn } from '@/lib/utils';
 
@@ -128,6 +129,13 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
               </div>
             )}
           </div>
+          
+          {/* Badge de Nível */}
+          <LevelBadge 
+            level={Math.floor((profile.level_xp || 0) / 100)} 
+            showLabel 
+            size="md"
+          />
         </div>
 
         {/* Badges */}
