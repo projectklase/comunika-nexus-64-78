@@ -42,20 +42,17 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
         </DialogHeader>
         
         <Tabs defaultValue="info" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="info" className="gap-2">
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Informações</span>
             </TabsTrigger>
-            <TabsTrigger value="confirmations" className="gap-2">
+            <TabsTrigger value="management" className="gap-2">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Confirmações</span>
-              <Badge variant="secondary" className="ml-1">{metrics?.confirmationsCount || 0}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="invitations" className="gap-2">
-              <UserPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Convites</span>
-              <Badge variant="secondary" className="ml-1">{metrics?.invitationsCount || 0}</Badge>
+              <span className="hidden sm:inline">Gestão</span>
+              <Badge variant="secondary" className="ml-1">
+                {(metrics?.confirmationsCount || 0) + (metrics?.invitationsCount || 0)}
+              </Badge>
             </TabsTrigger>
           </TabsList>
           
@@ -148,11 +145,7 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
               </Card>
             </TabsContent>
             
-            <TabsContent value="confirmations" className="mt-0">
-              <EventInvitationsTab eventId={event.id} eventTitle={event.title} />
-            </TabsContent>
-            
-            <TabsContent value="invitations" className="mt-0">
+            <TabsContent value="management" className="mt-0">
               <EventInvitationsTab eventId={event.id} eventTitle={event.title} />
             </TabsContent>
             
