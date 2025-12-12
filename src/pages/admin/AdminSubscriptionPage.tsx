@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 import {
   CreditCard,
   Brain,
@@ -28,6 +32,8 @@ import {
   Plus,
   Loader2,
   UsersRound,
+  ExternalLink,
+  Settings,
 } from 'lucide-react';
 
 const KLASE_FEATURES = [
@@ -64,6 +70,37 @@ function formatCurrency(cents: number): string {
 export default function AdminSubscriptionPage() {
   const { user } = useAuth();
   const { limits, isLoading, allPlans } = useSubscription();
+  const { isLoading: isStripeLoading, createCheckout, openCustomerPortal } = useStripeSubscription();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Handle success/cancel URL params
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast({
+        title: 'Pagamento realizado!',
+        description: 'Sua assinatura foi ativada com sucesso.',
+      });
+    } else if (searchParams.get('canceled') === 'true') {
+      toast({
+        title: 'Pagamento cancelado',
+        description: 'O processo de pagamento foi cancelado.',
+        variant: 'destructive',
+      });
+    }
+  }, [searchParams, toast]);
+
+  const handleUpgrade = async (planSlug: string) => {
+    await createCheckout(planSlug);
+  };
+
+  const handleAddSchool = async () => {
+    await createCheckout('escola_extra');
+  };
+
+  const handleManageSubscription = async () => {
+    await openCustomerPortal();
+  };
 
   if (isLoading) {
     return (
@@ -112,9 +149,19 @@ export default function AdminSubscriptionPage() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Seu Plano Atual</CardTitle>
-              <Button variant="outline" size="sm" className="gap-2">
-                <History className="h-4 w-4" />
-                Histórico
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={handleManageSubscription}
+                disabled={isStripeLoading}
+              >
+                {isStripeLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Settings className="h-4 w-4" />
+                )}
+                Gerenciar
               </Button>
             </div>
           </CardHeader>
@@ -260,9 +307,17 @@ export default function AdminSubscriptionPage() {
                       {plan.included_schools} escola{plan.included_schools > 1 ? 's' : ''} incluída{plan.included_schools > 1 ? 's' : ''}
                     </p>
                     {!isCurrentPlan && plan.max_students > (limits?.max_students || 0) && (
-                      <Button className="w-full gap-2 mt-4">
-                        <ArrowUpRight className="h-4 w-4" />
-                        Upgrade
+                      <Button 
+                        className="w-full gap-2 mt-4"
+                        onClick={() => handleUpgrade(plan.slug)}
+                        disabled={isStripeLoading}
+                      >
+                        {isStripeLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4" />
+                        )}
+                        Assinar
                       </Button>
                     )}
                   </CardContent>
@@ -290,9 +345,18 @@ export default function AdminSubscriptionPage() {
               <span className="text-lg font-bold text-primary">
                 +{formatCurrency(addonSchoolPrice)}/mês
               </span>
-              <Button variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Solicitar
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={handleAddSchool}
+                disabled={isStripeLoading}
+              >
+                {isStripeLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                Adicionar
               </Button>
             </div>
           </CardContent>
