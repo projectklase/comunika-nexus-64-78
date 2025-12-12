@@ -2626,7 +2626,7 @@ export type Database = {
       }
       assign_challenge_to_students: {
         Args: { p_challenge_id: string }
-        Returns: number
+        Returns: undefined
       }
       attack: {
         Args: { p_battle_id: string; p_player_id: string }
