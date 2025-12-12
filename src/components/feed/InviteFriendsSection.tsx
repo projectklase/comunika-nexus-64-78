@@ -65,7 +65,7 @@ export function InviteFriendsSection({
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <h4 className="font-bold text-sm text-purple-100 flex items-center gap-1.5">
-                🎉 Convide seus amigos!
+                🎉 Adicione seus amigos!
               </h4>
               {invitationsCount > 0 && (
                 <Badge 
@@ -93,7 +93,7 @@ export function InviteFriendsSection({
           <p className="text-xs text-purple-100/90 leading-snug">
             {limitReached 
               ? 'Você atingiu o limite de convites para este evento.' 
-              : 'Traga seus amigos e divirtam-se juntos!'}
+              : 'Cadastre amigos para participarem do evento com você!'}
           </p>
         </div>
       </div>
@@ -165,7 +165,7 @@ export function InviteFriendsSection({
         ) : (
           <>
             <Users className="h-3.5 w-3.5 mr-1.5" />
-            Convidar Amigo
+            Adicionar Amigo
           </>
             )}
             </Button>
