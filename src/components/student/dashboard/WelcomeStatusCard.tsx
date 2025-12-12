@@ -152,18 +152,6 @@ export function WelcomeStatusCard({ posts }: WelcomeStatusCardProps) {
               </div>
             </div>
           </div>
-
-          {statusData.count && statusData.count > 0 && (
-            <Badge 
-              variant="outline" 
-              className={cn(
-                "text-base sm:text-lg font-bold h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center self-start sm:self-auto",
-                styles.badge
-              )}
-            >
-              {statusData.count}
-            </Badge>
-          )}
         </div>
       </CardContent>
     </Card>
