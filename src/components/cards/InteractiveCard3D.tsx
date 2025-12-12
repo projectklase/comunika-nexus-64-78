@@ -125,7 +125,7 @@ export const InteractiveCard3D = ({ card, size = 'lg' }: InteractiveCard3DProps)
 
   // Dimensões baseadas no tamanho
   const sizeClasses = size === 'lg' 
-    ? 'w-52 h-80 sm:w-56 sm:h-[22rem]' 
+    ? 'w-52 h-[21rem] sm:w-56 sm:h-[25rem]' 
     : 'w-40 h-64 sm:w-44 sm:h-72';
 
   return (

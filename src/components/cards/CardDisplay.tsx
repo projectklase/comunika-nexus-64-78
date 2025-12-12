@@ -98,7 +98,7 @@ export const CardDisplay = ({
     xs: 'w-12 h-16',
     sm: 'w-full h-full max-w-[180px] max-h-[280px]', // Limite máximo + responsivo para mobile
     md: 'w-40 h-64 sm:w-44 sm:h-72',
-    lg: 'w-52 h-80 sm:w-56 sm:h-[22rem]'
+    lg: 'w-52 h-[21rem] sm:w-56 sm:h-[25rem]'
   };
 
   const statSizes = {
@@ -297,7 +297,7 @@ export const CardDisplay = ({
           </div>
 
           {/* Illustration Area */}
-          <div className="relative h-[50%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10 card-inner-glow">
+          <div className="relative h-[55%] bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-white/10 card-inner-glow">
             {/* Skeleton while loading */}
             {card.image_url && !imageLoaded && !imageError && (
               <Skeleton className="absolute inset-0 w-full h-full" />
