@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { ChevronRight } from 'lucide-react';
 
 interface GameStatCardProps {
   icon: ReactNode;
@@ -10,6 +11,7 @@ interface GameStatCardProps {
   variant?: 'default' | 'collection' | 'cards' | 'decks' | 'level';
   progress?: number;
   delay?: number;
+  onClick?: () => void;
 }
 
 const variantStyles = {
@@ -52,16 +54,22 @@ export function GameStatCard({
   subtitle, 
   variant = 'default',
   progress,
-  delay = 0 
+  delay = 0,
+  onClick
 }: GameStatCardProps) {
   const styles = variantStyles[variant];
+  const isClickable = !!onClick;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.3, delay: delay * 0.08, ease: 'easeOut' }}
-      className="relative group min-w-0 max-w-full overflow-hidden"
+      onClick={onClick}
+      className={cn(
+        "relative group min-w-0 max-w-full overflow-hidden",
+        isClickable && "cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 transition-transform duration-200"
+      )}
     >
       {/* Gradient border */}
       <div className={cn(
@@ -76,6 +84,13 @@ export function GameStatCard({
         styles.gradient,
         "border border-white/10"
       )}>
+        {/* Clickable indicator */}
+        {isClickable && (
+          <div className="absolute top-2 right-2 text-foreground/30 group-hover:text-foreground/60 transition-colors">
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </div>
+        )}
+
         {/* Shine effect */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
