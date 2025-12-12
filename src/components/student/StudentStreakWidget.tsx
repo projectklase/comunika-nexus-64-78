@@ -100,6 +100,10 @@ export function StudentStreakWidget() {
       // CORREÇÃO: Passar o updatedWeek diretamente para evitar race condition
       if (user?.id) {
         await syncToDatabase(user.id, result.updatedWeek);
+        
+        // Incrementar progresso do desafio DAILY_CHECKIN
+        await supabase.rpc('increment_daily_checkin_progress', { p_student_id: user.id });
+        
         // Refetch stats to update UI with fresh database values
         await refetchStats();
       }

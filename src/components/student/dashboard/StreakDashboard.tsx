@@ -65,6 +65,10 @@ export function StreakDashboard() {
       const authUser = (await supabase.auth.getUser()).data.user;
       if (authUser) {
         await syncToDatabase(authUser.id, result.updatedWeek);
+        
+        // Incrementar progresso do desafio DAILY_CHECKIN
+        await supabase.rpc('increment_daily_checkin_progress', { p_student_id: authUser.id });
+        
         await refetchStats();
       }
 
