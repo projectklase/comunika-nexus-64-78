@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, Deck } from '@/types/cards';
 import { CardDisplay } from './CardDisplay';
 import { CardDetailModal } from './CardDetailModal';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Search, Plus, X, Swords, Shield, Trash2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,21 @@ export const DeckBuilderModal = ({
   const [selectedCards, setSelectedCards] = useState<string[]>(existingDeck?.card_ids || []);
   const [search, setSearch] = useState('');
   const [detailCard, setDetailCard] = useState<Card | null>(null);
+  
+  // Flip sound ref
+  const flipSoundRef = useRef<HTMLAudioElement | null>(null);
+  
+  useEffect(() => {
+    flipSoundRef.current = new Audio('/sounds/card-flipping.mp3');
+    flipSoundRef.current.volume = 0.5;
+    
+    return () => {
+      if (flipSoundRef.current) {
+        flipSoundRef.current.pause();
+        flipSoundRef.current = null;
+      }
+    };
+  }, []);
 
   const availableCards = useMemo(() => {
     return allCards.filter(card => 
@@ -52,6 +67,11 @@ export const DeckBuilderModal = ({
 
   const handleAddCard = (cardId: string) => {
     if (canAddCard(cardId)) {
+      // Play flip sound
+      if (flipSoundRef.current) {
+        flipSoundRef.current.currentTime = 0;
+        flipSoundRef.current.play().catch(() => {});
+      }
       setSelectedCards([...selectedCards, cardId]);
     } else if (selectedCards.length >= 15) {
       toast.error('Máximo de 15 cartas por deck (Duelo Direto)');
@@ -174,43 +194,39 @@ export const DeckBuilderModal = ({
                   const owned = userCards.get(card.id) || 0;
                   const canAdd = canAddCard(card.id);
                   
-                  return (
-                    <div 
-                      key={card.id} 
-                      className={cn(
-                        "relative transition-all duration-200 rounded-lg",
-                        // Seleção visual quando carta está no deck
-                        inDeck > 0 && "ring-2 ring-emerald-500 ring-offset-1 ring-offset-background",
-                        // Desativado quando limite atingido
-                        !canAdd && inDeck >= owned && "opacity-40 grayscale"
-                      )}
-                    >
-                      <CardDisplay
-                        card={card}
-                        size="xs"
-                        className="cursor-pointer"
+                    return (
+                      <div 
+                        key={card.id} 
+                        className={cn(
+                          "relative transition-all duration-200 rounded-lg cursor-pointer active:scale-95",
+                          // Seleção visual quando carta está no deck
+                          inDeck > 0 && "ring-2 ring-emerald-500 ring-offset-1 ring-offset-background",
+                          // Desativado quando limite atingido
+                          !canAdd && inDeck >= owned && "opacity-40 grayscale"
+                        )}
                         onClick={() => handleAddCard(card.id)}
-                      />
-                      
-                      {/* Badge de quantidade no deck */}
-                      {inDeck > 0 && (
-                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold text-black shadow-lg shadow-amber-500/30 z-10">
-                          {inDeck}
-                        </div>
-                      )}
-
-                      {/* Long press para detalhes */}
-                      <button
-                        className="absolute inset-0 z-20 opacity-0"
                         onContextMenu={(e) => {
                           e.preventDefault();
                           setDetailCard(card);
                         }}
                         onDoubleClick={() => setDetailCard(card)}
-                      />
-                    </div>
-                  );
-                })}
+                      >
+                        <div className="pointer-events-none">
+                          <CardDisplay
+                            card={card}
+                            size="xs"
+                          />
+                        </div>
+                        
+                        {/* Badge de quantidade no deck */}
+                        {inDeck > 0 && (
+                          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold text-black shadow-lg shadow-amber-500/30 z-10">
+                            {inDeck}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </ScrollArea>
           </div>
