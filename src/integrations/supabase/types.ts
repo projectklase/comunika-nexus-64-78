@@ -2845,6 +2845,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_daily_checkin_progress: {
+        Args: { p_student_id: string }
+        Returns: undefined
+      }
       initialize_battle_game_state: {
         Args: { p_player1_deck_cards: string[]; p_player2_deck_cards: string[] }
         Returns: Json

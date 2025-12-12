@@ -60,16 +60,6 @@ export default function AlunoNexus() {
             </div>
           </div>
 
-          <Button
-            onClick={() => checkAchievements()}
-            disabled={isCheckingAchievements}
-            variant="outline"
-            size="sm"
-            className="bg-gradient-to-r from-amber-500/10 to-amber-600/10 hover:from-amber-500/20 hover:to-amber-600/20 border-amber-500/30"
-          >
-            <Trophy className="h-4 w-4 mr-2" />
-            {isCheckingAchievements ? 'Verificando...' : 'Verificar Conquistas'}
-          </Button>
         </header>
 
         {/* Main Content */}
