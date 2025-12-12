@@ -331,7 +331,7 @@ export function InviteFriendsModal({ isOpen, onClose, event, studentId }: Invite
             <span className="line-clamp-1">Convidar para {event.title}</span>
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
-            Preencha os dados do amigo e responsável para enviar o convite.
+            Cadastre os dados do amigo para adicioná-lo à sua lista de convidados.
           </DialogDescription>
         </DialogHeader>
 
