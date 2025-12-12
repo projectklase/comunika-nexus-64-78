@@ -115,10 +115,10 @@ export default function CartasPage() {
           <GameStatCard
             icon={<Sparkles className="w-5 h-5" />}
             title="Nível"
-            value={`Nv. ${Math.floor((user?.total_xp || 0) / 100)}`}
-            subtitle={`${(user?.total_xp || 0) % 100}/100 XP`}
+            value={`Nv. ${Math.floor((user?.level_xp || 0) / 100)}`}
+            subtitle={`${(user?.level_xp || 0) % 100}/100 XP`}
             variant="level"
-            progress={(user?.total_xp || 0) % 100}
+            progress={(user?.level_xp || 0) % 100}
             delay={3}
           />
         </div>
