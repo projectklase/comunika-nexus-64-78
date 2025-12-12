@@ -8,11 +8,10 @@ import { DeckBuilderModal } from '@/components/cards/DeckBuilderModal';
 import { CardDisplay } from '@/components/cards/CardDisplay';
 import { CardDetailModal } from '@/components/cards/CardDetailModal';
 import { CardRecycleModal } from '@/components/cards/CardRecycleModal';
+import { MyDecksModal } from '@/components/cards/MyDecksModal';
 import { GameStatCard } from '@/components/cards/GameStatCard';
 import { GameActionButton } from '@/components/cards/GameActionButton';
-import { GameDeckCard } from '@/components/cards/GameDeckCard';
 import { Package, BookOpen, Plus, Sparkles, TrendingUp, Flame } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { DeleteDeckConfirmModal } from '@/components/cards/DeleteDeckConfirmModal';
 import { Deck, Card } from '@/types/cards';
 import { getRecyclableCards } from '@/hooks/useCardRecycling';
@@ -40,6 +39,7 @@ export default function CartasPage() {
   const [showGallery, setShowGallery] = useState(false);
   const [showPackOpening, setShowPackOpening] = useState(false);
   const [showDeckBuilder, setShowDeckBuilder] = useState(false);
+  const [showMyDecks, setShowMyDecks] = useState(false);
   const [showRecycleModal, setShowRecycleModal] = useState(false);
   const [lastOpenedCards, setLastOpenedCards] = useState<any>(null);
   const [editingDeck, setEditingDeck] = useState<Deck | undefined>(undefined);
@@ -109,7 +109,7 @@ export default function CartasPage() {
             subtitle="Máx. 10 decks"
             variant="decks"
             delay={2}
-            onClick={() => setShowDeckBuilder(true)}
+            onClick={() => setShowMyDecks(true)}
           />
 
           <GameStatCard
@@ -162,44 +162,6 @@ export default function CartasPage() {
             badge={duplicateCount > 0 ? duplicateCount : undefined}
           />
         </div>
-
-        {/* Meus Decks */}
-        {decks.length > 0 && (
-          <div className="overflow-hidden max-w-full">
-            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 px-3 sm:px-0">Meus Decks</h2>
-            <ScrollArea className="w-full">
-              <div className="flex gap-3 sm:gap-4 pb-3 sm:pb-4 px-3 sm:px-0">
-                {decks.map((deck, idx) => (
-                  <GameDeckCard
-                    key={deck.id}
-                    name={deck.name}
-                    cardCount={deck.card_ids.length}
-                    isFavorite={deck.is_favorite}
-                    onEdit={() => {
-                      setEditingDeck(deck);
-                      setShowDeckBuilder(true);
-                    }}
-                    onDelete={() => setDeckToDelete(deck)}
-                    delay={idx}
-                  >
-                    {deck.card_ids.slice(0, 5).map((cardId, cardIdx) => {
-                      const card = allCards.find(c => c.id === cardId);
-                      return card ? (
-                        <CardDisplay 
-                          key={cardIdx} 
-                          card={card} 
-                          size="xs" 
-                          showStats={false}
-                          onClick={() => setSelectedCard(card)}
-                        />
-                      ) : null;
-                    })}
-                  </GameDeckCard>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        )}
 
         {/* Cartas Recentes */}
         {userCards.length > 0 && (
@@ -263,6 +225,28 @@ export default function CartasPage() {
           } else {
             createDeck(deckData);
           }
+        }}
+      />
+
+      {/* Modal Meus Decks */}
+      <MyDecksModal
+        isOpen={showMyDecks}
+        onClose={() => setShowMyDecks(false)}
+        decks={decks}
+        allCards={allCards}
+        onEditDeck={(deck) => {
+          setShowMyDecks(false);
+          setEditingDeck(deck);
+          setShowDeckBuilder(true);
+        }}
+        onDeleteDeck={(deck) => {
+          setShowMyDecks(false);
+          setDeckToDelete(deck);
+        }}
+        onCreateNew={() => {
+          setShowMyDecks(false);
+          setEditingDeck(undefined);
+          setShowDeckBuilder(true);
         }}
       />
 
