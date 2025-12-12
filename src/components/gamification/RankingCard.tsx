@@ -20,6 +20,7 @@ interface RankingCardProps {
   type: 'xp' | 'koins' | 'streak';
   isCurrentUser?: boolean;
   onClick?: () => void;
+  prizeBadge?: number;
 }
 
 const getMedalEmoji = (position: number) => {
@@ -36,7 +37,7 @@ const getValueByType = (student: RankedStudent, type: string) => {
   return '';
 };
 
-export function RankingCard({ student, type, isCurrentUser = false, onClick }: RankingCardProps) {
+export function RankingCard({ student, type, isCurrentUser = false, onClick, prizeBadge }: RankingCardProps) {
   const position = student.rank_position;
   const isTopThree = position <= 3;
 
@@ -44,7 +45,7 @@ export function RankingCard({ student, type, isCurrentUser = false, onClick }: R
     <div
       onClick={onClick}
       className={cn(
-        'flex items-center gap-3 p-3 rounded-lg transition-all duration-200',
+        'flex items-center gap-3 p-3 rounded-lg transition-all duration-200 relative',
         'hover:bg-accent/50 cursor-pointer',
         isCurrentUser && 'bg-primary/10 border border-primary/30 shadow-lg shadow-primary/10',
         isTopThree && 'bg-gradient-to-r from-amber-500/5 to-transparent'
@@ -82,6 +83,12 @@ export function RankingCard({ student, type, isCurrentUser = false, onClick }: R
           {getValueByType(student, type)}
         </p>
       </div>
+
+      {prizeBadge && (
+        <div className="absolute bottom-1 right-2 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md">
+          +{prizeBadge}
+        </div>
+      )}
     </div>
   );
 }

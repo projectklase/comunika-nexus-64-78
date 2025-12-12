@@ -103,24 +103,17 @@ export function WeeklyRankingList({
           <p className="text-xs mt-1">Complete desafios e batalhas para entrar no ranking!</p>
         </div>
       ) : (
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-2 pt-3">
+        <ScrollArea className="h-[400px] pr-2">
+          <div className="space-y-2">
             {adaptedStudents.map((student, index) => (
-              <div key={student.student_id} className="relative">
-                <RankingCard
-                  student={student}
-                  type="xp"
-                  isCurrentUser={student.student_id === currentUserId}
-                  onClick={() => onStudentClick?.(student.student_id)}
-                />
-                
-                {/* Badge de prêmio */}
-                {index < 10 && (
-                  <div className="absolute -right-1 -top-1 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">
-                    +{PRIZES[index]}
-                  </div>
-                )}
-              </div>
+              <RankingCard
+                key={student.student_id}
+                student={student}
+                type="xp"
+                isCurrentUser={student.student_id === currentUserId}
+                onClick={() => onStudentClick?.(student.student_id)}
+                prizeBadge={index < 10 ? PRIZES[index] : undefined}
+              />
             ))}
           </div>
         </ScrollArea>
