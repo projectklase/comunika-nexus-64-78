@@ -254,7 +254,17 @@ export default function RewardsStore() {
 
           {/* Items Grid */}
           <div>
-            {items.length === 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="aspect-[4/5] bg-muted rounded-lg mb-3"></div>
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : items.length === 0 ? (
               <div className="text-center py-12">
                 <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">
