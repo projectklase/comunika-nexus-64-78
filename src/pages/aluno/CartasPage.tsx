@@ -89,6 +89,7 @@ export default function CartasPage() {
             variant="collection"
             progress={collectionProgress.percentage}
             delay={0}
+            onClick={() => setShowGallery(true)}
           />
 
           <GameStatCard
@@ -98,6 +99,7 @@ export default function CartasPage() {
             subtitle="Incluindo duplicatas"
             variant="cards"
             delay={1}
+            onClick={() => setShowGallery(true)}
           />
 
           <GameStatCard
@@ -107,6 +109,7 @@ export default function CartasPage() {
             subtitle="Máx. 10 decks"
             variant="decks"
             delay={2}
+            onClick={() => setShowDeckBuilder(true)}
           />
 
           <GameStatCard
@@ -202,21 +205,16 @@ export default function CartasPage() {
         {userCards.length > 0 && (
           <div className="overflow-hidden max-w-full">
             <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 px-3 sm:px-0">Cartas Recentes</h2>
-            <div className="bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent backdrop-blur-sm rounded-xl border border-white/10 p-3 sm:p-4 mx-3 sm:mx-0">
-              <ScrollArea className="w-full">
-                <div className="flex gap-3 sm:gap-4 pb-2">
-                  {userCards.slice(0, 8).map(uc => uc.card && (
-                    <div key={uc.id} className="flex-shrink-0 w-[100px] sm:w-[120px]">
-                      <CardDisplay 
-                        card={uc.card} 
-                        quantity={uc.quantity}
-                        size="sm"
-                        onClick={() => setSelectedCard(uc.card!)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-0">
+              {userCards.slice(0, 8).map(uc => uc.card && (
+                <CardDisplay 
+                  key={uc.id} 
+                  card={uc.card} 
+                  quantity={uc.quantity}
+                  size="xs"
+                  onClick={() => setSelectedCard(uc.card!)}
+                />
+              ))}
             </div>
           </div>
         )}
