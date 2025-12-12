@@ -247,7 +247,7 @@ export default function AlunoProfile() {
             Rankings da Escola
           </h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {/* Ranking Semanal (destaque) */}
             <WeeklyRankingList
               students={rankings.topWeeklyXP}
@@ -269,14 +269,6 @@ export default function AlunoProfile() {
             <RankingList
               students={rankings.topStreak}
               type="streak"
-              currentUserId={user.id}
-              isLoading={rankings.isLoading}
-              onStudentClick={setSelectedStudentId}
-            />
-            
-            <RankingList
-              students={rankings.topXP}
-              type="xp"
               currentUserId={user.id}
               isLoading={rankings.isLoading}
               onStudentClick={setSelectedStudentId}
