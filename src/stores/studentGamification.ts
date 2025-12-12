@@ -140,14 +140,17 @@ export const useStudentGamification = create<GamificationStore>()(
         try {
           console.log('[syncToDatabase] Sincronizando week:', JSON.stringify(weekToSync));
           
+          // IMPORTANTE: NÃO sincronizamos total_xp aqui para evitar sobrescrever valores
+          // que foram atualizados por RPCs (batalhas, desafios, reciclagem).
+          // O XP é gerenciado exclusivamente pelo banco de dados via RPCs.
           const { error } = await supabase
             .from('profiles')
             .update({
-              total_xp: state.xp,
+              // total_xp: state.xp, // REMOVIDO - evita race conditions com RPCs
               current_streak_days: state.streak,
               best_streak_days: Math.max(state.streak, 0),
               last_activity_date: getToday(),
-              weekly_checkins: weekToSync // Usar week atualizado
+              weekly_checkins: weekToSync
             })
             .eq('id', userId);
 
