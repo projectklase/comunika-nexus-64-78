@@ -168,9 +168,11 @@ export const useStudentGamification = create<GamificationStore>()(
         try {
           console.log('[loadFromDatabase] Carregando dados de gamificação do banco...');
           
+          // Buscar level_xp (permanente) para exibição de desbloqueios/progressão
+          // e total_xp (gastável) para compras
           const { data, error } = await supabase
             .from('profiles')
-            .select('total_xp, current_streak_days, weekly_checkins, last_activity_date')
+            .select('level_xp, current_streak_days, weekly_checkins, last_activity_date')
             .eq('id', userId)
             .single();
 
@@ -187,14 +189,14 @@ export const useStudentGamification = create<GamificationStore>()(
             }
 
             set({
-              xp: data.total_xp || 0,
+              xp: data.level_xp || 0, // Usar level_xp para progressão de desbloqueios
               streak: data.current_streak_days || 0,
               lastCheckIn: data.last_activity_date || '',
               week: weekData
             });
 
             console.log('[loadFromDatabase] ✅ Dados carregados:', {
-              xp: data.total_xp,
+              xp: data.level_xp,
               streak: data.current_streak_days,
               weekDays: Object.keys(weekData).length
             });

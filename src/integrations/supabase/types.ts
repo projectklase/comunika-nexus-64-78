@@ -2639,7 +2639,12 @@ export type Database = {
       can_create_notifications: { Args: { _user_id: string }; Returns: boolean }
       check_and_unlock_achievements: {
         Args: { p_user_id: string }
-        Returns: Json
+        Returns: {
+          unlockable_id: string
+          unlockable_name: string
+          unlockable_rarity: string
+          unlockable_type: string
+        }[]
       }
       check_subscription_limits: { Args: { p_admin_id: string }; Returns: Json }
       check_turn_timeout: { Args: { p_battle_id: string }; Returns: Json }

@@ -38,10 +38,10 @@ export function ThemeGalleryModal({ open, onOpenChange }: ThemeGalleryModalProps
     queryFn: async () => {
       if (!user?.id) return null;
       
-      // Buscar perfil
+      // Buscar perfil - USANDO level_xp (permanente) em vez de total_xp (gastável)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('total_xp, current_streak_days, best_streak_days, koins')
+        .select('level_xp, current_streak_days, best_streak_days, koins')
         .eq('id', user.id)
         .single();
       
@@ -53,8 +53,8 @@ export function ThemeGalleryModal({ open, onOpenChange }: ThemeGalleryModalProps
         .eq('status', 'COMPLETED');
       
       return {
-        xp: profile?.total_xp || 0,
-        streak: profile?.best_streak_days || 0, // RPC usa best_streak_days
+        xp: profile?.level_xp || 0, // level_xp é permanente, nunca diminui
+        streak: profile?.best_streak_days || 0,
         challengesCompleted: challengesCompleted || 0,
         koinsEarned: profile?.koins || 0,
       };

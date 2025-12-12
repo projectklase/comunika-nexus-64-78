@@ -91,13 +91,14 @@ export const useUnlockables = () => {
       });
 
       if (error) throw error;
-      return data as Array<{ 
-        id: string; 
-        type: 'AVATAR' | 'THEME' | 'BADGE';
-        name: string; 
-        rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
-        preview_data?: Record<string, any>;
-      }>;
+      
+      // Mapear resposta da RPC para formato esperado
+      return (data || []).map((item: any) => ({
+        id: item.unlockable_id,
+        type: item.unlockable_type as 'AVATAR' | 'THEME' | 'BADGE',
+        name: item.unlockable_name,
+        rarity: item.unlockable_rarity as 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY',
+      }));
     },
     onSuccess: async (newlyUnlocked) => {
       if (newlyUnlocked && newlyUnlocked.length > 0) {
