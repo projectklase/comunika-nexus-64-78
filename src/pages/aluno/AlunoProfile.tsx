@@ -307,7 +307,7 @@ export default function AlunoProfile() {
           onOpenChange={(open) => !open && setSelectedBadge(null)}
           unlockable={selectedBadge}
           currentStats={{
-            xp: profileXP,
+            xp: levelXP, // Usar level_xp para requisitos de badges
             streak: profileStats?.current_streak_days || 0,
             challengesCompleted: 0,
             koinsEarned: user?.koins || 0,

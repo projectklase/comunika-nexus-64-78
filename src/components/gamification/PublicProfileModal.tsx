@@ -20,16 +20,29 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
   const koinsEnabled = getKoinsEnabled();
   const [selectedBadge, setSelectedBadge] = useState<any>(null);
 
-  // Fetch profile data using public RPC
+  // Fetch profile data using public RPC + level_xp from profiles
   const { data: profile, isLoading } = useQuery({
     queryKey: ['public-profile', studentId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Buscar dados públicos via RPC
+      const { data: publicData, error: publicError } = await supabase
         .rpc('get_public_student_profile', { student_id_param: studentId })
         .maybeSingle();
       
-      if (error) throw error;
-      return data;
+      if (publicError) throw publicError;
+      if (!publicData) return null;
+      
+      // Buscar level_xp adicional do profiles
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('level_xp')
+        .eq('id', studentId)
+        .single();
+      
+      return {
+        ...publicData,
+        level_xp: profileData?.level_xp || 0
+      };
     },
     enabled: open && !!studentId,
   });
@@ -140,7 +153,7 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
             onOpenChange={(open) => !open && setSelectedBadge(null)}
             unlockable={selectedBadge}
             currentStats={{
-              xp: profile.total_xp || 0,
+              xp: profile.level_xp || 0, // Usar level_xp para requisitos de badges
               streak: profile.current_streak_days || 0,
               challengesCompleted: 0,
               koinsEarned: profile.koins || 0,
@@ -151,14 +164,14 @@ export function PublicProfileModal({ open, onOpenChange, studentId }: PublicProf
 
         {/* Estatísticas */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-          {/* XP */}
+          {/* XP de Nível (permanente) */}
           <div className={cn(
             'bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-md',
             'border border-primary/20 rounded-xl p-4 text-center'
           )}>
             <Trophy className="h-6 w-6 mx-auto mb-2 text-primary" />
-            <p className="text-2xl font-bold">{profile.total_xp?.toLocaleString() || 0}</p>
-            <p className="text-sm text-muted-foreground">XP Total</p>
+            <p className="text-2xl font-bold">{profile.level_xp?.toLocaleString() || 0}</p>
+            <p className="text-sm text-muted-foreground">XP de Nível</p>
           </div>
 
           {/* Koins - só aparece se habilitado */}
