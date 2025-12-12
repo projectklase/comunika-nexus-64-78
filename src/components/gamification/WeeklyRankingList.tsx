@@ -104,7 +104,7 @@ export function WeeklyRankingList({
         </div>
       ) : (
         <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-2">
+          <div className="space-y-2 pt-3">
             {adaptedStudents.map((student, index) => (
               <div key={student.student_id} className="relative">
                 <RankingCard

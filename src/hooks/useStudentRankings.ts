@@ -63,8 +63,8 @@ export function useStudentRankings(studentId?: string, limit: number = 10): Stud
     queryFn: async () => {
       if (!currentSchool?.id) return [];
       const { data, error } = await supabase.rpc('get_weekly_xp_rankings', {
-        school_id_param: currentSchool.id,
-        limit_count: limit
+        p_school_id: currentSchool.id,
+        p_limit: limit
       });
       if (error) {
         console.error('Error fetching weekly XP rankings:', error);

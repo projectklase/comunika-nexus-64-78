@@ -2775,7 +2775,7 @@ export type Database = {
       get_user_role: { Args: { _user_id: string }; Returns: string }
       get_week_start: { Args: { p_date?: string }; Returns: string }
       get_weekly_xp_rankings: {
-        Args: { limit_count?: number; school_id_param: string }
+        Args: { p_limit?: number; p_school_id: string }
         Returns: {
           avatar: string
           equipped_avatar_emoji: string
