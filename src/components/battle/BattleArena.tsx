@@ -342,26 +342,28 @@ const [player1Profile, setPlayer1Profile] = useState<{
   useEffect(() => {
     if (!battleLog || battleLog.length === 0) return;
     
-    // Look for new trap-related entries (TRAP_ACTIVATED, etc.) using "type" field
+    // Look for trap activations - check both dedicated TRAP_ACTIVATED entries AND attack entries with trap_activated=true
     const trapEntries = battleLog.filter((log: any) => 
-      log.type?.includes('TRAP') && 
-      log.type !== 'PLAY_TRAP' // PLAY_TRAP is setting face-down, not activation
+      (log.type === 'TRAP_ACTIVATED' || log.action === 'TRAP_ACTIVATED') ||
+      (log.trap_activated === true && (log.type === 'ATTACK_MONSTER' || log.type === 'DIRECT_ATTACK' || log.action === 'ATTACK'))
     );
     
     if (trapEntries.length === 0) return;
     
-    // Sort by timestamp to get the most recent
-    const sortedTraps = [...trapEntries].sort((a: any, b: any) => 
-      parseFloat(b.logged_at || '0') - parseFloat(a.logged_at || '0')
-    );
+    // Sort by timestamp to get the most recent (accept both logged_at and timestamp)
+    const sortedTraps = [...trapEntries].sort((a: any, b: any) => {
+      const aTime = parseFloat(a.logged_at || '0') || new Date(a.timestamp).getTime() / 1000;
+      const bTime = parseFloat(b.logged_at || '0') || new Date(b.timestamp).getTime() / 1000;
+      return bTime - aTime;
+    });
     const latestTrap = sortedTraps[0];
-    const latestTimestamp = latestTrap.logged_at || '0';
+    const latestTimestamp = latestTrap.logged_at || (new Date(latestTrap.timestamp).getTime() / 1000).toString();
     
     // Only show if this trap is newer than the last one we processed
     if (parseFloat(latestTimestamp) > parseFloat(lastTrapTimestampRef.current)) {
-      // Show trap overlay with effect info - use "trap" field for name
-      const trapName = latestTrap.trap || "Trap Card";
-      const trapEffect = latestTrap.message || getTrapEffectDescription(latestTrap.effect);
+      // Show trap overlay with effect info - use "trap" field for name, fall back to trap_message
+      const trapName = latestTrap.trap || "Armadilha";
+      const trapEffect = latestTrap.message || latestTrap.trap_message || getTrapEffectDescription(latestTrap.effect);
       
       // Find trap card image from allCards
       const trapCard = allCards?.find(c => 
@@ -386,25 +388,28 @@ const [player1Profile, setPlayer1Profile] = useState<{
   useEffect(() => {
     if (!battleLog || battleLog.length === 0) return;
     
-    // Find attack entries: ATTACK_MONSTER or DIRECT_ATTACK
+    // Find attack entries - accept both old format (action='ATTACK') and new format (type='ATTACK_MONSTER'/'DIRECT_ATTACK')
     const attackEntries = battleLog.filter((log: any) => 
-      (log.type === 'ATTACK_MONSTER' || log.type === 'DIRECT_ATTACK') &&
-      log.logged_at
+      (log.type === 'ATTACK_MONSTER' || log.type === 'DIRECT_ATTACK' || log.action === 'ATTACK') &&
+      (log.logged_at || log.timestamp)
     );
     
     if (attackEntries.length === 0) return;
     
-    // Sort by timestamp to get the most recent
-    const sortedAttacks = [...attackEntries].sort((a: any, b: any) => 
-      parseFloat(b.logged_at || '0') - parseFloat(a.logged_at || '0')
-    );
+    // Sort by timestamp to get the most recent (accept both logged_at and timestamp)
+    const sortedAttacks = [...attackEntries].sort((a: any, b: any) => {
+      const aTime = parseFloat(a.logged_at || '0') || new Date(a.timestamp).getTime() / 1000;
+      const bTime = parseFloat(b.logged_at || '0') || new Date(b.timestamp).getTime() / 1000;
+      return bTime - aTime;
+    });
     const latestAttack = sortedAttacks[0];
-    const latestTimestamp = latestAttack.logged_at || '0';
+    const latestTimestamp = latestAttack.logged_at || (new Date(latestAttack.timestamp).getTime() / 1000).toString();
     
     // Only process if this attack is newer than the last one we processed
     if (parseFloat(latestTimestamp) > parseFloat(lastAttackTimestampRef.current)) {
-      // Determine if this attack was from the opponent (not from us)
-      const attackerIsPlayer1 = latestAttack.attacker_player === 'PLAYER1';
+      // Determine if this attack was from the opponent (not from us) - accept both attacker_player and player fields
+      const attackerPlayer = latestAttack.attacker_player || latestAttack.player;
+      const attackerIsPlayer1 = attackerPlayer === 'PLAYER1';
       const weArePlayer1 = isPlayer1;
       const isOpponentAttack = attackerIsPlayer1 !== weArePlayer1;
       
