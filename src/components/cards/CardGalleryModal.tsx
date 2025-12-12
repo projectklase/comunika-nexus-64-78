@@ -89,13 +89,10 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
           "sm:max-w-6xl sm:h-[80vh] sm:rounded-lg sm:p-6",
           "flex flex-col"
         )}>
-          {/* Header com contador */}
+          {/* Header */}
           <DialogHeader className="px-3 pt-3 sm:px-0 sm:pt-0 flex-shrink-0">
-            <DialogTitle className="text-lg sm:text-xl flex items-center justify-between">
-              <span>Galeria de Cartas</span>
-              <Badge variant="secondary" className="text-xs font-medium">
-                {userCards.size}/{cards.length} 🃏
-              </Badge>
+            <DialogTitle className="text-lg sm:text-xl">
+              Galeria de Cartas
             </DialogTitle>
           </DialogHeader>
 
@@ -112,17 +109,17 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
             </div>
           </div>
 
-          {/* Mobile: Filtros colapsáveis */}
-          <div className="px-3 sm:hidden flex-shrink-0">
-            <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+          {/* Mobile: Filtros colapsáveis + Contador */}
+          <div className="px-3 sm:hidden flex-shrink-0 flex items-center justify-between gap-2">
+            <Collapsible open={showFilters} onOpenChange={setShowFilters} className="flex-1">
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full justify-between h-9"
+                  className="w-full max-w-[180px] justify-between h-9"
                 >
                   <span className="text-xs">
-                    Filtros {activeFiltersCount > 0 && `(${activeFiltersCount} ativos)`}
+                    Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
                   </span>
                   <ChevronDown className={cn(
                     "w-4 h-4 transition-transform duration-200",
@@ -130,6 +127,17 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
                   )} />
                 </Button>
               </CollapsibleTrigger>
+            </Collapsible>
+            
+            {/* Contador de cartas - alinhado à direita */}
+            <Badge variant="secondary" className="text-xs font-medium px-3 py-1.5 h-9 flex items-center whitespace-nowrap">
+              {userCards.size}/{cards.length} 🃏
+            </Badge>
+          </div>
+          
+          {/* Mobile: Conteúdo colapsável dos filtros */}
+          <div className="px-3 sm:hidden">
+            <Collapsible open={showFilters} onOpenChange={setShowFilters}>
               <CollapsibleContent className="pt-2 space-y-2">
                 <FiltersContent />
               </CollapsibleContent>
