@@ -2503,6 +2503,51 @@ export type Database = {
           },
         ]
       }
+      weekly_xp_log: {
+        Row: {
+          earned_at: string | null
+          id: string
+          school_id: string
+          source: string
+          user_id: string
+          week_start: string
+          xp_earned: number
+        }
+        Insert: {
+          earned_at?: string | null
+          id?: string
+          school_id: string
+          source: string
+          user_id: string
+          week_start: string
+          xp_earned: number
+        }
+        Update: {
+          earned_at?: string | null
+          id?: string
+          school_id?: string
+          source?: string
+          user_id?: string
+          week_start?: string
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_xp_log_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_xp_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2728,6 +2773,20 @@ export type Database = {
       }
       get_user_growth: { Args: never; Returns: Json }
       get_user_role: { Args: { _user_id: string }; Returns: string }
+      get_week_start: { Args: { p_date?: string }; Returns: string }
+      get_weekly_xp_rankings: {
+        Args: { limit_count?: number; school_id_param: string }
+        Returns: {
+          avatar: string
+          equipped_avatar_emoji: string
+          equipped_avatar_image_url: string
+          equipped_avatar_rarity: string
+          rank_position: number
+          student_id: string
+          student_name: string
+          weekly_xp: number
+        }[]
+      }
       grant_koin_bonus: {
         Args: {
           p_event_description: string
@@ -2812,6 +2871,7 @@ export type Database = {
           type: string
         }[]
       }
+      process_weekly_xp_prizes: { Args: never; Returns: number }
       recycle_cards: {
         Args: { p_cards: Json; p_user_id: string }
         Returns: Json

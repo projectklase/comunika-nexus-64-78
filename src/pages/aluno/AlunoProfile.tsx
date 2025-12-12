@@ -8,12 +8,14 @@ import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { useStudentGamification } from '@/stores/studentGamification';
 import { Button } from '@/components/ui/button';
 import { RankingList } from '@/components/gamification/RankingList';
+import { WeeklyRankingList } from '@/components/gamification/WeeklyRankingList';
 import { ProfileStats } from '@/components/gamification/ProfileStats';
 import { BadgeWithLabel } from '@/components/gamification/BadgeWithLabel';
 import { BadgeSelectorModal } from '@/components/gamification/BadgeSelectorModal';
 import { BadgeRequirementsModal } from '@/components/gamification/BadgeRequirementsModal';
 import { PublicProfileModal } from '@/components/gamification/PublicProfileModal';
 import { PremiumAvatar } from '@/components/gamification/PremiumAvatar';
+import { LevelBadge } from '@/components/gamification/LevelBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Edit2, Trophy, Flame, Coins } from 'lucide-react';
@@ -65,7 +67,7 @@ export default function AlunoProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('total_xp, best_streak_days, current_streak_days')
+        .select('total_xp, level_xp, best_streak_days, current_streak_days')
         .eq('id', user.id)
         .single();
       
@@ -83,6 +85,8 @@ export default function AlunoProfile() {
 
   // XP do banco de dados (fonte de verdade)
   const profileXP = profileStats?.total_xp || 0;
+  const levelXP = profileStats?.level_xp || 0;
+  const playerLevel = Math.floor(levelXP / 100);
 
   // Sincronizar Zustand com valor do banco para outros componentes
   useEffect(() => {
@@ -148,11 +152,16 @@ export default function AlunoProfile() {
 
             {/* Info do Aluno */}
             <div className="flex-1 text-center md:text-left space-y-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  {user.name}
-                </h1>
-                <p className="text-muted-foreground mt-1">{currentSchool?.name}</p>
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    {user.name}
+                  </h1>
+                  <p className="text-muted-foreground mt-1">{currentSchool?.name}</p>
+                </div>
+                
+                {/* Badge de Nível */}
+                <LevelBadge level={playerLevel} size="lg" showLabel className="justify-center md:justify-start" />
               </div>
 
               {/* Stats rápidas */}
@@ -238,10 +247,10 @@ export default function AlunoProfile() {
             Rankings da Escola
           </h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <RankingList
-              students={rankings.topXP}
-              type="xp"
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+            {/* Ranking Semanal (destaque) */}
+            <WeeklyRankingList
+              students={rankings.topWeeklyXP}
               currentUserId={user.id}
               isLoading={rankings.isLoading}
               onStudentClick={setSelectedStudentId}
@@ -260,6 +269,14 @@ export default function AlunoProfile() {
             <RankingList
               students={rankings.topStreak}
               type="streak"
+              currentUserId={user.id}
+              isLoading={rankings.isLoading}
+              onStudentClick={setSelectedStudentId}
+            />
+            
+            <RankingList
+              students={rankings.topXP}
+              type="xp"
               currentUserId={user.id}
               isLoading={rankings.isLoading}
               onStudentClick={setSelectedStudentId}
