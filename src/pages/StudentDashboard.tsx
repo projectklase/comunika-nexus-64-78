@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudentPosts } from '@/hooks/useStudentPosts';
 import { useScrollToFeedPost } from '@/hooks/useScrollToFeedPost';
+import { useWeeklyPrizeCelebration } from '@/hooks/useWeeklyPrizeCelebration';
 import { WelcomeStatusCard } from '@/components/student/dashboard/WelcomeStatusCard';
 import { NextDaysList } from '@/components/student/dashboard/NextDaysList';
 import { FeedPreviewDashboard } from '@/components/student/dashboard/FeedPreviewDashboard';
@@ -13,6 +14,7 @@ import { StreakDashboard } from '@/components/student/dashboard/StreakDashboard'
 import { MyClassesCard } from '@/components/student/dashboard/MyClassesCard';
 import { DrawerEntrega } from '@/components/feed/DrawerEntrega';
 import { PostDetailDrawer } from '@/components/feed/PostDetailDrawer';
+import { WeeklyPrizeCelebrationModal } from '@/components/gamification/WeeklyPrizeCelebrationModal';
 import { Post } from '@/types/post';
 import { CalendarActionsHandler } from '@/utils/calendar-actions-handler';
 import { toast } from '@/hooks/use-toast';
@@ -29,6 +31,9 @@ const StudentDashboard = memo(function StudentDashboard() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<'entrega' | 'detail' | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+
+  // Weekly prize celebration modal
+  const { showModal: showPrizeModal, winners, myPosition, myPrize, markAsSeen } = useWeeklyPrizeCelebration();
 
   // Get posts with student-specific filtering
   const { posts } = useStudentPosts({ timeRange: 'all' });
@@ -264,6 +269,15 @@ const StudentDashboard = memo(function StudentDashboard() {
           />
         </>
       )}
+
+      {/* Weekly Prize Celebration Modal */}
+      <WeeklyPrizeCelebrationModal
+        open={showPrizeModal}
+        winners={winners}
+        myPosition={myPosition}
+        myPrize={myPrize}
+        onClose={markAsSeen}
+      />
     </div>
   );
 });

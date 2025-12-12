@@ -2503,6 +2503,38 @@ export type Database = {
           },
         ]
       }
+      weekly_prize_views: {
+        Row: {
+          id: string
+          school_id: string
+          user_id: string
+          viewed_at: string | null
+          week_start: string
+        }
+        Insert: {
+          id?: string
+          school_id: string
+          user_id: string
+          viewed_at?: string | null
+          week_start: string
+        }
+        Update: {
+          id?: string
+          school_id?: string
+          user_id?: string
+          viewed_at?: string | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_prize_views_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_xp_log: {
         Row: {
           earned_at: string | null
@@ -2697,6 +2729,10 @@ export type Database = {
       }
       get_family_metrics: { Args: { school_id_param?: string }; Returns: Json }
       get_financial_metrics: { Args: never; Returns: Json }
+      get_last_weekly_prize_results: {
+        Args: { p_school_id: string; p_user_id: string }
+        Returns: Json
+      }
       get_mrr_history: { Args: never; Returns: Json }
       get_plan_distribution: { Args: never; Returns: Json }
       get_platform_alerts: { Args: { p_resolved?: boolean }; Returns: Json }
@@ -2827,6 +2863,10 @@ export type Database = {
           p_entity_type: string
         }
         Returns: string
+      }
+      mark_weekly_prize_viewed: {
+        Args: { p_school_id: string; p_week_start: string }
+        Returns: undefined
       }
       open_card_pack: {
         Args: { p_is_free?: boolean; p_pack_type: string; p_user_id: string }
