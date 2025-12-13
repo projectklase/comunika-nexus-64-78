@@ -184,9 +184,7 @@ export default function PlatformAdmins() {
               className="absolute inset-0 rounded-md bg-gradient-to-r from-purple-500 to-indigo-500 blur-lg opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none" 
               style={{ zIndex: -1 }} 
             />
-            <Crown className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span>Novo Administrador</span>
-            <Sparkles className="w-3 h-3 ml-2 opacity-70 flex-shrink-0" />
+            Novo Administrador
           </Button>
         </div>
       </div>
