@@ -16,6 +16,7 @@ import {
   Eye,
   MoreVertical,
   UserPlus,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ import { toast } from 'sonner';
 import { SubscriptionManagementModal } from '@/components/platform/SubscriptionManagementModal';
 import { AdminPasswordResetModal } from '@/components/platform/AdminPasswordResetModal';
 import { CreateAdministratorModal } from '@/components/platform/CreateAdministratorModal';
+import { DeleteAdminModal } from '@/components/platform/DeleteAdminModal';
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -81,6 +83,7 @@ export default function PlatformAdmins() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [passwordResetModalOpen, setPasswordResetModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const filteredAdmins = adminsOverview?.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -103,6 +106,11 @@ export default function PlatformAdmins() {
   const handlePasswordReset = (admin: any) => {
     setSelectedAdmin(admin);
     setPasswordResetModalOpen(true);
+  };
+
+  const handleDeleteAdmin = (admin: any) => {
+    setSelectedAdmin(admin);
+    setDeleteModalOpen(true);
   };
 
   const handleImpersonate = async (admin: any) => {
@@ -294,6 +302,14 @@ export default function PlatformAdmins() {
                         <Eye className="w-4 h-4 mr-2" />
                         Visualizar Como
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteAdmin(admin)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir Administrador
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -326,6 +342,16 @@ export default function PlatformAdmins() {
         onSuccess={() => {
           refetchAdminsOverview();
           setCreateModalOpen(false);
+        }}
+      />
+
+      <DeleteAdminModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        admin={selectedAdmin}
+        onSuccess={() => {
+          refetchAdminsOverview();
+          setDeleteModalOpen(false);
         }}
       />
     </div>
