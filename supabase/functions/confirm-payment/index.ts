@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
       console.error('Plan not found for slug:', planSlug, planError)
     }
 
-    // Update subscription to active
+    // Update subscription to active and get temp_password
     const { data: subscriptionData, error: updateError } = await supabaseAdmin
       .from('admin_subscriptions')
       .update({
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
         plan_id: plan?.id,
       })
       .eq('admin_id', userId)
-      .select()
+      .select('*, temp_password')
       .single()
 
     if (updateError) {
@@ -124,6 +124,18 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: false, error: 'Erro ao atualizar assinatura' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
+    }
+
+    // Capturar senha temporária antes de limpar
+    const tempPassword = subscriptionData?.temp_password || null
+
+    // Limpar senha temporária imediatamente após capturar
+    if (tempPassword) {
+      await supabaseAdmin
+        .from('admin_subscriptions')
+        .update({ temp_password: null })
+        .eq('admin_id', userId)
+      console.log('Temp password cleared from database')
     }
 
     console.log('Subscription updated successfully')
@@ -207,13 +219,25 @@ Deno.serve(async (req) => {
 
     console.log('Payment confirmation complete')
 
+    // Preparar dados de onboarding se houver senha temporária (fluxo de link de pagamento)
+    const onboardingData = tempPassword ? {
+      adminName: profile?.name || '',
+      email: profile?.email || '',
+      password: tempPassword,
+      schoolName: schoolData?.name || '',
+      planName: plan?.name || '',
+      maxStudents: plan?.max_students || 0,
+    } : null
+
     return new Response(
       JSON.stringify({ 
         success: true,
         subscription: {
           id: subscriptionData?.id,
           status: 'active',
-        }
+        },
+        // Retornar dados para PDF no fluxo de link de pagamento
+        onboardingData,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )

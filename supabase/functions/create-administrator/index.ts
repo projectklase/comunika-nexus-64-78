@@ -295,6 +295,8 @@ Deno.serve(async (req) => {
         trial_ends_at: trialEndsAt,
         expires_at: expiresAt,
         addon_schools_count: data.addon_schools_count || 0,
+        // Salvar senha temporária para o fluxo de link de pagamento
+        temp_password: data.generate_payment_link ? data.password : null,
       })
       .select()
       .single()
