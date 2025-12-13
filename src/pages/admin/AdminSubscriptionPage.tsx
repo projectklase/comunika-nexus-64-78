@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/Layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,20 +75,36 @@ export default function AdminSubscriptionPage() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
-  // Handle success/cancel URL params
+  // Handle success/cancel URL params and sync with Stripe
   useEffect(() => {
-    if (searchParams.get('success') === 'true') {
-      toast({
-        title: 'Pagamento realizado!',
-        description: 'Sua assinatura foi ativada com sucesso.',
-      });
-    } else if (searchParams.get('canceled') === 'true') {
-      toast({
-        title: 'Pagamento cancelado',
-        description: 'O processo de pagamento foi cancelado.',
-        variant: 'destructive',
-      });
-    }
+    const syncSubscription = async () => {
+      if (searchParams.get('success') === 'true') {
+        const sessionId = searchParams.get('session_id');
+        if (sessionId) {
+          try {
+            const { data, error } = await supabase.functions.invoke('sync-subscription-from-stripe');
+            if (error) {
+              console.error('Error syncing subscription:', error);
+            }
+          } catch (err) {
+            console.error('Failed to sync subscription:', err);
+          }
+        }
+        toast({
+          title: 'Pagamento realizado!',
+          description: 'Sua assinatura foi ativada com sucesso.',
+        });
+        // Refresh subscription data
+        window.location.href = '/admin/assinatura';
+      } else if (searchParams.get('canceled') === 'true') {
+        toast({
+          title: 'Pagamento cancelado',
+          description: 'O processo de pagamento foi cancelado.',
+          variant: 'destructive',
+        });
+      }
+    };
+    syncSubscription();
   }, [searchParams, toast]);
 
   const handleUpgrade = async (planSlug: string) => {
