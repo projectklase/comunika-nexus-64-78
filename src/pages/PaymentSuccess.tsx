@@ -29,8 +29,8 @@ export default function PaymentSuccess() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const hasConfirmed = useRef(false);
 
-  // Load onboarding data from localStorage
-  useEffect(() => {
+  // Load onboarding data from localStorage (fallback for self-service)
+  const loadLocalStorageData = () => {
     const savedData = localStorage.getItem('temp_onboarding_data');
     if (savedData) {
       try {
@@ -40,7 +40,7 @@ export default function PaymentSuccess() {
         console.error('Error parsing onboarding data:', e);
       }
     }
-  }, []);
+  };
 
   useEffect(() => {
     // Prevent multiple executions
@@ -68,6 +68,13 @@ export default function PaymentSuccess() {
 
         if (!data?.success) {
           throw new Error(data?.error || 'Erro ao confirmar pagamento');
+        }
+
+        // Usar dados de onboarding da API (fluxo de link de pagamento) ou localStorage (self-service)
+        if (data.onboardingData) {
+          setOnboardingData(data.onboardingData);
+        } else {
+          loadLocalStorageData();
         }
 
         // Sign out so user starts fresh
