@@ -152,9 +152,22 @@ Deno.serve(async (req) => {
       schoolData = school
     }
 
-    // Enviar email de confirmação de pagamento
-    if (profile) {
+    // Check idempotency flag to prevent duplicate emails
+    const { data: existingSub } = await supabaseAdmin
+      .from('admin_subscriptions')
+      .select('payment_email_sent')
+      .eq('admin_id', userId)
+      .single()
+
+    // Only send email if not already sent
+    if (profile && !existingSub?.payment_email_sent) {
       try {
+        // Mark as sent BEFORE sending to prevent race conditions
+        await supabaseAdmin
+          .from('admin_subscriptions')
+          .update({ payment_email_sent: true })
+          .eq('admin_id', userId)
+
         console.log('Sending payment confirmation email to:', profile.email)
         await supabaseAdmin.functions.invoke('send-admin-welcome-email', {
           body: {
@@ -171,6 +184,8 @@ Deno.serve(async (req) => {
         console.error('Failed to send payment confirmation email:', emailError)
         // Don't fail the whole operation if email fails
       }
+    } else if (existingSub?.payment_email_sent) {
+      console.log('Payment email already sent, skipping to prevent duplicate')
     }
 
     // Log de auditoria

@@ -349,6 +349,16 @@ export default function Register() {
       }
 
       if (checkoutData?.url) {
+        // Save onboarding data to localStorage for PaymentSuccess page
+        localStorage.setItem('temp_onboarding_data', JSON.stringify({
+          adminName: formData.name,
+          email: formData.email.toLowerCase(),
+          password: formData.password,
+          schoolName: formData.school_name,
+          planName: selectedPlan?.name || 'Challenger',
+          maxStudents: selectedPlan?.max_students || 300,
+        }));
+        
         // Set redirecting state to show loading UI
         setRedirectingToStripe(true);
         toast.success('Conta criada! Redirecionando para pagamento...');

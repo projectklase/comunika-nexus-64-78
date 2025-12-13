@@ -24,6 +24,7 @@ export type Database = {
           discount_reason: string | null
           expires_at: string | null
           id: string
+          payment_email_sent: boolean | null
           plan_id: string
           started_at: string
           status: string
@@ -41,6 +42,7 @@ export type Database = {
           discount_reason?: string | null
           expires_at?: string | null
           id?: string
+          payment_email_sent?: boolean | null
           plan_id: string
           started_at?: string
           status?: string
@@ -58,6 +60,7 @@ export type Database = {
           discount_reason?: string | null
           expires_at?: string | null
           id?: string
+          payment_email_sent?: boolean | null
           plan_id?: string
           started_at?: string
           status?: string

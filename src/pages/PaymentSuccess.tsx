@@ -4,8 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, CheckCircle, Mail, ArrowRight, FileText } from 'lucide-react';
+import { Loader2, CheckCircle, Mail, ArrowRight, FileText, Download } from 'lucide-react';
+import { downloadAdminOnboardingPDF } from '@/lib/admin-onboarding-pdf';
+import { toast } from 'sonner';
 import klaseLogo from '@/assets/logo-klase-chromado.png';
+
+interface OnboardingData {
+  adminName: string;
+  email: string;
+  password: string;
+  schoolName: string;
+  planName: string;
+  maxStudents: number;
+}
 
 export default function PaymentSuccess() {
   const navigate = useNavigate();
@@ -13,7 +24,23 @@ export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const hasConfirmed = useRef(false);
+
+  // Load onboarding data from localStorage
+  useEffect(() => {
+    const savedData = localStorage.getItem('temp_onboarding_data');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        setOnboardingData(data);
+      } catch (e) {
+        console.error('Error parsing onboarding data:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Prevent multiple executions
@@ -57,7 +84,38 @@ export default function PaymentSuccess() {
     confirmPayment();
   }, [searchParams, logout]);
 
+  const handleDownloadPDF = async () => {
+    if (!onboardingData) {
+      toast.error('Dados de onboarding não encontrados');
+      return;
+    }
+    
+    setDownloadingPdf(true);
+    try {
+      await downloadAdminOnboardingPDF({
+        adminName: onboardingData.adminName,
+        schoolName: onboardingData.schoolName,
+        planName: onboardingData.planName,
+        maxStudents: onboardingData.maxStudents,
+        email: onboardingData.email,
+        password: onboardingData.password,
+      });
+      
+      // Clear sensitive data from localStorage after successful download
+      localStorage.removeItem('temp_onboarding_data');
+      setPdfDownloaded(true);
+      toast.success('Guia baixado com sucesso!');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error('Erro ao gerar PDF. Tente novamente.');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   const handleGoToLogin = () => {
+    // Ensure data is cleared before navigating
+    localStorage.removeItem('temp_onboarding_data');
     navigate('/login');
   };
 
@@ -122,17 +180,61 @@ export default function PaymentSuccess() {
             </p>
           </div>
 
+          {/* PDF Download Box - Only show if we have onboarding data */}
+          {onboardingData && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Guia de Configuração</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Baixe o PDF com suas credenciais de acesso e um guia completo 
+                    de primeiros passos para configurar sua escola.
+                  </p>
+                  <Button
+                    onClick={handleDownloadPDF}
+                    disabled={downloadingPdf || pdfDownloaded}
+                    variant={pdfDownloaded ? "outline" : "default"}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    {downloadingPdf ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Gerando PDF...
+                      </>
+                    ) : pdfDownloaded ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                        PDF Baixado
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Baixar Guia (PDF)
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Email notification box */}
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+          <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-6 h-6 text-green-500" />
               </div>
               <div>
                 <h3 className="font-semibold mb-1">Verifique seu email</h3>
                 <p className="text-sm text-muted-foreground">
-                  Enviamos os dados de acesso e um guia completo de primeiros passos 
-                  para o email cadastrado. Confira sua caixa de entrada.
+                  Enviamos um email de confirmação para o endereço cadastrado. 
+                  {onboardingData 
+                    ? ' Suas credenciais de acesso estão no guia PDF acima.'
+                    : ' Use o email e senha cadastrados no registro para fazer login.'}
                 </p>
               </div>
             </div>
