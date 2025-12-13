@@ -62,3 +62,9 @@ verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = true
+
+[functions.create-public-administrator]
+verify_jwt = false
+
+[functions.confirm-payment]
+verify_jwt = true
