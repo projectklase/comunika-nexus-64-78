@@ -89,6 +89,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log(`[getUserProfile] ✅ Perfil completo encontrado para ${profile.email} com role ${userRole.role}`);
       
+      // Para administradores, verificar status da assinatura
+      let subscriptionStatus: string | undefined;
+      if (userRole.role === 'administrador') {
+        const { data: subscription } = await supabase
+          .from('admin_subscriptions')
+          .select('status')
+          .eq('admin_id', userId)
+          .single();
+        
+        if (subscription?.status) {
+          subscriptionStatus = subscription.status;
+          console.log(`[getUserProfile] Admin subscription status: ${subscriptionStatus}`);
+        }
+      }
+      
       return {
         id: profile.id,
         name: profile.name,
@@ -103,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         koins: profile.koins || 0,
         total_xp: profile.total_xp || 0,
         level_xp: (profile as any).level_xp || 0,
+        subscriptionStatus,
       };
     } catch (error) {
       console.error('[getUserProfile] Erro crítico:', error);
