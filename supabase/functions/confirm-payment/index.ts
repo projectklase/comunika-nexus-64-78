@@ -65,6 +65,87 @@ Deno.serve(async (req) => {
 
     console.log('Payment confirmed for user:', userId)
 
+    // ========== VERIFICAÇÃO DE IDEMPOTÊNCIA ==========
+    // Buscar subscription existente para verificar se já foi processada
+    const { data: existingSubscription } = await supabaseAdmin
+      .from('admin_subscriptions')
+      .select('status, temp_password, plan_id')
+      .eq('admin_id', userId)
+      .single()
+
+    // Se já estiver ativo, retornar sucesso sem reprocessar (evita race condition)
+    if (existingSubscription?.status === 'active') {
+      console.log('Payment already confirmed, returning cached data (idempotency)')
+      
+      // Capturar senha temporária se ainda existir (2a chamada muito rápida)
+      const tempPassword = existingSubscription.temp_password || null
+      
+      // Buscar dados do perfil
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('name, email')
+        .eq('id', userId)
+        .single()
+
+      // Buscar escola
+      const { data: schoolMembership } = await supabaseAdmin
+        .from('school_memberships')
+        .select('school_id')
+        .eq('user_id', userId)
+        .eq('role', 'administrador')
+        .single()
+
+      let schoolData = null
+      if (schoolMembership?.school_id) {
+        const { data: school } = await supabaseAdmin
+          .from('schools')
+          .select('name, slug')
+          .eq('id', schoolMembership.school_id)
+          .single()
+        schoolData = school
+      }
+
+      // Buscar plano
+      const { data: plan } = await supabaseAdmin
+        .from('subscription_plans')
+        .select('id, name, max_students')
+        .eq('id', existingSubscription.plan_id)
+        .single()
+
+      // Preparar onboardingData se houver senha
+      const onboardingData = tempPassword ? {
+        adminName: profile?.name || '',
+        email: profile?.email || '',
+        password: tempPassword,
+        schoolName: schoolData?.name || '',
+        planName: plan?.name || '',
+        maxStudents: plan?.max_students || 0,
+      } : null
+
+      // Limpar temp_password se existir (para não ficar exposta)
+      if (tempPassword) {
+        await supabaseAdmin
+          .from('admin_subscriptions')
+          .update({ temp_password: null })
+          .eq('admin_id', userId)
+        console.log('Temp password cleared (idempotent call)')
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          subscription: { status: 'active' },
+          onboardingData,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+    // ========== FIM VERIFICAÇÃO DE IDEMPOTÊNCIA ==========
+
+    // Capturar senha temporária ANTES de atualizar
+    const tempPassword = existingSubscription?.temp_password || null
+    console.log('Captured temp_password:', tempPassword ? 'exists' : 'null')
+
     // Determine plan from subscription (chamada separada para respeitar limite de expansão)
     let planSlug = 'challenger'
     if (session.subscription) {
@@ -103,7 +184,7 @@ Deno.serve(async (req) => {
       console.error('Plan not found for slug:', planSlug, planError)
     }
 
-    // Update subscription to active and get temp_password
+    // Update subscription to active e limpar temp_password
     const { data: subscriptionData, error: updateError } = await supabaseAdmin
       .from('admin_subscriptions')
       .update({
@@ -113,9 +194,10 @@ Deno.serve(async (req) => {
           ? session.subscription 
           : (session.subscription as any)?.id,
         plan_id: plan?.id,
+        temp_password: null, // Limpar senha na mesma operação
       })
       .eq('admin_id', userId)
-      .select('*, temp_password')
+      .select()
       .single()
 
     if (updateError) {
@@ -126,17 +208,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Capturar senha temporária antes de limpar
-    const tempPassword = subscriptionData?.temp_password || null
-
-    // Limpar senha temporária imediatamente após capturar
-    if (tempPassword) {
-      await supabaseAdmin
-        .from('admin_subscriptions')
-        .update({ temp_password: null })
-        .eq('admin_id', userId)
-      console.log('Temp password cleared from database')
-    }
+    console.log('Temp password cleared in update operation')
 
     console.log('Subscription updated successfully')
 
