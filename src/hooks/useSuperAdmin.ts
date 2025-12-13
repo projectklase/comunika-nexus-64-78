@@ -308,7 +308,10 @@ export function useSuperAdmin() {
       discountPercent?: number;
       discountCents?: number;
       discountReason?: string | null;
+      implantationPaid?: boolean;
+      implantationNotes?: string | null;
     }) => {
+      // Primeiro atualiza via RPC os campos principais
       const { data, error } = await supabase.rpc('update_subscription_admin', {
         p_admin_id: params.adminId,
         p_plan_id: params.planId || null,
@@ -322,6 +325,30 @@ export function useSuperAdmin() {
       });
       
       if (error) throw error;
+
+      // Atualiza campos de implantação separadamente (não estão na RPC)
+      const updateData: Record<string, unknown> = {};
+      if (params.implantationPaid !== undefined) {
+        updateData.implantation_paid = params.implantationPaid;
+        if (params.implantationPaid) {
+          updateData.implantation_paid_at = new Date().toISOString();
+        } else {
+          updateData.implantation_paid_at = null;
+        }
+      }
+      if (params.implantationNotes !== undefined) {
+        updateData.implantation_notes = params.implantationNotes;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        const { error: updateError } = await supabase
+          .from('admin_subscriptions')
+          .update(updateData)
+          .eq('admin_id', params.adminId);
+        
+        if (updateError) throw updateError;
+      }
+
       return data;
     },
     onSuccess: () => {

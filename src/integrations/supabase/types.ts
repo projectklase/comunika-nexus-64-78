@@ -24,6 +24,9 @@ export type Database = {
           discount_reason: string | null
           expires_at: string | null
           id: string
+          implantation_notes: string | null
+          implantation_paid: boolean | null
+          implantation_paid_at: string | null
           payment_email_sent: boolean | null
           plan_id: string
           started_at: string
@@ -43,6 +46,9 @@ export type Database = {
           discount_reason?: string | null
           expires_at?: string | null
           id?: string
+          implantation_notes?: string | null
+          implantation_paid?: boolean | null
+          implantation_paid_at?: string | null
           payment_email_sent?: boolean | null
           plan_id: string
           started_at?: string
@@ -62,6 +68,9 @@ export type Database = {
           discount_reason?: string | null
           expires_at?: string | null
           id?: string
+          implantation_notes?: string | null
+          implantation_paid?: boolean | null
+          implantation_paid_at?: string | null
           payment_email_sent?: boolean | null
           plan_id?: string
           started_at?: string
