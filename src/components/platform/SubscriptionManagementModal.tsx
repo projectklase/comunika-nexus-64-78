@@ -17,8 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { Loader2, CreditCard, Calendar, Building2, Users, Percent, Tag, Receipt } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, CreditCard, Calendar, Building2, Users, Percent, Tag, Receipt, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -53,6 +55,8 @@ export function SubscriptionManagementModal({
     discount_cents: 0,
     discount_reason: '',
   });
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelingStripe, setCancelingStripe] = useState(false);
 
   useEffect(() => {
     if (admin?.subscription) {
@@ -84,6 +88,8 @@ export function SubscriptionManagementModal({
   }, [admin, subscriptionPlans]);
 
   const selectedPlan = subscriptionPlans?.find(p => p.id === formData.plan_id);
+  const currentStatus = admin?.subscription?.status;
+  const isChangingToCanceled = formData.status === 'canceled' && currentStatus !== 'canceled';
 
   // Calculate costs with discounts
   const costBreakdown = useMemo(() => {
@@ -110,11 +116,39 @@ export function SubscriptionManagementModal({
     };
   }, [selectedPlan, formData.addon_schools_count, formData.discount_percent, formData.discount_cents]);
 
+  const handleCancelStripeSubscription = async () => {
+    setCancelingStripe(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-stripe-subscription', {
+        body: { admin_id: admin.id }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success('Assinatura cancelada no Stripe com sucesso');
+      setShowCancelConfirm(false);
+      onSuccess();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error canceling Stripe subscription:', error);
+      toast.error(error.message || 'Erro ao cancelar assinatura no Stripe');
+    } finally {
+      setCancelingStripe(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!admin?.id || !formData.plan_id) {
       toast.error('Selecione um plano');
+      return;
+    }
+
+    // If changing to canceled, show confirmation modal
+    if (isChangingToCanceled) {
+      setShowCancelConfirm(true);
       return;
     }
 
@@ -380,6 +414,19 @@ export function SubscriptionManagementModal({
             />
           </div>
 
+          {/* Warning when changing to canceled */}
+          {isChangingToCanceled && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-destructive">Atenção: Cancelamento de Assinatura</p>
+                <p className="text-muted-foreground mt-1">
+                  Ao confirmar, a cobrança recorrente no Stripe será cancelada e o cliente não será mais cobrado.
+                </p>
+              </div>
+            </div>
+          )}
+
           <DialogFooter className="gap-2">
             <Button
               type="button"
@@ -387,14 +434,28 @@ export function SubscriptionManagementModal({
               onClick={() => onOpenChange(false)}
               className="bg-white/5 border-white/10"
             >
-              Cancelar
+              Fechar
             </Button>
-            <Button type="submit" disabled={updatingSubscription}>
+            <Button type="submit" disabled={updatingSubscription} variant={isChangingToCanceled ? "destructive" : "default"}>
               {updatingSubscription && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {admin?.subscription ? 'Atualizar' : 'Criar'} Assinatura
+              {isChangingToCanceled ? 'Cancelar Assinatura' : (admin?.subscription ? 'Atualizar' : 'Criar')} {!isChangingToCanceled && 'Assinatura'}
             </Button>
           </DialogFooter>
         </form>
+
+        {/* Confirmation dialog for Stripe cancellation */}
+        <ConfirmDialog
+          open={showCancelConfirm}
+          onOpenChange={setShowCancelConfirm}
+          title="Confirmar Cancelamento"
+          description={`Tem certeza que deseja cancelar a assinatura de ${admin?.name}? Isso irá encerrar a cobrança recorrente no Stripe imediatamente. Esta ação não pode ser desfeita facilmente.`}
+          confirmText={cancelingStripe ? "Cancelando..." : "Sim, Cancelar Assinatura"}
+          cancelText="Voltar"
+          onConfirm={handleCancelStripeSubscription}
+          variant="destructive"
+          isAsync={true}
+          loading={cancelingStripe}
+        />
       </DialogContent>
     </Dialog>
   );

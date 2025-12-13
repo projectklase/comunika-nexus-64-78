@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.verify-superadmin-password]
 verify_jwt = false
+
+[functions.cancel-stripe-subscription]
+verify_jwt = true
