@@ -18,7 +18,7 @@ interface CreateAdminRequest {
   
   // Dados da Assinatura
   plan_id: string
-  status: 'active' | 'trial'
+  status: 'active' | 'trial' | 'pending_payment'
   trial_days?: number
   addon_schools_count?: number
   
@@ -28,6 +28,9 @@ interface CreateAdminRequest {
   company_address?: string
   company_city?: string
   company_state?: string
+  
+  // Geração de link de pagamento
+  generate_payment_link?: boolean
 }
 
 Deno.serve(async (req) => {
@@ -279,12 +282,15 @@ Deno.serve(async (req) => {
     }
 
     // 8. Criar assinatura com addon_schools_count
+    // Se generate_payment_link é true, criar com pending_payment
+    const finalStatus = data.generate_payment_link ? 'pending_payment' : data.status
+    
     const { data: subscription, error: subscriptionError } = await supabaseAdmin
       .from('admin_subscriptions')
       .insert({
         admin_id: userId,
         plan_id: data.plan_id,
-        status: data.status,
+        status: finalStatus,
         trial_ends_at: trialEndsAt,
         expires_at: expiresAt,
         addon_schools_count: data.addon_schools_count || 0,
@@ -297,11 +303,41 @@ Deno.serve(async (req) => {
       // Continue anyway - subscription can be added later
     }
 
-    // 9. Calcular valor total para audit log
+    // 9. Gerar link de pagamento se solicitado
+    let paymentUrl: string | null = null
+    if (data.generate_payment_link) {
+      console.log('Generating Stripe payment link for admin:', userId)
+      
+      const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-payment-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({
+          planSlug: plan.slug,
+          addonSchools: data.addon_schools_count || 0,
+          customerEmail: data.email.toLowerCase(),
+          adminId: userId,
+          adminName: data.name,
+          schoolName: data.school_name,
+        }),
+      })
+      
+      const paymentResult = await response.json()
+      if (paymentResult.success && paymentResult.paymentUrl) {
+        paymentUrl = paymentResult.paymentUrl
+        console.log('Payment link generated:', paymentUrl)
+      } else {
+        console.error('Failed to generate payment link:', paymentResult.error)
+      }
+    }
+
+    // 10. Calcular valor total para audit log
     const addonCost = (data.addon_schools_count || 0) * 49700; // R$497 em centavos
     const totalMonthlyCents = plan.price_cents + addonCost;
 
-    // 10. Registrar no audit log com dados completos
+    // 11. Registrar no audit log com dados completos
     await supabaseAdmin
       .from('platform_audit_logs')
       .insert({
@@ -320,8 +356,10 @@ Deno.serve(async (req) => {
           addon_schools_count: data.addon_schools_count || 0,
           addon_cost_cents: addonCost,
           total_monthly_cents: totalMonthlyCents,
-          status: data.status,
+          status: finalStatus,
           trial_days: data.trial_days || null,
+          generate_payment_link: data.generate_payment_link || false,
+          payment_url_generated: !!paymentUrl,
           // Dados da empresa
           company_name: data.company_name || null,
           company_cnpj: data.company_cnpj || null,
@@ -367,6 +405,8 @@ Deno.serve(async (req) => {
           city: data.company_city || null,
           state: data.company_state || null,
         } : null,
+        // Novo campo para link de pagamento
+        payment_url: paymentUrl,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
