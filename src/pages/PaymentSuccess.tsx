@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, CheckCircle, Mail, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle, Mail, ArrowRight, FileText } from 'lucide-react';
 import klaseLogo from '@/assets/logo-klase-chromado.png';
 
 export default function PaymentSuccess() {
@@ -13,8 +13,12 @@ export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const hasConfirmed = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasConfirmed.current) return;
+    hasConfirmed.current = true;
     const confirmPayment = async () => {
       const sessionId = searchParams.get('session_id');
       

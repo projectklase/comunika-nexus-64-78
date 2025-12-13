@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
       schoolData = school
     }
 
-    // Enviar email de confirmação de pagamento (sem senha - usuário já sabe)
+    // Enviar email de confirmação de pagamento
     if (profile) {
       try {
         console.log('Sending payment confirmation email to:', profile.email)
