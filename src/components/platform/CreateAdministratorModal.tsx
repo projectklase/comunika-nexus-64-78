@@ -57,6 +57,7 @@ interface FormData {
   plan_id: string;
   addon_schools_count: number;
   generate_payment_link: boolean;
+  include_implantation: boolean;
   
   // Etapa 2 - Empresa (opcional)
   company_name: string;
@@ -159,6 +160,7 @@ export function CreateAdministratorModal({
     plan_id: '',
     addon_schools_count: 0,
     generate_payment_link: false,
+    include_implantation: false,
     company_name: '',
     company_cnpj: '',
     company_address: '',
@@ -182,6 +184,7 @@ export function CreateAdministratorModal({
         password: generatePassword(),
         plan_id: subscriptionPlans?.[0]?.id || '',
         generate_payment_link: false,
+        include_implantation: false,
       }));
     }
   }, [open, subscriptionPlans]);
@@ -208,9 +211,13 @@ export function CreateAdministratorModal({
   const selectedPlan = subscriptionPlans?.find(p => p.id === formData.plan_id);
   
   const calculateTotal = () => {
-    if (!selectedPlan) return 0;
+    if (!selectedPlan) return { monthly: 0, oneTime: 0 };
     const addonCost = formData.addon_schools_count * 49700; // R$497 em centavos
-    return selectedPlan.price_cents + addonCost;
+    const implantationCost = formData.include_implantation ? 200000 : 0; // R$2.000 em centavos
+    return {
+      monthly: selectedPlan.price_cents + addonCost,
+      oneTime: implantationCost,
+    };
   };
 
   const handlePreviewPDF = async () => {
@@ -296,6 +303,7 @@ export function CreateAdministratorModal({
           status: formData.generate_payment_link ? 'pending_payment' : 'active',
           addon_schools_count: formData.addon_schools_count,
           generate_payment_link: formData.generate_payment_link,
+          include_implantation: formData.include_implantation,
           // Dados da empresa (opcionais)
           company_name: formData.company_name || undefined,
           company_cnpj: formData.company_cnpj.replace(/\D/g, '') || undefined,
@@ -383,6 +391,7 @@ export function CreateAdministratorModal({
         plan_id: subscriptionPlans?.[0]?.id || '',
         addon_schools_count: 0,
         generate_payment_link: false,
+        include_implantation: false,
         company_name: '',
         company_cnpj: '',
         company_address: '',
@@ -401,7 +410,23 @@ export function CreateAdministratorModal({
       onSuccess();
     } catch (error: any) {
       console.error('Error creating administrator:', error);
-      toast.error(error.message || 'Erro ao criar administrador');
+      
+      // Extrair mensagem de erro do body da resposta
+      let errorMessage = 'Erro ao criar administrador';
+      try {
+        if (error?.context?.body) {
+          const body = JSON.parse(error.context.body);
+          errorMessage = body.error || errorMessage;
+        } else if (error?.message?.includes('409')) {
+          errorMessage = 'Este email já está cadastrado no sistema';
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+      } catch {
+        // Fallback para mensagem genérica
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -819,15 +844,41 @@ export function CreateAdministratorModal({
         </div>
       </div>
 
+      {/* Taxa de Implantação */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-3">
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="include-implantation"
+            checked={formData.include_implantation}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, include_implantation: !!checked }))}
+          />
+          <div className="flex-1">
+            <Label htmlFor="include-implantation" className="text-sm font-medium cursor-pointer">
+              Incluir Taxa de Implantação
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              +R$2.000,00 (pagamento único) - Configuração inicial e suporte de onboarding
+            </p>
+          </div>
+          <span className="font-bold text-primary">R$2.000,00</span>
+        </div>
+      </div>
+
       {/* Total */}
-      <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+      <div className="p-4 rounded-lg bg-primary/10 border border-primary/30 space-y-2">
         <div className="flex items-center justify-between">
           <span className="font-medium">Total Mensal</span>
-          <span className="text-2xl font-bold text-primary">{formatCurrency(calculateTotal())}</span>
+          <span className="text-2xl font-bold text-primary">{formatCurrency(calculateTotal().monthly)}</span>
         </div>
         {formData.addon_schools_count > 0 && selectedPlan && (
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className="text-xs text-muted-foreground">
             {formatCurrency(selectedPlan.price_cents)} (plano) + {formatCurrency(formData.addon_schools_count * 49700)} ({formData.addon_schools_count} escola{formData.addon_schools_count > 1 ? 's' : ''} extra)
+          </div>
+        )}
+        {formData.include_implantation && (
+          <div className="flex items-center justify-between pt-2 border-t border-white/10">
+            <span className="text-sm text-muted-foreground">Pagamento Único (Implantação)</span>
+            <span className="font-bold text-amber-400">{formatCurrency(calculateTotal().oneTime)}</span>
           </div>
         )}
       </div>
@@ -886,9 +937,15 @@ export function CreateAdministratorModal({
           <div className="text-muted-foreground">Escolas:</div>
           <div>{(selectedPlan?.included_schools || 1) + formData.addon_schools_count} ({selectedPlan?.included_schools} + {formData.addon_schools_count} extra)</div>
           <div className="text-muted-foreground">Status:</div>
-          <div>Ativo</div>
+          <div>{formData.generate_payment_link ? 'Pendente Pagamento' : 'Ativo'}</div>
           <div className="text-muted-foreground">Total Mensal:</div>
-          <div className="font-bold text-primary">{formatCurrency(calculateTotal())}</div>
+          <div className="font-bold text-primary">{formatCurrency(calculateTotal().monthly)}</div>
+          {formData.include_implantation && (
+            <>
+              <div className="text-muted-foreground">Taxa Implantação:</div>
+              <div className="font-bold text-amber-400">{formatCurrency(calculateTotal().oneTime)}</div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1093,6 +1150,7 @@ export function CreateAdministratorModal({
       plan_id: subscriptionPlans?.[0]?.id || '',
       addon_schools_count: 0,
       generate_payment_link: false,
+      include_implantation: false,
       company_name: '',
       company_cnpj: '',
       company_address: '',

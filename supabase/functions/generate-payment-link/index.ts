@@ -13,6 +13,7 @@ const PLAN_TO_PRICE: Record<string, string> = {
 }
 
 const ADDON_SCHOOL_PRICE = 'price_1SdfjlCs06MIouz0FgdhhJnV'
+const IMPLANTATION_PRICE = 'price_1SdKvYCs06MIouz0hh4bSB1a'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,6 +30,7 @@ Deno.serve(async (req) => {
       adminId,
       adminName,
       schoolName,
+      includeImplantation = false,
     } = await req.json()
 
     // Validações
@@ -47,7 +49,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('[GENERATE-PAYMENT-LINK] Params:', { planSlug, addonSchools, customerEmail, adminId })
+    console.log('[GENERATE-PAYMENT-LINK] Params:', { planSlug, addonSchools, customerEmail, adminId, includeImplantation })
 
     // Inicializar Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -70,6 +72,14 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Adicionar taxa de implantação se solicitado (one-time payment)
+    if (includeImplantation) {
+      lineItems.push({
+        price: IMPLANTATION_PRICE,
+        quantity: 1,
+      })
+    }
+
     // URLs de retorno
     const origin = 'https://app.klasetech.com'
     const successUrl = `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&admin_id=${adminId}`
@@ -87,6 +97,7 @@ Deno.serve(async (req) => {
         admin_id: adminId,
         plan_slug: planSlug,
         addon_schools_count: String(addonSchools),
+        include_implantation: String(includeImplantation),
         admin_name: adminName || '',
         school_name: schoolName || '',
         source: 'superadmin_manual_creation',
