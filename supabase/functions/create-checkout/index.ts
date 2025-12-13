@@ -88,7 +88,7 @@ serve(async (req) => {
         },
       ],
       mode: mode,
-      success_url: `${req.headers.get("origin")}/admin/assinatura?success=true`,
+      success_url: `${req.headers.get("origin")}/admin/assinatura?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/admin/assinatura?canceled=true`,
       metadata: {
         user_id: user.id,
