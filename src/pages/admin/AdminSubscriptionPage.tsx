@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
+import { useSchools } from '@/hooks/useSchools';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/Layout/AppLayout';
@@ -11,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { AddSchoolModal } from '@/components/admin/AddSchoolModal';
 import {
   CreditCard,
   Brain,
@@ -72,8 +74,11 @@ export default function AdminSubscriptionPage() {
   const { user } = useAuth();
   const { limits, isLoading, allPlans, refetch } = useSubscription();
   const { isLoading: isStripeLoading, createCheckout, openCustomerPortal } = useStripeSubscription();
+  const { createSchool } = useSchools();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const [addSchoolModalOpen, setAddSchoolModalOpen] = useState(false);
+  const [isCreatingSchool, setIsCreatingSchool] = useState(false);
 
   // Handle success/cancel URL params and sync with Stripe
   useEffect(() => {
@@ -83,19 +88,49 @@ export default function AdminSubscriptionPage() {
       
       if (isSuccess) {
         try {
-          // Sync subscription from Stripe - no dependency on session_id
+          // Sync subscription from Stripe
           const { error } = await supabase.functions.invoke('sync-subscription-from-stripe');
           if (error) {
             console.error('Error syncing subscription:', error);
           }
+          
+          // Check if there's pending school data to create
+          const pendingSchoolData = localStorage.getItem('pending_school_data');
+          if (pendingSchoolData) {
+            const schoolData = JSON.parse(pendingSchoolData);
+            setIsCreatingSchool(true);
+            
+            try {
+              await createSchool({
+                name: schoolData.name,
+                slug: schoolData.slug,
+              });
+              
+              localStorage.removeItem('pending_school_data');
+              
+              toast({
+                title: 'Escola criada com sucesso!',
+                description: `A escola "${schoolData.name}" foi adicionada ao seu painel.`,
+              });
+            } catch (schoolError) {
+              console.error('Error creating school:', schoolError);
+              toast({
+                title: 'Erro ao criar escola',
+                description: 'O pagamento foi processado, mas houve um erro ao criar a escola. Entre em contato com o suporte.',
+                variant: 'destructive',
+              });
+            } finally {
+              setIsCreatingSchool(false);
+            }
+          } else {
+            toast({
+              title: 'Pagamento realizado!',
+              description: 'Sua assinatura foi ativada com sucesso.',
+            });
+          }
         } catch (err) {
           console.error('Failed to sync subscription:', err);
         }
-        
-        toast({
-          title: 'Pagamento realizado!',
-          description: 'Sua assinatura foi ativada com sucesso.',
-        });
         
         // Use replaceState to avoid infinite reload loop
         window.history.replaceState({}, '', '/admin/assinatura');
@@ -103,6 +138,9 @@ export default function AdminSubscriptionPage() {
         // Refetch subscription data without page reload
         refetch();
       } else if (isCanceled) {
+        // Clear pending school data if payment was canceled
+        localStorage.removeItem('pending_school_data');
+        
         toast({
           title: 'Pagamento cancelado',
           description: 'O processo de pagamento foi cancelado.',
@@ -112,13 +150,20 @@ export default function AdminSubscriptionPage() {
       }
     };
     syncSubscription();
-  }, [searchParams, toast, refetch]);
+  }, [searchParams, toast, refetch, createSchool]);
 
   const handleUpgrade = async (planSlug: string) => {
     await createCheckout(planSlug);
   };
 
-  const handleAddSchool = async () => {
+  const handleAddSchool = () => {
+    setAddSchoolModalOpen(true);
+  };
+
+  const handleConfirmAddSchool = async (schoolData: { name: string; slug: string }) => {
+    // Save school data to localStorage before redirect
+    localStorage.setItem('pending_school_data', JSON.stringify(schoolData));
+    setAddSchoolModalOpen(false);
     await createCheckout('escola_extra');
   };
 
@@ -126,11 +171,14 @@ export default function AdminSubscriptionPage() {
     await openCustomerPortal();
   };
 
-  if (isLoading) {
+  if (isLoading || isCreatingSchool) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          {isCreatingSchool && (
+            <p className="text-muted-foreground">Criando escola...</p>
+          )}
         </div>
       </AppLayout>
     );
@@ -385,6 +433,15 @@ export default function AdminSubscriptionPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Add School Modal */}
+        <AddSchoolModal
+          open={addSchoolModalOpen}
+          onOpenChange={setAddSchoolModalOpen}
+          onConfirm={handleConfirmAddSchool}
+          isLoading={isStripeLoading}
+          priceFormatted={`+${formatCurrency(addonSchoolPrice)}`}
+        />
       </div>
     </AppLayout>
   );
