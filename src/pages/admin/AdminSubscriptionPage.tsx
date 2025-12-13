@@ -70,7 +70,7 @@ function formatCurrency(cents: number): string {
 
 export default function AdminSubscriptionPage() {
   const { user } = useAuth();
-  const { limits, isLoading, allPlans } = useSubscription();
+  const { limits, isLoading, allPlans, refetch } = useSubscription();
   const { isLoading: isStripeLoading, createCheckout, openCustomerPortal } = useStripeSubscription();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -78,34 +78,41 @@ export default function AdminSubscriptionPage() {
   // Handle success/cancel URL params and sync with Stripe
   useEffect(() => {
     const syncSubscription = async () => {
-      if (searchParams.get('success') === 'true') {
-        const sessionId = searchParams.get('session_id');
-        if (sessionId) {
-          try {
-            const { data, error } = await supabase.functions.invoke('sync-subscription-from-stripe');
-            if (error) {
-              console.error('Error syncing subscription:', error);
-            }
-          } catch (err) {
-            console.error('Failed to sync subscription:', err);
+      const isSuccess = searchParams.get('success') === 'true';
+      const isCanceled = searchParams.get('canceled') === 'true';
+      
+      if (isSuccess) {
+        try {
+          // Sync subscription from Stripe - no dependency on session_id
+          const { error } = await supabase.functions.invoke('sync-subscription-from-stripe');
+          if (error) {
+            console.error('Error syncing subscription:', error);
           }
+        } catch (err) {
+          console.error('Failed to sync subscription:', err);
         }
+        
         toast({
           title: 'Pagamento realizado!',
           description: 'Sua assinatura foi ativada com sucesso.',
         });
-        // Refresh subscription data
-        window.location.href = '/admin/assinatura';
-      } else if (searchParams.get('canceled') === 'true') {
+        
+        // Use replaceState to avoid infinite reload loop
+        window.history.replaceState({}, '', '/admin/assinatura');
+        
+        // Refetch subscription data without page reload
+        refetch();
+      } else if (isCanceled) {
         toast({
           title: 'Pagamento cancelado',
           description: 'O processo de pagamento foi cancelado.',
           variant: 'destructive',
         });
+        window.history.replaceState({}, '', '/admin/assinatura');
       }
     };
     syncSubscription();
-  }, [searchParams, toast]);
+  }, [searchParams, toast, refetch]);
 
   const handleUpgrade = async (planSlug: string) => {
     await createCheckout(planSlug);
