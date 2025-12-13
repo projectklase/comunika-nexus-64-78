@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
-import { useSchools } from '@/hooks/useSchools';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/Layout/AppLayout';
@@ -74,17 +73,27 @@ export default function AdminSubscriptionPage() {
   const { user } = useAuth();
   const { limits, isLoading, allPlans, refetch } = useSubscription();
   const { isLoading: isStripeLoading, createCheckout, openCustomerPortal } = useStripeSubscription();
-  const { createSchool } = useSchools();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [addSchoolModalOpen, setAddSchoolModalOpen] = useState(false);
   const [isCreatingSchool, setIsCreatingSchool] = useState(false);
+  
+  // Prevent duplicate processing of success callback
+  const hasProcessedRef = useRef(false);
 
   // Handle success/cancel URL params and sync with Stripe
   useEffect(() => {
-    const syncSubscription = async () => {
-      const isSuccess = searchParams.get('success') === 'true';
-      const isCanceled = searchParams.get('canceled') === 'true';
+    const isSuccess = searchParams.get('success') === 'true';
+    const isCanceled = searchParams.get('canceled') === 'true';
+    
+    // Early return if already processed or no action needed
+    if (hasProcessedRef.current || (!isSuccess && !isCanceled)) {
+      return;
+    }
+    
+    const processPaymentResult = async () => {
+      // Mark as processed immediately to prevent duplicate calls
+      hasProcessedRef.current = true;
       
       if (isSuccess) {
         try {
@@ -101,10 +110,17 @@ export default function AdminSubscriptionPage() {
             setIsCreatingSchool(true);
             
             try {
-              await createSchool({
-                name: schoolData.name,
-                slug: schoolData.slug,
+              // Use Edge Function with service_role to bypass RLS
+              const { data, error: schoolError } = await supabase.functions.invoke('create-school-after-payment', {
+                body: { 
+                  school_name: schoolData.name, 
+                  school_slug: schoolData.slug 
+                }
               });
+              
+              if (schoolError) {
+                throw schoolError;
+              }
               
               localStorage.removeItem('pending_school_data');
               
@@ -149,8 +165,9 @@ export default function AdminSubscriptionPage() {
         window.history.replaceState({}, '', '/admin/assinatura');
       }
     };
-    syncSubscription();
-  }, [searchParams, toast, refetch, createSchool]);
+    
+    processPaymentResult();
+  }, [searchParams, toast, refetch]);
 
   const handleUpgrade = async (planSlug: string) => {
     await createCheckout(planSlug);

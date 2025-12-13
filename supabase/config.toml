@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.cancel-stripe-subscription]
 verify_jwt = true
+
+[functions.create-school-after-payment]
+verify_jwt = true
