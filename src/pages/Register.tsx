@@ -176,13 +176,11 @@ export default function Register() {
     company_state_registration: '',
     plan_id: '',
   });
+  
+  // State for Stripe redirect
+  const [redirectingToStripe, setRedirectingToStripe] = useState(false);
 
-  // Redirect if already logged in
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Fetch plans
+  // Fetch plans - MUST be before any conditional returns
   useEffect(() => {
     async function fetchPlans() {
       try {
@@ -206,6 +204,24 @@ export default function Register() {
     }
     fetchPlans();
   }, []);
+
+  // Redirect if already logged in - AFTER all hooks
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  // Show loading while redirecting to Stripe
+  if (redirectingToStripe) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+          <p className="text-lg font-medium">Redirecionando para pagamento...</p>
+          <p className="text-sm text-muted-foreground">Aguarde, você será direcionado ao Stripe</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleCopy = async (text: string, field: string) => {
     await navigator.clipboard.writeText(text);
@@ -298,8 +314,13 @@ export default function Register() {
         }
       });
 
-      if (adminError) throw adminError;
-      if (!adminData.success) throw new Error(adminData.error);
+      if (adminError) {
+        console.error('Admin creation error:', adminError);
+        throw new Error(adminError.message || 'Erro ao criar conta de administrador');
+      }
+      if (!adminData?.success) {
+        throw new Error(adminData?.error || 'Erro ao criar conta de administrador');
+      }
 
       // 2. Login automatically
       const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -307,7 +328,10 @@ export default function Register() {
         password: formData.password,
       });
 
-      if (loginError) throw loginError;
+      if (loginError) {
+        console.error('Login error:', loginError);
+        throw new Error('Conta criada, mas houve erro no login automático. Faça login manualmente.');
+      }
 
       // 3. Create Stripe checkout session
       const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
@@ -317,12 +341,20 @@ export default function Register() {
         }
       });
 
-      if (checkoutError) throw checkoutError;
+      if (checkoutError) {
+        console.error('Checkout error:', checkoutError);
+        throw new Error('Conta criada! Erro ao iniciar pagamento. Acesse sua conta para continuar.');
+      }
 
       if (checkoutData?.url) {
+        // Set redirecting state to show loading UI
+        setRedirectingToStripe(true);
         toast.success('Conta criada! Redirecionando para pagamento...');
-        // Open Stripe checkout in same tab
-        window.location.href = checkoutData.url;
+        
+        // Use location.assign for clean redirect (prevents iFrame issues)
+        setTimeout(() => {
+          window.location.assign(checkoutData.url);
+        }, 500);
       } else {
         throw new Error('Erro ao criar sessão de pagamento');
       }
@@ -330,9 +362,9 @@ export default function Register() {
     } catch (error: any) {
       console.error('Error during registration:', error);
       toast.error(error.message || 'Erro ao criar conta');
-    } finally {
       setLoading(false);
     }
+    // Note: Don't set loading to false if redirecting, as component will unmount
   };
 
   // Stepper visual
