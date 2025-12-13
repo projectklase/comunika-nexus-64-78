@@ -238,7 +238,7 @@ export default function PlatformDashboard() {
       </div>
 
       {/* Main Metrics with MRR */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <MetricCard
           title="MRR"
           value={formatCurrency(metrics?.mrr_cents || 0)}
@@ -281,11 +281,11 @@ export default function PlatformDashboard() {
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <Card className="glass-card border-white/10">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-orange-500" />
+            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-orange-500/10 flex items-center justify-center">
+              <Users className="w-5 h-5 flex-shrink-0 text-orange-500" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Administradores</p>
@@ -300,8 +300,8 @@ export default function PlatformDashboard() {
 
         <Card className="glass-card border-white/10">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-500" />
+            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Users className="w-5 h-5 flex-shrink-0 text-blue-500" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Professores</p>
@@ -316,8 +316,8 @@ export default function PlatformDashboard() {
 
         <Card className="glass-card border-white/10">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-purple-500" />
+            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <Users className="w-5 h-5 flex-shrink-0 text-purple-500" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Secretárias</p>
@@ -332,8 +332,8 @@ export default function PlatformDashboard() {
 
         <Card className="glass-card border-white/10">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-green-500" />
+            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-green-500/10 flex items-center justify-center">
+              <Users className="w-5 h-5 flex-shrink-0 text-green-500" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Alunos</p>
@@ -348,8 +348,8 @@ export default function PlatformDashboard() {
 
         <Card className="glass-card border-white/10">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Clock className="w-5 h-5 flex-shrink-0 text-primary" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Logins Hoje</p>
