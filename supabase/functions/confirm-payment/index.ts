@@ -40,10 +40,10 @@ Deno.serve(async (req) => {
       apiVersion: '2025-08-27.basil',
     })
 
-    // Verificar sessão do Stripe
+    // Verificar sessão do Stripe (expansão limitada para respeitar limite de 4 níveis)
     console.log('Retrieving Stripe session:', session_id)
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ['subscription', 'subscription.items.data.price.product']
+      expand: ['subscription']
     })
 
     if (session.payment_status !== 'paid') {
@@ -65,17 +65,26 @@ Deno.serve(async (req) => {
 
     console.log('Payment confirmed for user:', userId)
 
-    // Determine plan from subscription
+    // Determine plan from subscription (chamada separada para respeitar limite de expansão)
     let planSlug = 'challenger'
-    const subscription = session.subscription as any
-    if (subscription?.items?.data) {
+    if (session.subscription) {
+      const subscriptionId = typeof session.subscription === 'string' 
+        ? session.subscription 
+        : (session.subscription as any).id
+      
+      console.log('Fetching subscription details:', subscriptionId)
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ['items.data.price.product']
+      })
+      
       for (const item of subscription.items.data) {
         const productId = typeof item.price.product === 'string' 
           ? item.price.product 
-          : item.price.product?.id
+          : (item.price.product as any)?.id
         
         if (productId && PRODUCT_TO_PLAN[productId]) {
           planSlug = PRODUCT_TO_PLAN[productId]
+          console.log('Found plan from product:', productId, '->', planSlug)
           break
         }
       }
