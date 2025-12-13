@@ -7,6 +7,18 @@ import { logAudit } from '@/stores/audit-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from './useSubscription';
 
+// Helper para calcular idade a partir de data de nascimento
+function calculateAge(dob: string): number {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 // As interfaces e a estrutura geral do hook permanecem as mesmas.
 interface Guardian {
   id: string;
@@ -333,11 +345,54 @@ export function useStudents() {
         throw new Error(responseData.error || 'Erro ao criar aluno');
       }
 
-      // CORREÇÃO 4: Melhor feedback para o usuário
-      toast.success(
-        'Aluno criado com sucesso! Aguarde 5 segundos antes de fazer login.',
-        { duration: 5000 }
-      );
+      // Determinar se aluno é menor de idade
+      const isMinor = studentData.dob ? calculateAge(studentData.dob) < 18 : false;
+      
+      // Buscar guardian primário se aluno for menor
+      let guardianEmail: string | undefined;
+      let guardianName: string | undefined;
+      
+      if (isMinor && responseData.user?.id) {
+        const { data: guardian } = await supabase
+          .from('guardians')
+          .select('email, name')
+          .eq('student_id', responseData.user.id)
+          .eq('is_primary', true)
+          .single();
+        
+        guardianEmail = guardian?.email || undefined;
+        guardianName = guardian?.name || undefined;
+      }
+
+      // Determinar destinatário do email
+      const recipientEmail = isMinor && guardianEmail ? guardianEmail : studentData.email;
+
+      // Enviar email de credenciais
+      if (recipientEmail) {
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-credentials-email', {
+            body: {
+              to: recipientEmail,
+              studentName: studentData.name,
+              email: studentData.email,
+              password: password,
+              schoolName: currentSchool?.name || 'Klase',
+              isGuardian: isMinor && !!guardianEmail,
+              guardianName: guardianName
+            }
+          });
+
+          if (emailError) {
+            console.error('Erro ao enviar email de credenciais:', emailError);
+            toast.warning('Aluno criado, mas não foi possível enviar email de credenciais');
+          }
+        } catch (emailErr) {
+          console.error('Erro ao enviar email:', emailErr);
+          // Não falha a criação do aluno por causa do email
+        }
+      }
+
+      toast.success('Aluno criado com sucesso!', { duration: 5000 });
       
       // Aguardar 5 segundos para garantir que triggers foram executados
       await new Promise(resolve => setTimeout(resolve, 5000));
