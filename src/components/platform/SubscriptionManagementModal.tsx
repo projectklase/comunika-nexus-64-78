@@ -20,7 +20,8 @@ import {
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CreditCard, Calendar, Building2, Users, Percent, Tag, Receipt, AlertTriangle } from 'lucide-react';
+import { Loader2, CreditCard, Calendar, Building2, Users, Percent, Tag, Receipt, AlertTriangle, Wrench, CheckCircle2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -54,6 +55,8 @@ export function SubscriptionManagementModal({
     discount_percent: 0,
     discount_cents: 0,
     discount_reason: '',
+    implantation_paid: false,
+    implantation_notes: '',
   });
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelingStripe, setCancelingStripe] = useState(false);
@@ -72,6 +75,8 @@ export function SubscriptionManagementModal({
         discount_percent: sub.discount_percent || 0,
         discount_cents: sub.discount_cents || 0,
         discount_reason: sub.discount_reason || '',
+        implantation_paid: sub.implantation_paid || false,
+        implantation_notes: sub.implantation_notes || '',
       });
     } else {
       setFormData({
@@ -83,6 +88,8 @@ export function SubscriptionManagementModal({
         discount_percent: 0,
         discount_cents: 0,
         discount_reason: '',
+        implantation_paid: false,
+        implantation_notes: '',
       });
     }
   }, [admin, subscriptionPlans]);
@@ -169,6 +176,8 @@ export function SubscriptionManagementModal({
         discountPercent: formData.discount_percent,
         discountCents: formData.discount_cents,
         discountReason: formData.discount_reason || null,
+        implantationPaid: formData.implantation_paid,
+        implantationNotes: formData.implantation_notes || null,
       });
       toast.success('Assinatura atualizada com sucesso');
       onSuccess();
@@ -385,6 +394,46 @@ export function SubscriptionManagementModal({
               </div>
             </div>
           )}
+
+          {/* Implantation Payment Tracking */}
+          <div className={`p-4 rounded-lg border space-y-3 ${
+            formData.implantation_paid 
+              ? 'bg-emerald-500/10 border-emerald-500/30' 
+              : 'bg-amber-500/10 border-amber-500/30'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {formData.implantation_paid ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <Wrench className="w-4 h-4 text-amber-400" />
+                )}
+                <Label className={`font-medium ${formData.implantation_paid ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  Implantação Paga
+                </Label>
+              </div>
+              <Switch
+                checked={formData.implantation_paid}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, implantation_paid: checked }))}
+              />
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Use este campo para rastrear o pagamento da taxa de implantação cobrada por fora do sistema (link separado do Stripe, transferência, etc.)
+            </p>
+
+            {formData.implantation_paid && (
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <Label className="text-sm">Observações da Implantação (opcional)</Label>
+                <Textarea
+                  value={formData.implantation_notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, implantation_notes: e.target.value }))}
+                  placeholder="Ex: Pago via PIX em 15/01, link Stripe ID xyz..."
+                  className="bg-white/5 border-white/10 min-h-[60px] resize-none"
+                />
+              </div>
+            )}
+          </div>
 
           {/* Trial End Date */}
           <div className="space-y-2">
