@@ -307,6 +307,54 @@ export type Database = {
           },
         ]
       }
+      billing_info: {
+        Row: {
+          admin_id: string
+          company_address: string
+          company_city: string
+          company_cnpj: string
+          company_name: string
+          company_neighborhood: string
+          company_number: string
+          company_state: string
+          company_state_registration: string | null
+          company_zipcode: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id: string
+          company_address: string
+          company_city: string
+          company_cnpj: string
+          company_name: string
+          company_neighborhood: string
+          company_number: string
+          company_state: string
+          company_state_registration?: string | null
+          company_zipcode: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string
+          company_address?: string
+          company_city?: string
+          company_cnpj?: string
+          company_name?: string
+          company_neighborhood?: string
+          company_number?: string
+          company_state?: string
+          company_state_registration?: string | null
+          company_zipcode?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       broadcast_messages: {
         Row: {
           channel: string
