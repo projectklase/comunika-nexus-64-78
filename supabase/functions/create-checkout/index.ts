@@ -46,8 +46,8 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Parse request body
-    const { priceType, quantity = 1 } = await req.json();
-    logStep("Request params", { priceType, quantity });
+    const { priceType, quantity = 1, successUrl, cancelUrl } = await req.json();
+    logStep("Request params", { priceType, quantity, successUrl, cancelUrl });
 
     // Validate price type
     const priceId = STRIPE_PRICES[priceType as keyof typeof STRIPE_PRICES];
@@ -77,6 +77,15 @@ serve(async (req) => {
     const mode = isRecurring ? 'subscription' : 'payment';
     logStep("Checkout mode", { mode, isRecurring });
 
+    // Determine URLs
+    const origin = req.headers.get("origin") || "https://app.klasetech.com";
+    const finalSuccessUrl = successUrl 
+      ? `${origin}${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/admin/assinatura?success=true&session_id={CHECKOUT_SESSION_ID}`;
+    const finalCancelUrl = cancelUrl 
+      ? `${origin}${cancelUrl}`
+      : `${origin}/admin/assinatura?canceled=true`;
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -88,8 +97,8 @@ serve(async (req) => {
         },
       ],
       mode: mode,
-      success_url: `${req.headers.get("origin")}/admin/assinatura?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/admin/assinatura?canceled=true`,
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
       metadata: {
         user_id: user.id,
         price_type: priceType,
