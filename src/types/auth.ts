@@ -32,6 +32,7 @@ export interface User {
   koins?: number;
   total_xp?: number;        // XP gastável (diminui ao comprar pacotes)
   level_xp?: number;        // XP permanente para cálculo de nível (só aumenta)
+  subscriptionStatus?: string; // Status da assinatura para admins (active, pending_payment, etc)
 }
 
 export interface AuthContextType {

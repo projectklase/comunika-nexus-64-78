@@ -24,6 +24,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     return <Navigate to="/login" replace />;
   }
 
+  // Bloquear acesso para admins com pagamento pendente
+  if (user.role === 'administrador' && user.subscriptionStatus === 'pending_payment') {
+    return <Navigate to="/pending-payment" replace />;
+  }
+
   // Check role permissions if allowedRoles is provided
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/login" replace />;
