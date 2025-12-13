@@ -31,6 +31,7 @@ interface CreateAdminRequest {
   
   // Geração de link de pagamento
   generate_payment_link?: boolean
+  include_implantation?: boolean
 }
 
 Deno.serve(async (req) => {
@@ -321,6 +322,7 @@ Deno.serve(async (req) => {
           adminId: userId,
           adminName: data.name,
           schoolName: data.school_name,
+          includeImplantation: data.include_implantation || false,
         }),
       })
       
@@ -359,6 +361,7 @@ Deno.serve(async (req) => {
           status: finalStatus,
           trial_days: data.trial_days || null,
           generate_payment_link: data.generate_payment_link || false,
+          include_implantation: data.include_implantation || false,
           payment_url_generated: !!paymentUrl,
           // Dados da empresa
           company_name: data.company_name || null,
