@@ -56,6 +56,7 @@ interface FormData {
   // Etapa 1 - Plano
   plan_id: string;
   addon_schools_count: number;
+  generate_payment_link: boolean;
   
   // Etapa 2 - Empresa (opcional)
   company_name: string;
@@ -71,6 +72,11 @@ interface FormData {
   password: string;
   school_name: string;
   school_slug: string;
+}
+
+interface CreationResult {
+  admin: { name: string; email: string };
+  payment_url?: string;
 }
 
 const STEPS = [
@@ -147,10 +153,12 @@ export function CreateAdministratorModal({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(true);
+  const [creationResult, setCreationResult] = useState<CreationResult | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     plan_id: '',
     addon_schools_count: 0,
+    generate_payment_link: false,
     company_name: '',
     company_cnpj: '',
     company_address: '',
@@ -168,10 +176,12 @@ export function CreateAdministratorModal({
   useEffect(() => {
     if (open) {
       setCurrentStep(1);
+      setCreationResult(null);
       setFormData(prev => ({
         ...prev,
         password: generatePassword(),
         plan_id: subscriptionPlans?.[0]?.id || '',
+        generate_payment_link: false,
       }));
     }
   }, [open, subscriptionPlans]);
@@ -283,8 +293,9 @@ export function CreateAdministratorModal({
           school_name: formData.school_name,
           school_slug: formData.school_slug,
           plan_id: formData.plan_id,
-          status: 'active',
+          status: formData.generate_payment_link ? 'pending_payment' : 'active',
           addon_schools_count: formData.addon_schools_count,
+          generate_payment_link: formData.generate_payment_link,
           // Dados da empresa (opcionais)
           company_name: formData.company_name || undefined,
           company_cnpj: formData.company_cnpj.replace(/\D/g, '') || undefined,
@@ -297,67 +308,81 @@ export function CreateAdministratorModal({
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
-      // Generate onboarding PDF
-      let onboardingPdfUrl: string | undefined;
-      try {
-        const pdfBlob = await generateAdminOnboardingPDF({
-          adminName: formData.name,
-          schoolName: formData.school_name,
-          planName: selectedPlan?.name || 'Plano',
-          maxStudents: selectedPlan?.max_students || 0,
-          email: formData.email.toLowerCase(),
-          password: formData.password,
+      // Se gerou link de pagamento, mostrar resultado
+      if (formData.generate_payment_link && data.payment_url) {
+        setCreationResult({
+          admin: { name: formData.name, email: formData.email },
+          payment_url: data.payment_url,
         });
-        
-        // Upload PDF to Supabase Storage
-        const fileName = `onboarding_${formData.school_slug}_${Date.now()}.pdf`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('onboarding-pdfs')
-          .upload(fileName, pdfBlob, {
-            contentType: 'application/pdf',
-            upsert: false,
-          });
-        
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabase.storage
-            .from('onboarding-pdfs')
-            .getPublicUrl(uploadData.path);
-          onboardingPdfUrl = urlData?.publicUrl;
-        }
-      } catch (pdfError) {
-        console.error('Failed to generate/upload PDF:', pdfError);
-        // Continue without PDF
+        toast.success('Administrador criado! Link de pagamento gerado.');
+        // Não reseta o form, mostra o resultado
+        return;
       }
 
-      // Send welcome email if checked
-      if (sendWelcomeEmail) {
+      // Generate onboarding PDF (apenas se não for link de pagamento)
+      let onboardingPdfUrl: string | undefined;
+      if (!formData.generate_payment_link) {
         try {
-          await supabase.functions.invoke('send-admin-welcome-email', {
-            body: {
-              adminName: formData.name,
-              adminEmail: formData.email.toLowerCase(),
-              password: formData.password,
-              schoolName: formData.school_name,
-              planName: selectedPlan?.name,
-              maxStudents: selectedPlan?.max_students,
-              isPasswordReset: false,
-              onboardingPdfUrl,
-            }
+          const pdfBlob = await generateAdminOnboardingPDF({
+            adminName: formData.name,
+            schoolName: formData.school_name,
+            planName: selectedPlan?.name || 'Plano',
+            maxStudents: selectedPlan?.max_students || 0,
+            email: formData.email.toLowerCase(),
+            password: formData.password,
           });
-          toast.success(`Administrador ${formData.name} criado e email enviado!`);
-        } catch (emailError) {
-          console.error('Failed to send welcome email:', emailError);
-          toast.success(`Administrador ${formData.name} criado com sucesso!`);
-          toast.warning('Falha ao enviar email de boas-vindas');
+          
+          // Upload PDF to Supabase Storage
+          const fileName = `onboarding_${formData.school_slug}_${Date.now()}.pdf`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('onboarding-pdfs')
+            .upload(fileName, pdfBlob, {
+              contentType: 'application/pdf',
+              upsert: false,
+            });
+          
+          if (!uploadError && uploadData) {
+            const { data: urlData } = supabase.storage
+              .from('onboarding-pdfs')
+              .getPublicUrl(uploadData.path);
+            onboardingPdfUrl = urlData?.publicUrl;
+          }
+        } catch (pdfError) {
+          console.error('Failed to generate/upload PDF:', pdfError);
+          // Continue without PDF
         }
-      } else {
-        toast.success(`Administrador ${formData.name} criado com sucesso!`);
+
+        // Send welcome email if checked
+        if (sendWelcomeEmail) {
+          try {
+            await supabase.functions.invoke('send-admin-welcome-email', {
+              body: {
+                adminName: formData.name,
+                adminEmail: formData.email.toLowerCase(),
+                password: formData.password,
+                schoolName: formData.school_name,
+                planName: selectedPlan?.name,
+                maxStudents: selectedPlan?.max_students,
+                isPasswordReset: false,
+                onboardingPdfUrl,
+              }
+            });
+            toast.success(`Administrador ${formData.name} criado e email enviado!`);
+          } catch (emailError) {
+            console.error('Failed to send welcome email:', emailError);
+            toast.success(`Administrador ${formData.name} criado com sucesso!`);
+            toast.warning('Falha ao enviar email de boas-vindas');
+          }
+        } else {
+          toast.success(`Administrador ${formData.name} criado com sucesso!`);
+        }
       }
       
       // Reset form
       setFormData({
         plan_id: subscriptionPlans?.[0]?.id || '',
         addon_schools_count: 0,
+        generate_payment_link: false,
         company_name: '',
         company_cnpj: '',
         company_address: '',
@@ -806,6 +831,33 @@ export function CreateAdministratorModal({
           </div>
         )}
       </div>
+
+      {/* Opção de gerar link de pagamento */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-3">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="generate-payment-link"
+            checked={formData.generate_payment_link}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, generate_payment_link: !!checked }))}
+            className="mt-0.5"
+          />
+          <div className="flex-1">
+            <Label htmlFor="generate-payment-link" className="text-sm font-medium cursor-pointer">
+              Gerar link de pagamento do Stripe
+            </Label>
+            <p className="text-xs text-muted-foreground mt-1">
+              A conta será criada com status "pendente" até o cliente efetuar o pagamento.
+              Você receberá um link para enviar ao cliente.
+            </p>
+          </div>
+        </div>
+        
+        {formData.generate_payment_link && (
+          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-200">
+            ⚠️ O acesso será liberado automaticamente após o pagamento via Stripe.
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -964,91 +1016,213 @@ export function CreateAdministratorModal({
     </div>
   );
 
+  // Tela de resultado com link de pagamento
+  const renderPaymentLinkResult = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-4">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+          <Check className="w-8 h-8 text-green-500" />
+        </div>
+        <h3 className="text-lg font-semibold">Administrador Criado!</h3>
+        <p className="text-sm text-muted-foreground">Link de pagamento gerado com sucesso</p>
+      </div>
+
+      {/* Dados do Admin */}
+      <div className="p-4 rounded-lg bg-white/5 border border-white/10 space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <User className="w-4 h-4 text-primary" />
+          Administrador
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="text-muted-foreground">Nome:</div>
+          <div>{creationResult?.admin.name}</div>
+          <div className="text-muted-foreground">Email:</div>
+          <div>{creationResult?.admin.email}</div>
+          <div className="text-muted-foreground">Status:</div>
+          <div className="text-amber-400">Aguardando pagamento</div>
+        </div>
+      </div>
+
+      {/* Link de Pagamento */}
+      <div className="p-4 rounded-lg bg-primary/10 border border-primary/30 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <CreditCard className="w-4 h-4 text-primary" />
+          Link de Pagamento (copiar e enviar ao cliente)
+        </div>
+        <div className="flex gap-2">
+          <Input
+            value={creationResult?.payment_url || ''}
+            readOnly
+            className="bg-white/5 border-white/10 text-xs font-mono"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="shrink-0 bg-white/5 border-white/10"
+            onClick={() => {
+              if (creationResult?.payment_url) {
+                navigator.clipboard.writeText(creationResult.payment_url);
+                setCopiedField('payment-link');
+                setTimeout(() => setCopiedField(null), 2000);
+                toast.success('Link copiado!');
+              }
+            }}
+          >
+            {copiedField === 'payment-link' ? (
+              <Check className="w-4 h-4 text-green-500" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Aviso */}
+      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-200">
+        ⚠️ O acesso será liberado automaticamente após o cliente efetuar o pagamento via Stripe.
+        <br />
+        <span className="text-muted-foreground">O email de boas-vindas será enviado após a confirmação do pagamento.</span>
+      </div>
+    </div>
+  );
+
+  const handleCloseAfterSuccess = () => {
+    setCreationResult(null);
+    setFormData({
+      plan_id: subscriptionPlans?.[0]?.id || '',
+      addon_schools_count: 0,
+      generate_payment_link: false,
+      company_name: '',
+      company_cnpj: '',
+      company_address: '',
+      company_city: '',
+      company_state: '',
+      name: '',
+      email: '',
+      phone: '',
+      password: generatePassword(),
+      school_name: '',
+      school_slug: '',
+    });
+    setCurrentStep(1);
+    onSuccess();
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen && creationResult) {
+        handleCloseAfterSuccess();
+      } else {
+        onOpenChange(isOpen);
+      }
+    }}>
       <DialogContent className="sm:max-w-xl glass-card border-white/10 max-h-[90vh] flex flex-col overflow-hidden p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <UserPlus className="w-5 h-5 text-primary" />
-            Novo Administrador
+            {creationResult ? 'Link de Pagamento' : 'Novo Administrador'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-6">
           <div className="py-4">
-            {renderStepper()}
-            
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
+            {creationResult ? (
+              renderPaymentLinkResult()
+            ) : (
+              <>
+                {renderStepper()}
+                
+                {currentStep === 1 && renderStep1()}
+                {currentStep === 2 && renderStep2()}
+                {currentStep === 3 && renderStep3()}
+                {currentStep === 4 && renderStep4()}
+              </>
+            )}
           </div>
         </div>
 
         <DialogFooter className="p-6 pt-4 border-t border-white/10 gap-2 flex-col sm:flex-row">
-          {currentStep > 1 && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={prevStep}
-              className="bg-white/5 border-white/10"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Voltar
-            </Button>
-          )}
-          
-          {currentStep === 2 && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={nextStep}
-              className="text-muted-foreground"
-            >
-              Pular
-            </Button>
-          )}
-
-          <div className="flex-1" />
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="bg-white/5 border-white/10"
-          >
-            Cancelar
-          </Button>
-
-          {currentStep < 4 ? (
-            <Button
-              type="button"
-              onClick={nextStep}
-              disabled={!validateStep(currentStep)}
-              className="gap-1"
-            >
-              Próximo
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+          {creationResult ? (
+            <>
+              <div className="flex-1" />
+              <Button
+                type="button"
+                onClick={handleCloseAfterSuccess}
+                className="gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Concluir
+              </Button>
+            </>
           ) : (
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" />
-                  Criar Administrador
-                </>
+            <>
+              {currentStep > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  className="bg-white/5 border-white/10"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Voltar
+                </Button>
               )}
-            </Button>
+              
+              {currentStep === 2 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={nextStep}
+                  className="text-muted-foreground"
+                >
+                  Pular
+                </Button>
+              )}
+
+              <div className="flex-1" />
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="bg-white/5 border-white/10"
+              >
+                Cancelar
+              </Button>
+
+              {currentStep < 4 ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!validateStep(currentStep)}
+                  className="gap-1"
+                >
+                  Próximo
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Criar Administrador
+                    </>
+                  )}
+                </Button>
+              )}
+            </>
           )}
         </DialogFooter>
       </DialogContent>
