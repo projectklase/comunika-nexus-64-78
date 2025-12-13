@@ -6,12 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Map Stripe Product IDs to plan slugs
+// Map Stripe Product IDs to plan slugs (unified with check-subscription)
 const PRODUCT_TO_PLAN: Record<string, string> = {
-  'prod_SWs3LDy6M5NMy9': 'challenger',
-  'prod_SWs4qOjuVNMzqG': 'master',
-  'prod_SWs4FPuqhXpGgn': 'legend',
+  'prod_SjcZxH3Sl5Pz2R': 'challenger',
+  'prod_SjtwQUDuwdAQXn': 'master',
+  'prod_SjtxQVIxLfPUAk': 'legend',
 }
+
+// Price ID for addon schools
+const ADDON_SCHOOL_PRICE_ID = 'price_1SdfjlCs06MIouz0FgdhhJnV'
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : ''
@@ -88,13 +91,33 @@ Deno.serve(async (req) => {
     }
 
     const stripeSubscription = subscriptions.data[0]
-    const productId = stripeSubscription.items.data[0].price.product as string
-    const planSlug = PRODUCT_TO_PLAN[productId] || 'challenger'
+    
+    // Analyze subscription items to determine plan and addon schools
+    let planSlug = 'challenger'
+    let addonSchoolsCount = 0
+    
+    for (const item of stripeSubscription.items.data) {
+      const productId = typeof item.price.product === 'string' 
+        ? item.price.product 
+        : (item.price.product as any).id
+      
+      // Check if it's a main plan
+      if (PRODUCT_TO_PLAN[productId]) {
+        planSlug = PRODUCT_TO_PLAN[productId]
+        logStep('Plan identified', { productId, planSlug })
+      }
+      
+      // Check if it's addon schools
+      if (item.price.id === ADDON_SCHOOL_PRICE_ID) {
+        addonSchoolsCount = item.quantity || 1
+        logStep('Addon schools found', { addonSchoolsCount })
+      }
+    }
     
     logStep('Active subscription found', { 
       subscriptionId: stripeSubscription.id, 
-      productId, 
-      planSlug 
+      planSlug,
+      addonSchoolsCount
     })
 
     // Get plan_id from subscription_plans
@@ -120,6 +143,7 @@ Deno.serve(async (req) => {
         status: 'active',
         stripe_customer_id: customerId,
         stripe_subscription_id: stripeSubscription.id,
+        addon_schools_count: addonSchoolsCount,
         updated_at: new Date().toISOString(),
       })
       .eq('admin_id', user.id)
@@ -137,6 +161,7 @@ Deno.serve(async (req) => {
     logStep('Subscription synced successfully', { 
       subscriptionId: subscription.id,
       planSlug,
+      addonSchoolsCount,
       stripeSubscriptionId: stripeSubscription.id 
     })
 
@@ -147,6 +172,7 @@ Deno.serve(async (req) => {
           id: subscription.id,
           plan_slug: planSlug,
           status: 'active',
+          addon_schools_count: addonSchoolsCount,
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
