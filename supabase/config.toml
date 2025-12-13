@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.confirm-payment]
 verify_jwt = false
+
+[functions.verify-superadmin-password]
+verify_jwt = false
