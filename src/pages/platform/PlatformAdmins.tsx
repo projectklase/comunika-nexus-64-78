@@ -171,7 +171,8 @@ export default function PlatformAdmins() {
           </Button>
           <Button 
             onClick={() => setCreateModalOpen(true)} 
-            className="relative group overflow-visible px-5 py-2.5 h-auto
+            className="relative group inline-flex items-center justify-center
+                       px-5 py-2.5 h-auto
                        bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 
                        hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500
                        text-white font-semibold
@@ -179,11 +180,13 @@ export default function PlatformAdmins() {
                        border border-white/20 backdrop-blur-sm
                        transition-all duration-300 hover:scale-105"
           >
-            {/* Glow effect */}
-            <span className="absolute inset-0 rounded-md bg-gradient-to-r from-purple-500 to-indigo-500 blur-lg opacity-40 group-hover:opacity-60 transition-opacity -z-10" />
-            <Crown className="w-4 h-4 mr-2" />
+            <span 
+              className="absolute inset-0 rounded-md bg-gradient-to-r from-purple-500 to-indigo-500 blur-lg opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none" 
+              style={{ zIndex: -1 }} 
+            />
+            <Crown className="w-4 h-4 mr-2 flex-shrink-0" />
             <span>Novo Administrador</span>
-            <Sparkles className="w-3 h-3 ml-2 opacity-70" />
+            <Sparkles className="w-3 h-3 ml-2 opacity-70 flex-shrink-0" />
           </Button>
         </div>
       </div>
