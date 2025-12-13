@@ -11,11 +11,12 @@ const corsHeaders = {
 interface AdminWelcomeEmailRequest {
   adminName: string;
   adminEmail: string;
-  password: string;
+  password?: string;
   schoolName?: string;
   planName?: string;
   maxStudents?: number;
   isPasswordReset?: boolean;
+  isPaymentConfirmation?: boolean;
   onboardingPdfUrl?: string;
 }
 
@@ -34,12 +35,24 @@ const handler = async (req: Request): Promise<Response> => {
       planName,
       maxStudents,
       isPasswordReset = false,
+      isPaymentConfirmation = false,
       onboardingPdfUrl,
     }: AdminWelcomeEmailRequest = await req.json();
 
-    if (!adminName || !adminEmail || !password) {
+    if (!adminName || !adminEmail) {
       return new Response(
-        JSON.stringify({ error: "Nome, email e senha são obrigatórios" }),
+        JSON.stringify({ error: "Nome e email são obrigatórios" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Password is required unless it's a payment confirmation
+    if (!password && !isPaymentConfirmation) {
+      return new Response(
+        JSON.stringify({ error: "Senha é obrigatória para este tipo de email" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -61,14 +74,20 @@ const handler = async (req: Request): Promise<Response> => {
     const appUrl = Deno.env.get("APP_URL") || "https://klase.app";
     const firstName = adminName.split(" ")[0];
 
-    // Different subject and intro based on whether it's a new account or password reset
-    const subject = isPasswordReset
-      ? "🔑 Sua nova senha do Klase"
-      : "🎉 Bem-vindo(a) ao Klase!";
-
-    const introText = isPasswordReset
-      ? `Olá ${firstName}, sua senha foi redefinida com sucesso.`
-      : `Olá ${firstName}, sua conta de administrador foi criada com sucesso!`;
+    // Different subject and intro based on email type
+    let subject: string;
+    let introText: string;
+    
+    if (isPaymentConfirmation) {
+      subject = "✅ Pagamento confirmado - Bem-vindo(a) ao Klase!";
+      introText = `Olá ${firstName}, seu pagamento foi confirmado e sua conta está ativa! Você já pode acessar a plataforma.`;
+    } else if (isPasswordReset) {
+      subject = "🔑 Sua nova senha do Klase";
+      introText = `Olá ${firstName}, sua senha foi redefinida com sucesso.`;
+    } else {
+      subject = "🎉 Bem-vindo(a) ao Klase!";
+      introText = `Olá ${firstName}, sua conta de administrador foi criada com sucesso!`;
+    }
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -100,13 +119,14 @@ const handler = async (req: Request): Promise<Response> => {
           <tr>
             <td style="padding: 32px;">
               <h1 style="margin: 0 0 16px; color: #ffffff; font-size: 24px; font-weight: 600;">
-                ${isPasswordReset ? "Nova Senha Gerada" : "Bem-vindo(a)!"}
+                ${isPaymentConfirmation ? "Pagamento Confirmado!" : isPasswordReset ? "Nova Senha Gerada" : "Bem-vindo(a)!"}
               </h1>
               
               <p style="margin: 0 0 24px; color: #d1d5db; font-size: 15px; line-height: 1.6;">
                 ${introText}
               </p>
 
+              ${password ? `
               <!-- Credentials Box -->
               <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
                 <div style="color: #a78bfa; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
@@ -132,6 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
                   </tr>
                 </table>
               </div>
+              ` : ''}
 
               ${!isPasswordReset && planName ? `
               <!-- Plan Info Box -->

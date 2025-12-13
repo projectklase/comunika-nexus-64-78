@@ -76,6 +76,7 @@ import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
 import PlatformCardEvents from "./pages/platform/PlatformCardEvents";
 import PlatformAnnouncements from "./pages/platform/PlatformAnnouncements";
 import PendingPayment from "./pages/PendingPayment";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/pending-payment" element={<PendingPayment />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>

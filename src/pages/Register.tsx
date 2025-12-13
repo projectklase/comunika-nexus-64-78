@@ -333,11 +333,13 @@ export default function Register() {
         throw new Error('Conta criada, mas houve erro no login automático. Faça login manualmente.');
       }
 
-      // 3. Create Stripe checkout session
+      // 3. Create Stripe checkout session with custom success URL
       const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
         body: { 
           priceType: selectedPlan?.slug || 'challenger',
           quantity: 1,
+          successUrl: '/payment-success',
+          cancelUrl: '/pending-payment',
         }
       });
 
