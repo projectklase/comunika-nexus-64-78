@@ -1565,7 +1565,7 @@ export type Database = {
           entity_type: string
           id: string
           ip_address: string | null
-          superadmin_id: string
+          superadmin_id: string | null
           user_agent: string | null
         }
         Insert: {
@@ -1577,7 +1577,7 @@ export type Database = {
           entity_type: string
           id?: string
           ip_address?: string | null
-          superadmin_id: string
+          superadmin_id?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -1589,7 +1589,7 @@ export type Database = {
           entity_type?: string
           id?: string
           ip_address?: string | null
-          superadmin_id?: string
+          superadmin_id?: string | null
           user_agent?: string | null
         }
         Relationships: []
