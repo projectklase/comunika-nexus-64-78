@@ -130,11 +130,11 @@ const handler = async (req: Request): Promise<Response> => {
               <!-- Access Instructions for Payment Confirmation -->
               <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
                 <div style="color: #4ade80; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                  ✅ Próximos Passos
+                  📄 Suas Credenciais
                 </div>
                 <p style="margin: 0; color: #d1d5db; font-size: 14px; line-height: 1.6;">
-                  Use o email e senha cadastrados durante o registro para acessar a plataforma. 
-                  Após o login, você terá acesso ao guia completo de configuração.
+                  Suas credenciais de acesso estão no <strong>Guia de Configuração (PDF)</strong> que você baixou 
+                  após a confirmação do pagamento. Se ainda não baixou, acesse a plataforma e faça o download.
                 </p>
               </div>
               ` : ''}
