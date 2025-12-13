@@ -54,7 +54,7 @@ serve(async (req) => {
 
     // Verify the user is actually a superadmin
     const { data: isSuperAdmin, error: roleError } = await supabaseAdmin.rpc('is_superadmin', {
-      uid: userId,
+      _user_id: userId,
     });
 
     if (roleError) {
