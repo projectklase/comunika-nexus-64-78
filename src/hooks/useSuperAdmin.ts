@@ -150,39 +150,6 @@ export function useSuperAdmin() {
     refetchInterval: 60000,
   });
 
-  // Get all schools with subscription info
-  const { data: schools, isLoading: loadingSchools, refetch: refetchSchools } = useQuery({
-    queryKey: ['platform-schools'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('schools')
-        .select(`
-          *,
-          admin_subscriptions (
-            id,
-            status,
-            plan_id,
-            started_at,
-            expires_at,
-            trial_ends_at,
-            addon_schools_count,
-            subscription_plans (
-              name,
-              slug,
-              price_cents,
-              max_students,
-              included_schools
-            )
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: isSuperAdmin === true,
-  });
-
   // Get platform audit logs
   const { data: auditLogs, isLoading: loadingAuditLogs } = useQuery({
     queryKey: ['platform-audit-logs'],
@@ -325,7 +292,6 @@ export function useSuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schools-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['platform-schools'] });
       queryClient.invalidateQueries({ queryKey: ['platform-metrics'] });
     },
   });
@@ -371,9 +337,6 @@ export function useSuperAdmin() {
     metrics,
     loadingMetrics,
     refetchMetrics,
-    schools,
-    loadingSchools,
-    refetchSchools,
     schoolsOverview,
     loadingSchoolsOverview,
     refetchSchoolsOverview,
