@@ -127,6 +127,25 @@ function formatCEP(value: string): string {
   return numbers.replace(/^(\d{5})(\d)/, '$1-$2');
 }
 
+async function fetchAddressByCep(cep: string): Promise<{
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
+} | null> {
+  const cleanCep = cep.replace(/\D/g, '');
+  if (cleanCep.length !== 8) return null;
+  
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    return null;
+  }
+}
+
 export default function Register() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -137,6 +156,8 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [cepAutoFilled, setCepAutoFilled] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -494,7 +515,37 @@ export default function Register() {
     </div>
   );
 
-  // Step 3: Fiscal Data
+  // Step 3: Fiscal Data with CEP auto-fetch
+  const handleCepChange = async (value: string) => {
+    const formatted = formatCEP(value);
+    setFormData(prev => ({ ...prev, company_zipcode: formatted }));
+    
+    const cleanCep = formatted.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      setLoadingCep(true);
+      setCepAutoFilled(false);
+      const data = await fetchAddressByCep(cleanCep);
+      setLoadingCep(false);
+      
+      if (data && !data.erro) {
+        setFormData(prev => ({
+          ...prev,
+          company_address: data.logradouro || '',
+          company_neighborhood: data.bairro || '',
+          company_city: data.localidade || '',
+          company_state: data.uf || '',
+        }));
+        setCepAutoFilled(true);
+        toast.success('Endereço preenchido automaticamente!');
+        setTimeout(() => {
+          document.getElementById('company_number')?.focus();
+        }, 100);
+      } else if (data?.erro) {
+        toast.error('CEP não encontrado');
+      }
+    }
+  };
+
   const renderStep3 = () => (
     <div className="space-y-4">
       <div className="text-center mb-4">
@@ -505,8 +556,9 @@ export default function Register() {
         <p className="text-sm text-muted-foreground">Informações obrigatórias para faturamento</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2 sm:col-span-2">
+      <div className="space-y-3">
+        {/* Razão Social - full width */}
+        <div className="space-y-1.5">
           <Label htmlFor="company_name">Razão Social *</Label>
           <div className="relative">
             <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -520,97 +572,127 @@ export default function Register() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="company_cnpj">CNPJ *</Label>
-          <Input
-            id="company_cnpj"
-            value={formData.company_cnpj}
-            onChange={(e) => setFormData(prev => ({ ...prev, company_cnpj: formatCNPJ(e.target.value) }))}
-            placeholder="00.000.000/0000-00"
-            className="bg-white/5 border-white/10"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="company_zipcode">CEP *</Label>
-          <Input
-            id="company_zipcode"
-            value={formData.company_zipcode}
-            onChange={(e) => setFormData(prev => ({ ...prev, company_zipcode: formatCEP(e.target.value) }))}
-            placeholder="00000-000"
-            className="bg-white/5 border-white/10"
-          />
-        </div>
-
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="company_address">Endereço *</Label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        {/* CNPJ + CEP - 2 colunas */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="company_cnpj">CNPJ *</Label>
             <Input
-              id="company_address"
-              value={formData.company_address}
-              onChange={(e) => setFormData(prev => ({ ...prev, company_address: e.target.value }))}
-              placeholder="Rua, Avenida..."
-              className="bg-white/5 border-white/10 pl-9"
+              id="company_cnpj"
+              value={formData.company_cnpj}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_cnpj: formatCNPJ(e.target.value) }))}
+              placeholder="00.000.000/0000-00"
+              className="bg-white/5 border-white/10"
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="company_zipcode">CEP *</Label>
+            <div className="relative">
+              <Input
+                id="company_zipcode"
+                value={formData.company_zipcode}
+                onChange={(e) => handleCepChange(e.target.value)}
+                placeholder="00000-000"
+                className={cn(
+                  "bg-white/5 border-white/10 pr-8",
+                  cepAutoFilled && "border-green-500/50"
+                )}
+              />
+              {loadingCep && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {cepAutoFilled && !loadingCep && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Check className="w-4 h-4 text-green-500" />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="company_number">Número *</Label>
-          <div className="relative">
-            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        {/* Endereço + Número - 3/4 + 1/4 */}
+        <div className="grid grid-cols-4 gap-3">
+          <div className="col-span-3 space-y-1.5">
+            <Label htmlFor="company_address">Endereço *</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="company_address"
+                value={formData.company_address}
+                onChange={(e) => setFormData(prev => ({ ...prev, company_address: e.target.value }))}
+                placeholder="Rua, Avenida..."
+                className={cn(
+                  "bg-white/5 border-white/10 pl-9",
+                  cepAutoFilled && formData.company_address && "border-green-500/30"
+                )}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="company_number">Nº *</Label>
             <Input
               id="company_number"
               value={formData.company_number}
               onChange={(e) => setFormData(prev => ({ ...prev, company_number: e.target.value }))}
               placeholder="123"
-              className="bg-white/5 border-white/10 pl-9"
+              className="bg-white/5 border-white/10"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="company_neighborhood">Bairro *</Label>
-          <Input
-            id="company_neighborhood"
-            value={formData.company_neighborhood}
-            onChange={(e) => setFormData(prev => ({ ...prev, company_neighborhood: e.target.value }))}
-            placeholder="Bairro"
-            className="bg-white/5 border-white/10"
-          />
+        {/* Bairro + Cidade + Estado - 3 colunas */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="company_neighborhood">Bairro *</Label>
+            <Input
+              id="company_neighborhood"
+              value={formData.company_neighborhood}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_neighborhood: e.target.value }))}
+              placeholder="Bairro"
+              className={cn(
+                "bg-white/5 border-white/10",
+                cepAutoFilled && formData.company_neighborhood && "border-green-500/30"
+              )}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="company_city">Cidade *</Label>
+            <Input
+              id="company_city"
+              value={formData.company_city}
+              onChange={(e) => setFormData(prev => ({ ...prev, company_city: e.target.value }))}
+              placeholder="Cidade"
+              className={cn(
+                "bg-white/5 border-white/10",
+                cepAutoFilled && formData.company_city && "border-green-500/30"
+              )}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="company_state">UF *</Label>
+            <Select
+              value={formData.company_state}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, company_state: value }))}
+            >
+              <SelectTrigger className={cn(
+                "bg-white/5 border-white/10",
+                cepAutoFilled && formData.company_state && "border-green-500/30"
+              )}>
+                <SelectValue placeholder="UF" />
+              </SelectTrigger>
+              <SelectContent>
+                {BRAZILIAN_STATES.map((state) => (
+                  <SelectItem key={state} value={state}>{state}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="company_city">Cidade *</Label>
-          <Input
-            id="company_city"
-            value={formData.company_city}
-            onChange={(e) => setFormData(prev => ({ ...prev, company_city: e.target.value }))}
-            placeholder="Cidade"
-            className="bg-white/5 border-white/10"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="company_state">Estado *</Label>
-          <Select
-            value={formData.company_state}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, company_state: value }))}
-          >
-            <SelectTrigger className="bg-white/5 border-white/10">
-              <SelectValue placeholder="UF" />
-            </SelectTrigger>
-            <SelectContent>
-              {BRAZILIAN_STATES.map((state) => (
-                <SelectItem key={state} value={state}>{state}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="company_state_registration">Inscrição Estadual</Label>
+        {/* Inscrição Estadual - full width */}
+        <div className="space-y-1.5">
+          <Label htmlFor="company_state_registration">Inscrição Estadual (opcional)</Label>
           <Input
             id="company_state_registration"
             value={formData.company_state_registration}
@@ -618,7 +700,6 @@ export default function Register() {
             placeholder="ISENTO ou número da inscrição"
             className="bg-white/5 border-white/10"
           />
-          <p className="text-xs text-muted-foreground">Deixe em branco ou escreva ISENTO se não possuir.</p>
         </div>
       </div>
     </div>
@@ -730,7 +811,7 @@ export default function Register() {
           <CardContent className="px-6 pb-6">
             {renderStepper()}
 
-            <ScrollArea className="max-h-[400px] pr-2">
+            <ScrollArea className="max-h-[calc(65vh-160px)] min-h-[320px] pr-2">
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
