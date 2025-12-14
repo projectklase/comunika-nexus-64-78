@@ -28,6 +28,7 @@ export type Database = {
           implantation_notes: string | null
           implantation_paid: boolean | null
           implantation_paid_at: string | null
+          is_test_account: boolean | null
           payment_email_sent: boolean | null
           plan_id: string
           started_at: string
@@ -51,6 +52,7 @@ export type Database = {
           implantation_notes?: string | null
           implantation_paid?: boolean | null
           implantation_paid_at?: string | null
+          is_test_account?: boolean | null
           payment_email_sent?: boolean | null
           plan_id: string
           started_at?: string
@@ -74,6 +76,7 @@ export type Database = {
           implantation_notes?: string | null
           implantation_paid?: boolean | null
           implantation_paid_at?: string | null
+          is_test_account?: boolean | null
           payment_email_sent?: boolean | null
           plan_id?: string
           started_at?: string
