@@ -271,21 +271,29 @@ export default function SecretariaFeed() {
         </Card>
       </div>
 
-      {/* Composer */}
-      {canEdit && showComposer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" data-composer="secretaria">
-            <PostComposer
-              key={updateKey} // Force re-render when editing
-              allowedTypes={allowedTypes}
-              onSubmit={handleCreatePost}
-              initialData={editingPost}
-              onCancel={handleComposerCancel}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
-      )}
+      {/* Composer Dialog */}
+      <Dialog open={canEdit && showComposer} onOpenChange={(open) => {
+        if (!open) {
+          handleComposerCancel();
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-composer="secretaria">
+          <DialogHeader>
+            <DialogTitle>{editingPost ? 'Editar Post' : 'Criar Novo Post'}</DialogTitle>
+            <DialogDescription>
+              {editingPost ? 'Edite as informações do post' : 'Crie um novo aviso, comunicado ou evento'}
+            </DialogDescription>
+          </DialogHeader>
+          <PostComposer
+            key={updateKey}
+            allowedTypes={allowedTypes}
+            onSubmit={handleCreatePost}
+            initialData={editingPost}
+            onCancel={handleComposerCancel}
+            isLoading={isLoading}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Unified Filters */}
       <FilterBar onFilterChange={setFilters} />
