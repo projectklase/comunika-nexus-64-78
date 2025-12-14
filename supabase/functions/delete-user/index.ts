@@ -42,8 +42,45 @@ Deno.serve(async (req) => {
 
     console.log(`Deleting user: ${userId}`)
 
-    // Delete the user from auth.users using admin privileges
-    // This will cascade delete to public.profiles due to ON DELETE CASCADE
+    // 1. Buscar escolas onde o admin é membro como administrador
+    const { data: adminSchools, error: fetchError } = await supabaseAdmin
+      .from('school_memberships')
+      .select('school_id')
+      .eq('user_id', userId)
+      .eq('role', 'administrador')
+
+    if (fetchError) {
+      console.error('Error fetching admin schools:', fetchError)
+    }
+
+    // 2. Deletar as escolas do admin (ON DELETE CASCADE cuida do resto)
+    if (adminSchools && adminSchools.length > 0) {
+      const schoolIds = adminSchools.map(s => s.school_id)
+      console.log(`Deleting ${schoolIds.length} schools for admin ${userId}:`, schoolIds)
+
+      const { error: deleteSchoolsError } = await supabaseAdmin
+        .from('schools')
+        .delete()
+        .in('id', schoolIds)
+
+      if (deleteSchoolsError) {
+        console.error('Error deleting schools:', deleteSchoolsError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Erro ao deletar escolas do administrador: ' + deleteSchoolsError.message 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400 
+          }
+        )
+      }
+
+      console.log(`Successfully deleted ${schoolIds.length} schools`)
+    }
+
+    // 3. Deletar o usuário do auth.users (cascade deleta profiles, school_memberships restantes)
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
     if (error) {
