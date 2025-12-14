@@ -19,6 +19,7 @@ import {
   Trash2,
   Sparkles,
   FileText,
+  FlaskConical,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,7 +80,7 @@ function getSubscriptionBadge(subscription: any) {
 }
 
 export default function PlatformAdmins() {
-  const { adminsOverview, loadingAdminsOverview, refetchAdminsOverview } = useSuperAdmin();
+  const { adminsOverview, loadingAdminsOverview, refetchAdminsOverview, toggleTestAccount, togglingTestAccount } = useSuperAdmin();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
@@ -88,6 +89,16 @@ export default function PlatformAdmins() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
+
+  const handleToggleTestAccount = async (admin: any) => {
+    const newValue = !admin.is_test_account;
+    try {
+      await toggleTestAccount.mutateAsync({ adminId: admin.id, isTest: newValue });
+      toast.success(newValue ? 'Conta marcada como teste' : 'Conta removida dos testes');
+    } catch (error) {
+      toast.error('Erro ao atualizar conta');
+    }
+  };
 
   const filteredAdmins = adminsOverview?.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -257,6 +268,11 @@ export default function PlatformAdmins() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-foreground truncate">{admin.name}</h3>
+                      {admin.is_test_account && (
+                        <Badge variant="outline" className="gap-1 border-orange-500/50 text-orange-500 bg-orange-500/10">
+                          <FlaskConical className="w-3 h-3" /> Teste
+                        </Badge>
+                      )}
                       {getSubscriptionBadge(admin.subscription)}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
@@ -322,6 +338,10 @@ export default function PlatformAdmins() {
                       <DropdownMenuItem onClick={() => handleOpenNotes(admin)}>
                         <FileText className="w-4 h-4 mr-2" />
                         Observações
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleTestAccount(admin)} disabled={togglingTestAccount}>
+                        <FlaskConical className="w-4 h-4 mr-2" />
+                        {admin.is_test_account ? 'Remover de Testes' : 'Marcar como Teste'}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handleImpersonate(admin)}>

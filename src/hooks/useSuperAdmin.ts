@@ -62,6 +62,7 @@ interface AdminOverview {
   is_active: boolean;
   schools_count: number;
   total_students: number;
+  is_test_account?: boolean;
   subscription: {
     id: string;
     status: string;
@@ -358,6 +359,23 @@ export function useSuperAdmin() {
     },
   });
 
+  // Toggle test account
+  const toggleTestAccount = useMutation({
+    mutationFn: async (params: { adminId: string; isTest: boolean }) => {
+      const { error } = await supabase
+        .from('admin_subscriptions')
+        .update({ is_test_account: params.isTest })
+        .eq('admin_id', params.adminId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admins-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['mrr-history'] });
+    },
+  });
+
   return {
     isSuperAdmin,
     checkingStatus,
@@ -387,5 +405,7 @@ export function useSuperAdmin() {
     updatingSchool: updateSchool.isPending,
     updateSubscription,
     updatingSubscription: updateSubscription.isPending,
+    toggleTestAccount,
+    togglingTestAccount: toggleTestAccount.isPending,
   };
 }
