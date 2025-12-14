@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useSchool } from '@/contexts/SchoolContext';
-import { Cake, Search, Sparkles, PartyPopper, Calendar, Gift, Users } from 'lucide-react';
+import { Cake, Search, Sparkles, PartyPopper, Calendar, Gift, Users, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BirthdayStudent {
@@ -18,6 +18,8 @@ interface BirthdayStudent {
   avatar: string | null;
   dob: string;
   className?: string;
+  phone?: string;
+  guardianPhone?: string;
 }
 
 interface BirthdayModalProps {
@@ -59,10 +61,10 @@ export function BirthdayModal({ open, onOpenChange }: BirthdayModalProps) {
         return;
       }
 
-      // Fetch profiles with DOB
+      // Fetch profiles with DOB and phone
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('id, name, avatar, dob')
+        .select('id, name, avatar, dob, phone')
         .in('id', studentIds)
         .not('dob', 'is', null);
 
@@ -76,12 +78,27 @@ export function BirthdayModal({ open, onOpenChange }: BirthdayModalProps) {
 
       if (classError) throw classError;
 
+      // Fetch primary guardian phones
+      const { data: guardians, error: guardiansError } = await supabase
+        .from('guardians')
+        .select('student_id, phone')
+        .in('student_id', studentIds)
+        .eq('is_primary', true);
+
+      if (guardiansError) throw guardiansError;
+
       // Map class names to students
       const classMap = new Map<string, string>();
       classStudents?.forEach(cs => {
         if (cs.classes && !classMap.has(cs.student_id)) {
           classMap.set(cs.student_id, (cs.classes as any).name);
         }
+      });
+
+      // Map guardian phones to students
+      const guardianPhoneMap = new Map<string, string>();
+      guardians?.forEach(g => {
+        if (g.phone) guardianPhoneMap.set(g.student_id, g.phone);
       });
 
       const studentsWithBirthdays: BirthdayStudent[] = (profiles || [])
@@ -91,7 +108,9 @@ export function BirthdayModal({ open, onOpenChange }: BirthdayModalProps) {
           name: p.name,
           avatar: p.avatar,
           dob: p.dob!,
-          className: classMap.get(p.id)
+          className: classMap.get(p.id),
+          phone: p.phone || undefined,
+          guardianPhone: guardianPhoneMap.get(p.id)
         }));
 
       setStudents(studentsWithBirthdays);
@@ -168,6 +187,15 @@ export function BirthdayModal({ open, onOpenChange }: BirthdayModalProps) {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  };
+
+  // Get contact phone based on age (18+ uses student phone, <18 uses guardian phone)
+  const getContactPhone = (student: BirthdayStudent) => {
+    const age = getAge(student.dob);
+    if (age >= 18) {
+      return student.phone || student.guardianPhone;
+    }
+    return student.guardianPhone || student.phone;
   };
 
   const counts = useMemo(() => ({
@@ -327,6 +355,28 @@ export function BirthdayModal({ open, onOpenChange }: BirthdayModalProps) {
                           {student.className}
                         </Badge>
                       )}
+
+                      {/* Mensagem e telefone de contato */}
+                      {(() => {
+                        const contactPhone = getContactPhone(student);
+                        if (contactPhone) {
+                          return (
+                            <div className="flex items-center gap-2 mt-2 text-sm">
+                              <span className="text-pink-400 font-medium flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                Parabenize seu aluno!
+                              </span>
+                              <a 
+                                href={`tel:${contactPhone}`} 
+                                className="text-green-400 hover:text-green-300 hover:underline font-mono transition-colors"
+                              >
+                                {contactPhone}
+                              </a>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 );
