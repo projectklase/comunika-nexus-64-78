@@ -323,7 +323,7 @@ export default function SecretariasPage() {
         mobileFilters={<MobileFiltersSheet />}
       >
         {/* Stats Cards Responsivos */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Card className="glass-card">
             <CardContent className="p-3 sm:p-6 text-center">
               <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
