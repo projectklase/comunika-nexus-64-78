@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,67 +16,84 @@ import { ConditionalNotificationProvider } from "@/components/ConditionalNotific
 import { ModalManagerProvider } from "@/components/ui/app-dialog";
 import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { PlatformLayout } from "@/layouts/PlatformLayout";
+import { PageLoadingSkeleton } from "@/components/ui/PageLoadingSkeleton";
+import { MANAGEMENT_ROLES, OPERATIONAL_ROLES } from "./utils/auth-helpers";
+
+// Critical pages - loaded immediately (login, dashboard, main feeds)
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import SecretariaFeed from "./pages/SecretariaFeed";
-import AlunoProfile from "@/pages/aluno/AlunoProfile";
-import HistoricoPage from "./pages/HistoricoPage";
-import ClassesPage from "./pages/ClassesPage";
-import ClassDetailPage from "./pages/ClassDetailPage";
-import ProgramsPage from "./pages/ProgramsPage";
-import LevelsPage from "./pages/LevelsPage";
-import SubjectsPage from "./pages/SubjectsPage";
-import ModalitiesPage from "./pages/ModalitiesPage";
-import StudentsPage from "./pages/StudentsPage";
-import CartasPage from './pages/aluno/CartasPage';
-import BatalhaPage from './pages/aluno/BatalhaPage';
-// Removed ClassTemplatesPage import
-import CatalogoPage from "./pages/CatalogoPage";
-import { MANAGEMENT_ROLES, OPERATIONAL_ROLES } from "./utils/auth-helpers";
-import TeachersPage from "./pages/TeachersPage";
-import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-import ProfessorDashboard from "./pages/professor/ProfessorDashboard";
-import ProfessorClasses from "./pages/professor/ProfessorClasses";
-import ProfessorClassDetail from "./pages/professor/ProfessorClassDetail";
-import ProfessorActivities from "./pages/professor/ProfessorActivities";
-import ProfessorFeed from "./pages/professor/ProfessorFeed";
-import ActivityDetail from "./pages/professor/ActivityDetail";
-import NovaAtividade from "./pages/professor/NovaAtividade";
-import { ClassCalendarPage } from "./pages/ClassCalendarPage";
-import AlunoFeed from "./pages/AlunoFeed";
-import AlunoHome from "./pages/AlunoHome";
-import AlunoActivityResult from "./pages/aluno/AlunoActivityResult";
-import AlunoNexus from "./pages/AlunoNexus";
-import AlunoCalendario from "./pages/AlunoCalendario";
-import { MinhasAtividadesPage } from "./pages/aluno/MinhasAtividadesPage";
-import StudentDashboard from "./pages/StudentDashboard";
-import ProfessorCalendar from "./pages/ProfessorCalendar";
-import SecretariaCalendar from "./pages/SecretariaCalendar";
-import AlterarSenha from "./pages/Auth/AlterarSenha";
-import PasswordResetsPage from "./pages/Secretaria/PasswordResets/index";
-import { PostFallback } from "./pages/PostFallback";
-import RewardsStore from "./pages/RewardsStore";
-import RewardsManagement from "./pages/Secretaria/RewardsManagement";
-import ChallengesManagement from "./pages/Secretaria/ChallengesManagement";
-import SecretariasPage from "./pages/admin/SecretariasPage";
-import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
-import EventosPage from "./pages/secretaria/EventosPage";
-import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
-import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
-import AdminSubscriptionPage from "./pages/admin/AdminSubscriptionPage";
-import PlatformDashboard from "./pages/platform/PlatformDashboard";
-import PlatformSchools from "./pages/platform/PlatformSchools";
-import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
-import PlatformAdmins from "./pages/platform/PlatformAdmins";
-import PlatformSupport from "./pages/platform/PlatformSupport";
-import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
-import PlatformCardEvents from "./pages/platform/PlatformCardEvents";
-import PlatformAnnouncements from "./pages/platform/PlatformAnnouncements";
 import PendingPayment from "./pages/PendingPayment";
 import PaymentSuccess from "./pages/PaymentSuccess";
+
+// Lazy loaded pages - loaded on demand
+// Admin pages
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const SecretariasPage = lazy(() => import("./pages/admin/SecretariasPage"));
+const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
+const FamilyRelationsPage = lazy(() => import("./pages/admin/FamilyRelationsPage"));
+const SchoolsManagementPage = lazy(() => import("./pages/admin/SchoolsManagementPage"));
+const AdminSubscriptionPage = lazy(() => import("./pages/admin/AdminSubscriptionPage"));
+
+// Secretaria pages
+const SecretariaFeed = lazy(() => import("./pages/SecretariaFeed"));
+const SecretariaCalendar = lazy(() => import("./pages/SecretariaCalendar"));
+const HistoricoPage = lazy(() => import("./pages/HistoricoPage"));
+const ClassesPage = lazy(() => import("./pages/ClassesPage"));
+const ClassDetailPage = lazy(() => import("./pages/ClassDetailPage"));
+const ProgramsPage = lazy(() => import("./pages/ProgramsPage"));
+const LevelsPage = lazy(() => import("./pages/LevelsPage"));
+const SubjectsPage = lazy(() => import("./pages/SubjectsPage"));
+const ModalitiesPage = lazy(() => import("./pages/ModalitiesPage"));
+const StudentsPage = lazy(() => import("./pages/StudentsPage"));
+const TeachersPage = lazy(() => import("./pages/TeachersPage"));
+const CatalogoPage = lazy(() => import("./pages/CatalogoPage"));
+const PasswordResetsPage = lazy(() => import("./pages/Secretaria/PasswordResets/index"));
+const RewardsManagement = lazy(() => import("./pages/Secretaria/RewardsManagement"));
+const ChallengesManagement = lazy(() => import("./pages/Secretaria/ChallengesManagement"));
+const EventosPage = lazy(() => import("./pages/secretaria/EventosPage"));
+
+// Professor pages
+const ProfessorDashboard = lazy(() => import("./pages/professor/ProfessorDashboard"));
+const ProfessorClasses = lazy(() => import("./pages/professor/ProfessorClasses"));
+const ProfessorClassDetail = lazy(() => import("./pages/professor/ProfessorClassDetail"));
+const ProfessorActivities = lazy(() => import("./pages/professor/ProfessorActivities"));
+const ProfessorFeed = lazy(() => import("./pages/professor/ProfessorFeed"));
+const ActivityDetail = lazy(() => import("./pages/professor/ActivityDetail"));
+const NovaAtividade = lazy(() => import("./pages/professor/NovaAtividade"));
+const ProfessorCalendar = lazy(() => import("./pages/ProfessorCalendar"));
+const ClassCalendarPage = lazy(() => import("./pages/ClassCalendarPage").then(m => ({ default: m.ClassCalendarPage })));
+
+// Aluno pages
+const AlunoFeed = lazy(() => import("./pages/AlunoFeed"));
+const AlunoHome = lazy(() => import("./pages/AlunoHome"));
+const AlunoProfile = lazy(() => import("@/pages/aluno/AlunoProfile"));
+const AlunoActivityResult = lazy(() => import("./pages/aluno/AlunoActivityResult"));
+const AlunoNexus = lazy(() => import("./pages/AlunoNexus"));
+const AlunoCalendario = lazy(() => import("./pages/AlunoCalendario"));
+const MinhasAtividadesPage = lazy(() => import("./pages/aluno/MinhasAtividadesPage").then(m => ({ default: m.MinhasAtividadesPage })));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const RewardsStore = lazy(() => import("./pages/RewardsStore"));
+
+// Heavy card game pages - always lazy
+const CartasPage = lazy(() => import('./pages/aluno/CartasPage'));
+const BatalhaPage = lazy(() => import('./pages/aluno/BatalhaPage'));
+
+// Settings & misc
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const AlterarSenha = lazy(() => import("./pages/Auth/AlterarSenha"));
+const PostFallback = lazy(() => import("./pages/PostFallback").then(m => ({ default: m.PostFallback })));
+
+// Platform pages (superadmin - rarely used)
+const PlatformDashboard = lazy(() => import("./pages/platform/PlatformDashboard"));
+const PlatformSchools = lazy(() => import("./pages/platform/PlatformSchools"));
+const PlatformSubscriptions = lazy(() => import("./pages/platform/PlatformSubscriptions"));
+const PlatformAdmins = lazy(() => import("./pages/platform/PlatformAdmins"));
+const PlatformSupport = lazy(() => import("./pages/platform/PlatformSupport"));
+const PlatformAnalytics = lazy(() => import("./pages/platform/PlatformAnalytics"));
+const PlatformCardEvents = lazy(() => import("./pages/platform/PlatformCardEvents"));
+const PlatformAnnouncements = lazy(() => import("./pages/platform/PlatformAnnouncements"));
 
 const queryClient = new QueryClient();
 
@@ -91,6 +108,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+            <Suspense fallback={<PageLoadingSkeleton />}>
             <Routes>
           <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -510,6 +528,7 @@ const App = () => (
             
             <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
             </ModalManagerProvider>
           </ConditionalNotificationProvider>
