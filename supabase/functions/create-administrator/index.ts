@@ -57,14 +57,27 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
+    console.log('Token received, validating user...')
+    
     const { data: { user: callerUser }, error: authError } = await supabaseAdmin.auth.getUser(token)
 
-    if (authError || !callerUser) {
+    if (authError) {
+      console.error('Auth error:', authError.message)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Token inválido', details: authError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+    
+    if (!callerUser) {
+      console.error('No user found for token')
       return new Response(
         JSON.stringify({ success: false, error: 'Token inválido' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
+    
+    console.log('User validated:', callerUser.id, callerUser.email)
 
     // Verificar se é superadmin
     const { data: isSuperAdmin } = await supabaseAdmin.rpc('is_superadmin', { _user_id: callerUser.id })
