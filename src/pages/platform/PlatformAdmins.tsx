@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { 
+import {
   Users, 
   Search, 
   Filter,
@@ -18,6 +18,7 @@ import {
   Crown,
   Trash2,
   Sparkles,
+  FileText,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ import { SubscriptionManagementModal } from '@/components/platform/SubscriptionM
 import { AdminPasswordResetModal } from '@/components/platform/AdminPasswordResetModal';
 import { CreateAdministratorModal } from '@/components/platform/CreateAdministratorModal';
 import { DeleteAdminModal } from '@/components/platform/DeleteAdminModal';
+import { AdminNotesModal } from '@/components/platform/AdminNotesModal';
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -85,6 +87,7 @@ export default function PlatformAdmins() {
   const [passwordResetModalOpen, setPasswordResetModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [notesModalOpen, setNotesModalOpen] = useState(false);
 
   const filteredAdmins = adminsOverview?.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -112,6 +115,11 @@ export default function PlatformAdmins() {
   const handleDeleteAdmin = (admin: any) => {
     setSelectedAdmin(admin);
     setDeleteModalOpen(true);
+  };
+
+  const handleOpenNotes = (admin: any) => {
+    setSelectedAdmin(admin);
+    setNotesModalOpen(true);
   };
 
   const handleImpersonate = async (admin: any) => {
@@ -311,6 +319,10 @@ export default function PlatformAdmins() {
                         <Key className="w-4 h-4 mr-2" />
                         Redefinir Senha
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenNotes(admin)}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        Observações
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handleImpersonate(admin)}>
                         <Eye className="w-4 h-4 mr-2" />
@@ -367,6 +379,13 @@ export default function PlatformAdmins() {
           refetchAdminsOverview();
           setDeleteModalOpen(false);
         }}
+      />
+
+      <AdminNotesModal
+        open={notesModalOpen}
+        onOpenChange={setNotesModalOpen}
+        admin={selectedAdmin}
+        onSuccess={() => refetchAdminsOverview()}
       />
     </div>
   );

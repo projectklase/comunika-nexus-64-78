@@ -23,6 +23,7 @@ export type Database = {
           discount_percent: number | null
           discount_reason: string | null
           expires_at: string | null
+          general_notes: string | null
           id: string
           implantation_notes: string | null
           implantation_paid: boolean | null
@@ -45,6 +46,7 @@ export type Database = {
           discount_percent?: number | null
           discount_reason?: string | null
           expires_at?: string | null
+          general_notes?: string | null
           id?: string
           implantation_notes?: string | null
           implantation_paid?: boolean | null
@@ -67,6 +69,7 @@ export type Database = {
           discount_percent?: number | null
           discount_reason?: string | null
           expires_at?: string | null
+          general_notes?: string | null
           id?: string
           implantation_notes?: string | null
           implantation_paid?: boolean | null
