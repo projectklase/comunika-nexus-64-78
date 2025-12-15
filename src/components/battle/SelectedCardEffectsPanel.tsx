@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardEffect } from '@/types/cards';
-import { Flame, Shield, Zap, Heart, Snowflake, Copy, RotateCcw, Swords, Skull, Sparkles } from 'lucide-react';
+import { CardDisplay } from '@/components/cards/CardDisplay';
+import { Flame, Shield, Zap, Heart, Snowflake, Copy, RotateCcw, Skull, Sparkles, Swords } from 'lucide-react';
+import { RARITY_FRAME_COLORS } from '@/types/cards';
 
 // Effect descriptions for fallback
 const EFFECT_DESCRIPTIONS: Record<string, string> = {
@@ -38,124 +40,175 @@ const TYPE_BADGES: Record<string, { label: string; color: string }> = {
   TRAP: { label: 'Armadilha', color: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
 };
 
+// Rarity glow colors
+const RARITY_GLOW: Record<string, string> = {
+  COMMON: 'from-gray-400/30 via-gray-500/20 to-gray-400/30',
+  UNCOMMON: 'from-green-400/40 via-emerald-500/30 to-green-400/40',
+  RARE: 'from-blue-400/50 via-cyan-500/40 to-blue-400/50',
+  EPIC: 'from-purple-400/50 via-violet-500/40 to-purple-400/50',
+  LEGENDARY: 'from-amber-400/60 via-yellow-500/50 to-amber-400/60',
+};
+
 export const SelectedCardEffectsPanel = ({ card, isVisible }: SelectedCardEffectsPanelProps) => {
   if (!card) return null;
 
   const cardType = card.card_type || 'MONSTER';
   const typeBadge = TYPE_BADGES[cardType] || TYPE_BADGES.MONSTER;
   const effects = card.effects || [];
+  const rarity = card.rarity || 'COMMON';
+  const glowGradient = RARITY_GLOW[rarity] || RARITY_GLOW.COMMON;
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="fixed bottom-44 left-1/2 -translate-x-1/2 z-[70] pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 flex items-center justify-center z-[70] pointer-events-none"
         >
-          {/* Holographic glow effect */}
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 blur-xl animate-pulse" />
+          {/* Holographic background overlay */}
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
           
-          {/* Main panel with glassmorphism */}
-          <div className="relative backdrop-blur-xl bg-black/60 rounded-xl border border-white/10 p-4 min-w-[280px] max-w-[320px] shadow-2xl">
-            {/* Animated gradient border */}
-            <div className="absolute inset-0 rounded-xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 opacity-50" 
+          {/* Main container with card + info */}
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="relative flex items-center gap-6"
+          >
+            {/* Animated holographic glow behind everything */}
+            <div 
+              className={`absolute -inset-8 bg-gradient-to-r ${glowGradient} blur-3xl opacity-60 animate-pulse`}
+              style={{ animationDuration: '2s' }}
+            />
+            
+            {/* The floating card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.7, rotateY: -20 }}
+              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+              exit={{ opacity: 0, scale: 0.8, rotateY: 10 }}
+              transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+              className="relative"
+              style={{ perspective: '1000px' }}
+            >
+              {/* Card with 3D effect */}
+              <div className="relative transform-gpu">
+                <CardDisplay card={card} size="lg" showStats={false} />
+                
+                {/* Floating shadow beneath card */}
+                <div 
+                  className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-4/5 h-6 bg-black/40 blur-xl rounded-full"
+                  style={{ transform: 'translateX(-50%) scaleY(0.3)' }}
+                />
+              </div>
+            </motion.div>
+            
+            {/* Info panel floating to the right */}
+            <motion.div
+              initial={{ opacity: 0, x: 30, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.95 }}
+              transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}
+              className="relative"
+            >
+              {/* Holographic border effect */}
+              <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-cyan-500/50 via-purple-500/50 to-pink-500/50 opacity-70" 
                    style={{ 
                      backgroundSize: '200% 100%',
                      animation: 'holographicShift 3s ease-in-out infinite'
                    }} 
               />
-            </div>
-            
-            {/* Content */}
-            <div className="relative z-10">
-              {/* Header with name and type badge */}
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                  <h3 className="font-bold text-white text-sm truncate max-w-[180px]">
-                    {card.name}
-                  </h3>
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full border ${typeBadge.color}`}>
-                  {typeBadge.label}
-                </span>
-              </div>
-
-              {/* Description */}
-              {card.description && (
-                <p className="text-xs text-white/70 mb-3 italic line-clamp-2">
-                  "{card.description}"
-                </p>
-              )}
-
-              {/* Stats for monsters */}
-              {cardType === 'MONSTER' && (
-                <div className="flex gap-4 mb-3 text-xs">
-                  <div className="flex items-center gap-1">
-                    <Swords className="w-3.5 h-3.5 text-red-400" />
-                    <span className="text-red-300 font-semibold">{card.atk} ATK</span>
+              
+              {/* Info content */}
+              <div className="relative backdrop-blur-xl bg-black/70 rounded-xl p-4 min-w-[240px] max-w-[280px] border border-white/5">
+                {/* Header with name and type badge */}
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    <h3 className="font-bold text-white text-sm truncate max-w-[150px]">
+                      {card.name}
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Shield className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="text-blue-300 font-semibold">{card.def} DEF</span>
-                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${typeBadge.color}`}>
+                    {typeBadge.label}
+                  </span>
                 </div>
-              )}
 
-              {/* Effects */}
-              {effects.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-cyan-400 font-semibold flex items-center gap-1">
-                    <Zap className="w-3 h-3" />
-                    EFEITOS
+                {/* Description */}
+                {card.description && (
+                  <p className="text-xs text-white/70 mb-3 italic line-clamp-2">
+                    "{card.description}"
                   </p>
-                  <div className="space-y-1.5">
-                    {effects.map((effect: CardEffect, index: number) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-start gap-2 bg-white/5 rounded-lg px-2 py-1.5"
-                      >
-                        <div className="mt-0.5">
-                          {EFFECT_ICONS[effect.type] || <Sparkles className="w-4 h-4 text-white/50" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-white/90">
-                            <span className="font-semibold text-white">{effect.type}</span>
-                            {effect.value > 0 && <span className="text-cyan-300 ml-1">({effect.value})</span>}
-                          </p>
-                          <p className="text-xs text-white/60 line-clamp-2">
-                            {effect.description || EFFECT_DESCRIPTIONS[effect.type] || 'Efeito especial'}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* No effects message */}
-              {effects.length === 0 && cardType === 'MONSTER' && (
-                <p className="text-xs text-white/40 italic">Sem efeitos especiais</p>
-              )}
-            </div>
-          </div>
+                {/* Stats for monsters */}
+                {cardType === 'MONSTER' && (
+                  <div className="flex gap-4 mb-3 text-xs">
+                    <div className="flex items-center gap-1">
+                      <Swords className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-red-300 font-semibold">{card.atk} ATK</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Shield className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-blue-300 font-semibold">{card.def} DEF</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Effects */}
+                {effects.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-cyan-400 font-semibold flex items-center gap-1">
+                      <Zap className="w-3 h-3" />
+                      EFEITOS
+                    </p>
+                    <div className="space-y-1.5">
+                      {effects.map((effect: CardEffect, index: number) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.2 + index * 0.08 }}
+                          className="flex items-start gap-2 bg-white/5 rounded-lg px-2 py-1.5"
+                        >
+                          <div className="mt-0.5">
+                            {EFFECT_ICONS[effect.type] || <Sparkles className="w-4 h-4 text-white/50" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-white/90">
+                              <span className="font-semibold text-white">{effect.type}</span>
+                              {effect.value > 0 && <span className="text-cyan-300 ml-1">({effect.value})</span>}
+                            </p>
+                            <p className="text-xs text-white/60 line-clamp-2">
+                              {effect.description || EFFECT_DESCRIPTIONS[effect.type] || 'Efeito especial'}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No effects message */}
+                {effects.length === 0 && cardType === 'MONSTER' && (
+                  <p className="text-xs text-white/40 italic">Sem efeitos especiais</p>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* CSS for holographic animation */}
+          <style>{`
+            @keyframes holographicShift {
+              0%, 100% { background-position: 0% 50%; }
+              50% { background-position: 100% 50%; }
+            }
+          `}</style>
         </motion.div>
       )}
-
-      {/* CSS for holographic animation */}
-      <style>{`
-        @keyframes holographicShift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-      `}</style>
     </AnimatePresence>
   );
 };
