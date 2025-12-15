@@ -229,7 +229,7 @@ export default function BatalhaPage() {
                     isVictory={isVictory}
                     myFinalHP={myHP ?? 100}
                     opponentFinalHP={opponentHP ?? 100}
-                    xpGained={isVictory === true ? 50 : isVictory === false ? 10 : 0}
+                    xpGained={isVictory === true ? 10 : isVictory === false ? 3 : 0}
                     duration={formatDuration(battle.started_at, battle.finished_at)}
                     battleDate={new Date(battle.last_action_at)}
                     status={battle.status}

@@ -2698,7 +2698,7 @@ export type Database = {
         Returns: undefined
       }
       attack: {
-        Args: { p_battle_id: string; p_player_id: string }
+        Args: { p_attacker_id: string; p_battle_id: string }
         Returns: Json
       }
       auto_archive_expired_posts: {

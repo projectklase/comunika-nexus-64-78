@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { WeightToggleField } from '@/components/activities/WeightToggleField';
 import { useSchoolSettings } from '@/hooks/useSchoolSettings';
 import { Coins, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ActivityFieldsProps {
   type: ActivityType;
@@ -49,28 +50,41 @@ export function ActivityFields({ type, meta, onChange }: ActivityFieldsProps) {
     }
   };
 
-  // Componente reutilizável para campo de XP
-  const XpRewardField = () => (
-    <div className="space-y-2">
-      <Label htmlFor="xp-reward">Recompensa em XP</Label>
-      <div className="relative">
-        <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          id="xp-reward"
-          type="number"
-          min="0"
-          max="10"
-          value={meta.xpReward || ''}
-          onChange={(e) => updateMeta({ xpReward: Math.min(10, parseInt(e.target.value) || 0) || undefined })}
-          placeholder="0"
-          className="pl-10"
-        />
+  // Componente reutilizável para campo de XP (10-500 XP)
+  const XpRewardField = () => {
+    const xpValue = meta.xpReward || 0;
+    const isOverLimit = xpValue > 500;
+    
+    return (
+      <div className="space-y-2">
+        <Label htmlFor="xp-reward">Recompensa em XP</Label>
+        <div className="relative">
+          <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="xp-reward"
+            type="number"
+            min="10"
+            max="500"
+            value={meta.xpReward || ''}
+            onChange={(e) => {
+              const value = parseInt(e.target.value) || 0;
+              updateMeta({ xpReward: Math.min(500, Math.max(0, value)) || undefined });
+            }}
+            placeholder="10"
+            className={cn("pl-10", isOverLimit && "border-destructive")}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          XP que o aluno receberá ao concluir (10-500)
+        </p>
+        {isOverLimit && (
+          <p className="text-xs text-destructive">
+            ⚠️ O valor máximo permitido é 500 XP
+          </p>
+        )}
       </div>
-      <p className="text-xs text-muted-foreground">
-        XP que o aluno receberá ao concluir (máx. 10)
-      </p>
-    </div>
-  );
+    );
+  };
 
   if (type === 'ATIVIDADE') {
     return (
