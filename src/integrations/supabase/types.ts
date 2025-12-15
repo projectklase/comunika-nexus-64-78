@@ -2950,33 +2950,15 @@ export type Database = {
         Args: { p_is_free?: boolean; p_pack_type: string; p_user_id: string }
         Returns: Json
       }
-      play_card:
-        | {
-            Args: {
-              p_battle_id: string
-              p_card_id: string
-              p_player_id: string
-              p_position?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_battle_id: string
-              p_card_id: string
-              p_player_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_battle_id: string
-              p_card_id: string
-              p_is_trap?: boolean
-              p_player_id: string
-            }
-            Returns: Json
-          }
+      play_card: {
+        Args: {
+          p_battle_id: string
+          p_card_id: string
+          p_is_trap?: boolean
+          p_player_id: string
+        }
+        Returns: Json
+      }
       preview_expired_posts: {
         Args: { p_school_id?: string }
         Returns: {
