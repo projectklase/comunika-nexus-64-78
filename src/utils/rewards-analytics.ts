@@ -43,7 +43,7 @@ export function calculateMonthlyDistribution(
     });
 
     const earned = monthTransactions
-      .filter(tx => tx.type === 'EARN' || tx.type === 'BONUS')
+      .filter(tx => tx.type === 'EARN' || tx.type === 'BONUS' || tx.type === 'EARN_CHALLENGE')
       .reduce((sum, tx) => sum + tx.amount, 0);
 
     const spent = monthTransactions
@@ -131,7 +131,7 @@ export function calculateKoinCirculation(transactions: KoinTransaction[]): {
   inCirculation: number;
 } {
   const totalDistributed = transactions
-    .filter(tx => tx.type === 'EARN' || tx.type === 'BONUS')
+    .filter(tx => tx.type === 'EARN' || tx.type === 'BONUS' || tx.type === 'EARN_CHALLENGE')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   const totalSpent = transactions

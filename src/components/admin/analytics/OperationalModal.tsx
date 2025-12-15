@@ -123,8 +123,8 @@ export function OperationalModal({
       } = await supabase.from('profiles').select('id, name, koins').in('id', studentIds);
       if (studentsError) throw studentsError;
 
-      // Filtrar transações da escola (via studentIds)
-      const schoolTransactions = transactions.filter(t => studentIds.includes(t.studentId));
+      // Usar transações já carregadas (já filtradas por school_id no store)
+      const schoolTransactions = transactions;
 
       // Calcular métricas
       const metrics = calculateDashboardMetrics(students || [], schoolTransactions);
@@ -175,7 +175,7 @@ export function OperationalModal({
     const topStudents: StudentRanking[] = students.map(s => ({
       id: s.id,
       name: s.name,
-      totalKoins: schoolTransactions.filter(t => t.studentId === s.id && (t.type === 'EARN' || t.type === 'BONUS')).reduce((sum, t) => sum + t.amount, 0),
+      totalKoins: schoolTransactions.filter(t => t.studentId === s.id && (t.type === 'EARN' || t.type === 'BONUS' || t.type === 'EARN_CHALLENGE')).reduce((sum, t) => sum + t.amount, 0),
       spentKoins: Math.abs(schoolTransactions.filter(t => t.studentId === s.id && (t.type === 'SPEND' || t.type === 'REDEMPTION')).reduce((sum, t) => sum + t.amount, 0)),
       position: 0
     })).sort((a, b) => b.totalKoins - a.totalKoins).slice(0, 10).map((s, i) => ({
