@@ -389,8 +389,11 @@ const [player1Profile, setPlayer1Profile] = useState<{
     if (!battleLog || battleLog.length === 0) return;
     
     // Find attack entries - accept both old format (action='ATTACK') and new format (type='ATTACK_MONSTER'/'DIRECT_ATTACK')
+    // IMPORTANT: Filter out FREEZE_PREVENTED_ATTACK - these are failed attacks that should not show animation
     const attackEntries = battleLog.filter((log: any) => 
       (log.type === 'ATTACK_MONSTER' || log.type === 'DIRECT_ATTACK' || log.action === 'ATTACK') &&
+      log.action !== 'FREEZE_PREVENTED_ATTACK' &&
+      log.type !== 'FREEZE_PREVENTED_ATTACK' &&
       (log.logged_at || log.timestamp)
     );
     

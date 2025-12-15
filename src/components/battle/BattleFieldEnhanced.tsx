@@ -14,6 +14,7 @@ interface FieldMonster {
   summoned_on_turn?: number;
   current_hp?: number;
   max_hp?: number;
+  is_frozen?: boolean;
 }
 
 interface FieldTrap {
@@ -33,35 +34,44 @@ interface BattleFieldEnhancedProps {
 }
 
 // Monster status badge component
-const MonsterBadge = ({ type }: { type: 'attacked' | 'summoned' }) => {
-  const isAttacked = type === 'attacked';
+const MonsterBadge = ({ type }: { type: 'attacked' | 'summoned' | 'frozen' }) => {
+  const config = {
+    attacked: {
+      gradient: 'from-red-500 to-orange-500',
+      shadow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]',
+      icon: <Swords className="w-3 h-3" />,
+      label: 'Atacou'
+    },
+    summoned: {
+      gradient: 'from-purple-500 to-indigo-500',
+      shadow: 'shadow-[0_0_10px_rgba(139,92,246,0.5)]',
+      icon: <Moon className="w-3 h-3" />,
+      label: 'Invocado'
+    },
+    frozen: {
+      gradient: 'from-cyan-400 to-blue-500',
+      shadow: 'shadow-[0_0_10px_rgba(34,211,238,0.5)]',
+      icon: <span>❄️</span>,
+      label: 'Congelado'
+    }
+  };
+  
+  const { gradient, shadow, icon, label } = config[type];
   
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       className={`
-        absolute -top-2 -right-2 z-20
+        absolute -top-2 ${type === 'frozen' ? '-left-2' : '-right-2'} z-20
         px-2 py-1 rounded-full
         text-[10px] font-bold uppercase tracking-wide
         flex items-center gap-1
-        ${isAttacked 
-          ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]' 
-          : 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_0_10px_rgba(139,92,246,0.5)]'
-        }
+        bg-gradient-to-r ${gradient} text-white ${shadow}
       `}
     >
-      {isAttacked ? (
-        <>
-          <Swords className="w-3 h-3" />
-          <span>Atacou</span>
-        </>
-      ) : (
-        <>
-          <Moon className="w-3 h-3" />
-          <span>Invocado</span>
-        </>
-      )}
+      {icon}
+      <span>{label}</span>
     </motion.div>
   );
 };
@@ -167,9 +177,10 @@ export const BattleFieldEnhanced = ({
                     : 'from-blue-500/40 to-cyan-500/40'
                 } blur-lg opacity-60`} />
                 
-                {/* Monster status badges - only on my field */}
-                {hasAttacked && <MonsterBadge type="attacked" />}
-                {hasSummoningSickness && !hasAttacked && <MonsterBadge type="summoned" />}
+                {/* Monster status badges */}
+                {monster?.is_frozen && <MonsterBadge type="frozen" />}
+                {isMyField && hasAttacked && <MonsterBadge type="attacked" />}
+                {isMyField && hasSummoningSickness && !hasAttacked && <MonsterBadge type="summoned" />}
                 
                 <div className="relative">
                   <BattleCard
