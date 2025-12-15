@@ -219,15 +219,31 @@ const Login = () => {
     const seconds = Math.floor(ms % 60000 / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-  // Controlled navigation after transition completes
-  if (shouldNavigate && navigatePath) {
-    return <Navigate to={navigatePath} replace />;
+  // ========== CRITICAL: Early return durante transição ==========
+  // Uma vez que transição inicia, NADA mais pode causar re-render visual
+  if (transitionLockRef.current) {
+    // Navegação controlada após fade-out completar
+    if (shouldNavigate && navigatePath) {
+      return <Navigate to={navigatePath} replace />;
+    }
+    // Durante transição, renderizar apenas Card invisível (sem processar resto)
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-[440px] opacity-0 scale-[0.98] pointer-events-none transition-all duration-300">
+          <CardContent className="p-8">
+            <div className="flex justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
-  
-  // Only auto-redirect if user was already logged in (page refresh), not during login flow
-  if (user && !isTransitioning && !isSubmitting) {
+
+  // Only auto-redirect if user was already logged in (page refresh)
+  if (user && !isSubmitting) {
     const redirectPath = getRoleBasedRoute(user.role);
-    return <Navigate to={redirectPath} replace />;
+    return <Navigate to={navigatePath} replace />;
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
