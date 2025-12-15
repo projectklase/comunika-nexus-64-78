@@ -14,7 +14,7 @@ export interface RewardItem {
 export interface KoinTransaction {
   id: string;
   studentId: string;
-  type: 'EARN' | 'SPEND' | 'BONUS' | 'REFUND' | 'REDEMPTION';
+  type: 'EARN' | 'SPEND' | 'BONUS' | 'REFUND' | 'REDEMPTION' | 'EARN_CHALLENGE';
   amount: number;
   balanceBefore?: number;
   balanceAfter?: number;

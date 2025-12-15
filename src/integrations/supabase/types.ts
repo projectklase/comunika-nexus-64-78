@@ -2812,7 +2812,7 @@ export type Database = {
       get_platform_alerts: { Args: { p_resolved?: boolean }; Returns: Json }
       get_platform_metrics: { Args: never; Returns: Json }
       get_post_read_analytics: {
-        Args: { days_filter?: number; school_id_param?: string }
+        Args: { days_filter?: number; school_id_param: string }
         Returns: Json
       }
       get_public_student_profile: {
