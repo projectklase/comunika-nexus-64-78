@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardRarity, CardCategory, RARITY_LABELS, CATEGORY_LABELS } from '@/types/cards';
 import { CardDisplay } from './CardDisplay';
 import { CardDetailModal } from './CardDetailModal';
-import { useState, useMemo } from 'react';
-import { Search, Lock, ChevronDown } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -25,6 +25,45 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
   const [detailCard, setDetailCard] = useState<Card | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showFiltersDesktop, setShowFiltersDesktop] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Navegação por teclado (setas ↑↓, PageUp/Down)
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignorar se estiver digitando em input
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      
+      if (!scrollRef.current) return;
+      
+      const scrollAmount = 200;
+      const pageScrollAmount = 500;
+      
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          scrollRef.current.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          scrollRef.current.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
+          break;
+        case 'PageDown':
+          e.preventDefault();
+          scrollRef.current.scrollBy({ top: pageScrollAmount, behavior: 'smooth' });
+          break;
+        case 'PageUp':
+          e.preventDefault();
+          scrollRef.current.scrollBy({ top: -pageScrollAmount, behavior: 'smooth' });
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   const filteredCards = useMemo(() => {
     return cards.filter(card => {
@@ -194,54 +233,84 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
           </div>
 
           {/* Grid de Cartas */}
-          <ScrollArea className="flex-1 px-3 sm:px-0 mt-2 sm:mt-0">
-            <div className="w-full max-w-full overflow-hidden">
-              <div className={cn(
-                "grid gap-2 sm:gap-4 pb-4",
-                "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
-                "w-full max-w-[100vw]",
-                "mx-auto place-items-center"
-              )}>
-                {filteredCards.map(card => {
-                  const isOwned = userCards.has(card.id);
-                  return (
-                    <div 
-                      key={card.id} 
-                      className={cn(
-                        "relative aspect-[7/11]",
-                        "w-full min-w-0",
-                        "max-w-[180px]"
-                      )}
-                    >
-                      <CardDisplay
-                        card={card}
-                        size="sm"
-                        quantity={userCards.get(card.id)}
-                        onClick={() => setDetailCard(card)}
+          <div className="flex-1 relative overflow-hidden">
+            <ScrollArea className="h-full px-3 sm:px-0 mt-2 sm:mt-0" ref={scrollRef}>
+              <div className="w-full max-w-full overflow-hidden">
+                <div className={cn(
+                  "grid gap-2 sm:gap-4 pb-4",
+                  "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+                  "w-full max-w-[100vw]",
+                  "mx-auto place-items-center"
+                )}>
+                  {filteredCards.map(card => {
+                    const isOwned = userCards.has(card.id);
+                    return (
+                      <div 
+                        key={card.id} 
                         className={cn(
-                          "w-full h-full",
-                          !isOwned && 'opacity-30 grayscale'
+                          "relative aspect-[7/11]",
+                          "w-full min-w-0",
+                          "max-w-[180px]"
                         )}
-                      />
-                      {!isOwned && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="bg-black/50 rounded-full p-2">
-                            <Lock className="w-5 h-5 text-gray-400" />
+                      >
+                        <CardDisplay
+                          card={card}
+                          size="sm"
+                          quantity={userCards.get(card.id)}
+                          onClick={() => setDetailCard(card)}
+                          className={cn(
+                            "w-full h-full",
+                            !isOwned && 'opacity-30 grayscale'
+                          )}
+                        />
+                        {!isOwned && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-black/50 rounded-full p-2">
+                              <Lock className="w-5 h-5 text-gray-400" />
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+              
+              {filteredCards.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  Nenhuma carta encontrada
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* Botões de scroll glassmórficos - Desktop apenas */}
+            <div className="hidden sm:flex absolute bottom-4 right-4 gap-2 z-10">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => scrollRef.current?.scrollBy({ top: -300, behavior: 'smooth' })}
+                className={cn(
+                  "bg-white/10 backdrop-blur-md border-white/20",
+                  "hover:bg-white/20 hover:border-white/30",
+                  "w-10 h-10 rounded-full transition-all duration-200"
+                )}
+              >
+                <ChevronUp className="w-5 h-5" />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => scrollRef.current?.scrollBy({ top: 300, behavior: 'smooth' })}
+                className={cn(
+                  "bg-white/10 backdrop-blur-md border-white/20",
+                  "hover:bg-white/20 hover:border-white/30",
+                  "w-10 h-10 rounded-full transition-all duration-200"
+                )}
+              >
+                <ChevronDown className="w-5 h-5" />
+              </Button>
             </div>
-            
-            {filteredCards.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground text-sm">
-                Nenhuma carta encontrada
-              </div>
-            )}
-          </ScrollArea>
+          </div>
 
           {/* Footer com estatísticas */}
           <div className="px-3 sm:px-0 py-2 sm:py-3 border-t text-xs sm:text-sm text-muted-foreground flex-shrink-0">
