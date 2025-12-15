@@ -1,6 +1,7 @@
 import { Card, RARITY_LABELS, CATEGORY_LABELS, RARITY_FRAME_COLORS, EFFECT_MECHANICS, CardEffectType } from '@/types/cards';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, Zap, Shield, Star, Clock, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InteractiveCard3D } from './InteractiveCard3D';
@@ -70,10 +71,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
         </DialogHeader>
 
         {/* Conteúdo scrollável - apenas esta área tem scroll */}
-        <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y px-4 py-4 sm:px-0 sm:py-0"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
+        <ScrollArea className="flex-1 px-4 py-4 sm:px-0 sm:py-0">
           <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-6 pb-4 sm:pb-6">
             
             {/* Coluna da Carta - CENTRALIZADA com giro 360° */}
@@ -193,7 +191,7 @@ export const CardDetailModal = ({ card, isOpen, onClose, quantity }: CardDetailM
               )}
             </div>
           </div>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
