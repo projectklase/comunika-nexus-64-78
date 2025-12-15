@@ -53,11 +53,38 @@ Deno.serve(async (req) => {
       console.error('Error fetching admin schools:', fetchError)
     }
 
-    // 2. Deletar as escolas do admin (ON DELETE CASCADE cuida do resto)
+    // 2. Deletar usuários das escolas do admin (professores, secretárias, alunos)
     if (adminSchools && adminSchools.length > 0) {
       const schoolIds = adminSchools.map(s => s.school_id)
-      console.log(`Deleting ${schoolIds.length} schools for admin ${userId}:`, schoolIds)
+      console.log(`Processing ${schoolIds.length} schools for admin ${userId}:`, schoolIds)
 
+      // Buscar todos os usuários dessas escolas (exceto o próprio admin)
+      const { data: schoolUsers, error: usersError } = await supabaseAdmin
+        .from('school_memberships')
+        .select('user_id')
+        .in('school_id', schoolIds)
+        .neq('user_id', userId)
+
+      if (usersError) {
+        console.error('Error fetching school users:', usersError)
+      }
+
+      // Deletar cada usuário das escolas
+      if (schoolUsers && schoolUsers.length > 0) {
+        const userIds = [...new Set(schoolUsers.map(u => u.user_id))]
+        console.log(`Deleting ${userIds.length} users from admin's schools:`, userIds)
+        
+        for (const uid of userIds) {
+          const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(uid)
+          if (deleteUserError) {
+            console.error(`Error deleting user ${uid}:`, deleteUserError)
+          } else {
+            console.log(`Deleted user: ${uid}`)
+          }
+        }
+      }
+
+      // 3. Agora deletar as escolas (ON DELETE CASCADE cuida dos dados restantes)
       const { error: deleteSchoolsError } = await supabaseAdmin
         .from('schools')
         .delete()
