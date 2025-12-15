@@ -1,8 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardEffect } from '@/types/cards';
-import { CardDisplay } from '@/components/cards/CardDisplay';
-import { Flame, Shield, Zap, Heart, Snowflake, Copy, RotateCcw, Skull, Sparkles, Swords } from 'lucide-react';
-import { RARITY_FRAME_COLORS } from '@/types/cards';
+import { InteractiveCard3D } from '@/components/cards/InteractiveCard3D';
+import { Flame, Shield, Zap, Heart, Snowflake, Copy, RotateCcw, Skull, Sparkles, Swords, X } from 'lucide-react';
 
 // Effect descriptions for fallback
 const EFFECT_DESCRIPTIONS: Record<string, string> = {
@@ -20,6 +19,7 @@ const EFFECT_DESCRIPTIONS: Record<string, string> = {
 interface SelectedCardEffectsPanelProps {
   card: Card | null;
   isVisible: boolean;
+  onClose?: () => void;
 }
 
 const EFFECT_ICONS: Record<string, React.ReactNode> = {
@@ -49,7 +49,7 @@ const RARITY_GLOW: Record<string, string> = {
   LEGENDARY: 'from-amber-400/60 via-yellow-500/50 to-amber-400/60',
 };
 
-export const SelectedCardEffectsPanel = ({ card, isVisible }: SelectedCardEffectsPanelProps) => {
+export const SelectedCardEffectsPanel = ({ card, isVisible, onClose }: SelectedCardEffectsPanelProps) => {
   if (!card) return null;
 
   const cardType = card.card_type || 'MONSTER';
@@ -66,26 +66,38 @@ export const SelectedCardEffectsPanel = ({ card, isVisible }: SelectedCardEffect
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 flex items-center justify-center z-[70] pointer-events-none"
+          className="fixed inset-0 flex items-center justify-center z-[70]"
         >
-          {/* Holographic background overlay */}
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+          {/* Clickable overlay to close */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
+            onClick={onClose}
+          />
           
-          {/* Main container with card + info */}
+          {/* Main container - responsive: column on mobile, row on desktop */}
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="relative flex items-center gap-6"
+            className="relative flex flex-col md:flex-row items-center gap-4 md:gap-6 p-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Animated holographic glow behind everything */}
             <div 
-              className={`absolute -inset-8 bg-gradient-to-r ${glowGradient} blur-3xl opacity-60 animate-pulse`}
+              className={`absolute -inset-8 bg-gradient-to-r ${glowGradient} blur-3xl opacity-60 animate-pulse pointer-events-none`}
               style={{ animationDuration: '2s' }}
             />
             
-            {/* The floating card */}
+            {/* Close button - mobile only */}
+            <button
+              onClick={onClose}
+              className="absolute top-2 right-2 md:hidden z-10 p-2 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            {/* The floating card with 3D interaction */}
             <motion.div
               initial={{ opacity: 0, scale: 0.7, rotateY: -20 }}
               animate={{ opacity: 1, scale: 1, rotateY: 0 }}
@@ -94,25 +106,28 @@ export const SelectedCardEffectsPanel = ({ card, isVisible }: SelectedCardEffect
               className="relative"
               style={{ perspective: '1000px' }}
             >
-              {/* Card with 3D effect */}
-              <div className="relative transform-gpu">
-                <CardDisplay card={card} size="lg" showStats={false} />
-                
-                {/* Floating shadow beneath card */}
-                <div 
-                  className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-4/5 h-6 bg-black/40 blur-xl rounded-full"
-                  style={{ transform: 'translateX(-50%) scaleY(0.3)' }}
-                />
+              {/* InteractiveCard3D - smaller on mobile */}
+              <div className="block md:hidden">
+                <InteractiveCard3D card={card} size="md" />
               </div>
+              <div className="hidden md:block">
+                <InteractiveCard3D card={card} size="lg" />
+              </div>
+              
+              {/* Floating shadow beneath card */}
+              <div 
+                className="absolute -bottom-4 md:-bottom-6 left-1/2 -translate-x-1/2 w-4/5 h-4 md:h-6 bg-black/40 blur-xl rounded-full pointer-events-none"
+                style={{ transform: 'translateX(-50%) scaleY(0.3)' }}
+              />
             </motion.div>
             
-            {/* Info panel floating to the right */}
+            {/* Info panel - below on mobile, right side on desktop */}
             <motion.div
-              initial={{ opacity: 0, x: 30, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 20, scale: 0.95 }}
+              initial={{ opacity: 0, y: 20, x: 0 }}
+              animate={{ opacity: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}
-              className="relative"
+              className="relative w-full md:w-auto"
             >
               {/* Holographic border effect */}
               <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-cyan-500/50 via-purple-500/50 to-pink-500/50 opacity-70" 
@@ -123,7 +138,7 @@ export const SelectedCardEffectsPanel = ({ card, isVisible }: SelectedCardEffect
               />
               
               {/* Info content */}
-              <div className="relative backdrop-blur-xl bg-black/70 rounded-xl p-4 min-w-[240px] max-w-[280px] border border-white/5">
+              <div className="relative backdrop-blur-xl bg-black/70 rounded-xl p-4 min-w-[240px] max-w-full md:max-w-[280px] border border-white/5">
                 {/* Header with name and type badge */}
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2">
@@ -196,6 +211,11 @@ export const SelectedCardEffectsPanel = ({ card, isVisible }: SelectedCardEffect
                 {effects.length === 0 && cardType === 'MONSTER' && (
                   <p className="text-xs text-white/40 italic">Sem efeitos especiais</p>
                 )}
+                
+                {/* Hint to close */}
+                <p className="text-xs text-white/30 mt-3 text-center hidden md:block">
+                  Clique fora para fechar
+                </p>
               </div>
             </motion.div>
           </motion.div>

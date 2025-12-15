@@ -846,6 +846,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
         <SelectedCardEffectsPanel 
           card={selectedCard ? (playerHand.find(c => c.id === selectedCard) || allCards?.find(c => c.id === selectedCard) || null) : null}
           isVisible={selectedCard !== null}
+          onClose={() => setSelectedCard(null)}
         />
 
         <BattleActionButtons 
