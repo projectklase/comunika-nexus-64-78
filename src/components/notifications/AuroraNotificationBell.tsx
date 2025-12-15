@@ -22,7 +22,10 @@ interface AuroraNotificationBellProps {
 type CounterState = 'normal' | 'important' | 'silent';
 type CounterDisplay = string; // "1", "10", "99+"
 
-export function AuroraNotificationBell({
+export const AuroraNotificationBell = React.forwardRef<
+  HTMLButtonElement,
+  AuroraNotificationBellProps
+>(({
   count,
   hasImportant = false,
   hasUnread = false,
@@ -33,13 +36,23 @@ export function AuroraNotificationBell({
   onMiddleClick,
   isOpen = false,
   'aria-controls': ariaControls
-}: AuroraNotificationBellProps) {
+}, forwardedRef) => {
   const [isPressed, setIsPressed] = useState(false);
   const [justReceivedNotification, setJustReceivedNotification] = useState(false);
   const [displayCount, setDisplayCount] = useState<CounterDisplay>('0');
   const longPressRef = useRef<NodeJS.Timeout | null>(null);
-  const bellRef = useRef<HTMLButtonElement>(null);
+  const internalRef = useRef<HTMLButtonElement>(null);
   const prevCountRef = useRef(count);
+
+  // Merge refs (interno + externo)
+  const bellRef = (node: HTMLButtonElement | null) => {
+    internalRef.current = node;
+    if (typeof forwardedRef === 'function') {
+      forwardedRef(node);
+    } else if (forwardedRef) {
+      forwardedRef.current = node;
+    }
+  };
   
   // Counter logic with smooth transitions
   useEffect(() => {
@@ -262,4 +275,6 @@ export function AuroraNotificationBell({
       )}
     </div>
   );
-}
+});
+
+AuroraNotificationBell.displayName = 'AuroraNotificationBell';
