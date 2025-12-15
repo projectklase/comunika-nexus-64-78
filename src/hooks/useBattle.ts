@@ -186,7 +186,7 @@ export const useBattle = (battleId?: string) => {
 
       const { data: result, error } = await supabase.rpc('attack', {
         p_battle_id: battleId,
-        p_attacker_id: user.id,
+        p_player_id: user.id,
       });
 
       if (error) throw error;
