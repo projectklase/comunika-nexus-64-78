@@ -91,7 +91,7 @@ export default function SecretariaFeed() {
   });
 
   const allowedTypes: PostType[] = ['AVISO', 'COMUNICADO', 'EVENTO'];
-  const canEdit = user?.role === 'secretaria';
+  const canEdit = user?.role === 'secretaria' || user?.role === 'administrador';
 
   // Handle edit mode from URL params
   useEffect(() => {
