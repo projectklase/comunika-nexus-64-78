@@ -75,9 +75,9 @@ export function AvatarGalleryModal({ open, onOpenChange }: AvatarGalleryModalPro
     // Admins have all avatars
     if (user?.role === 'administrador') return true;
     
-    // Staff (secretaria, professor) get COMMON and UNCOMMON free
+    // Staff (secretaria, professor) get COMMON, UNCOMMON and RARE free
     if (user?.role === 'secretaria' || user?.role === 'professor') {
-      return avatar.rarity === 'COMMON' || avatar.rarity === 'UNCOMMON';
+      return avatar.rarity === 'COMMON' || avatar.rarity === 'UNCOMMON' || avatar.rarity === 'RARE';
     }
     
     // Students: COMMON avatars without requirements are always free
