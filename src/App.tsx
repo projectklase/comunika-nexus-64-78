@@ -183,7 +183,7 @@ const App = () => (
             } />
             {/* Placeholder routes for other pages */}
             <Route path="/secretaria/feed" element={
-              <RoleGuard allowedRoles={['secretaria']}>
+              <RoleGuard allowedRoles={['secretaria', 'administrador']}>
                 <AppLayout>
                   <SecretariaFeed />
                 </AppLayout>
