@@ -116,15 +116,22 @@ serve(async (req) => {
     if (hasXP) rewardParts.push(`${xpAmount} XP`);
     const rewardMessage = rewardParts.join(' e ');
 
+    // Determinar link e tipo baseado no tipo de recompensa
+    const notificationLink = hasKoins 
+      ? '/aluno/loja-recompensas?tab=history'  // Koins → loja de recompensas
+      : '/aluno/perfil';  // Apenas XP → perfil do aluno
+    
+    const notificationType = hasKoins ? 'KOIN_BONUS' : 'XP_EARNED';
+
     // Criar notificações para cada aluno usando service_role (sem RLS)
     const notificationPromises = studentIds.map(studentId => 
       supabaseAdmin.from('notifications').insert({
         user_id: studentId,
-        type: 'KOIN_BONUS',
-        title: 'Bonificação Recebida!',
+        type: notificationType,
+        title: hasKoins ? 'Bonificação Recebida!' : 'XP Recebido!',
         message: `Você recebeu ${rewardMessage} pelo evento '${eventName}'!`,
         role_target: 'ALUNO',
-        link: '/aluno/loja-recompensas?tab=history',
+        link: notificationLink,
         is_read: false,
         meta: { 
           koinAmount: koinAmount || 0,

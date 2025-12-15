@@ -90,7 +90,7 @@ export function resolveNotificationTarget(
   }
 
   // Rewards notifications - use their specific links
-  if (['KOINS_EARNED', 'KOIN_BONUS', 'REDEMPTION_APPROVED', 'REDEMPTION_REJECTED'].includes(notification.type)) {
+  if (['KOINS_EARNED', 'KOIN_BONUS', 'XP_EARNED', 'REDEMPTION_APPROVED', 'REDEMPTION_REJECTED'].includes(notification.type)) {
     return {
       destination: 'feed',
       url: notification.link || '/aluno/loja-recompensas?tab=history'
