@@ -29,9 +29,10 @@ export function usePostActionsUnified() {
       case 'archive':
       case 'delete':
         return user.role === 'secretaria' || 
+               user.role === 'administrador' ||
                (user.role === 'professor' && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type));
       case 'publishNow':
-        return (user.role === 'secretaria' || user.role === 'professor') && post.status === 'SCHEDULED';
+        return (user.role === 'secretaria' || user.role === 'professor' || user.role === 'administrador') && post.status === 'SCHEDULED';
       case 'viewInCalendar':
         return true; // Everyone can view in calendar
       case 'markDelivered':
@@ -330,8 +331,8 @@ export function usePostActionsUnified() {
     if (user?.role === 'professor' && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(post.type)) {
       // For professor activities, open the nova atividade page with edit mode
       navigate(`/professor/atividades/nova?edit=${post.id}`);
-    } else if (user?.role === 'secretaria') {
-      // For secretaria, always use feed composer with edit mode
+    } else if (user?.role === 'secretaria' || user?.role === 'administrador') {
+      // For secretaria/admin, always use feed composer with edit mode
       navigate(`${ROUTES.SECRETARIA.FEED}?edit=${post.id}`);
     }
   };
