@@ -12,7 +12,7 @@ interface CardDisplayProps {
   showStats?: boolean;
   onClick?: () => void;
   className?: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export const CardDisplay = ({ 
@@ -96,9 +96,10 @@ export const CardDisplay = ({
 
   const sizeClasses = {
     xs: 'w-12 h-16',
-    sm: 'w-full h-full max-w-[180px] max-h-[280px]', // Limite máximo + responsivo para mobile
+    sm: 'w-full h-full max-w-[180px] max-h-[280px]',
     md: 'w-40 h-64 sm:w-44 sm:h-72',
-    lg: 'w-52 h-[21rem] sm:w-56 sm:h-[25rem]'
+    lg: 'w-52 h-[21rem] sm:w-56 sm:h-[25rem]',
+    xl: 'w-64 h-[26rem] sm:w-72 sm:h-[30rem]'
   };
 
   const statSizes = {
@@ -122,10 +123,17 @@ export const CardDisplay = ({
       label: 'text-xs',
       value: 'text-sm',
       gap: 'gap-1'
+    },
+    xl: {
+      container: 'px-3 py-1.5',
+      icon: 'w-4 h-4',
+      label: 'text-sm',
+      value: 'text-base',
+      gap: 'gap-1.5'
     }
   };
 
-  const currentStatSize = statSizes[size as 'sm' | 'md' | 'lg'] || statSizes.md;
+  const currentStatSize = statSizes[size as 'sm' | 'md' | 'lg' | 'xl'] || statSizes.md;
 
   // For xs size, render ultra-compact version (just image with rarity border)
   if (size === 'xs') {
@@ -189,8 +197,8 @@ export const CardDisplay = ({
   // Determine rarity-specific wrapper class
   const rarityWrapperClass = card.rarity === 'COMMON' ? 'card-common-shimmer' : '';
 
-  // Enable 3D hover only for md and lg sizes
-  const enable3DHover = size === 'md' || size === 'lg';
+  // Enable 3D hover only for md, lg, and xl sizes
+  const enable3DHover = size === 'md' || size === 'lg' || size === 'xl';
 
   return (
     <div
@@ -288,8 +296,12 @@ export const CardDisplay = ({
           )}>
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 flex-1 min-w-0">
-                <CategoryIcon className="w-4 h-4 text-white flex-shrink-0" />
-                <span className="font-bold text-white text-xs truncate uppercase tracking-wide">
+                <CategoryIcon className={cn("text-white flex-shrink-0", size === 'xl' ? "w-5 h-5" : "w-4 h-4")} />
+                <span className={cn(
+                  "font-bold text-white uppercase tracking-wide",
+                  size === 'xl' ? "text-sm" : "text-xs",
+                  size === 'lg' || size === 'xl' ? "" : "truncate"
+                )}>
                   {card.name}
                 </span>
               </div>

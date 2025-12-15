@@ -61,6 +61,8 @@ export const BattleArena = ({ battleId }: BattleArenaProps) => {
   const { userCards, allCards } = useCards();
   const battleResult = useBattleResult(battle, user?.id);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  const [showCardDetails, setShowCardDetails] = useState(false);
+  const lastCardClickRef = useRef<{ cardId: string | null; time: number }>({ cardId: null, time: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
   const [showVictoryModal, setShowVictoryModal] = useState(false);
@@ -525,7 +527,22 @@ const [player1Profile, setPlayer1Profile] = useState<{
 
   const handleCardClick = (cardId: string) => {
     if (!isMyTurn()) return;
-    setSelectedCard(cardId);
+    
+    const now = Date.now();
+    const isDoubleClick = lastCardClickRef.current.cardId === cardId && 
+                          (now - lastCardClickRef.current.time) < 300;
+    
+    if (isDoubleClick) {
+      // Double click - open holographic panel
+      setSelectedCard(cardId);
+      setShowCardDetails(true);
+    } else {
+      // Single click - toggle selection
+      setSelectedCard(prev => prev === cardId ? null : cardId);
+      setShowCardDetails(false);
+    }
+    
+    lastCardClickRef.current = { cardId, time: now };
   };
 
   const handlePlayCard = async () => {
@@ -543,6 +560,7 @@ const [player1Profile, setPlayer1Profile] = useState<{
     });
     
     setSelectedCard(null);
+    setShowCardDetails(false);
     setIsPlaying(false);
   };
 
@@ -842,11 +860,11 @@ const [player1Profile, setPlayer1Profile] = useState<{
           </div>
         </div>
 
-        {/* Holographic Effects Panel for selected card */}
+        {/* Holographic Effects Panel for selected card - only on double click */}
         <SelectedCardEffectsPanel 
           card={selectedCard ? (playerHand.find(c => c.id === selectedCard) || allCards?.find(c => c.id === selectedCard) || null) : null}
-          isVisible={selectedCard !== null}
-          onClose={() => setSelectedCard(null)}
+          isVisible={showCardDetails}
+          onClose={() => setShowCardDetails(false)}
         />
 
         <BattleActionButtons 

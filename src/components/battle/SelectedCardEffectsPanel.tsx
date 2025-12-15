@@ -106,12 +106,12 @@ export const SelectedCardEffectsPanel = ({ card, isVisible, onClose }: SelectedC
               className="relative"
               style={{ perspective: '1000px' }}
             >
-              {/* InteractiveCard3D - smaller on mobile */}
+              {/* InteractiveCard3D - md on mobile, xl on desktop */}
               <div className="block md:hidden">
                 <InteractiveCard3D card={card} size="md" />
               </div>
               <div className="hidden md:block">
-                <InteractiveCard3D card={card} size="lg" />
+                <InteractiveCard3D card={card} size="xl" />
               </div>
               
               {/* Floating shadow beneath card */}

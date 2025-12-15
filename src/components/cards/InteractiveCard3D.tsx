@@ -7,7 +7,7 @@ import { RotateCcw } from 'lucide-react';
 
 interface InteractiveCard3DProps {
   card: Card;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'xl';
 }
 
 export const InteractiveCard3D = ({ card, size = 'lg' }: InteractiveCard3DProps) => {
@@ -124,9 +124,11 @@ export const InteractiveCard3D = ({ card, size = 'lg' }: InteractiveCard3DProps)
   };
 
   // Dimensões baseadas no tamanho
-  const sizeClasses = size === 'lg' 
-    ? 'w-52 h-[21rem] sm:w-56 sm:h-[25rem]' 
-    : 'w-40 h-64 sm:w-44 sm:h-72';
+  const sizeClasses = {
+    md: 'w-40 h-64 sm:w-44 sm:h-72',
+    lg: 'w-52 h-[21rem] sm:w-56 sm:h-[25rem]',
+    xl: 'w-64 h-[26rem] sm:w-72 sm:h-[30rem]'
+  }[size];
 
   return (
     <div className="flex flex-col items-center gap-3">
