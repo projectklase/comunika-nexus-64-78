@@ -10,6 +10,7 @@ export type NotificationType =
   | "HOLIDAY"
   | "KOINS_EARNED"
   | "KOIN_BONUS"
+  | "XP_EARNED"
   | "REDEMPTION_REQUESTED"
   | "REDEMPTION_APPROVED"
   | "REDEMPTION_REJECTED"
