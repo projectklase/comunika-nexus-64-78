@@ -6,22 +6,32 @@ const headlines = [
   "Entre em sua conta • Experiência premium"
 ];
 
-export const DynamicHeadline = () => {
+interface DynamicHeadlineProps {
+  paused?: boolean;
+}
+
+export const DynamicHeadline = ({ paused = false }: DynamicHeadlineProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    if (paused) return;
+
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % headlines.length);
-    }, 3000); // Change every 3 seconds
+      setIsVisible(false);
+      setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % headlines.length);
+        setIsVisible(true);
+      }, 200);
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [paused]);
 
   return (
-    <div className="text-center">
+    <div className="text-center h-5">
       <p 
-        key={currentIndex}
-        className="text-xs text-muted-foreground animate-fade-in"
+        className={`text-xs text-muted-foreground transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       >
         {headlines[currentIndex]}
       </p>
