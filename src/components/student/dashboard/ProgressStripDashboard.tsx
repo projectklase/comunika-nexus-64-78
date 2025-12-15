@@ -26,6 +26,10 @@ export function ProgressStripDashboard({ posts }: ProgressStripDashboardProps) {
   const { data: profileStats } = useQuery({
     queryKey: ['student-progress-stats', user?.id],
     queryFn: async () => {
+      // Verificar se ainda está autenticado antes da query
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      
       const { data } = await supabase
         .from('profiles')
         .select('total_xp, current_streak_days')

@@ -65,6 +65,10 @@ export default function AlunoProfile() {
     queryFn: async () => {
       if (!user?.id) return null;
       
+      // Verificar se ainda está autenticado antes da query
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('total_xp, level_xp, best_streak_days, current_streak_days')
