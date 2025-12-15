@@ -30,6 +30,8 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [shouldNavigate, setShouldNavigate] = useState(false);
+  const [navigatePath, setNavigatePath] = useState<string | null>(null);
   const [showError, setShowError] = useState(false);
   const [remainingLockTime, setRemainingLockTime] = useState(0);
   const {
@@ -184,12 +186,29 @@ const Login = () => {
       setRemainingLockTime(0);
     }
   }, [email, isLocked, getRemainingLockTime]);
+  
+  // When user is defined during transition, schedule navigation after fade-out
+  useEffect(() => {
+    if (isTransitioning && user) {
+      const redirectPath = getRoleBasedRoute(user.role);
+      setNavigatePath(redirectPath);
+      const timer = setTimeout(() => setShouldNavigate(true), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [isTransitioning, user]);
+  
   const formatCountdown = (ms: number): string => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor(ms % 60000 / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-  if (user) {
+  // Controlled navigation after transition completes
+  if (shouldNavigate && navigatePath) {
+    return <Navigate to={navigatePath} replace />;
+  }
+  
+  // Only auto-redirect if user was already logged in (page refresh), not during login flow
+  if (user && !isTransitioning && !isSubmitting) {
     const redirectPath = getRoleBasedRoute(user.role);
     return <Navigate to={redirectPath} replace />;
   }
@@ -243,6 +262,7 @@ const Login = () => {
         }
         setShowSuccess(true);
         setIsTransitioning(true);
+        
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Klase."
@@ -352,6 +372,7 @@ const Login = () => {
       console.log(`QuickLogin result for ${role}:`, result);
       if (result.success) {
         setIsTransitioning(true);
+        
         toast({
           title: "Login realizado com sucesso!",
           description: `Bem-vindo(a), ${name}!`
