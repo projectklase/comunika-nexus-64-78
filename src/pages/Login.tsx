@@ -29,6 +29,7 @@ const Login = () => {
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [showError, setShowError] = useState(false);
   const [remainingLockTime, setRemainingLockTime] = useState(0);
   const {
@@ -241,6 +242,7 @@ const Login = () => {
           updateSetting('rememberEmail', false);
         }
         setShowSuccess(true);
+        setIsTransitioning(true);
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Klase."
@@ -349,6 +351,7 @@ const Login = () => {
       const result = await login(email, password);
       console.log(`QuickLogin result for ${role}:`, result);
       if (result.success) {
+        setIsTransitioning(true);
         toast({
           title: "Login realizado com sucesso!",
           description: `Bem-vindo(a), ${name}!`
@@ -439,7 +442,7 @@ const Login = () => {
           
           {/* Login Card - col-span-5 on lg+ */}
           <div className="flex items-center justify-center px-0 lg:col-span-5 lg:px-6 py-4 lg:py-8 w-full">
-            <Card className="w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg">
+            <Card className={cn("w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg transition-opacity duration-300", isTransitioning && "opacity-0 pointer-events-none")}>
               <CardHeader className="text-center space-y-1 px-6 py-6">
                 <div className="flex items-center justify-center">
                   <img src={klaseLogo} alt="Klase" width={262} height={64} className="h-16 w-auto" />
@@ -447,11 +450,11 @@ const Login = () => {
                 <CardDescription className="text-sm text-muted-foreground my-[15px]">
                   Acesse sua conta
                 </CardDescription>
-                <DynamicHeadline />
+                <DynamicHeadline paused={isFormSubmitting || isTransitioning} />
               </CardHeader>
 
               <CardContent className="space-y-5 px-6 pb-6">
-                {formError && <div className={cn("flex items-center gap-2 py-3 px-4 rounded-lg text-sm animate-in fade-in slide-in-from-top-2 duration-300", email && isLocked(email) ? "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-pulse" : "bg-destructive/15 border border-destructive/30 text-destructive")} role="alert" aria-live="assertive" id="form-error">
+                {formError && <div className={cn("flex items-center gap-2 py-3 px-4 rounded-lg text-sm transition-all duration-300", email && isLocked(email) ? "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-pulse" : "bg-destructive/15 border border-destructive/30 text-destructive")} role="alert" aria-live="assertive" id="form-error">
                     {email && isLocked(email) ? <Clock className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
                     <span>{formError}</span>
                   </div>}
