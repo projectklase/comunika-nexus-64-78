@@ -29,6 +29,7 @@ const Login = () => {
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [hideUI, setHideUI] = useState(false);
   const [showError, setShowError] = useState(false);
   const [remainingLockTime, setRemainingLockTime] = useState(0);
   const {
@@ -240,6 +241,7 @@ const Login = () => {
           setLastEmail('');
           updateSetting('rememberEmail', false);
         }
+        setHideUI(true);
         setShowSuccess(true);
         toast({
           title: "Login realizado com sucesso!",
@@ -349,6 +351,7 @@ const Login = () => {
       const result = await login(email, password);
       console.log(`QuickLogin result for ${role}:`, result);
       if (result.success) {
+        setHideUI(true);
         toast({
           title: "Login realizado com sucesso!",
           description: `Bem-vindo(a), ${name}!`
@@ -364,7 +367,7 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-  return <div className="min-h-screen bg-background">
+  return <div className={cn("min-h-screen bg-background transition-opacity duration-200", hideUI && "opacity-0")}>
       {/* Background patterns - more subtle */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/10" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_0)] bg-[length:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
