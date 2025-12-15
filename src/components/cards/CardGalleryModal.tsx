@@ -234,7 +234,7 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
 
           {/* Grid de Cartas */}
           <div className="flex-1 relative overflow-hidden">
-            <ScrollArea className="h-full px-3 sm:px-0 mt-2 sm:mt-0" ref={scrollRef}>
+            <ScrollArea className="h-full px-3 sm:px-0 mt-2 sm:mt-0" viewportRef={scrollRef}>
               <div className="w-full max-w-full overflow-hidden">
                 <div className={cn(
                   "grid gap-2 sm:gap-4 pb-4",
