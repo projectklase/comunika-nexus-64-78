@@ -170,7 +170,12 @@ export const useUnlockables = () => {
           !unlockable.required_streak_days && 
           !unlockable.required_challenges_completed;
         
-        if (!alreadyUnlocked && !isCommonWithoutReqs) {
+        // Secretárias e professores têm acesso livre a COMMON, UNCOMMON e RARE
+        const isStaffWithFreeAccess = (user.role === 'secretaria' || user.role === 'professor') &&
+          unlockable && 
+          (unlockable.rarity === 'COMMON' || unlockable.rarity === 'UNCOMMON' || unlockable.rarity === 'RARE');
+        
+        if (!alreadyUnlocked && !isCommonWithoutReqs && !isStaffWithFreeAccess) {
           throw new Error('Item não está desbloqueado');
         }
       }
