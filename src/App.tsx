@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -75,9 +75,9 @@ import { MinhasAtividadesPage } from "./pages/aluno/MinhasAtividadesPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import RewardsStore from "./pages/RewardsStore";
 
-// Heavy card game pages - ONLY these remain lazy loaded
-const CartasPage = lazy(() => import('./pages/aluno/CartasPage'));
-const BatalhaPage = lazy(() => import('./pages/aluno/BatalhaPage'));
+// Card game pages - direct imports for cache stability
+import CartasPage from "./pages/aluno/CartasPage";
+import BatalhaPage from "./pages/aluno/BatalhaPage";
 
 // Settings & misc
 import SettingsPage from "./pages/SettingsPage";
@@ -238,19 +238,15 @@ const App = () => (
                 </AppLayout>
               </RoleGuard>
             } />
-            {/* Heavy card game pages - individual Suspense */}
+            {/* Card game pages */}
             <Route path="/aluno/cartas" element={
               <RoleGuard allowedRoles={['aluno']}>
-                <Suspense fallback={<PageLoadingSkeleton />}>
-                  <CartasPage />
-                </Suspense>
+                <CartasPage />
               </RoleGuard>
             } />
             <Route path="/aluno/batalha" element={
               <RoleGuard allowedRoles={['aluno']}>
-                <Suspense fallback={<PageLoadingSkeleton />}>
-                  <BatalhaPage />
-                </Suspense>
+                <BatalhaPage />
               </RoleGuard>
             } />
             {/* Legacy calendar redirects */}
