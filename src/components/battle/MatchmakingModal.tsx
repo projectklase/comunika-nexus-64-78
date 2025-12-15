@@ -62,13 +62,14 @@ export function MatchmakingModal({ open, deckId, onClose, onMatchFound }: Matchm
             const opponentId = battle.player1_id === user.id ? battle.player2_id : battle.player1_id;
             
             const { data: profile } = await supabase
-              .from('profiles')
-              .select('name, avatar')
-              .eq('id', opponentId)
+              .rpc('get_public_student_profile', { student_id_param: opponentId })
               .single();
             
             if (profile) {
-              setOpponentProfile(profile);
+              setOpponentProfile({
+                name: profile.name,
+                avatar: profile.equipped_avatar_image_url || profile.equipped_avatar_emoji || undefined
+              });
             }
           }
         } catch (error) {
