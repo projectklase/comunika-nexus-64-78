@@ -189,13 +189,17 @@ const Login = () => {
   
   // When user is defined during transition, schedule navigation after fade-out
   useEffect(() => {
+    // Guard: prevent re-execution if path already set
+    if (navigatePath) return;
+    
     if (isTransitioning && user) {
       const redirectPath = getRoleBasedRoute(user.role);
       setNavigatePath(redirectPath);
-      const timer = setTimeout(() => setShouldNavigate(true), 350);
+      // Slightly longer delay to ensure fade-out completes
+      const timer = setTimeout(() => setShouldNavigate(true), 400);
       return () => clearTimeout(timer);
     }
-  }, [isTransitioning, user]);
+  }, [isTransitioning, user, navigatePath]);
   
   const formatCountdown = (ms: number): string => {
     const minutes = Math.floor(ms / 60000);
@@ -463,7 +467,7 @@ const Login = () => {
           
           {/* Login Card - col-span-5 on lg+ */}
           <div className="flex items-center justify-center px-0 lg:col-span-5 lg:px-6 py-4 lg:py-8 w-full">
-            <Card className={cn("w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg transition-opacity duration-300", isTransitioning && "opacity-0 pointer-events-none")}>
+            <Card className={cn("w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out", isTransitioning && "opacity-0 scale-[0.98] pointer-events-none")}>
               <CardHeader className="text-center space-y-1 px-6 py-6">
                 <div className="flex items-center justify-center">
                   <img src={klaseLogo} alt="Klase" width={262} height={64} className="h-16 w-auto" />
