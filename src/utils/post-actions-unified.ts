@@ -74,9 +74,10 @@ export function canPerformAction(action: string, post: Post | NormalizedCalendar
     case 'archive':
     case 'delete':
       return userRole === 'secretaria' || 
+             userRole === 'administrador' ||
              (userRole === 'professor' && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(postData.type));
     case 'publishNow':
-      return (userRole === 'secretaria' || userRole === 'professor') && postData.status === 'SCHEDULED';
+      return (userRole === 'secretaria' || userRole === 'professor' || userRole === 'administrador') && postData.status === 'SCHEDULED';
     case 'viewInCalendar':
     case 'copyLink':
     case 'openAttachments':
@@ -207,7 +208,7 @@ export function editPost(post: Post | NormalizedCalendarEvent, userRole: string,
   // Navigate to correct edit route based on user role and post type
   if (userRole === 'professor' && ['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(postData.type)) {
     navigate(`/professor/atividades/${postData.id}/editar`);
-  } else if (userRole === 'secretaria') {
+  } else if (userRole === 'secretaria' || userRole === 'administrador') {
     if (['ATIVIDADE', 'TRABALHO', 'PROVA'].includes(postData.type)) {
       navigate(`/secretaria/atividades/${postData.id}/editar`);
     } else {

@@ -15,13 +15,13 @@ const menuItems = {
     url: '/admin/dashboard',
     icon: LayoutDashboard
   }, {
-    title: 'Feed',
-    url: '/secretaria/feed',
-    icon: Rss
-  }, {
     title: 'Inteligência',
     url: '/admin/analytics',
     icon: BarChart3
+  }, {
+    title: 'Feed',
+    url: '/secretaria/feed',
+    icon: Rss
   }, {
     title: 'Gerenciar Secretarias',
     url: '/admin/gerenciar-secretarias',
