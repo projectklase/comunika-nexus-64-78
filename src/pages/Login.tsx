@@ -32,6 +32,9 @@ const Login = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [shouldNavigate, setShouldNavigate] = useState(false);
   const [navigatePath, setNavigatePath] = useState<string | null>(null);
+  
+  // Ref to lock visual transition state - prevents flickering from AuthContext re-renders
+  const transitionLockRef = useRef(false);
   const [showError, setShowError] = useState(false);
   const [remainingLockTime, setRemainingLockTime] = useState(0);
   const {
@@ -186,6 +189,16 @@ const Login = () => {
       setRemainingLockTime(0);
     }
   }, [email, isLocked, getRemainingLockTime]);
+  
+  // Lock the visual transition state when transition starts
+  useEffect(() => {
+    if (isTransitioning) {
+      transitionLockRef.current = true;
+    }
+  }, [isTransitioning]);
+  
+  // Stable visual state - once locked, stays locked (prevents flickering from re-renders)
+  const isVisuallyTransitioning = transitionLockRef.current || isTransitioning;
   
   // When user is defined during transition, schedule navigation after fade-out
   useEffect(() => {
@@ -467,7 +480,7 @@ const Login = () => {
           
           {/* Login Card - col-span-5 on lg+ */}
           <div className="flex items-center justify-center px-0 lg:col-span-5 lg:px-6 py-4 lg:py-8 w-full">
-            <Card className={cn("w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out", isTransitioning && "opacity-0 scale-[0.98] pointer-events-none")}>
+            <Card className={cn("w-full max-w-[440px] border-border/30 bg-card/95 backdrop-blur-sm shadow-lg transition-all duration-300 ease-out", isVisuallyTransitioning && "opacity-0 scale-[0.98] pointer-events-none")}>
               <CardHeader className="text-center space-y-1 px-6 py-6">
                 <div className="flex items-center justify-center">
                   <img src={klaseLogo} alt="Klase" width={262} height={64} className="h-16 w-auto" />
