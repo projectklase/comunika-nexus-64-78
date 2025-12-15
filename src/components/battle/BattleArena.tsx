@@ -131,55 +131,38 @@ const [player1Profile, setPlayer1Profile] = useState<{
       
       setIsLoadingProfiles(true);
       
-      // Fetch basic profiles
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('id, name, avatar')
-        .in('id', [battle.player1_id, battle.player2_id]);
-      
-      if (error) {
-        console.error('Erro ao carregar perfis:', error);
+      // Usar RPC get_public_student_profile para buscar perfis (bypassa RLS)
+      const [p1Result, p2Result] = await Promise.all([
+        supabase.rpc('get_public_student_profile', { student_id_param: battle.player1_id }).maybeSingle(),
+        supabase.rpc('get_public_student_profile', { student_id_param: battle.player2_id }).maybeSingle()
+      ]);
+
+      if (p1Result.error || p2Result.error) {
+        console.error('Erro ao carregar perfis:', p1Result.error || p2Result.error);
         setIsLoadingProfiles(false);
         return;
       }
 
-      // Fetch equipped avatars from gamification system
-      const { data: equippedAvatars } = await supabase
-        .from('user_unlocks')
-        .select(`
-          user_id,
-          unlockable:unlockables(type, rarity, preview_data)
-        `)
-        .in('user_id', [battle.player1_id, battle.player2_id])
-        .eq('is_equipped', true);
-
-      // Build avatar map from equipped unlockables
-      const avatarMap: Record<string, { emoji?: string; imageUrl?: string; rarity?: string }> = {};
-      equippedAvatars?.forEach((unlock: any) => {
-        if (unlock.unlockable?.type === 'AVATAR') {
-          avatarMap[unlock.user_id] = {
-            emoji: unlock.unlockable.preview_data?.emoji,
-            imageUrl: unlock.unlockable.preview_data?.imageUrl,
-            rarity: unlock.unlockable.rarity
-          };
+      // Mapear resultado da RPC para o formato esperado
+      setPlayer1Profile(p1Result.data ? { 
+        name: p1Result.data.name || 'Jogador 1', 
+        avatar: undefined,
+        equippedAvatar: {
+          emoji: p1Result.data.equipped_avatar_emoji,
+          imageUrl: p1Result.data.equipped_avatar_image_url,
+          rarity: p1Result.data.equipped_avatar_rarity
         }
-      });
+      } : null);
       
-      if (profiles) {
-        const p1 = profiles.find(p => p.id === battle.player1_id);
-        const p2 = profiles.find(p => p.id === battle.player2_id);
-        
-        setPlayer1Profile(p1 ? { 
-          name: p1.name, 
-          avatar: p1.avatar || undefined,
-          equippedAvatar: avatarMap[battle.player1_id]
-        } : null);
-        setPlayer2Profile(p2 ? { 
-          name: p2.name, 
-          avatar: p2.avatar || undefined,
-          equippedAvatar: avatarMap[battle.player2_id]
-        } : null);
-      }
+      setPlayer2Profile(p2Result.data ? { 
+        name: p2Result.data.name || 'Jogador 2', 
+        avatar: undefined,
+        equippedAvatar: {
+          emoji: p2Result.data.equipped_avatar_emoji,
+          imageUrl: p2Result.data.equipped_avatar_image_url,
+          rarity: p2Result.data.equipped_avatar_rarity
+        }
+      } : null);
       
       setIsLoadingProfiles(false);
     };

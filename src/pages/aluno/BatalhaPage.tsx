@@ -49,35 +49,26 @@ export default function BatalhaPage() {
     queryFn: async () => {
       if (!opponentIds.length) return {};
       
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, name, avatar')
-        .in('id', opponentIds);
+      // Usar RPC get_public_student_profile para buscar perfis (bypassa RLS)
+      const profilePromises = opponentIds.map(id =>
+        supabase.rpc('get_public_student_profile', { student_id_param: id }).maybeSingle()
+      );
+      const results = await Promise.all(profilePromises);
       
-      // Fetch equipped avatars - filter by AVATAR type via inner join
-      const { data: unlocks } = await supabase
-        .from('user_unlocks')
-        .select('user_id, unlockables!inner(type, preview_data, rarity)')
-        .in('user_id', opponentIds)
-        .eq('is_equipped', true)
-        .eq('unlockables.type', 'AVATAR');
-      
+      // Construir mapa de perfis no formato esperado
       const profileMap: Record<string, { name: string; avatar?: string; equippedAvatar?: any }> = {};
       
-      data?.forEach(p => {
-        profileMap[p.id] = { 
-          name: p.name || 'Jogador', 
-          avatar: p.avatar 
-        };
-      });
-      
-      unlocks?.forEach(u => {
-        if (profileMap[u.user_id] && u.unlockables) {
-          const unlockable = u.unlockables as any;
-          profileMap[u.user_id].equippedAvatar = {
-            emoji: unlockable.preview_data?.emoji,
-            imageUrl: unlockable.preview_data?.imageUrl,
-            rarity: unlockable.rarity
+      results.forEach((result, index) => {
+        if (result.data) {
+          const p = result.data;
+          profileMap[opponentIds[index]] = {
+            name: p.name || 'Jogador',
+            avatar: undefined,
+            equippedAvatar: {
+              emoji: p.equipped_avatar_emoji,
+              imageUrl: p.equipped_avatar_image_url,
+              rarity: p.equipped_avatar_rarity
+            }
           };
         }
       });
