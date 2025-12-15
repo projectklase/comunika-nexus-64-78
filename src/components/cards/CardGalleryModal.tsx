@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Card, CardRarity, CardCategory, RARITY_LABELS, CATEGORY_LABELS } from '@/types/cards';
@@ -134,9 +134,6 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
             <DialogTitle className="text-lg sm:text-xl">
               Galeria de Cartas
             </DialogTitle>
-            <DialogDescription className="sr-only">
-              Navegue por todas as cartas disponíveis e veja sua coleção
-            </DialogDescription>
           </DialogHeader>
 
           {/* Busca fixa no topo */}

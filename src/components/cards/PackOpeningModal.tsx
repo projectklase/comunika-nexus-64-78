@@ -21,20 +21,13 @@ interface PackOpeningModalProps {
   hasClaimedFreePack?: boolean;
 }
 
-// Probabilidades de raridade por tipo de pacote (REBALANCEADAS - sincronizadas com backend)
+// Probabilidades de raridade por tipo de pacote (devem coincidir com o backend)
 // EVENT pack não usa probabilidades - é 100% garantido
-const PACK_PROBABILITIES: Record<Exclude<PackType, 'EVENT'>, { 
-  common: number; 
-  rare: number; 
-  epic: number; 
-  legendary: number;
-  guaranteed?: 'EPIC' | 'LEGENDARY';
-  note?: string;
-}> = {
-  BASIC: { common: 80, rare: 19, epic: 0.9, legendary: 0.1 },
-  RARE: { common: 50, rare: 45, epic: 4.5, legendary: 0.5 },
-  EPIC: { common: 40, rare: 50, epic: 9, legendary: 1, guaranteed: 'EPIC', note: '1 Épica garantida + 4 cartas aleatórias' },
-  LEGENDARY: { common: 0, rare: 60, epic: 35, legendary: 5, guaranteed: 'LEGENDARY', note: '1 Lendária garantida + 6 cartas (sem comuns)' },
+const PACK_PROBABILITIES: Record<Exclude<PackType, 'EVENT'>, { common: number; rare: number; epic: number; legendary: number }> = {
+  BASIC: { common: 85, rare: 13, epic: 1.9, legendary: 0.1 },
+  RARE: { common: 60, rare: 35, epic: 4.5, legendary: 0.5 },
+  EPIC: { common: 40, rare: 45, epic: 14, legendary: 1 },
+  LEGENDARY: { common: 25, rare: 45, epic: 25, legendary: 5 },
   FREE: { common: 80, rare: 18, epic: 2, legendary: 0 },
 };
 
@@ -102,37 +95,11 @@ export const PackOpeningModal = ({
     const probs = PACK_PROBABILITIES[packType];
     return (
       <div className="text-xs space-y-1 text-left">
-        {/* Badge de garantia para pacotes premium */}
-        {probs.guaranteed === 'EPIC' && (
-          <div className="mb-2 p-1.5 rounded bg-purple-500/20 border border-purple-500/50">
-            <p className="font-bold text-purple-400 flex items-center gap-1">
-              ✨ 1 Épica Garantida!
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              Cartas embaralhadas - surpresa em cada abertura!
-            </p>
-          </div>
-        )}
-        {probs.guaranteed === 'LEGENDARY' && (
-          <div className="mb-2 p-1.5 rounded bg-yellow-500/20 border border-yellow-500/50">
-            <p className="font-bold text-yellow-400 flex items-center gap-1">
-              👑 1 Lendária Garantida!
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              Sem cartas Comuns + embaralhamento surpresa!
-            </p>
-          </div>
-        )}
-        
-        <p className="font-semibold mb-2">
-          {probs.guaranteed ? 'Demais cartas:' : 'Probabilidades:'}
-        </p>
-        {probs.common > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-            <span>Comum: {probs.common}%</span>
-          </div>
-        )}
+        <p className="font-semibold mb-2">Probabilidades:</p>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+          <span>Comum: {probs.common}%</span>
+        </div>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-blue-500"></span>
           <span>Rara: {probs.rare}%</span>

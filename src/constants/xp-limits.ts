@@ -15,19 +15,12 @@ export const XP_SUGGESTIONS_BY_TYPE: Record<string, { min: number; max: number; 
   ACHIEVEMENT: { min: 100, max: 300, label: 'Recomendado: 100-300 XP para conquistas' },
 } as const;
 
-// Referência de economia para tooltips (REBALANCEADA)
+// Referência de economia para tooltips
 export const XP_ECONOMY_HINTS = [
-  '💡 100 XP = 1 Pacote Básico (10 vitórias)',
-  '💡 500 XP = 1 Pacote Raro (50 vitórias)',
-  '💡 1.500 XP = 1 Pacote Épico + 1 Épica Garantida!',
-  '💡 5.000 XP = 1 Pacote Lendário + 1 Lendária Garantida!',
+  '💡 100 XP = 1 Pacote Básico',
+  '💡 500 XP = 1 Pacote Raro',
+  '💡 1500 XP = 1 Pacote Épico',
 ] as const;
-
-// Limite de XP para atividades de professor
-export const PROFESSOR_XP_LIMITS = {
-  MIN: 10,
-  MAX: 500,
-} as const;
 
 /**
  * Quantidade mínima de ações por tipo de desafio

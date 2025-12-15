@@ -34,8 +34,8 @@ export function useBattleResult(
     log.action === 'PLAY_MONSTER' || log.action === 'PLAY_TRAP'
   ).length || 0;
 
-  // Base XP - Rebalanceado para economia controlada (10 vitórias = 1 pacote básico)
-  const baseXP = isVictory ? 10 : 3;
+  // Base XP
+  const baseXP = isVictory ? 50 : 10;
 
   // Streak bonus (would require tracking consecutive wins - placeholder for now)
   // In a real implementation, you'd query the last N battles for this user
