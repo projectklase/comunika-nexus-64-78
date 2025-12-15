@@ -171,29 +171,31 @@ export function StreakDashboard() {
         </div>
 
         {/* Check-in Button */}
-        <Button
-          onClick={handleCheckIn}
-          disabled={hasCheckedInToday}
-          className={cn(
-            "w-full min-h-11 transition-all duration-200",
-            hasCheckedInToday 
-              ? "bg-success/20 text-success border-success/30 cursor-not-allowed"
-              : "bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
-          )}
-          variant={hasCheckedInToday ? "outline" : "default"}
-        >
-          {hasCheckedInToday ? (
-            <>
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Check-in feito hoje!
-            </>
-          ) : (
-            <>
-              <Calendar className="h-4 w-4 mr-2" />
-              Fazer check-in diário
-            </>
-          )}
-        </Button>
+        <div className="flex justify-center">
+          <Button
+            onClick={handleCheckIn}
+            disabled={hasCheckedInToday}
+            className={cn(
+              "min-h-11 px-8 transition-all duration-200",
+              hasCheckedInToday 
+                ? "bg-success/20 text-success border-success/30 cursor-not-allowed"
+                : "bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
+            )}
+            variant={hasCheckedInToday ? "outline" : "default"}
+          >
+            {hasCheckedInToday ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Check-in feito hoje!
+              </>
+            ) : (
+              <>
+                <Calendar className="h-4 w-4 mr-2" />
+                Fazer check-in diário
+              </>
+            )}
+          </Button>
+        </div>
 
         {/* Weekly Progress */}
         <div className="border-t border-border/50 pt-3 sm:pt-4">
