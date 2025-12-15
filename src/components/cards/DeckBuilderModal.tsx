@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -125,16 +125,22 @@ export const DeckBuilderModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className={cn(
-          // Mobile: fullscreen
-          "w-full h-[100dvh] max-w-none rounded-none p-0",
-          "left-0 top-0 translate-x-0 translate-y-0",
-          // Desktop: modal centralizado
-          "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
-          "sm:max-w-5xl sm:h-[90vh] sm:rounded-xl",
-          "flex flex-col overflow-hidden",
-          "bg-gradient-to-b from-background via-background to-purple-950/20"
-        )}>
+        <DialogContent 
+          className={cn(
+            // Mobile: fullscreen
+            "w-full h-[100dvh] max-w-none rounded-none p-0",
+            "left-0 top-0 translate-x-0 translate-y-0",
+            // Desktop: modal centralizado
+            "sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+            "sm:max-w-5xl sm:h-[90vh] sm:rounded-xl",
+            "flex flex-col overflow-hidden",
+            "bg-gradient-to-b from-background via-background to-purple-950/20"
+          )}
+          aria-describedby="deck-builder-description"
+        >
+          <DialogDescription id="deck-builder-description" className="sr-only">
+            Monte seu deck selecionando cartas da sua coleção
+          </DialogDescription>
           {/* Premium Header */}
           <div className="flex-shrink-0 bg-gradient-to-r from-purple-900/80 via-purple-800/60 to-purple-900/80 border-b border-purple-500/30 px-4 py-3 sm:py-4">
             <div className="flex items-center justify-between">
