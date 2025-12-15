@@ -87,7 +87,7 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
           // Desktop/Tablet: tela cheia também
           "sm:w-[100vw] sm:h-[100dvh] sm:max-w-none sm:rounded-none",
           "sm:left-0 sm:top-0 sm:translate-x-0 sm:translate-y-0 sm:p-6",
-          "flex flex-col"
+          "flex flex-col overflow-hidden"
         )}>
           {/* Header */}
           <DialogHeader className="px-3 pt-3 sm:px-0 sm:pt-0 flex-shrink-0">
