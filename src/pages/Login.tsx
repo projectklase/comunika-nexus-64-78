@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+// Navigate removed - using imperative navigation to fix flickering
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hideUI, setHideUI] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [showError, setShowError] = useState(false);
   const [remainingLockTime, setRemainingLockTime] = useState(0);
   const {
@@ -197,16 +198,27 @@ const Login = () => {
       setRemainingLockTime(0);
     }
   }, [email, isLocked, getRemainingLockTime]);
+
+  // Detecta quando user é atualizado e redireciona de forma controlada
+  useEffect(() => {
+    if (user && isRedirecting) {
+      console.log('🚀 [REDIRECT] User detected, initiating navigation...');
+      
+      const timer = setTimeout(() => {
+        const redirectPath = getRoleBasedRoute(user.role);
+        console.log('🚀 [REDIRECT] Navigating to:', redirectPath);
+        window.location.href = redirectPath;
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, isRedirecting]);
+
   const formatCountdown = (ms: number): string => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor(ms % 60000 / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-  if (user) {
-    console.log('🚀 [NAVIGATE] Redirecting to:', getRoleBasedRoute(user.role), 'hideUI:', hideUI);
-    const redirectPath = getRoleBasedRoute(user.role);
-    return <Navigate to={redirectPath} replace />;
-  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -257,10 +269,10 @@ const Login = () => {
           setLastEmail('');
           updateSetting('rememberEmail', false);
         }
-        console.log('✅ [LOGIN] Success - setting hideUI=true');
+        console.log('✅ [LOGIN] Success - setting isRedirecting=true');
+        setIsRedirecting(true);
         setHideUI(true);
         setShowSuccess(true);
-        console.log('✨ [LOGIN] Set showSuccess=true');
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Klase."
@@ -369,6 +381,7 @@ const Login = () => {
       const result = await login(email, password);
       console.log(`QuickLogin result for ${role}:`, result);
       if (result.success) {
+        setIsRedirecting(true);
         setHideUI(true);
         toast({
           title: "Login realizado com sucesso!",
@@ -385,6 +398,18 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
+  // Mostra tela de loading durante redirecionamento
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-sm text-muted-foreground">Redirecionando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return <div className={cn("min-h-screen bg-background transition-opacity duration-200", hideUI && "opacity-0")}>
       {/* Background patterns - more subtle */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/10" />
