@@ -83,13 +83,39 @@ export function useRetentionMetrics(daysFilter: number = 30) {
       
       const avgDaysActive = studentsWithActivity > 0 ? Math.round(totalDays / studentsWithActivity) : 0;
       
-      // Gerar tendência dos últimos 6 meses (simplificado)
-      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-      const enrollmentTrend = months.map((month, idx) => ({
-        month,
-        enrolled: Math.max(0, totalEnrolled - Math.floor(Math.random() * 10)),
-        active: Math.max(0, activeStudents - Math.floor(Math.random() * 5))
-      }));
+      // Gerar tendência dos últimos 6 meses com dados reais
+      const enrollmentTrend: Array<{ month: string; enrolled: number; active: number }> = [];
+      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      
+      for (let i = 5; i >= 0; i--) {
+        const monthDate = new Date();
+        monthDate.setMonth(monthDate.getMonth() - i);
+        const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+        
+        // Alunos matriculados até o final do mês
+        const { data: monthEnrollments } = await supabase
+          .from('class_students')
+          .select('student_id, classes!inner(school_id)')
+          .eq('classes.school_id', currentSchool.id);
+        
+        // Alunos ativos no mês (com entregas)
+        const { data: monthDeliveries } = await supabase
+          .from('deliveries')
+          .select('student_id')
+          .eq('school_id', currentSchool.id)
+          .gte('submitted_at', monthStart.toISOString())
+          .lte('submitted_at', monthEnd.toISOString());
+        
+        const monthEnrolled = monthEnrollments?.length || 0;
+        const monthActive = new Set(monthDeliveries?.map(d => d.student_id) || []).size;
+        
+        enrollmentTrend.push({
+          month: monthNames[monthDate.getMonth()],
+          enrolled: monthEnrolled,
+          active: monthActive
+        });
+      }
       
       return {
         total_enrolled: totalEnrolled,

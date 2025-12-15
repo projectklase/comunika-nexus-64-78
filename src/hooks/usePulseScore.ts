@@ -126,15 +126,43 @@ export function usePulseScore(daysFilter: number = 30) {
         (retentionScore * 0.10)
       );
       
-      // Gerar tendência (simplificado - últimos 30 dias)
-      const trend = Array.from({ length: 30 }, (_, i) => {
-        const date = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000);
-        const variance = Math.random() * 10 - 5; // ±5 pontos de variação
-        return {
-          date: date.toISOString().split('T')[0],
-          score: Math.max(0, Math.min(100, overallScore + variance))
-        };
-      });
+      // Gerar tendência baseada em dados reais dos últimos 30 dias
+      const trend: Array<{ date: string; score: number }> = [];
+      
+      for (let i = 29; i >= 0; i--) {
+        const dayStart = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        // Buscar entregas do dia
+        const { data: dayDeliveries } = await supabase
+          .from('deliveries')
+          .select('student_id, review_status, submitted_at, reviewed_at')
+          .eq('school_id', currentSchool.id)
+          .gte('submitted_at', dayStart.toISOString())
+          .lte('submitted_at', dayEnd.toISOString());
+        
+        // Calcular score do dia baseado em atividade real
+        const dayActiveStudents = new Set(dayDeliveries?.map(d => d.student_id) || []).size;
+        const dayEngagement = totalStudents && totalStudents > 0 
+          ? (dayActiveStudents / totalStudents) * 100 
+          : 0;
+        
+        const dayApproved = dayDeliveries?.filter(d => d.review_status === 'APROVADO').length || 0;
+        const dayTotal = dayDeliveries?.length || 0;
+        const dayApprovalRate = dayTotal > 0 ? (dayApproved / dayTotal) * 100 : 0;
+        
+        // Calcular score ponderado do dia (engajamento + aprovação)
+        const dayScore = dayTotal > 0 
+          ? Math.round((dayEngagement * 0.6) + (dayApprovalRate * 0.4))
+          : overallScore; // Usar score geral se não houver dados do dia
+        
+        trend.push({
+          date: dayStart.toISOString().split('T')[0],
+          score: Math.max(0, Math.min(100, dayScore))
+        });
+      }
       
       return {
         overall_score: overallScore,

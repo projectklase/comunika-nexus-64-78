@@ -81,8 +81,8 @@ export function OperationalModal({
     if (!currentSchool) return;
     setIsLoading(true);
     try {
-      // Carregar transações da escola
-      await loadAllTransactions();
+      // Carregar transações da escola com schoolId e forçar refresh
+      await loadAllTransactions(currentSchool.id, true);
 
       // Buscar todos os alunos da escola via school_memberships
       const {
