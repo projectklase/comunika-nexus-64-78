@@ -28,6 +28,7 @@ import { DefeatedCardEffect } from './DefeatedCardEffect';
 import { TimeoutOverlay } from './TimeoutOverlay';
 import { TurnIndicatorBadge } from './TurnIndicatorBadge';
 import { BattleContextMenu } from './BattleContextMenu';
+import { SelectedCardEffectsPanel } from './SelectedCardEffectsPanel';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -840,6 +841,12 @@ const [player1Profile, setPlayer1Profile] = useState<{
             ))}
           </div>
         </div>
+
+        {/* Holographic Effects Panel for selected card */}
+        <SelectedCardEffectsPanel 
+          card={selectedCard ? (playerHand.find(c => c.id === selectedCard) || allCards?.find(c => c.id === selectedCard) || null) : null}
+          isVisible={selectedCard !== null}
+        />
 
         <BattleActionButtons 
           canPlayCard={selectedCard !== null && isMyTurn() && !hasPlayedCardThisTurn} 
