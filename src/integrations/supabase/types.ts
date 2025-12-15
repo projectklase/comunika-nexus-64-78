@@ -2946,10 +2946,16 @@ export type Database = {
         Args: { p_school_id: string; p_week_start: string }
         Returns: undefined
       }
-      open_card_pack: {
-        Args: { p_is_free?: boolean; p_pack_type: string; p_user_id: string }
-        Returns: Json
-      }
+      open_card_pack:
+        | { Args: { p_is_free?: boolean; p_pack_type: string }; Returns: Json }
+        | {
+            Args: {
+              p_is_free?: boolean
+              p_pack_type: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       play_card: {
         Args: {
           p_battle_id: string
