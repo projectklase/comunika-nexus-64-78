@@ -2797,10 +2797,15 @@ export type Database = {
         Returns: Json
       }
       get_daily_logins: { Args: never; Returns: Json }
-      get_evasion_risk_analytics: {
-        Args: { days_filter?: number; school_id_param?: string }
-        Returns: Json
-      }
+      get_evasion_risk_analytics:
+        | {
+            Args: { days_filter?: number; school_id_param?: string }
+            Returns: Json
+          }
+        | {
+            Args: { days_filter?: number; school_id_param: string }
+            Returns: Json
+          }
       get_family_metrics: { Args: { school_id_param?: string }; Returns: Json }
       get_financial_metrics: { Args: never; Returns: Json }
       get_last_weekly_prize_results: {
