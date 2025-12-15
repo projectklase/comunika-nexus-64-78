@@ -24,6 +24,7 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
   const [selectedCategory, setSelectedCategory] = useState<CardCategory | 'ALL'>('ALL');
   const [detailCard, setDetailCard] = useState<Card | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showFiltersDesktop, setShowFiltersDesktop] = useState(false);
 
   const filteredCards = useMemo(() => {
     return cards.filter(card => {
@@ -144,9 +145,52 @@ export const CardGalleryModal = ({ isOpen, onClose, cards, userCards }: CardGall
             </Collapsible>
           </div>
 
-          {/* Desktop: Filtros sempre visíveis */}
-          <div className="hidden sm:block px-0 space-y-3 flex-shrink-0">
-            <FiltersContent />
+          {/* Desktop/Tablet: Filtros colapsáveis com botão glassmórfico */}
+          <div className="hidden sm:flex sm:items-center sm:gap-4 px-0 py-3 flex-shrink-0">
+            <Collapsible open={showFiltersDesktop} onOpenChange={setShowFiltersDesktop} className="flex-1">
+              <div className="flex items-center gap-3">
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className={cn(
+                      "bg-white/10 backdrop-blur-md border-white/20",
+                      "hover:bg-white/20 hover:border-white/30",
+                      "text-foreground font-medium px-5 py-2.5 h-10",
+                      "transition-all duration-200"
+                    )}
+                  >
+                    <span>Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
+                    <ChevronDown className={cn(
+                      "w-4 h-4 ml-2 transition-transform duration-200",
+                      showFiltersDesktop && "rotate-180"
+                    )} />
+                  </Button>
+                </CollapsibleTrigger>
+                
+                {/* Badges de filtros ativos */}
+                {selectedRarity !== 'ALL' && (
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                    {RARITY_LABELS[selectedRarity]}
+                  </Badge>
+                )}
+                {selectedCategory !== 'ALL' && (
+                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                    {CATEGORY_LABELS[selectedCategory]}
+                  </Badge>
+                )}
+              </div>
+              
+              <CollapsibleContent className="pt-4">
+                <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 space-y-3">
+                  <FiltersContent />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+            
+            {/* Contador de cartas */}
+            <Badge variant="secondary" className="text-sm font-medium px-4 py-2 whitespace-nowrap">
+              {userCards.size}/{cards.length} 🃏
+            </Badge>
           </div>
 
           {/* Grid de Cartas */}
