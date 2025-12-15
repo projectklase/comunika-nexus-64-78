@@ -83,11 +83,11 @@ export function useClasses() {
 
       if (classesError) throw classesError;
 
-      // Fetch related data (use JOIN for teachers via user_roles)
-      const [levelsRes, modalitiesRes, teacherRolesRes, classSubjectsRes, subjectsRes, classStudentsRes] = await Promise.all([
+      // Fetch related data (use school_memberships for teachers)
+      const [levelsRes, modalitiesRes, teacherMembershipsRes, classSubjectsRes, subjectsRes, classStudentsRes] = await Promise.all([
         supabase.from('levels').select('id, name'),
         supabase.from('modalities').select('id, name'),
-        supabase.from('user_roles').select(`user_id, profiles!inner(id, name)`).eq('role', 'professor'),
+        supabase.from('school_memberships').select('user_id, profiles!inner(id, name)').eq('role', 'professor').eq('school_id', currentSchool.id),
         (supabase as any).from('class_subjects').select('class_id, subject_id'),
         supabase.from('subjects').select('id, name'),
         (supabase as any).from('class_students').select('class_id, student_id'),
@@ -97,7 +97,7 @@ export function useClasses() {
       const levelsMap = new Map(levelsRes.data?.map(l => [l.id, l.name]) || []);
       const modalitiesMap = new Map(modalitiesRes.data?.map(m => [m.id, m.name]) || []);
       const teachersMap = new Map(
-        teacherRolesRes.data?.map((tr: any) => [tr.profiles.id, tr.profiles.name]) || []
+        teacherMembershipsRes.data?.map((tm: any) => [tm.profiles.id, tm.profiles.name]) || []
       );
       const subjectsMap = new Map(subjectsRes.data?.map(s => [s.id, s.name]) || []);
 

@@ -182,11 +182,11 @@ export function PredictiveInsightsDashboard() {
               <SeverityIcon className={`h-5 w-5 ${severityConfig.color}`} />
               Análise de Evasão
             </CardTitle>
-            <CardDescription>
+            <div className="flex items-center gap-2 mt-1">
               <Badge className={severityConfig.bg + ' ' + severityConfig.color}>
                 {severityConfig.label}
               </Badge>
-            </CardDescription>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -219,11 +219,11 @@ export function PredictiveInsightsDashboard() {
               <TrendIcon className={`h-5 w-5 ${trendConfig.color}`} />
               Análise de Engajamento
             </CardTitle>
-            <CardDescription>
+            <div className="flex items-center gap-2 mt-1">
               <Badge className={trendConfig.color}>
                 {trendConfig.label}
               </Badge>
-            </CardDescription>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -260,12 +260,12 @@ export function PredictiveInsightsDashboard() {
                   <ClipboardList className={`h-5 w-5 ${attendanceConfig.color}`} />
                   Análise de Frequência
                 </CardTitle>
-                <CardDescription>
+                <div className="flex items-center gap-2 mt-1">
                   <Badge className={attendanceConfig.bg + ' ' + attendanceConfig.color}>
                     <AttendanceIcon className="h-3 w-3 mr-1" />
                     {attendanceConfig.label}
                   </Badge>
-                </CardDescription>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
