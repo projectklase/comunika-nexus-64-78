@@ -113,6 +113,19 @@ const Login = () => {
     };
   }, []);
 
+  // DEBUG: Login render diagnostics (TEMPORARY)
+  useEffect(() => {
+    console.log('🔍 [LOGIN RENDER]', {
+      hasUser: !!user,
+      userEmail: user?.email,
+      isLoading,
+      isSubmitting,
+      showSuccess,
+      hideUI,
+      timestamp: new Date().toISOString()
+    });
+  }, [user, isLoading, isSubmitting, showSuccess, hideUI]);
+
   // Enhanced keyboard handling (Enter key)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -190,6 +203,7 @@ const Login = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
   if (user) {
+    console.log('🚀 [NAVIGATE] Redirecting to:', getRoleBasedRoute(user.role), 'hideUI:', hideUI);
     const redirectPath = getRoleBasedRoute(user.role);
     return <Navigate to={redirectPath} replace />;
   }
@@ -227,8 +241,10 @@ const Login = () => {
     setFormError('');
     setShowError(false);
     setIsSubmitting(true);
+    console.log('📤 [LOGIN] Starting login for:', email);
     try {
       const result = await login(email.trim(), password);
+      console.log('📥 [LOGIN] Result:', result);
       if (result.success) {
         // Limpar tentativas após sucesso
         resetAttempts(email);
@@ -241,8 +257,10 @@ const Login = () => {
           setLastEmail('');
           updateSetting('rememberEmail', false);
         }
+        console.log('✅ [LOGIN] Success - setting hideUI=true');
         setHideUI(true);
         setShowSuccess(true);
+        console.log('✨ [LOGIN] Set showSuccess=true');
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Klase."
