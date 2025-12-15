@@ -1257,7 +1257,7 @@ return (
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="glass-card border-border/50">
-                      {user?.role === 'secretaria' && (
+                      {(user?.role === 'secretaria' || user?.role === 'administrador') && (
                         <SelectItem value="GLOBAL">Global (Toda a escola)</SelectItem>
                       )}
                       <SelectItem value="CLASS">Turmas específicas</SelectItem>
