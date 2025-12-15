@@ -585,11 +585,23 @@ const [player1Profile, setPlayer1Profile] = useState<{
     // Execute attack after animation starts
     setTimeout(async () => {
       try {
-        await attack.mutateAsync(battle.id);
+        const result = await attack.mutateAsync(battle.id) as { damage?: number } | null;
+        
+        // Update animation with real damage from database
+        const realDamage = result?.damage ?? estimatedDamage;
+        setAttackAnimation(prev => prev ? {
+          ...prev,
+          damage: realDamage,
+          isCritical: realDamage >= 30
+        } : null);
+        
+        // Keep animation visible for a moment after update
+        setTimeout(() => {
+          setAttackAnimation(null);
+          setIsAttacking(false);
+        }, 800);
       } catch (error: any) {
         toast.error(error?.message || 'Erro ao atacar');
-      } finally {
-        // Always unblock and clear animation
         setIsAttacking(false);
         setAttackAnimation(null);
       }
