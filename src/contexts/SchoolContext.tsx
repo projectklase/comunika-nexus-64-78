@@ -55,9 +55,56 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Extrair escolas dos memberships
-      const schools = memberships
+      const membershipSchools = memberships
         .map((m: any) => m.schools)
         .filter((s: any) => s && s.is_active) as School[];
+      
+      // Buscar permissões extras de secretária (multi-escola)
+      let additionalSchools: School[] = [];
+      if (user.role === 'secretaria') {
+        const { data: permissions } = await (supabase as any)
+          .from('secretaria_permissions')
+          .select('permission_value')
+          .eq('secretaria_id', user.id)
+          .eq('permission_key', 'manage_all_schools');
+
+        if (permissions && permissions.length > 0) {
+          for (const perm of permissions) {
+            const permValue = perm.permission_value as any;
+            let permSchools = permValue?.schools;
+            
+            if (typeof permSchools === 'string') {
+              try { permSchools = JSON.parse(permSchools); } catch (e) {}
+            }
+            
+            if (permSchools === '*' || (Array.isArray(permSchools) && permSchools.includes('*'))) {
+              // Permissão total: buscar TODAS as escolas ativas
+              const { data: allSchools } = await (supabase as any)
+                .from('schools')
+                .select('*')
+                .eq('is_active', true);
+              
+              additionalSchools = allSchools || [];
+              break;
+            } else if (Array.isArray(permSchools) && permSchools.length > 0) {
+              // Escolas específicas
+              const { data: specificSchools } = await (supabase as any)
+                .from('schools')
+                .select('*')
+                .in('id', permSchools)
+                .eq('is_active', true);
+              
+              additionalSchools = specificSchools || [];
+            }
+          }
+        }
+      }
+
+      // Combinar memberships + permissions e remover duplicatas
+      const allSchools = [...membershipSchools, ...additionalSchools];
+      const schools = Array.from(
+        new Map(allSchools.map(s => [s.id, s])).values()
+      ).sort((a, b) => a.name.localeCompare(b.name));
       
       setAvailableSchools(schools);
 
