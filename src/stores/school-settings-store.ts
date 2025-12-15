@@ -125,7 +125,7 @@ async function loadSupabaseSettings(): Promise<SchoolSettings | null> {
     .select('value')
     .eq('key', 'use_activity_weights')
     .eq('school_id', profile.current_school_id)
-    .single();
+    .maybeSingle(); // ✅ Permite resultado vazio sem erro 406
 
   if (error) {
     // PGRST116 = not found (ok, usar default)

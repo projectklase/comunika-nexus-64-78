@@ -83,22 +83,31 @@ export function useClasses() {
 
       if (classesError) throw classesError;
 
-      // Fetch related data (use school_memberships for teachers)
+      // Fetch related data - query de professores em duas etapas para evitar erro 400
       const [levelsRes, modalitiesRes, teacherMembershipsRes, classSubjectsRes, subjectsRes, classStudentsRes] = await Promise.all([
         supabase.from('levels').select('id, name'),
         supabase.from('modalities').select('id, name'),
-        supabase.from('school_memberships').select('user_id, profiles!inner(id, name)').eq('role', 'professor').eq('school_id', currentSchool.id),
+        supabase.from('school_memberships').select('user_id').eq('role', 'professor').eq('school_id', currentSchool.id),
         (supabase as any).from('class_subjects').select('class_id, subject_id'),
         supabase.from('subjects').select('id, name'),
         (supabase as any).from('class_students').select('class_id, student_id'),
       ]);
 
+      // Buscar profiles dos professores em etapa separada (evita erro 400 de FK inválida)
+      const teacherIds = teacherMembershipsRes.data?.map((tm: { user_id: string }) => tm.user_id) || [];
+      let teacherProfiles: { id: string; name: string }[] = [];
+      if (teacherIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', teacherIds);
+        teacherProfiles = profiles || [];
+      }
+
       // Create lookup maps
       const levelsMap = new Map(levelsRes.data?.map(l => [l.id, l.name]) || []);
       const modalitiesMap = new Map(modalitiesRes.data?.map(m => [m.id, m.name]) || []);
-      const teachersMap = new Map(
-        teacherMembershipsRes.data?.map((tm: any) => [tm.profiles.id, tm.profiles.name]) || []
-      );
+      const teachersMap = new Map(teacherProfiles.map(p => [p.id, p.name]));
       const subjectsMap = new Map(subjectsRes.data?.map(s => [s.id, s.name]) || []);
 
       // Group class subjects - criar dois Maps (IDs e nomes)
