@@ -19,9 +19,9 @@ interface SupportTicketModalProps {
 }
 
 const priorityOptions = [
-  { value: 'LOW', label: 'Normal', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30' },
-  { value: 'MEDIUM', label: 'Alta', icon: AlertCircle, color: 'text-orange-400', bg: 'bg-orange-500/20 border-orange-500/30' },
-  { value: 'HIGH', label: 'Urgente', icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30' },
+  { value: 'normal', label: 'Normal', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30' },
+  { value: 'high', label: 'Alta', icon: AlertCircle, color: 'text-orange-400', bg: 'bg-orange-500/20 border-orange-500/30' },
+  { value: 'urgent', label: 'Urgente', icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30' },
 ];
 
 export function SupportTicketModal({ open, onOpenChange, onSuccess }: SupportTicketModalProps) {
@@ -29,7 +29,7 @@ export function SupportTicketModal({ open, onOpenChange, onSuccess }: SupportTic
   const { currentSchool } = useSchool();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('LOW');
+  const [priority, setPriority] = useState('normal');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -57,7 +57,7 @@ export function SupportTicketModal({ open, onOpenChange, onSuccess }: SupportTic
         subject: subject.trim(),
         description: description.trim(),
         priority,
-        status: 'OPEN',
+        status: 'open',
       });
 
       if (error) throw error;
@@ -68,7 +68,7 @@ export function SupportTicketModal({ open, onOpenChange, onSuccess }: SupportTic
       setTimeout(() => {
         setSubject('');
         setDescription('');
-        setPriority('LOW');
+        setPriority('normal');
         setIsSuccess(false);
         onOpenChange(false);
         onSuccess?.();
@@ -85,7 +85,7 @@ export function SupportTicketModal({ open, onOpenChange, onSuccess }: SupportTic
     if (!isSubmitting) {
       setSubject('');
       setDescription('');
-      setPriority('LOW');
+      setPriority('normal');
       setIsSuccess(false);
       onOpenChange(false);
     }
