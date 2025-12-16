@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { 
   Users, 
   GraduationCap, 
@@ -22,7 +25,8 @@ import {
   MessageSquare,
   Award,
   Activity,
-  Info
+  Info,
+  Rocket
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -58,9 +62,45 @@ interface DashboardMetrics {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const { currentSchool } = useSchool();
+  const { currentSchool, refetchSchools } = useSchool();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [studentAccessActive, setStudentAccessActive] = useState(currentSchool?.is_student_access_active ?? false);
+  const [isUpdatingAccess, setIsUpdatingAccess] = useState(false);
+
+  // Sincronizar estado com currentSchool
+  useEffect(() => {
+    if (currentSchool) {
+      setStudentAccessActive(currentSchool.is_student_access_active ?? false);
+    }
+  }, [currentSchool?.is_student_access_active]);
+
+  const handleToggleStudentAccess = async (checked: boolean) => {
+    if (!currentSchool) return;
+    
+    setIsUpdatingAccess(true);
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .update({ is_student_access_active: checked })
+        .eq('id', currentSchool.id);
+
+      if (error) throw error;
+
+      setStudentAccessActive(checked);
+      await refetchSchools();
+      
+      toast.success(checked 
+        ? '✅ Acesso dos alunos liberado!' 
+        : '🔒 Alunos redirecionados para Sala de Espera'
+      );
+    } catch (error) {
+      console.error('Erro ao atualizar acesso:', error);
+      toast.error('Erro ao atualizar configuração');
+    } finally {
+      setIsUpdatingAccess(false);
+    }
+  };
 
   useEffect(() => {
     loadDashboardMetrics();
@@ -385,6 +425,30 @@ export default function AdminDashboard() {
           
         </div>
       </div>
+
+      {/* Soft Launch Control */}
+      <Card className="glass-card border-purple-500/30">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Rocket className="w-5 h-5 text-purple-400" />
+                {studentAccessActive ? '🟢' : '🔴'} Acesso dos Alunos
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {studentAccessActive 
+                  ? 'Alunos podem acessar a plataforma normalmente' 
+                  : 'Alunos verão a Sala de Espera (Soft Launch)'}
+              </p>
+            </div>
+            <Switch
+              checked={studentAccessActive}
+              onCheckedChange={handleToggleStudentAccess}
+              disabled={isUpdatingAccess}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* KPIs Principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
