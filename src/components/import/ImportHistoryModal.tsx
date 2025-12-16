@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { History, Search, X, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { useImportHistoryStore } from '@/stores/import-history-store';
 import { ImportRecord } from '@/types/import';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export function ImportHistoryModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ImportRecord | null>(null);
   
+  const { currentSchool } = useSchool();
   const { 
     history, 
     filters, 
@@ -23,10 +25,10 @@ export function ImportHistoryModal() {
   } = useImportHistoryStore();
 
   useEffect(() => {
-    if (isOpen) {
-      loadHistory();
+    if (isOpen && currentSchool?.id) {
+      loadHistory(currentSchool.id);
     }
-  }, [isOpen, loadHistory]);
+  }, [isOpen, currentSchool?.id, loadHistory]);
 
   const filteredHistory = getFilteredHistory();
 

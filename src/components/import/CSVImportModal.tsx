@@ -15,6 +15,7 @@ import { useProgramStore } from '@/stores/program-store';
 import { useLevels } from '@/hooks/useLevels';
 import { useToast } from '@/hooks/use-toast';
 import { ColumnMapping } from '@/types/import';
+import { useSchool } from '@/contexts/SchoolContext';
 
 interface CSVImportModalProps {
   isOpen: boolean;
@@ -60,6 +61,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const { programs } = useProgramStore();
   const { levels } = useLevels();
   const { toast } = useToast();
+  const { currentSchool } = useSchool();
 
   const resetModal = () => {
     setStep('upload');
@@ -223,7 +225,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
           message: err,
           value: null
         })),
-        importedBy: '', // Will be set by the backend
+        importedBy: '',
+        schoolId: currentSchool?.id || '',
       });
 
       toast({

@@ -1201,6 +1201,7 @@ export type Database = {
           rows_failed: number | null
           rows_processed: number | null
           rows_succeeded: number | null
+          school_id: string | null
           status: string
         }
         Insert: {
@@ -1213,6 +1214,7 @@ export type Database = {
           rows_failed?: number | null
           rows_processed?: number | null
           rows_succeeded?: number | null
+          school_id?: string | null
           status: string
         }
         Update: {
@@ -1225,6 +1227,7 @@ export type Database = {
           rows_failed?: number | null
           rows_processed?: number | null
           rows_succeeded?: number | null
+          school_id?: string | null
           status?: string
         }
         Relationships: [
@@ -1233,6 +1236,13 @@ export type Database = {
             columns: ["imported_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_history_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           },
         ]
