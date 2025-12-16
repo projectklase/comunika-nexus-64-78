@@ -138,6 +138,46 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     loadUserSchools();
   }, [loadUserSchools]);
 
+  // Real-time subscription para detectar mudanças em is_student_access_active
+  useEffect(() => {
+    if (!currentSchool?.id) return;
+
+    console.log('[SchoolContext] Configurando real-time para escola:', currentSchool.id);
+    
+    const channel = supabase
+      .channel(`school-${currentSchool.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'schools',
+          filter: `id=eq.${currentSchool.id}`
+        },
+        (payload) => {
+          console.log('[SchoolContext] 🔔 Mudança detectada em escola:', payload);
+          
+          const newRecord = payload.new as any;
+          if (newRecord && 'is_student_access_active' in newRecord) {
+            setCurrentSchool(prev => prev ? {
+              ...prev,
+              is_student_access_active: newRecord.is_student_access_active
+            } : null);
+            
+            console.log('[SchoolContext] is_student_access_active atualizado para:', newRecord.is_student_access_active);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[SchoolContext] Status da subscription:', status);
+      });
+
+    return () => {
+      console.log('[SchoolContext] Removendo subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [currentSchool?.id]);
+
   const switchSchool = async (schoolId: string) => {
     if (!user || schoolId === currentSchool?.id) return;
     
