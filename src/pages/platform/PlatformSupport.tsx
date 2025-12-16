@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/app-dialog/ConfirmDialog';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -18,17 +19,19 @@ import {
   CheckCircle, 
   AlertTriangle,
   Search,
-  Filter,
   Paperclip,
   Download,
   FileText,
   Image as ImageIcon,
   File,
-  Loader2
+  Loader2,
+  Trash2,
+  Hash
 } from 'lucide-react';
 
 interface SupportTicket {
   id: string;
+  ticket_code: string | null;
   subject: string;
   description: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
@@ -99,6 +102,7 @@ export default function PlatformSupport() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
+  const [ticketToDelete, setTicketToDelete] = useState<SupportTicket | null>(null);
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ['support-tickets', statusFilter, priorityFilter],
@@ -147,6 +151,24 @@ export default function PlatformSupport() {
     },
   });
 
+  const deleteTicketMutation = useMutation({
+    mutationFn: async (ticketId: string) => {
+      const { error } = await supabase.rpc('delete_support_ticket', {
+        p_ticket_id: ticketId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+      toast.success('Ticket excluído com sucesso');
+      setTicketToDelete(null);
+      setSelectedTicket(null);
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao excluir: ${error.message}`);
+    },
+  });
+
   const handleDownload = async (attachment: TicketAttachment) => {
     try {
       const { data, error } = await supabase.storage
@@ -162,11 +184,16 @@ export default function PlatformSupport() {
     }
   };
 
-  const filteredTickets = tickets.filter(ticket => 
-    ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ticket.admin?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ticket.admin?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter tickets by search term (subject, admin name, email, or ticket_code)
+  const filteredTickets = tickets.filter(ticket => {
+    const search = searchTerm.toLowerCase();
+    return (
+      ticket.subject.toLowerCase().includes(search) ||
+      ticket.admin?.name?.toLowerCase().includes(search) ||
+      ticket.admin?.email?.toLowerCase().includes(search) ||
+      ticket.ticket_code?.toLowerCase().includes(search)
+    );
+  });
 
   const stats = {
     open: tickets.filter(t => t.status === 'open').length,
@@ -251,7 +278,7 @@ export default function PlatformSupport() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar tickets..."
+                  placeholder="Buscar por código, assunto, admin..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 bg-background/50"
@@ -311,7 +338,13 @@ export default function PlatformSupport() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        {ticket.ticket_code && (
+                          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 font-mono text-xs">
+                            <Hash className="h-3 w-3 mr-1" />
+                            {ticket.ticket_code}
+                          </Badge>
+                        )}
                         <h3 className="font-medium truncate">{ticket.subject}</h3>
                         <Badge className={priorityColors[ticket.priority]}>
                           {priorityLabels[ticket.priority]}
@@ -341,7 +374,14 @@ export default function PlatformSupport() {
       <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selectedTicket?.subject}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedTicket?.ticket_code && (
+                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 font-mono">
+                  {selectedTicket.ticket_code}
+                </Badge>
+              )}
+              {selectedTicket?.subject}
+            </DialogTitle>
           </DialogHeader>
           
           {selectedTicket && (
@@ -436,7 +476,7 @@ export default function PlatformSupport() {
               {selectedTicket.resolution_notes && (
                 <div>
                   <span className="text-sm text-muted-foreground">Notas de Resolução:</span>
-                  <p className="mt-1 p-3 rounded-lg bg-green-500/10 text-sm">
+                  <p className="mt-1 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm">
                     {selectedTicket.resolution_notes}
                   </p>
                 </div>
@@ -455,6 +495,19 @@ export default function PlatformSupport() {
               )}
 
               <DialogFooter className="flex-wrap gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTicketToDelete(selectedTicket);
+                  }}
+                  className="mr-auto"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir
+                </Button>
+                
                 {selectedTicket.status === 'open' && (
                   <Button
                     variant="outline"
@@ -493,6 +546,24 @@ export default function PlatformSupport() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!ticketToDelete}
+        onOpenChange={(open) => !open && setTicketToDelete(null)}
+        title="Excluir Ticket"
+        description={`Tem certeza que deseja excluir o ticket ${ticketToDelete?.ticket_code || ''}? Esta ação é irreversível e removerá todos os anexos associados.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={() => {
+          if (ticketToDelete) {
+            deleteTicketMutation.mutate(ticketToDelete.id);
+          }
+        }}
+        loading={deleteTicketMutation.isPending}
+        isAsync
+      />
     </div>
   );
 }

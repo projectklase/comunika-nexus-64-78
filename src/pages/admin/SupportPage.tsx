@@ -62,7 +62,7 @@ export default function SupportPage() {
       
       const { data, error } = await supabase
         .from('support_tickets')
-        .select('*')
+        .select('id, ticket_code, subject, description, status, priority, created_at, resolution_notes')
         .eq('admin_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -182,6 +182,11 @@ export default function SupportPage() {
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            {ticket.ticket_code && (
+                              <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30 font-mono">
+                                {ticket.ticket_code}
+                              </Badge>
+                            )}
                             <Badge variant="outline" className={cn('text-xs', status.color)}>
                               <StatusIcon className={cn('h-3 w-3 mr-1', status.icon === Loader2 && 'animate-spin')} />
                               {status.label}
