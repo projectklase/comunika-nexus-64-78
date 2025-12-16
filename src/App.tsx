@@ -26,6 +26,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import PendingPayment from "./pages/PendingPayment";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import StudentWaitingRoom from "./pages/StudentWaitingRoom";
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -112,6 +113,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/pending-payment" element={<PendingPayment />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/waiting-room" element={<StudentWaitingRoom />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>

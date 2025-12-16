@@ -5,6 +5,7 @@ export interface School {
   logo_url?: string;
   primary_color?: string;
   is_active: boolean;
+  is_student_access_active: boolean;
   created_at: string;
   updated_at: string;
 }

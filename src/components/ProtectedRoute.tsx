@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
@@ -8,8 +9,9 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { user, isLoading } = useAuth();
+  const { currentSchool, isLoading: schoolLoading } = useSchool();
 
-  if (isLoading) {
+  if (isLoading || schoolLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="glass-card p-8 rounded-xl">
@@ -27,6 +29,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   // Bloquear acesso para admins com pagamento pendente
   if (user.role === 'administrador' && user.subscriptionStatus === 'pending_payment') {
     return <Navigate to="/pending-payment" replace />;
+  }
+
+  // Bloquear alunos se escola estiver em soft launch
+  if (user.role === 'aluno' && currentSchool && currentSchool.is_student_access_active === false) {
+    return <Navigate to="/waiting-room" replace />;
   }
 
   // Check role permissions if allowedRoles is provided
