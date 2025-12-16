@@ -102,6 +102,13 @@ export default function RewardsManagement() {
     }
   }, []);
 
+  // Quando muda para aba Analytics, forçar refresh dos dados
+  useEffect(() => {
+    if (activeTab === 'analytics' && currentSchool) {
+      loadAllTransactions(currentSchool.id, true); // forceRefresh = true
+    }
+  }, [activeTab, currentSchool?.id, loadAllTransactions]);
+
   // Statistics
   const totalItems = items.length;
   const activeItems = items.filter(item => item.isActive).length;
