@@ -89,8 +89,8 @@ const StudentWaitingRoom: React.FC = () => {
             <Rocket className="w-12 h-12 text-purple-400" />
           </div>
           
-          <CardTitle className="text-3xl gradient-text">
-            Quase Lá! 🚀
+        <CardTitle className="text-2xl gradient-text">
+            O Futuro do seu Estudo está carregando...
           </CardTitle>
           
           <CardDescription className="text-lg">
@@ -100,13 +100,8 @@ const StudentWaitingRoom: React.FC = () => {
         
         <CardContent className="space-y-6">
           <div className="text-center space-y-3 p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20">
-            <div className="flex items-center justify-center gap-2 text-purple-400">
-              <Clock className="w-5 h-5" />
-              <span className="font-semibold">Preparando sua experiência...</span>
-            </div>
             <p className="text-muted-foreground">
-              A escola <span className="text-foreground font-medium">{currentSchool?.name || 'sua escola'}</span> ainda 
-              está preparando tudo para você. Em breve você terá acesso a todas as funcionalidades!
+              O <span className="text-foreground font-medium">{currentSchool?.name || 'Colégio Klase'}</span> está finalizando os detalhes da sua nova jornada. Em breve, suas tarefas vão valer XP, suas notas vão desbloquear Recompensas reais e você poderá colecionar Klasemons exclusivos. Aguarde o sinal!
             </p>
           </div>
 
