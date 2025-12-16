@@ -115,10 +115,10 @@ const StudentWaitingRoom: React.FC = () => {
               <Sparkles className="w-4 h-4 text-yellow-400" />
               O que te espera:
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 text-center">
                 <Star className="w-6 h-6 text-green-400 mx-auto mb-1" />
-                <span className="text-xs text-muted-foreground">Desafios</span>
+                <span className="text-xs text-muted-foreground">Missões</span>
               </div>
               <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 text-center">
                 <Star className="w-6 h-6 text-blue-400 mx-auto mb-1" />
@@ -126,11 +126,11 @@ const StudentWaitingRoom: React.FC = () => {
               </div>
               <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 text-center">
                 <Star className="w-6 h-6 text-purple-400 mx-auto mb-1" />
-                <span className="text-xs text-muted-foreground">Cartas</span>
+                <span className="text-xs text-muted-foreground">Klasemons</span>
               </div>
               <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-center">
                 <Star className="w-6 h-6 text-amber-400 mx-auto mb-1" />
-                <span className="text-xs text-muted-foreground">Batalhas</span>
+                <span className="text-xs text-muted-foreground">Ranking</span>
               </div>
             </div>
           </div>
@@ -140,33 +140,35 @@ const StudentWaitingRoom: React.FC = () => {
             <p className="text-xs mt-1">{user?.email}</p>
           </div>
 
-          <Button
-            variant="secondary"
-            onClick={handleManualCheck}
-            disabled={isChecking}
-            className="w-full h-10"
-          >
-            {isChecking ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Verificando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Verificar se já posso entrar
-              </>
-            )}
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={handleManualCheck}
+              disabled={isChecking}
+              className="h-10 px-4"
+            >
+              {isChecking ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Verificar
+                </>
+              )}
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            className="w-full h-12 text-base"
-          >
-            <LogOut className="w-5 h-5 mr-2" />
-            Sair
-          </Button>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="h-10 px-4"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
           
           <p className="text-xs text-muted-foreground text-center">
             Precisa de ajuda? Fale com sua escola.
