@@ -9,6 +9,7 @@ export interface ImportRecord {
   errorLog: Array<{ row: number; field: string; message: string; value: any }>;
   importedBy: string;
   createdAt: string;
+  schoolId: string;
 }
 
 export interface ImportHistoryFilters {

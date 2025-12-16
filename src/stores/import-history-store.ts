@@ -10,7 +10,7 @@ interface ImportHistoryState {
 }
 
 interface ImportHistoryActions {
-  loadHistory: () => Promise<void>;
+  loadHistory: (schoolId: string) => Promise<void>;
   addRecord: (record: Omit<ImportRecord, 'id' | 'createdAt'>) => Promise<ImportRecord>;
   updateRecord: (id: string, updates: Partial<ImportRecord>) => Promise<void>;
   setFilters: (filters: ImportHistoryFilters) => void;
@@ -23,12 +23,13 @@ export const useImportHistoryStore = create<ImportHistoryState & ImportHistoryAc
   isLoading: false,
   error: null,
 
-  loadHistory: async () => {
+  loadHistory: async (schoolId: string) => {
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await (supabase as any)
         .from('import_history')
         .select('*')
+        .eq('school_id', schoolId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -44,6 +45,7 @@ export const useImportHistoryStore = create<ImportHistoryState & ImportHistoryAc
         errorLog: item.error_log || [],
         importedBy: item.imported_by || '',
         createdAt: item.created_at,
+        schoolId: item.school_id || '',
       }));
 
       set({ history: mappedHistory, isLoading: false });
@@ -66,6 +68,7 @@ export const useImportHistoryStore = create<ImportHistoryState & ImportHistoryAc
           rows_failed: record.rowsFailed,
           error_log: record.errorLog,
           imported_by: record.importedBy,
+          school_id: record.schoolId,
         })
         .select()
         .single();
@@ -83,6 +86,7 @@ export const useImportHistoryStore = create<ImportHistoryState & ImportHistoryAc
         errorLog: data.error_log || [],
         importedBy: data.imported_by || '',
         createdAt: data.created_at,
+        schoolId: data.school_id || '',
       };
 
       set(state => ({ history: [newRecord, ...state.history] }));
