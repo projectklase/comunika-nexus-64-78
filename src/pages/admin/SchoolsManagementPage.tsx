@@ -2,22 +2,25 @@ import { useState, useEffect } from 'react';
 import { useSchools } from '@/hooks/useSchools';
 import { useSchoolFeatures } from '@/hooks/useSchoolFeatures';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useSchool } from '@/contexts/SchoolContext';
 import { School } from '@/types/school';
 import { SchoolFormModal } from '@/components/admin/SchoolFormModal';
 import { SchoolFeaturesModal } from '@/components/admin/SchoolFeaturesModal';
 import { DeleteSchoolModal } from '@/components/admin/DeleteSchoolModal';
 import { UpgradeSchoolModal } from '@/components/admin/UpgradeSchoolModal';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, Search, Plus, Settings, Edit, MoreVertical, Trash2, Users, BookOpen, UserCog, Loader2, Wrench } from 'lucide-react';
+import { Building2, Search, Plus, Settings, Edit, MoreVertical, Trash2, Users, BookOpen, UserCog, Loader2, Wrench, Rocket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -133,6 +136,7 @@ function SchoolCard({
 
 export default function SchoolsManagementPage() {
   const { schools, isLoading, createSchool, updateSchool, getSchoolStats, refetch } = useSchools();
+  const { currentSchool, refetchSchools } = useSchool();
   const { canAddSchools } = useSubscription();
   const [searchTerm, setSearchTerm] = useState('');
   const [formModal, setFormModal] = useState<{ open: boolean; school: School | null }>({
@@ -151,6 +155,42 @@ export default function SchoolsManagementPage() {
   const [schoolStats, setSchoolStats] = useState<Record<string, any>>({});
   const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
   const [isFixingAvatars, setIsFixingAvatars] = useState(false);
+  const [studentAccessActive, setStudentAccessActive] = useState(currentSchool?.is_student_access_active ?? false);
+  const [isUpdatingAccess, setIsUpdatingAccess] = useState(false);
+
+  // Sincronizar estado com currentSchool
+  useEffect(() => {
+    if (currentSchool) {
+      setStudentAccessActive(currentSchool.is_student_access_active ?? false);
+    }
+  }, [currentSchool?.is_student_access_active]);
+
+  const handleToggleStudentAccess = async (checked: boolean) => {
+    if (!currentSchool) return;
+    
+    setIsUpdatingAccess(true);
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .update({ is_student_access_active: checked })
+        .eq('id', currentSchool.id);
+
+      if (error) throw error;
+
+      setStudentAccessActive(checked);
+      await refetchSchools();
+      
+      toast.success(checked 
+        ? '✅ Acesso dos alunos liberado!' 
+        : '🔒 Alunos redirecionados para Sala de Espera'
+      );
+    } catch (error) {
+      console.error('Erro ao atualizar acesso:', error);
+      toast.error('Erro ao atualizar configuração');
+    } finally {
+      setIsUpdatingAccess(false);
+    }
+  };
 
   // Load stats for all schools
   useEffect(() => {
@@ -233,6 +273,30 @@ export default function SchoolsManagementPage() {
           Gerencie suas unidades escolares e configurações
         </p>
       </div>
+
+      {/* Soft Launch Control */}
+      <Card className="glass-card border-purple-500/30 mb-6">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Rocket className="w-5 h-5 text-purple-400" />
+                {studentAccessActive ? '🟢' : '🔴'} Acesso dos Alunos
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {studentAccessActive 
+                  ? 'Alunos podem acessar a plataforma normalmente' 
+                  : 'Alunos verão a Sala de Espera (Soft Launch)'}
+              </p>
+            </div>
+            <Switch
+              checked={studentAccessActive}
+              onCheckedChange={handleToggleStudentAccess}
+              disabled={isUpdatingAccess}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Search and Actions */}
       <Card className="glass-card p-4 mb-6">
