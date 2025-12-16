@@ -101,7 +101,7 @@ const StudentWaitingRoom: React.FC = () => {
         <CardContent className="space-y-6">
           <div className="text-center space-y-3 p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20">
             <p className="text-muted-foreground">
-              O <span className="text-foreground font-medium">{currentSchool?.name || 'Colégio Klase'}</span> está finalizando os detalhes da sua nova jornada. Em breve, suas tarefas vão valer XP, suas notas vão desbloquear Recompensas reais e você poderá colecionar Klasemons exclusivos. Aguarde o sinal!
+              O <span className="text-foreground font-medium">{currentSchool?.name || 'Colégio Klase'}</span> está finalizando os detalhes da sua nova jornada. Em breve, suas tarefas vão <span className="text-foreground font-medium">valer XP</span>, suas notas vão desbloquear <span className="text-foreground font-medium">Recompensas reais</span> e você poderá colecionar <span className="text-foreground font-medium">Klasemons exclusivos</span>. Aguarde o sinal!
             </p>
           </div>
 
