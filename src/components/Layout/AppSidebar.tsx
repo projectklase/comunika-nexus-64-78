@@ -100,10 +100,6 @@ const menuItems = {
     title: 'Desafios',
     url: '/secretaria/gerenciar-desafios',
     icon: Target
-  }, {
-    title: 'Histórico',
-    url: '/secretaria/historico',
-    icon: History
   }],
   secretariaCadastros: [{
     title: 'Programas',
