@@ -31,8 +31,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     return <Navigate to="/pending-payment" replace />;
   }
 
-  // Bloquear alunos se escola estiver em soft launch
-  if (user.role === 'aluno' && currentSchool && currentSchool.is_student_access_active !== true) {
+  // Bloquear alunos se escola não carregou OU soft launch ativo
+  if (user.role === 'aluno' && (!currentSchool || currentSchool.is_student_access_active !== true)) {
     return <Navigate to="/waiting-room" replace />;
   }
 
