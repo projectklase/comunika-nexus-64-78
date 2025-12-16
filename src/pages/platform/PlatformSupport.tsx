@@ -18,7 +18,13 @@ import {
   CheckCircle, 
   AlertTriangle,
   Search,
-  Filter
+  Filter,
+  Paperclip,
+  Download,
+  FileText,
+  Image as ImageIcon,
+  File,
+  Loader2
 } from 'lucide-react';
 
 interface SupportTicket {
@@ -33,6 +39,15 @@ interface SupportTicket {
   resolution_notes: string | null;
   admin: { id: string; name: string; email: string } | null;
   school: { id: string; name: string } | null;
+}
+
+interface TicketAttachment {
+  id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string | null;
+  file_size: number | null;
+  created_at: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -63,6 +78,20 @@ const priorityLabels: Record<string, string> = {
   urgent: 'Urgente',
 };
 
+const formatFileSize = (bytes: number | null): string => {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const getFileIcon = (type: string | null) => {
+  if (!type) return File;
+  if (type.startsWith('image/')) return ImageIcon;
+  if (type === 'application/pdf') return FileText;
+  return File;
+};
+
 export default function PlatformSupport() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -81,6 +110,21 @@ export default function PlatformSupport() {
       if (error) throw error;
       return (data as unknown as SupportTicket[]) || [];
     },
+  });
+
+  const { data: attachments = [], isLoading: attachmentsLoading } = useQuery({
+    queryKey: ['ticket-attachments', selectedTicket?.id],
+    queryFn: async () => {
+      if (!selectedTicket?.id) return [];
+      const { data, error } = await supabase
+        .from('support_ticket_attachments')
+        .select('*')
+        .eq('ticket_id', selectedTicket.id)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data as TicketAttachment[];
+    },
+    enabled: !!selectedTicket?.id,
   });
 
   const updateStatusMutation = useMutation({
@@ -102,6 +146,21 @@ export default function PlatformSupport() {
       toast.error(`Erro: ${error.message}`);
     },
   });
+
+  const handleDownload = async (attachment: TicketAttachment) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('support-attachments')
+        .createSignedUrl(attachment.file_url, 60);
+
+      if (error) throw error;
+      
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Erro ao baixar arquivo');
+    }
+  };
 
   const filteredTickets = tickets.filter(ticket => 
     ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -280,7 +339,7 @@ export default function PlatformSupport() {
 
       {/* Ticket Detail Modal */}
       <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedTicket?.subject}</DialogTitle>
           </DialogHeader>
@@ -328,6 +387,51 @@ export default function PlatformSupport() {
                   {selectedTicket.description}
                 </p>
               </div>
+
+              {/* Attachments Section */}
+              {attachmentsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando anexos...
+                </div>
+              ) : attachments.length > 0 && (
+                <div>
+                  <span className="text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                    <Paperclip className="h-4 w-4" />
+                    Anexos ({attachments.length})
+                  </span>
+                  <div className="space-y-2">
+                    {attachments.map((attachment) => {
+                      const FileIcon = getFileIcon(attachment.file_type);
+                      return (
+                        <div
+                          key={attachment.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50"
+                        >
+                          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
+                            <FileIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{attachment.file_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(attachment.file_size)}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownload(attachment)}
+                            className="shrink-0"
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Baixar
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {selectedTicket.resolution_notes && (
                 <div>
