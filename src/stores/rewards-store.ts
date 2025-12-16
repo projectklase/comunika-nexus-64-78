@@ -233,10 +233,15 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
   loadAllTransactions: async (schoolId?: string, forceRefresh = false) => {
     const cacheKey = schoolId ? `all-transactions-${schoolId}` : 'all-transactions';
     const lastFetch = get().lastFetch.get(cacheKey) || 0;
+    const currentTransactions = get().transactions;
     
-    if (!forceRefresh && Date.now() - lastFetch < CACHE_DURATION) {
-      return; // Use cache
+    // NÃO usar cache se transactions está vazio (força re-fetch)
+    if (!forceRefresh && currentTransactions.length > 0 && Date.now() - lastFetch < CACHE_DURATION) {
+      console.log('[RewardsStore] Using cache for transactions');
+      return; // Use cache somente se já tem dados
     }
+
+    console.log('[RewardsStore] Loading all transactions for school:', schoolId);
 
     try {
       set({ isLoading: true });
