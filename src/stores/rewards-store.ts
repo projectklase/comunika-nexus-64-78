@@ -133,6 +133,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
   lastFetch: new Map(),
 
   loadItems: async (schoolId?: string) => {
+    set({ isLoading: true });
     try {
       let query = supabase
         .from('reward_items')
@@ -161,10 +162,11 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         updatedAt: item.updated_at,
       }));
 
-      set({ items });
+      set({ items, isLoading: false });
       get().lastFetch.set('items', Date.now());
     } catch (error) {
       console.error('Error loading reward items:', error);
+      set({ isLoading: false });
     }
   },
 
