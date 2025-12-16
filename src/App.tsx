@@ -314,7 +314,7 @@ const App = () => (
               <Navigate to="/secretaria/cadastros/programas" replace />
             } />
             <Route path="/secretaria/historico" element={
-              <ProtectedRoute allowedRoles={OPERATIONAL_ROLES}>
+              <ProtectedRoute allowedRoles={['administrador']}>
                 <AppLayout>
                   <HistoricoPage />
                 </AppLayout>
