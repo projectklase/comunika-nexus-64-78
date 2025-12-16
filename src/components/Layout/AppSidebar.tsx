@@ -6,7 +6,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { CadastrosModal } from '@/components/admin/CadastrosModal';
-import { LayoutDashboard, Rss, Plus, Calendar, Users, History, BookOpen, PlusCircle, ClipboardList, LogOut, Settings, Layers, Target, FileText, UserCog, Gift, Store, ListTodo, Sparkles, Shield, BarChart3, User, Building2, Package, Sword, CreditCard, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Rss, Plus, Calendar, Users, History, BookOpen, PlusCircle, ClipboardList, LogOut, Settings, Layers, Target, FileText, UserCog, Gift, Store, ListTodo, Sparkles, Shield, BarChart3, User, Building2, Package, Sword, CreditCard, ChevronDown, HeadphonesIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import klaseLogoViolet from '@/assets/klase-logo-violet.png';
 const menuItems = {
@@ -54,6 +54,10 @@ const menuItems = {
     title: 'Desafios',
     url: '/secretaria/gerenciar-desafios',
     icon: Target
+  }, {
+    title: 'Suporte',
+    url: '/admin/suporte',
+    icon: HeadphonesIcon
   }],
   administradorCadastros: [{
     title: 'Programas',
@@ -100,6 +104,10 @@ const menuItems = {
     title: 'Desafios',
     url: '/secretaria/gerenciar-desafios',
     icon: Target
+  }, {
+    title: 'Suporte',
+    url: '/admin/suporte',
+    icon: HeadphonesIcon
   }],
   secretariaCadastros: [{
     title: 'Programas',

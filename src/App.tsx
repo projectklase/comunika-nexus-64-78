@@ -35,6 +35,7 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import FamilyRelationsPage from "./pages/admin/FamilyRelationsPage";
 import SchoolsManagementPage from "./pages/admin/SchoolsManagementPage";
 import AdminSubscriptionPage from "./pages/admin/AdminSubscriptionPage";
+import SupportPage from "./pages/admin/SupportPage";
 
 // Secretaria pages
 import SecretariaFeed from "./pages/SecretariaFeed";
@@ -171,6 +172,13 @@ const App = () => (
               <ProtectedRoute allowedRoles={['administrador']}>
                 <AdminSubscriptionPage />
               </ProtectedRoute>
+            } />
+            
+            {/* Admin/Secretaria - Suporte */}
+            <Route path="/admin/suporte" element={
+              <RoleGuard allowedRoles={['administrador', 'secretaria']}>
+                <SupportPage />
+              </RoleGuard>
             } />
             
             {/* Professor Dashboard - separate route */}
