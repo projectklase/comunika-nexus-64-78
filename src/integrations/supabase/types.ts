@@ -2402,6 +2402,7 @@ export type Database = {
           school_id: string | null
           status: string
           subject: string
+          ticket_code: string | null
           updated_at: string
         }
         Insert: {
@@ -2417,6 +2418,7 @@ export type Database = {
           school_id?: string | null
           status?: string
           subject: string
+          ticket_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -2432,6 +2434,7 @@ export type Database = {
           school_id?: string | null
           status?: string
           subject?: string
+          ticket_code?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2815,6 +2818,7 @@ export type Database = {
         }
         Returns: string
       }
+      delete_support_ticket: { Args: { p_ticket_id: string }; Returns: boolean }
       end_turn: {
         Args: { p_battle_id: string; p_player_id: string }
         Returns: Json
