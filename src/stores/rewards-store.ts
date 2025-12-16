@@ -129,7 +129,7 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
   filters: {},
   currentPage: 1,
   itemsPerPage: 20,
-  isLoading: false,
+  isLoading: true,
   lastFetch: new Map(),
 
   loadItems: async (schoolId?: string) => {
